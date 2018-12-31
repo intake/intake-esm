@@ -4,11 +4,9 @@ workflows:
   version: 2
   default:
     jobs:
-      - "python-2.7"
       - "python-3.6"
       - "deploy-pypi":
           requires:
-            - "python-2.7"
             - "python-3.6"
           filters:
             tags:
@@ -18,7 +16,6 @@ workflows:
 
       - "deploy-conda":
           requires:
-            - "python-2.7"
             - "python-3.6"
           filters:
             tags:
@@ -28,42 +25,6 @@ workflows:
           
 
 jobs:
-  # Python 2.7 build
-  "python-2.7":
-    docker:
-      - image: continuumio/miniconda:latest
-
-    environment:
-      PYTHON: "2.7"
-      ENV_NAME: "intake-cesmle-dev"
-
-    steps:
-      - checkout
-
-      # Restore cached files to speed things up
-      - restore_cache:
-          key: deps-2.7
-
-      - run: # install and activate conda environment
-          name: configure conda 
-          command: ./ci/install-circle.sh
-
-      - run:
-          command: |
-            source activate ${ENV_NAME}
-            pytest --junitxml=test-reports/junit.xml --cov=./
-
-      - save_cache:
-          key: deps-2.7
-          paths:
-            - "/opt/conda/envs/${ENV_NAME}/"
-            - "/opt/conda/pkgs"
-
-      - store_test_results:
-          path: test-reports
-
-      - store_artifacts:
-          path: test-reports
 
   "python-3.6":
     docker:

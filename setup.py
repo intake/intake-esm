@@ -8,7 +8,7 @@ from os.path import exists
 
 readme = open("README.rst").read() if exists("README.rst") else ""
 
-
+requirements = ["intake", "intake-xarray"]
 
 setup(
     name='intake-cesmle',
@@ -22,8 +22,7 @@ setup(
     ],
     package_dir={'intake-cesmle': 'intake-cesmle'},
     include_package_data=True,
-    install_requires=[
-    ],
+    install_requires=requirements,
     license='Apache-2.0 license',
     zip_safe=False,
     keywords='intake-cesmle',
