@@ -1,0 +1,28 @@
+name: intake-cesmle-dev
+channels:
+  - conda-forge
+dependencies:
+  - python=2.7
+  - numpy
+  - xarray
+  - netcdf4
+  - zarr
+  - dask
+  - distributed
+  - autopep8
+  - flake8
+  - pytest
+  - coverage
+  - pytest-cov
+  - codecov
+  - sphinx>=1.6
+  - sphinx_rtd_theme
+  - recommonmark 
+  - numpydoc
+  - nbsphinx
+  - pandoc
+  - ipykernel
+  - six
+  - pip:
+    - sphinx_copybutton
+
