@@ -8,7 +8,7 @@ from os.path import exists
 
 readme = open("README.rst").read() if exists("README.rst") else ""
 
-requirements = ["intake", "intake-xarray"]
+requirements = ["intake"]
 
 setup(
     name='intake-cesmle',
@@ -17,9 +17,7 @@ setup(
     maintainer='Anderson Banihirwe',
     maintainer_email='abanihi@ucar.edu',
     url='https://github.com/NCAR/intake-cesmle',
-    packages=[
-        'intake-cesmle',
-    ],
+    packages=find_packages(),
     package_dir={'intake-cesmle': 'intake-cesmle'},
     include_package_data=True,
     install_requires=requirements,
