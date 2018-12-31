@@ -6,7 +6,6 @@ dependencies:
   - numpy
   - xarray
   - netcdf4
-  - zarr
   - dask
   - distributed
   - autopep8
@@ -24,7 +23,6 @@ dependencies:
   - nbsphinx
   - pandoc
   - ipykernel
-  - six
   - pip:
     - sphinx_copybutton
 
