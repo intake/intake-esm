@@ -1,8 +1,11 @@
 name: intake-cesmle-dev
 channels:
+  - intake
   - conda-forge
 dependencies:
   - python=3.6
+  - intake-xarray
+  - intake
   - numpy
   - xarray
   - netcdf4
