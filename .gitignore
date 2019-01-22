@@ -106,3 +106,4 @@ venv.bak/
 
 # Sphinx
 docs/_build
+.vscode/
