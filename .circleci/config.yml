@@ -9,12 +9,12 @@ workflows:
 
         
 jobs:
-  "python-3.7":
+  "python-3.6":
     docker:
       - image: continuumio/miniconda:latest
 
     environment:
-      PYTHON: "3.7"
+      PYTHON: "3.6"
       ENV_NAME: "intake-cesm-dev"
 
     steps:
@@ -22,7 +22,7 @@ jobs:
 
       # Restore cached files to speed things up
       - restore_cache:
-          key: deps-{{ .Branch }}-3.7-{{ checksum "ci/environment-dev-3.7.yml" }}
+          key: deps-{{ .Branch }}-3.6-{{ checksum "ci/environment-dev-3.6.yml" }}
 
       - run: # install and activate conda environment
           name: configure conda 
@@ -34,7 +34,7 @@ jobs:
             pytest --junitxml=test-reports/junit.xml --cov=./
 
       - save_cache:
-          key: deps-{{ .Branch }}-3.7-{{ checksum "ci/environment-dev-3.7.yml" }}
+          key: deps-{{ .Branch }}-3.6-{{ checksum "ci/environment-dev-3.6.yml" }}
           paths:
             - "/opt/conda/envs/${ENV_NAME}/"
             - "/opt/conda/pkgs"
@@ -45,12 +45,12 @@ jobs:
       - store_artifacts:
           path: test-reports
 
-  "python-3.6":
+  "python-3.7":
     docker:
       - image: continuumio/miniconda:latest
 
     environment:
-      PYTHON: "3.6"
+      PYTHON: "3.7"
       ENV_NAME: "intake-cesm-dev"
 
     steps:
@@ -60,7 +60,7 @@ jobs:
 
       # Restore cached files to speed things up
       - restore_cache:
-          key: deps-{{ .Branch }}-3.6-{{ checksum "ci/environment-dev-3.6.yml" }}
+          key: deps-{{ .Branch }}-3.7-{{ checksum "ci/environment-dev-3.7.yml" }}
 
       - run: # install and activate conda environment
           name: configure conda 
@@ -97,7 +97,7 @@ jobs:
      
       # Cache some files for a speedup in subsequent builds
       - save_cache:
-          key: deps-{{ .Branch }}-3.6-{{ checksum "ci/environment-dev-3.6.yml" }}
+          key: deps-{{ .Branch }}-3.7-{{ checksum "ci/environment-dev-3.7.yml" }}
           paths:
             - "/opt/conda/envs/${ENV_NAME}/"
             - "/opt/conda/pkgs"
