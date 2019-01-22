@@ -16,5 +16,5 @@ Feedback
 ========
 
 
-If you encounter any errors or problems with **intake-cesmle**,
-please open an Issue at the GitHub http://github.com/NCAR/intake-cesmle main repository.
+If you encounter any errors or problems with **intake-cesm**,
+please open an Issue at the GitHub http://github.com/NCAR/intake-cesm main repository.

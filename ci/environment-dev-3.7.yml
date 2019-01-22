@@ -2,7 +2,7 @@ name: intake-cesm-dev
 channels:
   - conda-forge
 dependencies:
-  - python=3.6
+  - python=3.7
   - numpy
   - xarray
   - netcdf4
@@ -11,8 +11,6 @@ dependencies:
   - distributed
   - autopep8
   - flake8
-  - black
-  - isort
   - pytest
   - coverage
   - pytest-cov
