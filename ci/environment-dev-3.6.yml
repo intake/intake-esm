@@ -2,29 +2,16 @@ name: intake-cesm-dev
 channels:
   - conda-forge
 dependencies:
-  - python=3.6
-  - numpy
-  - xarray
-  - netcdf4
-  - zarr
+  - codecov
+  - coverage
   - dask
   - distributed
-  - autopep8
-  - flake8
-  - black
-  - isort
+  - netcdf4
+  - numpy
   - pytest
-  - coverage
   - pytest-cov
-  - codecov
-  - sphinx>=1.6
-  - sphinx_rtd_theme
-  - recommonmark 
-  - numpydoc
-  - nbsphinx
-  - pandoc
-  - ipykernel
-  - six
-  - pip:
-    - sphinx_copybutton
+  - pytest-icdiff
+  - python=3.6
+  - xarray
+  - zarr
 
