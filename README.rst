@@ -1,8 +1,8 @@
 ===============================
-intake-cesm
+Intake-cesm
 ===============================
 
-.. image:: https://img.shields.io/circleci/project/github/NCAR/intake-cesm/master.svg?style=for-the-badge
+.. image:: https://img.shields.io/circleci/project/github/NCAR/intake-cesm/master.svg?style=for-the-badge&logo=circleci
     :target: https://circleci.com/gh/NCAR/intake-cesm/tree/master
 
 .. image:: https://img.shields.io/codecov/c/github/NCAR/intake-cesm.svg?style=for-the-badge
