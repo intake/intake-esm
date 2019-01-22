@@ -1,6 +1,6 @@
 [run]
 omit = 
     tests/*.py
-    intake_cesmle/_version.py
+    intake_cesm/_version.py
     versioneer.py
     setup.py
