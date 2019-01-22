@@ -24,7 +24,7 @@ clean-pyc:
 	find . -name '*~' -exec rm -f {} +
 
 lint:
-	flake8 intake_cesmle test
+	flake8 intake_cesm test
 
 test:
 	py.test
@@ -33,15 +33,15 @@ test-all:
 	tox
 
 coverage:
-	coverage run --source intake_cesmle setup.py test
+	coverage run --source intake_cesm setup.py test
 	coverage report -m
 	coverage html
 	open htmlcov/index.html
 
 docs:
-	rm -f docs/intake_cesmle.rst
+	rm -f docs/intake_cesm.rst
 	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ intake_cesmle
+	sphinx-apidoc -o docs/ intake_cesm
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	open docs/_build/html/index.html

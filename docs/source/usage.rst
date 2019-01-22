@@ -2,6 +2,6 @@
 Usage
 ========
 
-To use intake-cesmle in a project::
+To use intake-cesm in a project::
 
-	import intake_cesmle
+	import intake_cesm
