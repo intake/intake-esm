@@ -14,6 +14,7 @@ dependencies:
   - numpy
   - numpydoc
   - pandoc
+  - pyyaml
   - pytest
   - pytest-cov
   - pytest-icdiff
