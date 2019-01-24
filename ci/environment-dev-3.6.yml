@@ -13,5 +13,6 @@ dependencies:
   - pytest-icdiff
   - python=3.6
   - xarray
+  - pyyaml
   - zarr
 
