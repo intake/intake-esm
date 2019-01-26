@@ -8,22 +8,23 @@ dependencies:
   - dask
   - distributed
   - flake8
+  - intake
+  - intake-xarray
   - ipykernel
   - nbsphinx
   - netcdf4
   - numpy
   - numpydoc
   - pandoc
-  - pyyaml
   - pytest
   - pytest-cov
   - pytest-icdiff
   - python=3.7
+  - pyyaml
   - recommonmark 
   - sphinx_rtd_theme
   - sphinx>=1.6
   - xarray
-  - zarr
   - pip:
     - sphinx_copybutton
 
