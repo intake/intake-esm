@@ -3,6 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - autopep8
+  - black
   - codecov
   - coverage
   - dask
