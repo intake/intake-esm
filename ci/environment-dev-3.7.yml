@@ -12,6 +12,7 @@ dependencies:
   - intake
   - intake-xarray
   - ipykernel
+  - isort
   - nbsphinx
   - netcdf4
   - numpy
