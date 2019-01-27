@@ -5,12 +5,13 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+   :caption: Contents:
 
    installation
-   usage
+   getting-started.ipynb
    contributing
    authors
-   history
+   changelog
 
 Feedback
 ========
