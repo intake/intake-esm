@@ -7,7 +7,7 @@ Contents:
    :maxdepth: 2
 
    installation
-   usage
+   getting-started.ipynb
    contributing
    authors
    history
