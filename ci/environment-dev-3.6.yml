@@ -6,12 +6,15 @@ dependencies:
   - coverage
   - dask
   - distributed
+  - intake
+  - intake-xarray
   - netcdf4
   - numpy
   - pytest
   - pytest-cov
   - pytest-icdiff
   - python=3.6
+  - pyyaml
   - xarray
-  - zarr
+
 
