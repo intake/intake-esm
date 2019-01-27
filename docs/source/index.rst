@@ -11,7 +11,7 @@ Contents:
    getting-started.ipynb
    contributing
    authors
-   history
+   changelog
 
 Feedback
 ========
