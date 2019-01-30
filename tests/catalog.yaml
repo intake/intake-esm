@@ -1,0 +1,30 @@
+plugins:
+  source:
+  - module: intake_cesm.core
+sources:
+  cesm1_le-90b7bc60-f946-4ae3-b727-7caeed65d974:
+    args:
+      chunks:
+        time: 1
+      collection: cesm1_le
+      concat_dim: time
+      decode_coords: false
+      decode_times: false
+      engine: netcdf4
+      query:
+        case: null
+        component: ocn
+        ctrl_branch_year: null
+        date_range: null
+        ensemble: 1
+        experiment:
+        - 20C
+        - RCP85
+        has_ocean_bgc: null
+        stream: null
+        variable: FG_CO2
+    description: Catalog from cesm1_le collection
+    driver: cesm
+    metadata:
+      cache: {}
+      catalog_dir: ''
