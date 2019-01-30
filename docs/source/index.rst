@@ -9,6 +9,7 @@ Contents:
 
    installation
    getting-started.ipynb
+   api
    contributing
    authors
    changelog
