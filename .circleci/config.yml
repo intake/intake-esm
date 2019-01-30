@@ -31,7 +31,7 @@ jobs:
       - run:
           command: |
             source activate ${ENV_NAME}
-            pytest --junitxml=test-reports/junit.xml --cov=./
+            pytest --junitxml=test-reports/junit.xml --cov=./ --verbose
 
       - save_cache:
           key: deps-{{ .Branch }}-3.6-{{ checksum "ci/environment-dev-3.6.yml" }}
@@ -68,7 +68,7 @@ jobs:
       - run:
           command: |
             source activate ${ENV_NAME}
-            pytest --junitxml=test-reports/junit.xml --cov=./
+            pytest --junitxml=test-reports/junit.xml --cov=./ --verbose
 
       - run:
           name: Code Coverage + Code Styling with (black, flake8, isort)
