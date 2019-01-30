@@ -1,17 +1,18 @@
-.. include:: ../../README.rst
-
 Contents:
 =========
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
    installation
    getting-started.ipynb
+   api
    contributing
    authors
    changelog
+
+
+.. include:: ../../README.rst
 
 Feedback
 ========
