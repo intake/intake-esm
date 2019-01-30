@@ -95,7 +95,7 @@ class CesmSource(NetCDFSource):
         self.concat_dim = concat_dim
         self._kwargs = kwargs
         self.urlpath = get_subset(self.collection, self.query).files.tolist()
-        super(CesmSource, self).__init__(urlpath, chunks, **kwargs)
+        super(CesmSource, self).__init__(urlpath, chunks, path_as_pattern=False, **kwargs)
         if self.metadata is None:
             self.metadata = {}
 
