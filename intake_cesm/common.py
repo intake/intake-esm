@@ -7,6 +7,7 @@ from .config import collections
 
 
 def open_collection(collection):
+    """ Open a CESM collection and return a Pandas dataframe """
     try:
 
         df = pd.read_csv(collections[collection], index_col=0)
@@ -18,6 +19,7 @@ def open_collection(collection):
 
 
 def get_subset(collection, query):
+    """ Get a subset of collection entries that match a query """
     df = open_collection(collection)
 
     condition = np.ones(len(df), dtype=bool)

@@ -20,6 +20,14 @@ class CesmMetadataStoreCatalog(Catalog):
     version = __version__
 
     def __init__(self, collection, **kwargs):
+        """ CESM collection Metadata store
+
+        Parameters
+        ----------
+        collection : string
+                   CESM collection to use. Accepted values are `cesm1_le`, `cesm2_runs`, `cesm_dple`.
+
+        """
         self.collection = collection
         self.df = open_collection(collection)
         print(f"Active collection: {collection}")
@@ -45,6 +53,24 @@ class CesmMetadataStoreCatalog(Catalog):
         ctrl_branch_year=None,
         has_ocean_bgc=None,
     ):
+        """ Search for entries matching query
+
+        Parameters
+        ----------
+
+        case : string or list of strings
+        component : string or list of strings
+        date_range : string
+        ensemble : int or list of integers
+        stream : string
+        variable : string
+        ctrl_branch_year : string
+        has_ocean_bgc : bool
+
+
+        Returns:
+            intake.Catalog -- An intake catalog entry
+        """
 
         # Capture parameter names and values in a dictionary to be use as a query
         frame = inspect.currentframe()
@@ -81,7 +107,11 @@ class CesmMetadataStoreCatalog(Catalog):
 
 
 class CesmSource(NetCDFSource):
+    """ Read CESM data sets into xarray datasets
+    """
+
     name = "cesm"
+    partition_access = True
     version = __version__
 
     def __init__(self, collection=None, query={}, chunks={"time": 1}, concat_dim="time", **kwargs):
@@ -98,6 +128,7 @@ class CesmSource(NetCDFSource):
 
     @property
     def results(self):
+        """ Return collection entries matching query"""
         if self.query_results is not None:
             return self.query_results
 
