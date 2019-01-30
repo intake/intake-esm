@@ -17,20 +17,14 @@ class CesmCatalog(Catalog):
     name = "cesm_cat"
     version = __version__
 
-    def __init__(self, collection, query=None, **kwargs):
+    def __init__(self, collection, **kwargs):
         self.collection = collection
         self.df = self._open_collection(collection)
-        self._query = query or {}
         kwargs.setdefault("name", collection)
         super(CesmCatalog, self).__init__(**kwargs)
         if self.metadata is None:
             self.metadata = {}
         self._entries = {}
-
-        if self._query:
-            self.query_results = self._get_subset(query)
-        else:
-            self.query_results = pd.DataFrame()
 
     def _open_collection(self, collection):
         try:
@@ -81,7 +75,12 @@ class CesmCatalog(Catalog):
         query.pop("frame", None)
         name = self.collection + "-" + str(uuid.uuid4())
         files = self._get_subset(query)
-        args = {"urlpath": files, "chunks": {}, "concat_dim": "time"}
+        args = {
+            "urlpath": files,
+            "chunks": {"time": 1},
+            "decode_times": False,
+            "decode_coords": False,
+        }
         description = f"Catalog from {self.collection} collection"
         cat = LocalCatalogEntry(
             name=name,
