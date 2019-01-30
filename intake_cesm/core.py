@@ -84,14 +84,11 @@ class CesmSource(NetCDFSource):
     name = "cesm"
     version = __version__
 
-    def __init__(self, collection=None, query={}, chunks=None, concat_dim="time", **kwargs):
+    def __init__(self, collection=None, query={}, chunks={"time": 1}, concat_dim="time", **kwargs):
         self.collection = collection
         self.query = query
         self.query_results = get_subset(self.collection, self.query)
         self._ds = None
-        self.chunks = chunks
-        self.concat_dim = concat_dim
-        self._kwargs = kwargs
         urlpath = get_subset(self.collection, self.query).files.tolist()
         super(CesmSource, self).__init__(
             urlpath, chunks, concat_dim=concat_dim, path_as_pattern=False, **kwargs
