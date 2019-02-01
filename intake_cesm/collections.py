@@ -69,7 +69,9 @@ class CesmCollections(object):
                     # ensure that file name conforms to expectation
                     if datestr_nc != f"{datestr}.nc":
                         logging.warning(
-                            f"Filename: {filename} does" " not conform to expected" " pattern"
+                            f"Filename: {filename} does"
+                            " not conform to expected"
+                            " pattern"
                         )
                         return
 
@@ -97,7 +99,11 @@ class CesmCollections(object):
                     exclude_dirs = ensemble_attrs["exclude_dirs"]
 
                 entry.update(
-                    {key: val for key, val in ensemble_attrs.items() if key in self.columns}
+                    {
+                        key: val
+                        for key, val in ensemble_attrs.items()
+                        if key in self.columns
+                    }
                 )
 
                 if "ensemble" not in ensemble_attrs:
@@ -119,7 +125,8 @@ class CesmCollections(object):
                     # skip directories specified in `exclude_dirs`
                     local_root = root.replace(root_dir + "/", "")
                     if any(
-                        fnmatch.fnmatch(local_root, exclude_dir) for exclude_dir in exclude_dirs
+                        fnmatch.fnmatch(local_root, exclude_dir)
+                        for exclude_dir in exclude_dirs
                     ):
                         logging.warning(f"skipping {root}")
                         continue
@@ -169,9 +176,13 @@ class CesmCollections(object):
                         else:
                             temp_df = pd.DataFrame(columns=self.df.columns)
 
-                        self.df = pd.concat([temp_df, self.df], ignore_index=True, sort=False)
+                        self.df = pd.concat(
+                            [temp_df, self.df], ignore_index=True, sort=False
+                        )
 
-        self.df = self.df.drop_duplicates(subset="files", keep="last").reset_index(drop=True)
+        self.df = self.df.drop_duplicates(subset="files", keep="last").reset_index(
+            drop=True
+        )
         self.df.to_csv(self.active_db, index=False)
 
     def build_collections(self):

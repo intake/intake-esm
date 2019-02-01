@@ -32,7 +32,9 @@ def test_set_collection_fail():
 
 def test_search():
     c = intake.open_cesm_metadatastore("cesm1_le")
-    cat = c.search(experiment=["20C", "RCP85"], component="ocn", ensemble=1, variable="FG_CO2")
+    cat = c.search(
+        experiment=["20C", "RCP85"], component="ocn", ensemble=1, variable="FG_CO2"
+    )
 
     assert isinstance(cat.results, pd.DataFrame)
     assert not cat.results.empty
