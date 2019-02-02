@@ -25,9 +25,15 @@ def get_subset(collection, query):
     condition = np.ones(len(df), dtype=bool)
 
     for key, val in query.items():
-        if not isinstance(val, list) and val is not None:
-            val = [val]
-            condition = condition & (df[key].isin(val))
+
+        if isinstance(val, list):
+            condition_i = np.zeros(len(df), dtype=bool)
+            for val_i in val:
+                condition_i = condition_i | (df[key] == val_i)
+            condition = condition & condition_i
+
+        elif val is not None:
+            condition = condition & (df[key] == val)
 
     query_results = df.loc[condition].sort_values(
         by=["sequence_order", "files"], ascending=True
