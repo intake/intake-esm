@@ -6,6 +6,7 @@ Contents:
 
    installation
    getting-started.ipynb
+   building-collections.ipynb
    api
    contributing
    authors
