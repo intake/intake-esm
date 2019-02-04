@@ -4,7 +4,7 @@ import intake
 import pandas as pd
 import pytest
 
-import intake_cesm
+
 
 # pytest imports this package last, so plugin is not auto-added
 from intake_cesm.core import CesmMetadataStoreCatalog
@@ -14,7 +14,7 @@ intake.registry["cesm_metadatastore"] = CesmMetadataStoreCatalog
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-
+# import intake_cesm
 # @pytest.mark.parametrize("collection", ["cesm1_le", "cesm_dple"])
 # def test_build_collection(collection):
 #     collection_type_def_file = 'intake_cesm/cesm_definitions.yml'
