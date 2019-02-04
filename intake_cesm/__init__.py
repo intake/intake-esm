@@ -6,3 +6,4 @@ __version__ = get_versions()["version"]
 del get_versions
 
 from .core import CesmSource, CesmMetadataStoreCatalog
+from .manage_collections import CESMCollections

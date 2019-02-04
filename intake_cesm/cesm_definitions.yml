@@ -1,24 +1,26 @@
 collection_columns:
+  - resource
   - experiment
+  - case
   - component
   - stream
   - variable
   - date_range
-  - case
   - ensemble
+  - files
+  - files_basename
+  - files_dirname
   - ctrl_branch_year
   - year_offset
   - sequence_order
   - has_ocean_bgc
   - grid
-  - files
-  - file_basename
 
 replacements:
   freq:
-    - !!python/tuple [monthly, month_1]
-    - !!python/tuple [daily, day_1]
-    - !!python/tuple [yearly, year_1]
+    monthly: month_1
+    daily: day_1
+    yearly: year_1
 
 component_streams:
     ocn:
