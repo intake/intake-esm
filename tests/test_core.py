@@ -29,7 +29,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 #                                 collection_type_def_file=collection_type_def_file)
 
 
-@pytest.mark.parametrize("collection", ["cesm1_le", "cesm_dple"])
+@pytest.mark.parametrize("collection", ["cesm_dple"])
 def test_constructor(collection):
     c = intake.open_cesm_metadatastore(collection)
     assert isinstance(c, CesmMetadataStoreCatalog)
