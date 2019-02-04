@@ -7,7 +7,7 @@ from __future__ import absolute_import, print_function
 
 import os
 
-collection_dir = os.path.join(os.path.dirname(__file__), "collections")
+collection_dir = os.path.join(os.path.dirname(__file__), "..", "collections")
 
 collections = {
     "cesm_dple": os.path.join(collection_dir, "cesm_dple.csv"),

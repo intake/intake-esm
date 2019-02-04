@@ -4,36 +4,54 @@ import intake
 import pandas as pd
 import pytest
 
+import intake_cesm
+
 # pytest imports this package last, so plugin is not auto-added
 from intake_cesm.core import CesmMetadataStoreCatalog
+
 
 intake.registry["cesm_metadatastore"] = CesmMetadataStoreCatalog
 
 here = os.path.abspath(os.path.dirname(__file__))
 
 
-@pytest.mark.parametrize("collection", ["cesm1_le", "cesm2_runs", "cesm_dple"])
+# @pytest.mark.parametrize("collection", ["cesm1_le", "cesm_dple"])
+# def test_build_collection(collection):
+#     collection_type_def_file = 'intake_cesm/cesm_definitions.yml'
+#     if collection == "cesm1_le":
+#         collection_input_file = 'collection_input_cesm1_le.yml'
+#     if collection == "cesm2_runs":
+#         collection_input_file = "collection_input_cmip6_cesm.yml"
+#     if collection == "cesm_dple":
+#         collection_input_file = "collection_input_cesm_dple.yml"
+#
+#     intake_cesm.CESMCollections(collection_input_file=collection_input_file,
+#                                 collection_type_def_file=collection_type_def_file)
+
+
+@pytest.mark.parametrize("collection", ["cesm1_le", "cesm_dple"])
 def test_constructor(collection):
     c = intake.open_cesm_metadatastore(collection)
     assert isinstance(c, CesmMetadataStoreCatalog)
 
 
 def test_set_collection_success():
-    c = intake.open_cesm_metadatastore("cesm1_le")
-    c.set_collection("cesm2_runs")
+    c = intake.open_cesm_metadatastore("cesm_dple")
+    c.set_collection("cesm_dple")
     assert isinstance(c, CesmMetadataStoreCatalog)
 
 
 def test_set_collection_fail():
     with pytest.raises(KeyError):
-        c = intake.open_cesm_metadatastore("cesm1_le")
+        c = intake.open_cesm_metadatastore("cesm_dple")
         c.set_collection("cesm")
 
 
 def test_search():
-    c = intake.open_cesm_metadatastore("cesm1_le")
+    c = intake.open_cesm_metadatastore("cesm_dple")
     cat = c.search(
-        experiment=["20C", "RCP85"], component="ocn", ensemble=1, variable="FG_CO2"
+        experiment="g.e11_LENS.GECOIAF.T62_g16.009",
+        component="ocn", variable="FG_CO2"
     )
 
     assert isinstance(cat.results, pd.DataFrame)
