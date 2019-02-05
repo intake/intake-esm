@@ -1,6 +1,7 @@
+import intake
+
 import os
 
-import intake
 import pandas as pd
 import pytest
 
@@ -10,7 +11,7 @@ import pytest
 from intake_cesm.core import CesmMetadataStoreCatalog
 
 
-intake.registry["cesm_metadatastore"] = CesmMetadataStoreCatalog
+#intake.registry["cesm_metadatastore"] = CesmMetadataStoreCatalog
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -42,7 +43,7 @@ def test_set_collection_success():
 
 
 def test_set_collection_fail():
-    with pytest.raises(KeyError):
+    with pytest.raises(FileNotFoundError):
         c = intake.open_cesm_metadatastore("cesm_dple")
         c.set_collection("cesm")
 
@@ -57,8 +58,7 @@ def test_search():
     assert isinstance(cat.results, pd.DataFrame)
     assert not cat.results.empty
 
-
 def test_cat():
     cat = intake.open_catalog(os.path.join(here, "catalog.yaml"))
-    cat = cat["cesm1_le-90b7bc60-f946-4ae3-b727-7caeed65d974"]
+    cat = cat["cesm_dple-cff53aef-6938-4c6e-b6ae-efa5035bed7e"]
     assert isinstance(cat.results, pd.DataFrame)

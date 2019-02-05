@@ -9,7 +9,7 @@ from intake.catalog.local import LocalCatalogEntry
 from intake_xarray.netcdf import NetCDFSource
 
 from ._version import get_versions
-from .common import get_subset, open_collection
+from .common import get_subset, open_collection, get_collection_def
 
 __version__ = get_versions()["version"]
 del get_versions
@@ -41,42 +41,27 @@ class CesmMetadataStoreCatalog(Catalog):
         """Set the active collection"""
         self.__init__(collection)
 
-    def search(
-        self,
-        case=None,
-        component=None,
-        date_range=None,
-        ensemble=None,
-        experiment=None,
-        stream=None,
-        variable=None,
-        ctrl_branch_year=None,
-        has_ocean_bgc=None,
-    ):
+    def search(self, **query):
         """ Search for entries matching query
 
         Parameters
         ----------
 
-        case : string or list of strings
-        component : string or list of strings
-        date_range : string
-        ensemble : int or list of integers
-        stream : string
-        variable : string
-        ctrl_branch_year : string
-        has_ocean_bgc : bool
-
+        query : keyword arguments of a catalog query
 
         Returns:
             intake.Catalog -- An intake catalog entry
         """
 
-        # Capture parameter names and values in a dictionary to be use as a query
-        frame = inspect.currentframe()
-        _, _, _, query = inspect.getargvalues(frame)
-        query.pop("self", None)
-        query.pop("frame", None)
+        collection_columns = get_collection_def(self.collection)
+        for key in query.keys():
+            if key not in collection_columns:
+                raise ValueError(f'{key} is not in {self.collection}')
+
+        for key in collection_columns:
+            if key not in query:
+                query[key] = None
+                
         name = self.collection + "-" + str(uuid.uuid4())
         args = {
             "collection": self.collection,

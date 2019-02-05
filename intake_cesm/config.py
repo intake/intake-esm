@@ -67,7 +67,6 @@ class set_options(object):
         for key, val in settings_dict.items():
             if key in _SETTERS:
                 settings_dict[key] = _SETTERS[key](val)
-        print(settings_dict)
         SETTINGS.update(settings_dict)
 
     def __enter__(self):

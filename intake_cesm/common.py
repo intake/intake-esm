@@ -41,3 +41,9 @@ def get_subset(collection, query):
     )
 
     return query_results
+
+
+def get_collection_def(collection):
+    """Return list of columns defining a collection.
+    """
+    return open_collection(collection).columns.tolist()
