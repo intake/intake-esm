@@ -79,9 +79,10 @@ class StorageResource(object):
 
 
 class CESMCollections(object):
-    db_dir = SETTINGS["database_directory"]
-
     def __init__(self, collection_input_file, collection_type_def_file):
+
+        self.db_dir = SETTINGS["database_directory"]
+
         with open(collection_input_file) as f:
             self.collections = yaml.load(f)
         with open(collection_type_def_file) as f:
@@ -105,8 +106,8 @@ class CESMCollections(object):
 
     def _set_active_collection(self, name):
         self.active_collection = name
-        os.makedirs(CESMCollections.db_dir, exist_ok=True)
-        self.active_db = f"{CESMCollections.db_dir}/{name}.csv"
+        os.makedirs(self.db_dir, exist_ok=True)
+        self.active_db = f"{self.db_dir}/{name}.csv"
 
     def _extract_cesm_date_str(self, filename):
         """Extract a datastr from file name."""
