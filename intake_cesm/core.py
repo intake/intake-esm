@@ -9,7 +9,7 @@ from intake.catalog.local import LocalCatalogEntry
 from intake_xarray.netcdf import NetCDFSource
 
 from ._version import get_versions
-from .common import get_subset, open_collection, get_collection_def
+from .common import get_collection_def, get_subset, open_collection
 
 __version__ = get_versions()["version"]
 del get_versions
@@ -56,12 +56,12 @@ class CesmMetadataStoreCatalog(Catalog):
         collection_columns = get_collection_def(self.collection)
         for key in query.keys():
             if key not in collection_columns:
-                raise ValueError(f'{key} is not in {self.collection}')
+                raise ValueError(f"{key} is not in {self.collection}")
 
         for key in collection_columns:
             if key not in query:
                 query[key] = None
-                
+
         name = self.collection + "-" + str(uuid.uuid4())
         args = {
             "collection": self.collection,
@@ -139,12 +139,12 @@ class CesmSource(NetCDFSource):
 
             ds_ens_list = []
             for ens_i in ensembles:
-                query['ensemble'] = ens_i
+                query["ensemble"] = ens_i
 
                 dsi = xr.Dataset()
                 for var_i in variables:
 
-                    query['variable'] = var_i
+                    query["variable"] = var_i
                     urlpath_ei_vi = get_subset(self.collection, query).files.tolist()
                     dsi = xr.merge(
                         (
@@ -153,15 +153,14 @@ class CesmSource(NetCDFSource):
                                 urlpath_ei_vi,
                                 data_vars=[var_i],
                                 chunks=self.chunks,
-                                **kwargs
+                                **kwargs,
                             ),
                         )
                     )
 
                     ds_ens_list.append(dsi)
 
-            self._ds = xr.concat(ds_ens_list, dim='ens',
-                                 data_vars=variables)
+            self._ds = xr.concat(ds_ens_list, dim="ens", data_vars=variables)
         else:
             self._ds = xr.open_dataset(url, chunks=self.chunks, **kwargs)
 
