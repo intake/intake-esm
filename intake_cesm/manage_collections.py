@@ -1,10 +1,9 @@
 import fnmatch
 import logging
 import os
-import shutil
 import re
-
-from subprocess import Popen, PIPE
+import shutil
+from subprocess import PIPE, Popen
 
 import pandas as pd
 import yaml
@@ -13,6 +12,7 @@ from tqdm import tqdm
 from .config import SETTINGS
 
 logging.basicConfig(level=logging.DEBUG)
+
 
 class StorageResource(object):
     def __init__(self, urlpath, type, file_extension=".nc"):
@@ -35,14 +35,15 @@ class StorageResource(object):
 
         filelist = []
         for root, dirs, files in w:
-            filelist.extend([
-                os.path.join(root, f)
-                for f in files if f.endswith(self.file_extension)
+            filelist.extend(
+                [
+                    os.path.join(root, f)
+                    for f in files
+                    if f.endswith(self.file_extension)
                 ]
-                            )
+            )
 
         return filelist
-
 
     def _list_files_hsi(self):
 
@@ -50,12 +51,16 @@ class StorageResource(object):
             logging.warning(f"no hsi; cannot access [HSI]{self.urlpath}")
             return []
 
-        p = Popen([
-            "hsi",
-            'find {urlpath} -name "*{file_extension}"'.format(
-                urlpath=self.urlpath,
-                file_extension=self.file_extension)
-            ], stdout=PIPE, stderr=PIPE)
+        p = Popen(
+            [
+                "hsi",
+                'find {urlpath} -name "*{file_extension}"'.format(
+                    urlpath=self.urlpath, file_extension=self.file_extension
+                ),
+            ],
+            stdout=PIPE,
+            stderr=PIPE,
+        )
 
         stdout, stderr = p.communicate()
         lines = stderr.decode("UTF-8").strip().split("\n")[1:]
@@ -68,10 +73,9 @@ class StorageResource(object):
                 continue
             else:
                 filelist.append(lines[i])
-                i +=1
+                i += 1
 
         return filelist
-
 
 
 class CESMCollections(object):
@@ -154,12 +158,22 @@ class CESMCollections(object):
         logging.warning(f"could not identify CESM fileparts: {filename}")
         return
 
-
     def _build_cesm_collection_df_files(self, resource_key, filelist):
 
-        entries = {key: [] for key in ["resource", "case", "component", "stream",
-                                       "variable", "date_range", "files_basename",
-                                       "files_dirname", "files"]}
+        entries = {
+            key: []
+            for key in [
+                "resource",
+                "case",
+                "component",
+                "stream",
+                "variable",
+                "date_range",
+                "files_basename",
+                "files_dirname",
+                "files",
+            ]
+        }
 
         if not filelist:
             return pd.DataFrame(entries)
@@ -167,8 +181,9 @@ class CESMCollections(object):
         logging.info(f"building file database: {resource_key}")
 
         for f in tqdm(filelist):
-            fileparts = self._cesm_filename_parts(os.path.basename(f),
-                                                  self.component_streams)
+            fileparts = self._cesm_filename_parts(
+                os.path.basename(f), self.component_streams
+            )
 
             if fileparts is None:
                 continue
@@ -183,22 +198,20 @@ class CESMCollections(object):
             entries["files_dirname"].append(os.path.dirname(f) + "/")
             entries["files"].append(f)
 
-
         return pd.DataFrame(entries)
-
 
     def _build_cesm_collection(self, collection_attrs):
 
-        #-- loop over experiments
+        # -- loop over experiments
         df_files = {}
         for experiment, ensembles in collection_attrs["data_sources"].items():
             logging.info(f"working on experiment: {experiment}")
             input_attrs = {"experiment": experiment}
 
-            #-- loop over ensemble members
+            # -- loop over ensemble members
             for ensemble, ensemble_attrs in tqdm(enumerate(ensembles)):
 
-                #-- get attributes from ensemble_attrs
+                # -- get attributes from ensemble_attrs
                 case = ensemble_attrs["case"]
 
                 component_attrs = ensemble_attrs["component_attrs"]
@@ -213,27 +226,28 @@ class CESMCollections(object):
                 if "sequence_order" not in ensemble_attrs:
                     input_attrs.update({"sequence_order": 0})
 
-                #-- loop over "locations" and assemble filelist databases
+                # -- loop over "locations" and assemble filelist databases
                 for location in ensemble_attrs["locations"]:
-                    res_key = ":".join([location["name"], location["type"],
-                                        location["urlpath"]])
+                    res_key = ":".join(
+                        [location["name"], location["type"], location["urlpath"]]
+                    )
 
                     if res_key not in df_files:
                         logging.info("getting file listing: %s", res_key)
-                        resource = StorageResource(urlpath=location["urlpath"],
-                                                   type=location["type"])
+                        resource = StorageResource(
+                            urlpath=location["urlpath"], type=location["type"]
+                        )
 
                         df_files[res_key] = self._build_cesm_collection_df_files(
-                            resource_key=res_key,
-                            filelist=resource.filelist,
-                            )
+                            resource_key=res_key, filelist=resource.filelist
+                        )
 
                     input_attrs.update(
                         {
                             key: val
                             for key, val in ensemble_attrs.items()
-                            if key in self.columns and
-                            key not in df_files[res_key].columns
+                            if key in self.columns
+                            and key not in df_files[res_key].columns
                         }
                     )
 
@@ -241,12 +255,13 @@ class CESMCollections(object):
                     # ensemble memeber:
                     # - "case" matches
                     # - "files_dirname" not in exclude_dirs
-                    condition = (df_files[res_key]["case"] == case)
+                    condition = df_files[res_key]["case"] == case
                     for exclude_dir in exclude_dirs:
-                        condition = (
-                            condition &
-                            (~df_files[res_key]["files_dirname"].apply(
-                                fnmatch.fnmatch, pat=exclude_dir)))
+                        condition = condition & (
+                            ~df_files[res_key]["files_dirname"].apply(
+                                fnmatch.fnmatch, pat=exclude_dir
+                            )
+                        )
 
                     # if there are any matching files, append to self.df
                     if any(condition):
@@ -263,7 +278,7 @@ class CESMCollections(object):
                                 continue
                             for key, val in component_attrs[component].items():
                                 if key in self.columns:
-                                    loc = (temp_df["component"]==component)
+                                    loc = temp_df["component"] == component
                                     temp_df.loc[loc, key] = val
 
                         # append
@@ -282,7 +297,6 @@ class CESMCollections(object):
             drop=True
         )
         self.df.to_csv(self.active_db, index=False)
-
 
     def build_collections(self):
         for collection_name, collection_attrs in self.collections.items():

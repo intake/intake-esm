@@ -1,17 +1,13 @@
-import intake
-
 import os
 
+import intake
 import pandas as pd
 import pytest
-
-
 
 # pytest imports this package last, so plugin is not auto-added
 from intake_cesm.core import CesmMetadataStoreCatalog
 
-
-#intake.registry["cesm_metadatastore"] = CesmMetadataStoreCatalog
+# intake.registry["cesm_metadatastore"] = CesmMetadataStoreCatalog
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -51,12 +47,12 @@ def test_set_collection_fail():
 def test_search():
     c = intake.open_cesm_metadatastore("cesm_dple")
     cat = c.search(
-        experiment="g.e11_LENS.GECOIAF.T62_g16.009",
-        component="ocn", variable="FG_CO2"
+        experiment="g.e11_LENS.GECOIAF.T62_g16.009", component="ocn", variable="FG_CO2"
     )
 
     assert isinstance(cat.results, pd.DataFrame)
     assert not cat.results.empty
+
 
 def test_cat():
     cat = intake.open_catalog(os.path.join(here, "catalog.yaml"))
