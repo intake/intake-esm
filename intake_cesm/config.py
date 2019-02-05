@@ -18,11 +18,10 @@ else:
 SETTINGS = {DATABASE_DIRECTORY : os.path.join(_config_dir, 'collections'),
             }
 
-# TODO: _path_config_yml = os.path.join(_config_dir, '.intake-cesm-config.yml')
-
 os.makedirs(SETTINGS[DATABASE_DIRECTORY], exist_ok=True)
 
 def _check_path_write_access(value):
+    value = os.path.abspath(os.path.expanduser(value))
     if os.path.exists(value):
         if not os.access(value, os.W_OK):
             print(f'no write access to: {value}')
@@ -38,7 +37,7 @@ def _check_path_write_access(value):
 
 
 def _full_path(value):
-    return os.path.abspath(os.path.expanduser(value))
+    return  os.path.abspath(os.path.expanduser(value))
 
 
 _VALIDATORS = {DATABASE_DIRECTORY: _check_path_write_access,
@@ -68,6 +67,7 @@ class set_options(object):
         for key, val in settings_dict.items():
             if key in _SETTERS:
                 settings_dict[key] = _SETTERS[key](val)
+        print(settings_dict)
         SETTINGS.update(settings_dict)
 
     def __enter__(self):
@@ -75,3 +75,10 @@ class set_options(object):
 
     def __exit__(self, type, value, traceback):
         self._apply_update(self.old)
+
+
+_path_config_yml = os.path.join(_config_dir, 'config.yml')
+if os.path.exists(_path_config_yml):
+    with open(_path_config_yml) as f:
+        dot_file_settings = yaml.load(f)
+    set_options(**dot_file_settings)
