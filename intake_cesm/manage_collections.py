@@ -299,7 +299,7 @@ class CESMCollections(object):
         self.df = self.df.drop_duplicates(subset="files", keep="last").reset_index(
             drop=True
         )
-        self.df.to_csv(self.active_db, index=False)
+        self.df.to_csv(self.active_db, index=True)
 
     def build_collections(self, overwrite_existing):
         for collection_name, collection_attrs in self.collections.items():
