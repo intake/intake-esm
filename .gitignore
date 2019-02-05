@@ -108,3 +108,6 @@ venv.bak/
 docs/_build
 .vscode/
 notes/
+intake_cesm/collections/*
+collections/cesm1_le.csv
+docs/source/collections/*

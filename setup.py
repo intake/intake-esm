@@ -11,7 +11,7 @@ if exists("requirements.txt"):
     with open("requirements.txt") as f:
         install_requires = f.read().strip().split("\n")
 else:
-    install_requires = ["intake", "xarray", "pyyaml"]
+    install_requires = ["intake", "xarray", "pyyaml", "tqdm"]
 
 if exists("README.rst"):
     with open("README.rst") as f:

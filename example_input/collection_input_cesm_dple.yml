@@ -1,0 +1,22 @@
+cesm_dple:
+    type: cesm
+    data_sources:
+      g.e11_LENS.GECOIAF.T62_g16.009:
+        - case: g.e11_LENS.GECOIAF.T62_g16.009
+          root_dir: /glade/p/cesm/community/CESM-DPLE/CESM-DPLE_POPCICEhindcast
+          locations:
+            - name: GLADE
+              type: posix
+              urlpath: /glade/p/cesm/community/CESM-DPLE/CESM-DPLE_POPCICEhindcast         
+          year_offset: 1699
+          component_attrs:
+            ocn: {grid: POP_gx1v6}
+      g.e11_LENS.GECOIAF.T62_g16.009_sigma_coord:
+        - case: g.e11_LENS.GECOIAF.T62_g16.009
+          locations:
+            - name: GLADE
+              type: posix
+              urlpath: /glade/p/cgd/oce/projects/DPLE_O2/sigma_coord/CESM-DPLE_POPCICEhindcast
+          year_offset: 1699
+          component_attrs:
+            ocn: {grid: POP_gx1v6}

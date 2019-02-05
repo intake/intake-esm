@@ -9,7 +9,7 @@ from intake.catalog.local import LocalCatalogEntry
 from intake_xarray.netcdf import NetCDFSource
 
 from ._version import get_versions
-from .common import get_subset, open_collection
+from .common import get_collection_def, get_subset, open_collection
 
 __version__ = get_versions()["version"]
 del get_versions
@@ -41,42 +41,27 @@ class CesmMetadataStoreCatalog(Catalog):
         """Set the active collection"""
         self.__init__(collection)
 
-    def search(
-        self,
-        case=None,
-        component=None,
-        date_range=None,
-        ensemble=None,
-        experiment=None,
-        stream=None,
-        variable=None,
-        ctrl_branch_year=None,
-        has_ocean_bgc=None,
-    ):
+    def search(self, **query):
         """ Search for entries matching query
 
         Parameters
         ----------
 
-        case : string or list of strings
-        component : string or list of strings
-        date_range : string
-        ensemble : int or list of integers
-        stream : string
-        variable : string
-        ctrl_branch_year : string
-        has_ocean_bgc : bool
-
+        query : keyword arguments of a catalog query
 
         Returns:
             intake.Catalog -- An intake catalog entry
         """
 
-        # Capture parameter names and values in a dictionary to be use as a query
-        frame = inspect.currentframe()
-        _, _, _, query = inspect.getargvalues(frame)
-        query.pop("self", None)
-        query.pop("frame", None)
+        collection_columns = get_collection_def(self.collection)
+        for key in query.keys():
+            if key not in collection_columns:
+                raise ValueError(f"{key} is not in {self.collection}")
+
+        for key in collection_columns:
+            if key not in query:
+                query[key] = None
+
         name = self.collection + "-" + str(uuid.uuid4())
         args = {
             "collection": self.collection,
@@ -141,16 +126,43 @@ class CesmSource(NetCDFSource):
     def _open_dataset(self):
         url = self.urlpath
         kwargs = self._kwargs
+
+        query = dict(self.query)
         if "*" in url or isinstance(url, list):
-            _open_dataset = xr.open_mfdataset
             if "concat_dim" not in kwargs.keys():
                 kwargs.update(concat_dim=self.concat_dim)
             if self.pattern:
                 kwargs.update(preprocess=self._add_path_to_ds)
-        else:
-            _open_dataset = xr.open_dataset
 
-        self._ds = _open_dataset(url, chunks=self.chunks, **kwargs)
+            ensembles = self.query_results.ensemble.unique()
+            variables = self.query_results.variable.unique()
+
+            ds_ens_list = []
+            for ens_i in ensembles:
+                query["ensemble"] = ens_i
+
+                dsi = xr.Dataset()
+                for var_i in variables:
+
+                    query["variable"] = var_i
+                    urlpath_ei_vi = get_subset(self.collection, query).files.tolist()
+                    dsi = xr.merge(
+                        (
+                            dsi,
+                            xr.open_mfdataset(
+                                urlpath_ei_vi,
+                                data_vars=[var_i],
+                                chunks=self.chunks,
+                                **kwargs,
+                            ),
+                        )
+                    )
+
+                    ds_ens_list.append(dsi)
+
+            self._ds = xr.concat(ds_ens_list, dim="ens", data_vars=variables)
+        else:
+            self._ds = xr.open_dataset(url, chunks=self.chunks, **kwargs)
 
     def to_xarray(self, dask=True):
         """Return dataset as an xarray instance"""
