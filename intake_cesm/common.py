@@ -3,17 +3,18 @@ import os
 import numpy as np
 import pandas as pd
 
-from .config import collections
+from .config import SETTINGS
 
 
 def open_collection(collection):
     """ Open a CESM collection and return a Pandas dataframe """
     try:
-
-        df = pd.read_csv(collections[collection], index_col=0)
+        db_dir = SETTINGS["database_directory"]
+        collection_path = os.path.join(db_dir, f"{collection}.csv")
+        df = pd.read_csv(collection_path, index_col=0)
         return df
 
-    except (KeyError, FileNotFoundError) as err:
+    except (FileNotFoundError) as err:
         print("****** The specified collection does not exit. ******")
         raise err
 

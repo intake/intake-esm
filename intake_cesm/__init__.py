@@ -7,3 +7,4 @@ del get_versions
 
 from .core import CesmSource, CesmMetadataStoreCatalog
 from .manage_collections import CESMCollections
+from .config import set_options

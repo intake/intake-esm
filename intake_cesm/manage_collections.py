@@ -10,6 +10,8 @@ import pandas as pd
 import yaml
 from tqdm import tqdm
 
+from .config import SETTINGS
+
 logging.basicConfig(level=logging.DEBUG)
 
 class StorageResource(object):
@@ -73,7 +75,7 @@ class StorageResource(object):
 
 
 class CESMCollections(object):
-    db_dir = "./collections"
+    db_dir = SETTINGS["database_directory"]
 
     def __init__(self, collection_input_file, collection_type_def_file):
         with open(collection_input_file) as f:
@@ -281,7 +283,7 @@ class CESMCollections(object):
         )
         self.df.to_csv(self.active_db, index=False)
 
-    
+
     def build_collections(self):
         for collection_name, collection_attrs in self.collections.items():
             self._validate(self.collection_definition)
