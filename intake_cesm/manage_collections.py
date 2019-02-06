@@ -29,6 +29,11 @@ class StorageResource(object):
         if self.type == "hsi":
             return self._list_files_hsi()
 
+        if self.type == "input-file":
+            return self._list_files_input_file()
+
+        raise ValueError(f"unknown resource type: {self.type}")
+
     def _list_files_posix(self):
         """Get a list of files"""
         w = os.walk(self.urlpath)
@@ -72,6 +77,10 @@ class StorageResource(object):
                 i += 1
 
         return filelist
+
+    def _list_files_input_file(self):
+        with open(self.urlpath, "r") as fid:
+            return fid.read().splitlines()
 
 
 class CESMCollections(object):
