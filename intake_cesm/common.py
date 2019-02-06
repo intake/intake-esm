@@ -36,9 +36,7 @@ def get_subset(collection, query):
         elif val is not None:
             condition = condition & (df[key] == val)
 
-    query_results = df.loc[condition].sort_values(
-        by=["sequence_order", "files"], ascending=True
-    )
+    query_results = df.loc[condition].sort_values(by=["sequence_order", "files"], ascending=True)
 
     return query_results
 

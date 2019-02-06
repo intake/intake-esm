@@ -99,9 +99,7 @@ class CesmSource(NetCDFSource):
     partition_access = True
     version = __version__
 
-    def __init__(
-        self, collection=None, query={}, chunks={"time": 1}, concat_dim="time", **kwargs
-    ):
+    def __init__(self, collection=None, query={}, chunks={"time": 1}, concat_dim="time", **kwargs):
         self.collection = collection
         self.query = query
         self.query_results = get_subset(self.collection, self.query)
@@ -150,10 +148,7 @@ class CesmSource(NetCDFSource):
                         (
                             dsi,
                             xr.open_mfdataset(
-                                urlpath_ei_vi,
-                                data_vars=[var_i],
-                                chunks=self.chunks,
-                                **kwargs,
+                                urlpath_ei_vi, data_vars=[var_i], chunks=self.chunks, **kwargs
                             ),
                         )
                     )

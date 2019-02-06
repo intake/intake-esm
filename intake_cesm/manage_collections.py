@@ -36,11 +36,7 @@ class StorageResource(object):
         filelist = []
         for root, dirs, files in w:
             filelist.extend(
-                [
-                    os.path.join(root, f)
-                    for f in files
-                    if f.endswith(self.file_extension)
-                ]
+                [os.path.join(root, f) for f in files if f.endswith(self.file_extension)]
             )
 
         return filelist
@@ -79,9 +75,7 @@ class StorageResource(object):
 
 
 class CESMCollections(object):
-    def __init__(
-        self, collection_input_file, collection_type_def_file, overwrite_existing=False
-    ):
+    def __init__(self, collection_input_file, collection_type_def_file, overwrite_existing=False):
 
         self.db_dir = SETTINGS["database_directory"]
 
@@ -144,9 +138,7 @@ class CESMCollections(object):
                     # ensure that file name conforms to expectation
                     if datestr_nc != f"{datestr}.nc":
                         logging.warning(
-                            f"Filename: {filename} does"
-                            " not conform to expected"
-                            " pattern"
+                            f"Filename: {filename} does" " not conform to expected" " pattern"
                         )
                         return
 
@@ -184,9 +176,7 @@ class CESMCollections(object):
         logging.info(f"building file database: {resource_key}")
 
         for f in tqdm(filelist):
-            fileparts = self._cesm_filename_parts(
-                os.path.basename(f), self.component_streams
-            )
+            fileparts = self._cesm_filename_parts(os.path.basename(f), self.component_streams)
 
             if fileparts is None:
                 continue
@@ -231,9 +221,7 @@ class CESMCollections(object):
 
                 # -- loop over "locations" and assemble filelist databases
                 for location in ensemble_attrs["locations"]:
-                    res_key = ":".join(
-                        [location["name"], location["type"], location["urlpath"]]
-                    )
+                    res_key = ":".join([location["name"], location["type"], location["urlpath"]])
 
                     if res_key not in df_files:
                         logging.info("getting file listing: %s", res_key)
@@ -249,8 +237,7 @@ class CESMCollections(object):
                         {
                             key: val
                             for key, val in ensemble_attrs.items()
-                            if key in self.columns
-                            and key not in df_files[res_key].columns
+                            if key in self.columns and key not in df_files[res_key].columns
                         }
                     )
 
@@ -285,9 +272,7 @@ class CESMCollections(object):
                                     temp_df.loc[loc, key] = val
 
                         # append
-                        self.df = pd.concat(
-                            [temp_df, self.df], ignore_index=True, sort=False
-                        )
+                        self.df = pd.concat([temp_df, self.df], ignore_index=True, sort=False)
 
         # make replacements
         self.df.replace(self.replacements, inplace=True)
@@ -296,9 +281,7 @@ class CESMCollections(object):
         self.df = self.df[self.columns]
 
         # write data to csv
-        self.df = self.df.drop_duplicates(subset="files", keep="last").reset_index(
-            drop=True
-        )
+        self.df = self.df.drop_duplicates(subset="files", keep="last").reset_index(drop=True)
         self.df.to_csv(self.active_db, index=True)
 
     def build_collections(self, overwrite_existing):

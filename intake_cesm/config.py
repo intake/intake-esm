@@ -54,9 +54,7 @@ class set_options(object):
         self.old = {}
         for key, val in kwargs.items():
             if key not in SETTINGS:
-                raise ValueError(
-                    f"{key} is not in the set of valid settings:\n {set(SETTINGS)}"
-                )
+                raise ValueError(f"{key} is not in the set of valid settings:\n {set(SETTINGS)}")
             if key in _VALIDATORS and not _VALIDATORS[key](val):
                 raise ValueError(f"{val} is not a valid value for {key}")
             self.old[key] = SETTINGS[key]

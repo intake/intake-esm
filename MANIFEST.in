@@ -1,5 +1,13 @@
 include AUTHORS.rst
 include CONTRIBUTING.rst
-include HISTORY.rst
 include LICENSE
 include README.rst
+include README.rst
+include requirements.txt
+
+
+recursive-include intake_cesm *.py
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+include versioneer.py
+include intake_cesm/_version.py
