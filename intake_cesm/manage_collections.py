@@ -7,6 +7,7 @@ from subprocess import PIPE, Popen
 
 import pandas as pd
 import yaml
+from intake.catalog import Catalog
 from tqdm import tqdm
 
 from .config import SETTINGS
@@ -100,7 +101,7 @@ class StorageResource(object):
             return fid.read().splitlines()
 
 
-class CESMCollections(object):
+class CESMCollections(Catalog):
     """CESM collections builder"""
 
     name = 'cesm_collections'
@@ -145,6 +146,7 @@ class CESMCollections(object):
         self.include_cache_dir = include_cache_dir
 
         self.build_collections(overwrite_existing)
+        super(CESMCollections, self).__init__()
 
     def _validate(self, collection_definition):
         self.columns = collection_definition["collection_columns"]
