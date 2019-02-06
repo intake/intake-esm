@@ -11,5 +11,5 @@ conda env create -f ci/environment-dev-${PYTHON}.yml --name=${ENV_NAME} --quiet
 conda env list
 source activate ${ENV_NAME}
 pip install pip --upgrade
-pip install --no-deps --quiet -e .
+pip install --no-deps --quiet -e --no-use-pep517 . 
 conda list -n ${ENV_NAME}
