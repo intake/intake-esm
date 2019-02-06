@@ -29,6 +29,11 @@ class StorageResource(object):
         if self.type == "hsi":
             return self._list_files_hsi()
 
+        if self.type == "input-file":
+            return self._list_files_input_file()
+
+        raise ValueError(f"unknown resource type: {self.type}")
+
     def _list_files_posix(self):
         """Get a list of files"""
         w = os.walk(self.urlpath)
@@ -42,7 +47,7 @@ class StorageResource(object):
         return filelist
 
     def _list_files_hsi(self):
-
+        """Get a list of files from HPSS"""
         if shutil.which("hsi") is None:
             logging.warning(f"no hsi; cannot access [HSI]{self.urlpath}")
             return []
@@ -73,11 +78,23 @@ class StorageResource(object):
 
         return filelist
 
+    def _list_files_input_file(self):
+        """return a list of files from a file containing a list of files"""
+        with open(self.urlpath, "r") as fid:
+            return fid.read().splitlines()
+
 
 class CESMCollections(object):
-    def __init__(self, collection_input_file, collection_type_def_file, overwrite_existing=False):
+    def __init__(
+        self,
+        collection_input_file,
+        collection_type_def_file,
+        overwrite_existing=False,
+        include_cache_dir=False,
+    ):
 
         self.db_dir = SETTINGS["database_directory"]
+        self.cache_dir = SETTINGS["cache_directory"]
 
         with open(collection_input_file) as f:
             self.collections = yaml.load(f)
@@ -91,6 +108,7 @@ class CESMCollections(object):
         self.columns = None
         self.replacements = {}
         self.df = None
+        self.include_cache_dir = include_cache_dir
 
         self.build_collections(overwrite_existing)
 
@@ -153,12 +171,14 @@ class CESMCollections(object):
         logging.warning(f"could not identify CESM fileparts: {filename}")
         return
 
-    def _build_cesm_collection_df_files(self, resource_key, filelist):
+    def _build_cesm_collection_df_files(self, resource_key, resource_type, direct_access, filelist):
 
         entries = {
             key: []
             for key in [
                 "resource",
+                "resource_type",
+                "direct_access",
                 "case",
                 "component",
                 "stream",
@@ -182,6 +202,9 @@ class CESMCollections(object):
                 continue
 
             entries["resource"].append(resource_key)
+            entries["resource_type"].append(resource_type)
+            entries["direct_access"].append(direct_access)
+
             entries["case"].append(fileparts["case"])
             entries["component"].append(fileparts["component"])
             entries["stream"].append(fileparts["stream"])
@@ -197,66 +220,83 @@ class CESMCollections(object):
 
         # -- loop over experiments
         df_files = {}
-        for experiment, ensembles in collection_attrs["data_sources"].items():
+        for experiment, experiment_attrs in collection_attrs["data_sources"].items():
             logging.info(f"working on experiment: {experiment}")
-            input_attrs = {"experiment": experiment}
+
+            component_attrs = experiment_attrs["component_attrs"]
+            ensembles = experiment_attrs["case_members"]
+
+            # -- loop over "locations" and assemble filelist databases
+            for location in experiment_attrs["locations"]:
+                res_key = ":".join([location["name"], location["type"], location["urlpath"]])
+
+                if res_key not in df_files:
+                    logging.info("getting file listing: %s", res_key)
+                    resource = StorageResource(urlpath=location["urlpath"], type=location["type"])
+
+                    df_files[res_key] = self._build_cesm_collection_df_files(
+                        resource_key=res_key,
+                        resource_type=location["type"],
+                        direct_access=location["direct_access"],
+                        filelist=resource.filelist,
+                    )
+
+            if self.include_cache_dir:
+                res_key = ":".join(["CACHE", "posix", self.cache_dir])
+                if res_key not in df_files:
+                    logging.info("getting file listing: %s", res_key)
+                    resource = StorageResource(urlpath=self.cache_dir, type="posix")
+
+                    df_files[res_key] = self._build_cesm_collection_df_files(
+                        resource_key=res_key,
+                        resource_type="posix",
+                        direct_access=True,
+                        filelist=resource.filelist,
+                    )
 
             # -- loop over ensemble members
             for ensemble, ensemble_attrs in tqdm(enumerate(ensembles)):
 
+                input_attrs_base = {"experiment": experiment}
+
                 # -- get attributes from ensemble_attrs
                 case = ensemble_attrs["case"]
-
-                component_attrs = ensemble_attrs["component_attrs"]
 
                 exclude_dirs = []
                 if "exclude_dirs" in ensemble_attrs:
                     exclude_dirs = ensemble_attrs["exclude_dirs"]
 
                 if "ensemble" not in ensemble_attrs:
-                    input_attrs.update({"ensemble": ensemble})
+                    input_attrs_base.update({"ensemble": ensemble})
 
                 if "sequence_order" not in ensemble_attrs:
-                    input_attrs.update({"sequence_order": 0})
+                    input_attrs_base.update({"sequence_order": 0})
 
-                # -- loop over "locations" and assemble filelist databases
-                for location in ensemble_attrs["locations"]:
-                    res_key = ":".join([location["name"], location["type"], location["urlpath"]])
-
-                    if res_key not in df_files:
-                        logging.info("getting file listing: %s", res_key)
-                        resource = StorageResource(
-                            urlpath=location["urlpath"], type=location["type"]
-                        )
-
-                        df_files[res_key] = self._build_cesm_collection_df_files(
-                            resource_key=res_key, filelist=resource.filelist
-                        )
-
-                    input_attrs.update(
-                        {
-                            key: val
-                            for key, val in ensemble_attrs.items()
-                            if key in self.columns and key not in df_files[res_key].columns
-                        }
-                    )
-
+                for res_key, df_f in df_files.items():
                     # build query to find entries relevant to *this*
                     # ensemble memeber:
                     # - "case" matches
                     # - "files_dirname" not in exclude_dirs
-                    condition = df_files[res_key]["case"] == case
+                    condition = df_f["case"] == case
                     for exclude_dir in exclude_dirs:
                         condition = condition & (
-                            ~df_files[res_key]["files_dirname"].apply(
-                                fnmatch.fnmatch, pat=exclude_dir
-                            )
+                            ~df_f["files_dirname"].apply(fnmatch.fnmatch, pat=exclude_dir)
                         )
 
                     # if there are any matching files, append to self.df
                     if any(condition):
+                        input_attrs = dict(input_attrs_base)
+
+                        input_attrs.update(
+                            {
+                                key: val
+                                for key, val in ensemble_attrs.items()
+                                if key in self.columns and key not in df_f.columns
+                            }
+                        )
+
                         # relevant files
-                        temp_df = pd.DataFrame(df_files[res_key].loc[condition])
+                        temp_df = pd.DataFrame(df_f.loc[condition])
 
                         # append data coming from input file (input_attrs)
                         for col, val in input_attrs.items():
@@ -280,8 +320,12 @@ class CESMCollections(object):
         # reorder columns
         self.df = self.df[self.columns]
 
+        # remove duplicates
+        self.df = self.df.drop_duplicates(subset=["resource", "files"], keep="last").reset_index(
+            drop=True
+        )
+
         # write data to csv
-        self.df = self.df.drop_duplicates(subset="files", keep="last").reset_index(drop=True)
         self.df.to_csv(self.active_db, index=True)
 
     def build_collections(self, overwrite_existing):

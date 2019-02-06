@@ -11,20 +11,6 @@ from intake_cesm.core import CesmMetadataStoreCatalog
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-# import intake_cesm
-# @pytest.mark.parametrize("collection", ["cesm1_le", "cesm_dple"])
-# def test_build_collection(collection):
-#     collection_type_def_file = 'intake_cesm/cesm_definitions.yml'
-#     if collection == "cesm1_le":
-#         collection_input_file = 'collection_input_cesm1_le.yml'
-#     if collection == "cesm2_runs":
-#         collection_input_file = "collection_input_cmip6_cesm.yml"
-#     if collection == "cesm_dple":
-#         collection_input_file = "collection_input_cesm_dple.yml"
-#
-#     intake_cesm.CESMCollections(collection_input_file=collection_input_file,
-#                                 collection_type_def_file=collection_type_def_file)
-
 
 @pytest.mark.parametrize("collection", ["cesm_dple"])
 def test_constructor(collection):
