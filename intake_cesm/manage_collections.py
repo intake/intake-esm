@@ -16,6 +16,20 @@ logging.basicConfig(level=logging.DEBUG)
 
 class StorageResource(object):
     def __init__(self, urlpath, type, file_extension=".nc"):
+        """ Defines a storage resource object
+
+        Parameters
+        -----------
+
+        urlpath : str
+              Path to storage resource
+        type : str
+              Type of storage resource. Supported resources include: posix, hsi (tape)
+        file_extension : str, default `.nc`
+              File extension
+
+        """
+
         self.urlpath = urlpath
         self.type = type
         self.file_extension = file_extension
@@ -85,6 +99,8 @@ class StorageResource(object):
 
 
 class CESMCollections(object):
+    name = 'cesm_collections'
+
     def __init__(
         self,
         collection_input_file,
@@ -92,6 +108,20 @@ class CESMCollections(object):
         overwrite_existing=False,
         include_cache_dir=False,
     ):
+        """CESM collections builder
+
+        Parameters
+        ----------
+
+        collection_input_file : str, Path, file
+                        Path to a YAML file containing collection metadata
+        collection_type_def_file : str, Path, file
+                        Path to a YAML file containing collection type definition info
+        overwrite_existing : bool, default `False`
+                        Whether to overwrite existing collection database
+        include_cache_dir : bool, default `False`
+                        Whether to include a cache directory for the content of the generated collection
+        """
 
         self.db_dir = SETTINGS["database_directory"]
         self.cache_dir = SETTINGS["cache_directory"]
@@ -329,6 +359,14 @@ class CESMCollections(object):
         self.df.to_csv(self.active_db, index=True)
 
     def build_collections(self, overwrite_existing):
+        """ Build CESM collection
+        Parameters
+        ----------
+
+        overwrite_existing : bool
+              Whether to overwrite existing collection database
+        """
+
         for collection_name, collection_attrs in self.collections.items():
             self._validate(self.collection_definition)
             self._set_active_collection(collection_name)
