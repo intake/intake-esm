@@ -75,9 +75,16 @@ class StorageResource(object):
 
 
 class CESMCollections(object):
-    def __init__(self, collection_input_file, collection_type_def_file, overwrite_existing=False):
+    def __init__(
+        self,
+        collection_input_file,
+        collection_type_def_file,
+        overwrite_existing=False,
+        include_cache_dir=False,
+    ):
 
         self.db_dir = SETTINGS["database_directory"]
+        self.cache_dir = SETTINGS["cache_directory"]
 
         with open(collection_input_file) as f:
             self.collections = yaml.load(f)
@@ -91,6 +98,7 @@ class CESMCollections(object):
         self.columns = None
         self.replacements = {}
         self.df = None
+        self.include_cache_dir = include_cache_dir
 
         self.build_collections(overwrite_existing)
 
@@ -153,12 +161,14 @@ class CESMCollections(object):
         logging.warning(f"could not identify CESM fileparts: {filename}")
         return
 
-    def _build_cesm_collection_df_files(self, resource_key, filelist):
+    def _build_cesm_collection_df_files(self, resource_key, resource_type, direct_access, filelist):
 
         entries = {
             key: []
             for key in [
                 "resource",
+                "resource_type",
+                "direct_access",
                 "case",
                 "component",
                 "stream",
@@ -182,6 +192,9 @@ class CESMCollections(object):
                 continue
 
             entries["resource"].append(resource_key)
+            entries["resource_type"].append(resource_type)
+            entries["direct_access"].append(direct_access)
+
             entries["case"].append(fileparts["case"])
             entries["component"].append(fileparts["component"])
             entries["stream"].append(fileparts["stream"])
@@ -212,7 +225,23 @@ class CESMCollections(object):
                     resource = StorageResource(urlpath=location["urlpath"], type=location["type"])
 
                     df_files[res_key] = self._build_cesm_collection_df_files(
-                        resource_key=res_key, filelist=resource.filelist
+                        resource_key=res_key,
+                        resource_type=location["type"],
+                        direct_access=location["direct_access"],
+                        filelist=resource.filelist,
+                    )
+
+            if self.include_cache_dir:
+                res_key = ":".join(["CACHE", "posix", self.cache_dir])
+                if res_key not in df_files:
+                    logging.info("getting file listing: %s", res_key)
+                    resource = StorageResource(urlpath=self.cache_dir, type="posix")
+
+                    df_files[res_key] = self._build_cesm_collection_df_files(
+                        resource_key=res_key,
+                        resource_type="posix",
+                        direct_access=True,
+                        filelist=resource.filelist,
                     )
 
             # -- loop over ensemble members
@@ -281,8 +310,12 @@ class CESMCollections(object):
         # reorder columns
         self.df = self.df[self.columns]
 
+        # remove duplicates
+        self.df = self.df.drop_duplicates(subset=["resource", "files"], keep="last").reset_index(
+            drop=True
+        )
+
         # write data to csv
-        self.df = self.df.drop_duplicates(subset="files", keep="last").reset_index(drop=True)
         self.df.to_csv(self.active_db, index=True)
 
     def build_collections(self, overwrite_existing):

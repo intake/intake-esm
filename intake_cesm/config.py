@@ -9,6 +9,7 @@ import os
 import yaml
 
 DATABASE_DIRECTORY = "database_directory"
+CACHE_DIRECTORY = "cache_directory"
 
 SETTINGS = {}
 if "INTAKE_CESM_CONFIG" in os.environ:
@@ -16,9 +17,13 @@ if "INTAKE_CESM_CONFIG" in os.environ:
 else:
     _config_dir = os.path.join(os.path.expanduser("~"), ".intake-cesm")
 
-SETTINGS = {DATABASE_DIRECTORY: os.path.join(_config_dir, "collections")}
+SETTINGS = {
+    DATABASE_DIRECTORY: os.path.join(_config_dir, "collections"),
+    CACHE_DIRECTORY: os.path.join(_config_dir, "data-cache"),
+}
 
-os.makedirs(SETTINGS[DATABASE_DIRECTORY], exist_ok=True)
+for key in [DATABASE_DIRECTORY, CACHE_DIRECTORY]:
+    os.makedirs(SETTINGS[key], exist_ok=True)
 
 
 def _check_path_write_access(value):
@@ -41,10 +46,13 @@ def _full_path(value):
     return os.path.abspath(os.path.expanduser(value))
 
 
-_VALIDATORS = {DATABASE_DIRECTORY: _check_path_write_access}
+_VALIDATORS = {
+    DATABASE_DIRECTORY: _check_path_write_access,
+    CACHE_DIRECTORY: _check_path_write_access,
+}
 
 
-_SETTERS = {DATABASE_DIRECTORY: _full_path}
+_SETTERS = {DATABASE_DIRECTORY: _full_path, CACHE_DIRECTORY: _full_path}
 
 
 class set_options(object):
