@@ -1,0 +1,25 @@
+cesm_dple_test_collection:
+  type: cesm
+  data_sources:
+    g.e11_LENS.GECOIAF.T62_g16.009:
+      locations:
+        - name: TEST-LIST
+          type: input-file
+          direct_access: False
+          urlpath: tests/intake-cesm-test-filelist
+      component_attrs:
+        ocn: {grid: POP_gx1v6}
+      case_members:
+        - case: g.e11_LENS.GECOIAF.T62_g16.009
+          year_offset: 1699
+    g.e11_LENS.GECOIAF.T62_g16.009_sigma_coord:
+      locations:
+        - name: TEST-LIST
+          type: input-file
+          direct_access: False
+          urlpath: tests/intake-cesm-test-filelist
+      component_attrs:
+        ocn: {grid: POP_gx1v6}
+      case_members:
+        - case: g.e11_LENS.GECOIAF.T62_g16.009
+          year_offset: 1699
