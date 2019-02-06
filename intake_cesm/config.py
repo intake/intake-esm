@@ -17,6 +17,11 @@ if "INTAKE_CESM_CONFIG" in os.environ:
 else:
     _config_dir = os.path.join(os.path.expanduser("~"), ".intake-cesm")
 
+_path_config_yml = os.path.join(_config_dir, "config.yml")
+if os.path.exists(".config-intake-cesm.yml"):
+    _path_config_yml = os.path.join(".config-intake-cesm.yml")
+
+
 SETTINGS = {
     DATABASE_DIRECTORY: os.path.join(_config_dir, "collections"),
     CACHE_DIRECTORY: os.path.join(_config_dir, "data-cache"),
@@ -81,8 +86,12 @@ class set_options(object):
         self._apply_update(self.old)
 
 
-_path_config_yml = os.path.join(_config_dir, "config.yml")
+def get_options():
+    return SETTINGS
+
+
 if os.path.exists(_path_config_yml):
     with open(_path_config_yml) as f:
         dot_file_settings = yaml.load(f)
-    set_options(**dot_file_settings)
+    if dot_file_settings:
+        set_options(**dot_file_settings)
