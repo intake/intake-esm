@@ -1,5 +1,7 @@
 collection_columns:
   - resource
+  - resource_type
+  - direct_access
   - experiment
   - case
   - component
