@@ -196,67 +196,68 @@ class CESMCollections(object):
     def _build_cesm_collection(self, collection_attrs):
 
         # -- loop over experiments
-        df_files = {}
-        for experiment, ensembles in collection_attrs["data_sources"].items():
+        for experiment, experiment_attrs in collection_attrs["data_sources"].items():
             logging.info(f"working on experiment: {experiment}")
-            input_attrs = {"experiment": experiment}
+
+            component_attrs = experiment_attrs["component_attrs"]
+            ensembles = experiment_attrs["case_members"]
+
+            # -- loop over "locations" and assemble filelist databases
+            df_files = {}
+            for location in experiment_attrs["locations"]:
+                res_key = ":".join([location["name"], location["type"], location["urlpath"]])
+
+                if res_key not in df_files:
+                    logging.info("getting file listing: %s", res_key)
+                    resource = StorageResource(urlpath=location["urlpath"], type=location["type"])
+
+                    df_files[res_key] = self._build_cesm_collection_df_files(
+                        resource_key=res_key, filelist=resource.filelist
+                    )
 
             # -- loop over ensemble members
             for ensemble, ensemble_attrs in tqdm(enumerate(ensembles)):
 
+                input_attrs_base = {"experiment": experiment}
+
                 # -- get attributes from ensemble_attrs
                 case = ensemble_attrs["case"]
-
-                component_attrs = ensemble_attrs["component_attrs"]
 
                 exclude_dirs = []
                 if "exclude_dirs" in ensemble_attrs:
                     exclude_dirs = ensemble_attrs["exclude_dirs"]
 
                 if "ensemble" not in ensemble_attrs:
-                    input_attrs.update({"ensemble": ensemble})
+                    input_attrs_base.update({"ensemble": ensemble})
 
                 if "sequence_order" not in ensemble_attrs:
-                    input_attrs.update({"sequence_order": 0})
+                    input_attrs_base.update({"sequence_order": 0})
 
-                # -- loop over "locations" and assemble filelist databases
-                for location in ensemble_attrs["locations"]:
-                    res_key = ":".join([location["name"], location["type"], location["urlpath"]])
-
-                    if res_key not in df_files:
-                        logging.info("getting file listing: %s", res_key)
-                        resource = StorageResource(
-                            urlpath=location["urlpath"], type=location["type"]
-                        )
-
-                        df_files[res_key] = self._build_cesm_collection_df_files(
-                            resource_key=res_key, filelist=resource.filelist
-                        )
-
-                    input_attrs.update(
-                        {
-                            key: val
-                            for key, val in ensemble_attrs.items()
-                            if key in self.columns and key not in df_files[res_key].columns
-                        }
-                    )
-
+                for res_key, df_f in df_files.items():
                     # build query to find entries relevant to *this*
                     # ensemble memeber:
                     # - "case" matches
                     # - "files_dirname" not in exclude_dirs
-                    condition = df_files[res_key]["case"] == case
+                    condition = df_f["case"] == case
                     for exclude_dir in exclude_dirs:
                         condition = condition & (
-                            ~df_files[res_key]["files_dirname"].apply(
-                                fnmatch.fnmatch, pat=exclude_dir
-                            )
+                            ~df_f["files_dirname"].apply(fnmatch.fnmatch, pat=exclude_dir)
                         )
 
                     # if there are any matching files, append to self.df
                     if any(condition):
+                        input_attrs = dict(input_attrs_base)
+
+                        input_attrs.update(
+                            {
+                                key: val
+                                for key, val in ensemble_attrs.items()
+                                if key in self.columns and key not in df_f.columns
+                            }
+                        )
+
                         # relevant files
-                        temp_df = pd.DataFrame(df_files[res_key].loc[condition])
+                        temp_df = pd.DataFrame(df_f.loc[condition])
 
                         # append data coming from input file (input_attrs)
                         for col, val in input_attrs.items():
