@@ -209,6 +209,7 @@ class CESMCollections(object):
     def _build_cesm_collection(self, collection_attrs):
 
         # -- loop over experiments
+        df_files = {}
         for experiment, experiment_attrs in collection_attrs["data_sources"].items():
             logging.info(f"working on experiment: {experiment}")
 
@@ -216,7 +217,6 @@ class CESMCollections(object):
             ensembles = experiment_attrs["case_members"]
 
             # -- loop over "locations" and assemble filelist databases
-            df_files = {}
             for location in experiment_attrs["locations"]:
                 res_key = ":".join([location["name"], location["type"], location["urlpath"]])
 
