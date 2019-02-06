@@ -46,9 +46,7 @@ def test_set_collection_fail():
 
 def test_search():
     c = intake.open_cesm_metadatastore("cesm_dple")
-    cat = c.search(
-        experiment="g.e11_LENS.GECOIAF.T62_g16.009", component="ocn", variable="FG_CO2"
-    )
+    cat = c.search(experiment="g.e11_LENS.GECOIAF.T62_g16.009", component="ocn", variable="FG_CO2")
 
     assert isinstance(cat.results, pd.DataFrame)
     assert not cat.results.empty
