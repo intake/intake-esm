@@ -6,6 +6,7 @@ workflows:
     jobs:
       - "python-3.7"
       - "python-3.6"
+      - "docs-and-linting"
 
         
 jobs:
@@ -107,6 +108,62 @@ jobs:
 
       - store_artifacts:
           path: test-reports
+      # Tell Circle to store the documentation output in a folder that we can access later
+      - store_artifacts: 
+          path: docs/_build/html
+          destination: html
+  
+
+  "docs-and-linting":
+    docker:
+      - image: continuumio/miniconda:latest
+
+    environment:
+      PYTHON: "3.7"
+      ENV_NAME: "intake-cesm-dev"
+
+    steps:
+    
+      # Get our data and merge with upstream
+      - checkout
+
+      # Restore cached files to speed things up
+      - restore_cache:
+          key: deps-{{ .Branch }}-3.7-{{ checksum "ci/environment-dev-3.7.yml" }}
+
+      - run: # install and activate conda environment
+          name: configure conda 
+          command: ./ci/install-circle.sh
+     
+
+      - run:
+          name: Code Coverage + Code Styling with (black, flake8, isort)
+          command: |
+        
+            echo "[flake8]"
+            flake8 
+
+            echo "[black]"
+            black --check . 
+
+            echo "[isort]"
+            isort --recursive --check-only .
+      - run:
+          name: Check documentation build 
+          command: |
+            source activate ${ENV_NAME}
+            pushd docs
+            make html
+            popd
+
+     
+      # Cache some files for a speedup in subsequent builds
+      - save_cache:
+          key: deps-{{ .Branch }}-3.7-{{ checksum "ci/environment-dev-3.7.yml" }}
+          paths:
+            - "/opt/conda/envs/${ENV_NAME}/"
+            - "/opt/conda/pkgs"
+
       # Tell Circle to store the documentation output in a folder that we can access later
       - store_artifacts: 
           path: docs/_build/html
