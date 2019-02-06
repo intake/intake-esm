@@ -94,7 +94,7 @@ cesm1_le:
           sequence_order: 0
           ensemble: 15
           has_ocean_bgc: True
-       - case: b.e11.B20TRC5CNBDRD.f09_g16.016
+        - case: b.e11.B20TRC5CNBDRD.f09_g16.016
           sequence_order: 0
           ensemble: 16
           has_ocean_bgc: True
