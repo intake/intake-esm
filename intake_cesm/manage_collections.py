@@ -15,8 +15,10 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 class StorageResource(object):
+    """ Defines a storage resource object"""
+
     def __init__(self, urlpath, type, file_extension=".nc"):
-        """ Defines a storage resource object
+        """
 
         Parameters
         -----------
@@ -99,6 +101,8 @@ class StorageResource(object):
 
 
 class CESMCollections(object):
+    """CESM collections builder"""
+
     name = 'cesm_collections'
 
     def __init__(
@@ -108,7 +112,7 @@ class CESMCollections(object):
         overwrite_existing=False,
         include_cache_dir=False,
     ):
-        """CESM collections builder
+        """
 
         Parameters
         ----------

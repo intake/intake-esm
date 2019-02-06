@@ -3,15 +3,29 @@ API reference
 
 This is a reference API class listing, and modules.
 
+.. currentmodule:: intake_cesm
+
 .. autosummary::
-   intake_cesm.core.CesmMetadataStoreCatalog
-   intake_cesm.core.CesmSource
+   manage_collections.StorageResource
+   manage_collections.CESMCollections
+   core.CesmMetadataStoreCatalog
+   core.CesmSource
 
 
-.. autoclass:: intake_cesm.core.CesmMetadataStoreCatalog
+.. currentmodule:: intake_cesm.manage_collections
+
+.. autoclass:: StorageResource
+   :members: __init__
+
+.. autoclass:: CESMCollections
+   :members: __init__
+
+.. currentmodule:: intake_cesm.core
+
+.. autoclass:: CesmMetadataStoreCatalog
    :members: __init__, search 
 
-
-
-.. autoclass:: intake_cesm.core.CesmSource
+.. autoclass:: CesmSource
    :members: __init__, to_xarray
+
+
