@@ -17,4 +17,5 @@ exclude = '''
   | intake_cesm/_version.py
 )/
 '''
-skip-string-normalization
+skip-string-normalization = true
+
