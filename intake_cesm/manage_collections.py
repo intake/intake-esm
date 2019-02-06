@@ -47,7 +47,7 @@ class StorageResource(object):
         return filelist
 
     def _list_files_hsi(self):
-
+        """Get a list of files from HPSS"""
         if shutil.which("hsi") is None:
             logging.warning(f"no hsi; cannot access [HSI]{self.urlpath}")
             return []
@@ -79,6 +79,7 @@ class StorageResource(object):
         return filelist
 
     def _list_files_input_file(self):
+        """return a list of files from a file containing a list of files"""
         with open(self.urlpath, "r") as fid:
             return fid.read().splitlines()
 
