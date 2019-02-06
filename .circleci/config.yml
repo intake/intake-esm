@@ -139,7 +139,8 @@ jobs:
       - run:
           name: Code Coverage + Code Styling with (black, flake8, isort)
           command: |
-        
+            source activate ${ENV_NAME}
+            
             echo "[flake8]"
             flake8 
 
