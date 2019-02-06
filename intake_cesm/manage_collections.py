@@ -79,9 +79,12 @@ class StorageResource(object):
 
 
 class CESMCollections(object):
-    db_dir = SETTINGS["database_directory"]
+    def __init__(
+        self, collection_input_file, collection_type_def_file, overwrite_existing=False
+    ):
 
-    def __init__(self, collection_input_file, collection_type_def_file):
+        self.db_dir = SETTINGS["database_directory"]
+
         with open(collection_input_file) as f:
             self.collections = yaml.load(f)
         with open(collection_type_def_file) as f:
@@ -95,7 +98,7 @@ class CESMCollections(object):
         self.replacements = {}
         self.df = None
 
-        self.build_collections()
+        self.build_collections(overwrite_existing)
 
     def _validate(self, collection_definition):
         self.columns = collection_definition["collection_columns"]
@@ -105,8 +108,8 @@ class CESMCollections(object):
 
     def _set_active_collection(self, name):
         self.active_collection = name
-        os.makedirs(CESMCollections.db_dir, exist_ok=True)
-        self.active_db = f"{CESMCollections.db_dir}/{name}.csv"
+        os.makedirs(self.db_dir, exist_ok=True)
+        self.active_db = f"{self.db_dir}/{name}.csv"
 
     def _extract_cesm_date_str(self, filename):
         """Extract a datastr from file name."""
@@ -296,9 +299,9 @@ class CESMCollections(object):
         self.df = self.df.drop_duplicates(subset="files", keep="last").reset_index(
             drop=True
         )
-        self.df.to_csv(self.active_db, index=False)
+        self.df.to_csv(self.active_db, index=True)
 
-    def build_collections(self):
+    def build_collections(self, overwrite_existing):
         for collection_name, collection_attrs in self.collections.items():
             self._validate(self.collection_definition)
             self._set_active_collection(collection_name)
@@ -312,6 +315,10 @@ class CESMCollections(object):
                 if "replacements" in self.collection_definition:
                     self.replacements = self.collection_definition["replacements"]
 
-                self.df = pd.DataFrame(columns=self.columns)
+                if os.path.exists(self.active_db) and not overwrite_existing:
+                    self.df = pd.read_csv(self.active_db, index_col=0)
 
-                self._build_cesm_collection(collection_attrs)
+                else:
+                    self.df = pd.DataFrame(columns=self.columns)
+
+                    self._build_cesm_collection(collection_attrs)
