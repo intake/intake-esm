@@ -143,7 +143,7 @@ class CESMCollections(object):
         self.df = None
         self.include_cache_dir = include_cache_dir
 
-        self.build_collections(overwrite_existing)
+        self._build_collections(overwrite_existing)
         super(CESMCollections, self).__init__()
 
     def _validate(self, collection_definition):
@@ -362,8 +362,9 @@ class CESMCollections(object):
         # write data to csv
         self.df.to_csv(self.active_db, index=True)
 
-    def build_collections(self, overwrite_existing):
+    def _build_collections(self, overwrite_existing):
         """ Build CESM collection
+
         Parameters
         ----------
 
@@ -393,5 +394,10 @@ class CESMCollections(object):
                     self._build_cesm_collection(collection_attrs)
 
     def get_built_collection(self):
-        """ Return built collection database """
+        """ Returns built collection database
+
+        Returns
+        -------
+        pd.DataFrame
+        """
         return self.df

@@ -18,7 +18,7 @@ This is a reference API class listing, and modules.
    :members: __init__
 
 .. autoclass:: CESMCollections
-   :members: __init__
+   :members: __init__, get_built_collection
 
 .. currentmodule:: intake_cesm.core
 
