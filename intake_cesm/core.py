@@ -16,11 +16,13 @@ del get_versions
 
 
 class CesmMetadataStoreCatalog(Catalog):
+    """ CESM collection Metadata store """
+
     name = "cesm_metadatastore"
     version = __version__
 
     def __init__(self, collection, **kwargs):
-        """ CESM collection Metadata store
+        """
 
         Parameters
         ----------

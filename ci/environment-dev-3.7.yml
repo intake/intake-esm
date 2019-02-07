@@ -29,5 +29,6 @@ dependencies:
   - sphinx>=1.6
   - tqdm
   - xarray
+  - pip=18.1
   - pip:
     - sphinx_copybutton

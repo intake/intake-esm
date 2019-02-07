@@ -9,7 +9,6 @@ Contents:
    building-collections.ipynb
    api
    contributing
-   authors
    changelog
 
 
