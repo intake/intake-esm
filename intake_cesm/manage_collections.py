@@ -158,9 +158,13 @@ class CESMCollections(object):
         self.active_db = f"{self.db_dir}/{name}.csv"
 
     def _extract_cesm_date_str(self, filename):
-        """Extract a datastr from file name."""
-        b = filename.split(".")[-2]
-        return b
+        """Extract a date string from file name."""
+        try:
+            b = filename.split(".")[-2]
+            return b
+        except Exception:
+            logging.warning(f"Cannot extract date string from : {filename}")
+            return
 
     def _cesm_filename_parts(self, filename, component_streams):
         """Extract each part of case.stream.variable.datestr.nc file pattern."""
@@ -168,42 +172,47 @@ class CESMCollections(object):
         # define lists of stream strings
         datestr = self._extract_cesm_date_str(filename)
 
-        for component, streams in component_streams.items():
-            # loop over stream strings (order matters!)
-            for stream in sorted(streams, key=lambda s: len(s), reverse=True):
+        if datestr:
 
-                # search for case.stream part of filename
-                s = filename.find(stream)
+            for component, streams in component_streams.items():
+                # loop over stream strings (order matters!)
+                for stream in sorted(streams, key=lambda s: len(s), reverse=True):
 
-                if s >= 0:  # got a match
-                    # get varname.datestr.nc part of filename
-                    case = filename[0 : s - 1]
-                    idx = len(stream)
-                    variable_datestr_nc = filename[s + idx + 1 :]
-                    variable = variable_datestr_nc[: variable_datestr_nc.find(".")]
+                    # search for case.stream part of filename
+                    s = filename.find(stream)
 
-                    # assert expected pattern
-                    datestr_nc = variable_datestr_nc[
-                        variable_datestr_nc.find(f".{variable}.") + len(variable) + 2 :
-                    ]
+                    if s >= 0:  # got a match
+                        # get varname.datestr.nc part of filename
+                        case = filename[0 : s - 1]
+                        idx = len(stream)
+                        variable_datestr_nc = filename[s + idx + 1 :]
+                        variable = variable_datestr_nc[: variable_datestr_nc.find(".")]
 
-                    # ensure that file name conforms to expectation
-                    if datestr_nc != f"{datestr}.nc":
-                        logging.warning(
-                            f"Filename: {filename} does" " not conform to expected" " pattern"
-                        )
-                        return
+                        # assert expected pattern
+                        datestr_nc = variable_datestr_nc[
+                            variable_datestr_nc.find(f".{variable}.") + len(variable) + 2 :
+                        ]
 
-                    return {
-                        "case": case,
-                        "component": component,
-                        "stream": stream,
-                        "variable": variable,
-                        "datestr": datestr,
-                    }
+                        # ensure that file name conforms to expectation
+                        if datestr_nc != f"{datestr}.nc":
+                            logging.warning(
+                                f"Filename: {filename} does" " not conform to expected" " pattern"
+                            )
+                            return
 
-        logging.warning(f"could not identify CESM fileparts: {filename}")
-        return
+                        return {
+                            "case": case,
+                            "component": component,
+                            "stream": stream,
+                            "variable": variable,
+                            "datestr": datestr,
+                        }
+
+            logging.warning(f"could not identify CESM fileparts: {filename}")
+            return
+
+        else:
+            return
 
     def _build_cesm_collection_df_files(self, resource_key, resource_type, direct_access, filelist):
 
