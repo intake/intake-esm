@@ -31,11 +31,12 @@ class CesmMetadataStoreCatalog(Catalog):
         build_args : dict
                     A dictionary containing arguments to enable and trigger a collection build.
                     This dictionary should contain the following keys:
+
                     - `collection_input_file`
                     - `collection_type_def_file`
                     - `overwriting_existing`
                     - `include_cache_dir`
-                    For more info, check :class:`~intake_cesm.manage_collections.CESMCollections`
+                    For more info about these arguments, check :class:`~intake_cesm.manage_collections.CESMCollections`
 
         """
         self.collection = collection
