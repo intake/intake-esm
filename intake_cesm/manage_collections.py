@@ -160,9 +160,21 @@ class CESMCollections(Catalog):
         self.active_db = f"{self.db_dir}/{name}.csv"
 
     def _extract_cesm_date_str(self, filename):
-        """Extract a datastr from file name."""
-        b = filename.split(".")[-2]
-        return b
+        """Extract a date string from file name."""
+        datestrs = [
+            r'\d{12}Z-\d{12}Z',
+            r'\d{10}Z-\d{10}Z',
+            r'\d{8}-\d{8}',
+            r'\d{6}-\d{6}',
+            r'\d{4}-\d{4}',
+        ]
+
+        for datestr in datestrs:
+            match = re.compile(datestr).findall(filename)
+            if match:
+                return match[0]
+
+        raise ValueError(f'unable to match date string: {filename}')
 
     def _cesm_filename_parts(self, filename, component_streams):
         """Extract each part of case.stream.variable.datestr.nc file pattern."""
