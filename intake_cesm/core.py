@@ -36,7 +36,7 @@ class CesmMetadataStoreCatalog(Catalog):
                     - `collection_type_def_file`
                     - `overwriting_existing`
                     - `include_cache_dir`
-                    For more info about these arguments, check :class:`~intake_cesm.manage_collections.CESMCollections`
+                    For more info about these arguments, check :class:`~intake_cesm._manage_collections.CESMCollections`
 
         """
         self.collection = collection
