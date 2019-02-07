@@ -101,10 +101,8 @@ class StorageResource(object):
             return fid.read().splitlines()
 
 
-class CESMCollections(Catalog):
+class CESMCollections(object):
     """CESM collections builder"""
-
-    name = 'cesm_collections'
 
     def __init__(
         self,
@@ -393,3 +391,7 @@ class CESMCollections(Catalog):
                     self.df = pd.DataFrame(columns=self.columns)
 
                     self._build_cesm_collection(collection_attrs)
+
+    def get_built_collection(self):
+        """ Return built collection database """
+        return self.df
