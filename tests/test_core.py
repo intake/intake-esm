@@ -3,6 +3,7 @@ import os
 import intake
 import pandas as pd
 import pytest
+import xarray as xr
 
 # pytest imports this package last, so plugin is not auto-added
 from intake_cesm.core import CesmMetadataStoreCatalog
@@ -54,3 +55,10 @@ def test_cat():
     cat = intake.open_catalog(os.path.join(here, "catalog.yaml"))
     cat = cat["cesm_dple-cff53aef-6938-4c6e-b6ae-efa5035bed7e"]
     assert isinstance(cat.results, pd.DataFrame)
+
+
+def test_to_xarray():
+    c = intake.open_cesm_metadatastore("cesm_dple_test_collection")
+    cat = c.search(variable='O2', direct_access=True)
+    ds = cat.to_xarray()
+    assert isinstance(ds, xr.Dataset)
