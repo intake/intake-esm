@@ -1,10 +1,4 @@
-/glade/p/cesm/community/CESM-DPLE/CESM-DPLE_POPCICEhindcast/g.e11_LENS.GECOIAF.T62_g16.009.cice.h1.FYarea_d_nh.02490101-03161231.nc
-/glade/p/cesm/community/CESM-DPLE/CESM-DPLE_POPCICEhindcast/g.e11_LENS.GECOIAF.T62_g16.009.cice.h.daidtt_sh.024901-031612.nc
-/glade/p/cesm/community/CESM-DPLE/CESM-DPLE_POPCICEhindcast/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.ECOSYS_ATM_PRESS.024901-031612.nc
-/glade/p/cesm/community/CESM-DPLE/CESM-DPLE_POPCICEhindcast/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.ecosys.nday1.CaCO3_form_zint.02490101-03161231.nc
-/glade/p/cesm/community/CESM-DPLE/CESM-DPLE_POPCICEhindcast/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.ecosys.nday1.diatChl_SURF.02490101-03161231.nc
-/glade/p/cesm/community/CESM-DPLE/CESM-DPLE_POPCICEhindcast/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.ecosys.nyear1.HDIFN_DOC.0249-0316.nc
-/glade/p/cesm/community/CESM-DPLE/CESM-DPLE_POPCICEhindcast/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.ecosys.nyear1.WT_Fe.0249-0316.nc
-/glade/p/cesm/community/CESM-DPLE/CESM-DPLE_POPCICEhindcast/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.ecosys.nyear1.WT_O2.0249-0316.nc
-/glade/p/cesm/community/CESM-DPLE/CESM-DPLE_POPCICEhindcast/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.ECOSYS_XKW.024901-031612.nc
-/glade/p/cgd/oce/projects/DPLE_O2/sigma_coord/CESM-DPLE_POPCICEhindcast/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.sigma.O2.024901-031612.nc
+example_input/sample_data/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.ecosys.nday1.CaCO3_form_zint.02490101-03161231.nc
+example_input/sample_data/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.ECOSYS_XKW.024901-031612.nc
+example_input/sample_data/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.sigma.O2.024901-031612.nc
+
