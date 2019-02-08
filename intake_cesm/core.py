@@ -10,6 +10,7 @@ from intake_xarray.netcdf import NetCDFSource
 
 from ._version import get_versions
 from .common import get_collection_def, get_subset, open_collection
+from .manage_collections import CESMCollections
 
 __version__ = get_versions()["version"]
 del get_versions
@@ -21,17 +22,29 @@ class CesmMetadataStoreCatalog(Catalog):
     name = "cesm_metadatastore"
     version = __version__
 
-    def __init__(self, collection, **kwargs):
+    def __init__(self, collection, build_args={}, **kwargs):
         """
-
         Parameters
         ----------
         collection : string
-                   CESM collection to use. Accepted values are `cesm1_le`, `cesm2_runs`, `cesm_dple`.
+                   CESM collection name
+        build_args : dict
+                    A dictionary containing arguments to enable and trigger a collection build.
+                    This dictionary should contain the following keys:
+
+                    - `collection_input_file`
+                    - `collection_type_def_file`
+                    - `overwriting_existing`
+                    - `include_cache_dir`
+                    For more info about these arguments, check :class:`~intake_cesm._manage_collections.CESMCollections`
 
         """
         self.collection = collection
-        self.df = open_collection(collection)
+        self.build_args = build_args
+        if self.build_args:
+            self.df = self.build_collections()
+        else:
+            self.df = open_collection(collection)
         print(f"Active collection: {collection}")
         kwargs.setdefault("name", collection)
         super(CesmMetadataStoreCatalog, self).__init__(**kwargs)
@@ -42,6 +55,24 @@ class CesmMetadataStoreCatalog(Catalog):
     def set_collection(self, collection):
         """Set the active collection"""
         self.__init__(collection)
+
+    def build_collections(self):
+        """ Build CESM collection
+        """
+
+        if "collection_input_file" in self.build_args:
+            collection_input_file = self.build_args.get("collection_input_file")
+
+        if "collection_type_def_file" in self.build_args:
+            collection_type_def_file = self.build_args.get("collection_type_def_file")
+
+        overwrite_existing = self.build_args.get("overwrite_existing", False)
+        include_cache_dir = self.build_args.get("include_cache_dir", False)
+
+        cc = CESMCollections(
+            collection_input_file, collection_type_def_file, overwrite_existing, include_cache_dir
+        )
+        return cc.get_built_collection()
 
     def search(self, **query):
         """ Search for entries matching query
