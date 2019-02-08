@@ -18,12 +18,13 @@ def test_build_collection():
     build_args = {
         'collection_input_file': collection_input_file,
         'collection_type_def_file': collection_type_def_file,
+        'overwrite_existing': True,
     }
     col = intake.open_cesm_metadatastore(collection='test', build_args=build_args)
     assert isinstance(col.df, pd.DataFrame)
 
 
-@pytest.mark.parametrize("collection", ["cesm_dple"])
+@pytest.mark.parametrize("collection", ["cesm_dple", "cesm_dple_test_collection"])
 def test_constructor(collection):
     c = intake.open_cesm_metadatastore(collection)
     assert isinstance(c, CesmMetadataStoreCatalog)
