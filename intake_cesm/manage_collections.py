@@ -7,6 +7,7 @@ from subprocess import PIPE, Popen
 
 import pandas as pd
 import yaml
+from intake.catalog import Catalog
 from tqdm import tqdm
 
 from .config import SETTINGS
@@ -15,7 +16,23 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 class StorageResource(object):
+    """ Defines a storage resource object"""
+
     def __init__(self, urlpath, type, file_extension=".nc"):
+        """
+
+        Parameters
+        -----------
+
+        urlpath : str
+              Path to storage resource
+        type : str
+              Type of storage resource. Supported resources include: posix, hsi (tape)
+        file_extension : str, default `.nc`
+              File extension
+
+        """
+
         self.urlpath = urlpath
         self.type = type
         self.file_extension = file_extension
@@ -85,6 +102,8 @@ class StorageResource(object):
 
 
 class CESMCollections(object):
+    """CESM collections builder"""
+
     def __init__(
         self,
         collection_input_file,
@@ -92,6 +111,20 @@ class CESMCollections(object):
         overwrite_existing=False,
         include_cache_dir=False,
     ):
+        """
+
+        Parameters
+        ----------
+
+        collection_input_file : str, Path, file
+                        Path to a YAML file containing collection metadata
+        collection_type_def_file : str, Path, file
+                        Path to a YAML file containing collection type definition info
+        overwrite_existing : bool, default `False`
+                        Whether to overwrite existing collection database
+        include_cache_dir : bool, default `False`
+                        Whether to include a cache directory for the content of the generated collection
+        """
 
         self.db_dir = SETTINGS["database_directory"]
         self.cache_dir = SETTINGS["cache_directory"]
@@ -110,7 +143,8 @@ class CESMCollections(object):
         self.df = None
         self.include_cache_dir = include_cache_dir
 
-        self.build_collections(overwrite_existing)
+        self._build_collections(overwrite_existing)
+        super(CESMCollections, self).__init__()
 
     def _validate(self, collection_definition):
         self.columns = collection_definition["collection_columns"]
@@ -124,9 +158,13 @@ class CESMCollections(object):
         self.active_db = f"{self.db_dir}/{name}.csv"
 
     def _extract_cesm_date_str(self, filename):
-        """Extract a datastr from file name."""
-        b = filename.split(".")[-2]
-        return b
+        """Extract a date string from file name."""
+        try:
+            b = filename.split(".")[-2]
+            return b
+        except Exception:
+            logging.warning(f"Cannot extract date string from : {filename}")
+            return
 
     def _cesm_filename_parts(self, filename, component_streams):
         """Extract each part of case.stream.variable.datestr.nc file pattern."""
@@ -134,42 +172,47 @@ class CESMCollections(object):
         # define lists of stream strings
         datestr = self._extract_cesm_date_str(filename)
 
-        for component, streams in component_streams.items():
-            # loop over stream strings (order matters!)
-            for stream in sorted(streams, key=lambda s: len(s), reverse=True):
+        if datestr:
 
-                # search for case.stream part of filename
-                s = filename.find(stream)
+            for component, streams in component_streams.items():
+                # loop over stream strings (order matters!)
+                for stream in sorted(streams, key=lambda s: len(s), reverse=True):
 
-                if s >= 0:  # got a match
-                    # get varname.datestr.nc part of filename
-                    case = filename[0 : s - 1]
-                    idx = len(stream)
-                    variable_datestr_nc = filename[s + idx + 1 :]
-                    variable = variable_datestr_nc[: variable_datestr_nc.find(".")]
+                    # search for case.stream part of filename
+                    s = filename.find(stream)
 
-                    # assert expected pattern
-                    datestr_nc = variable_datestr_nc[
-                        variable_datestr_nc.find(f".{variable}.") + len(variable) + 2 :
-                    ]
+                    if s >= 0:  # got a match
+                        # get varname.datestr.nc part of filename
+                        case = filename[0 : s - 1]
+                        idx = len(stream)
+                        variable_datestr_nc = filename[s + idx + 1 :]
+                        variable = variable_datestr_nc[: variable_datestr_nc.find(".")]
 
-                    # ensure that file name conforms to expectation
-                    if datestr_nc != f"{datestr}.nc":
-                        logging.warning(
-                            f"Filename: {filename} does" " not conform to expected" " pattern"
-                        )
-                        return
+                        # assert expected pattern
+                        datestr_nc = variable_datestr_nc[
+                            variable_datestr_nc.find(f".{variable}.") + len(variable) + 2 :
+                        ]
 
-                    return {
-                        "case": case,
-                        "component": component,
-                        "stream": stream,
-                        "variable": variable,
-                        "datestr": datestr,
-                    }
+                        # ensure that file name conforms to expectation
+                        if datestr_nc != f"{datestr}.nc":
+                            logging.warning(
+                                f"Filename: {filename} does" " not conform to expected" " pattern"
+                            )
+                            return
 
-        logging.warning(f"could not identify CESM fileparts: {filename}")
-        return
+                        return {
+                            "case": case,
+                            "component": component,
+                            "stream": stream,
+                            "variable": variable,
+                            "datestr": datestr,
+                        }
+
+            logging.warning(f"could not identify CESM fileparts: {filename}")
+            return
+
+        else:
+            return
 
     def _build_cesm_collection_df_files(self, resource_key, resource_type, direct_access, filelist):
 
@@ -328,7 +371,16 @@ class CESMCollections(object):
         # write data to csv
         self.df.to_csv(self.active_db, index=True)
 
-    def build_collections(self, overwrite_existing):
+    def _build_collections(self, overwrite_existing):
+        """ Build CESM collection
+
+        Parameters
+        ----------
+
+        overwrite_existing : bool
+              Whether to overwrite existing collection database
+        """
+
         for collection_name, collection_attrs in self.collections.items():
             self._validate(self.collection_definition)
             self._set_active_collection(collection_name)
@@ -349,3 +401,12 @@ class CESMCollections(object):
                     self.df = pd.DataFrame(columns=self.columns)
 
                     self._build_cesm_collection(collection_attrs)
+
+    def get_built_collection(self):
+        """ Returns built collection database
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+        return self.df

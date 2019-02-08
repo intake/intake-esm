@@ -18,3 +18,4 @@ dependencies:
   - pyyaml
   - tqdm
   - xarray
+  - pip=18.1
