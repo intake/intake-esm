@@ -12,14 +12,16 @@ cesm_dple_test_collection:
       case_members:
         - case: g.e11_LENS.GECOIAF.T62_g16.009
           year_offset: 1699
-    g.e11_LENS.GECOIAF.T62_g16.009_sigma_coord:
+
+    g.e11_LENS.GECOIAF.T62_g16.009-copy:
       locations:
-        - name: TEST-LIST
-          type: input-file
-          direct_access: False
-          urlpath: tests/intake-cesm-test-filelist
+        - name: SAMPLE-DATA
+          type: posix
+          direct_access: True
+          urlpath: tests/sample_data
       component_attrs:
         ocn: {grid: POP_gx1v6}
       case_members:
         - case: g.e11_LENS.GECOIAF.T62_g16.009
           year_offset: 1699
+
