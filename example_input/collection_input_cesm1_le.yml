@@ -194,177 +194,177 @@ cesm1_le:
           sequence_order: 0
           ensemble: 105
           has_ocean_bgc: True
-      RCP85:
-        locations:
-          - name: GLADE
-            type: posix
-            direct_access: True
-            urlpath: /glade/collections/cdg/data/cesmLE/CESM-CAM5-BGC-LE
-          - name: HPSS
-            type: hsi
-            direct_access: False
-            urlpath: /CCSM/csm/CESM-CAM5-BGC-LE
-        component_attrs:
-          ocn:
-            grid: POP_gx1v6
-        case_members:
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.001
-            sequence_order: 1
-            ensemble: 1
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.002
-            sequence_order: 1
-            ensemble: 2
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.003
-            sequence_order: 1
-            ensemble: 3
-            has_ocean_bgc: False
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.004
-            sequence_order: 1
-            ensemble: 4
-            has_ocean_bgc: False
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.005
-            sequence_order: 1
-            ensemble: 5
-            has_ocean_bgc: False
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.006
-            sequence_order: 1
-            ensemble: 6
-            has_ocean_bgc: False
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.007
-            sequence_order: 1
-            ensemble: 7
-            has_ocean_bgc: False
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.008
-            sequence_order: 1
-            ensemble: 8
-            has_ocean_bgc: False
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.009
-            sequence_order: 1
-            ensemble: 9
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.010
-            sequence_order: 1
-            ensemble: 10
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.011
-            sequence_order: 1
-            ensemble: 11
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.012
-            sequence_order: 1
-            ensemble: 12
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.013
-            sequence_order: 1
-            ensemble: 13
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.014
-            sequence_order: 1
-            ensemble: 14
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.015
-            sequence_order: 1
-            ensemble: 15
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.016
-            sequence_order: 1
-            ensemble: 16
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.017
-            sequence_order: 1
-            ensemble: 17
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.018
-            sequence_order: 1
-            ensemble: 18
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.019
-            sequence_order: 1
-            ensemble: 19
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.020
-            sequence_order: 1
-            ensemble: 20
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.021
-            sequence_order: 1
-            ensemble: 21
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.022
-            sequence_order: 1
-            ensemble: 22
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.023
-            sequence_order: 1
-            ensemble: 23
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.024
-            sequence_order: 1
-            ensemble: 24
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.025
-            sequence_order: 1
-            ensemble: 25
-            has_ocean_bgc: False
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.026
-            sequence_order: 1
-            ensemble: 26
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.027
-            sequence_order: 1
-            ensemble: 27
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.028
-            sequence_order: 1
-            ensemble: 28
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.029
-            sequence_order: 1
-            ensemble: 29
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.030
-            sequence_order: 1
-            ensemble: 30
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.031
-            sequence_order: 1
-            ensemble: 31
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.032
-            sequence_order: 1
-            ensemble: 32
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.033
-            sequence_order: 1
-            ensemble: 33
-            has_ocean_bgc: False
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.034
-            sequence_order: 1
-            ensemble: 34
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.035
-            sequence_order: 1
-            ensemble: 35
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.101
-            sequence_order: 1
-            ensemble: 101
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.102
-            sequence_order: 1
-            ensemble: 102
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.103
-            sequence_order: 1
-            ensemble: 103
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.104
-            sequence_order: 1
-            ensemble: 104
-            has_ocean_bgc: True
-          - case: b.e11.BRCP85C5CNBDRD.f09_g16.105
-            sequence_order: 1
-            ensemble: 105
-            has_ocean_bgc: True
+    RCP85:
+      locations:
+        - name: GLADE
+          type: posix
+          direct_access: True
+          urlpath: /glade/collections/cdg/data/cesmLE/CESM-CAM5-BGC-LE
+        - name: HPSS
+          type: hsi
+          direct_access: False
+          urlpath: /CCSM/csm/CESM-CAM5-BGC-LE
+      component_attrs:
+        ocn:
+          grid: POP_gx1v6
+      case_members:
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.001
+          sequence_order: 1
+          ensemble: 1
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.002
+          sequence_order: 1
+          ensemble: 2
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.003
+          sequence_order: 1
+          ensemble: 3
+          has_ocean_bgc: False
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.004
+          sequence_order: 1
+          ensemble: 4
+          has_ocean_bgc: False
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.005
+          sequence_order: 1
+          ensemble: 5
+          has_ocean_bgc: False
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.006
+          sequence_order: 1
+          ensemble: 6
+          has_ocean_bgc: False
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.007
+          sequence_order: 1
+          ensemble: 7
+          has_ocean_bgc: False
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.008
+          sequence_order: 1
+          ensemble: 8
+          has_ocean_bgc: False
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.009
+          sequence_order: 1
+          ensemble: 9
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.010
+          sequence_order: 1
+          ensemble: 10
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.011
+          sequence_order: 1
+          ensemble: 11
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.012
+          sequence_order: 1
+          ensemble: 12
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.013
+          sequence_order: 1
+          ensemble: 13
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.014
+          sequence_order: 1
+          ensemble: 14
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.015
+          sequence_order: 1
+          ensemble: 15
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.016
+          sequence_order: 1
+          ensemble: 16
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.017
+          sequence_order: 1
+          ensemble: 17
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.018
+          sequence_order: 1
+          ensemble: 18
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.019
+          sequence_order: 1
+          ensemble: 19
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.020
+          sequence_order: 1
+          ensemble: 20
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.021
+          sequence_order: 1
+          ensemble: 21
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.022
+          sequence_order: 1
+          ensemble: 22
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.023
+          sequence_order: 1
+          ensemble: 23
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.024
+          sequence_order: 1
+          ensemble: 24
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.025
+          sequence_order: 1
+          ensemble: 25
+          has_ocean_bgc: False
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.026
+          sequence_order: 1
+          ensemble: 26
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.027
+          sequence_order: 1
+          ensemble: 27
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.028
+          sequence_order: 1
+          ensemble: 28
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.029
+          sequence_order: 1
+          ensemble: 29
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.030
+          sequence_order: 1
+          ensemble: 30
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.031
+          sequence_order: 1
+          ensemble: 31
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.032
+          sequence_order: 1
+          ensemble: 32
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.033
+          sequence_order: 1
+          ensemble: 33
+          has_ocean_bgc: False
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.034
+          sequence_order: 1
+          ensemble: 34
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.035
+          sequence_order: 1
+          ensemble: 35
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.101
+          sequence_order: 1
+          ensemble: 101
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.102
+          sequence_order: 1
+          ensemble: 102
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.103
+          sequence_order: 1
+          ensemble: 103
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.104
+          sequence_order: 1
+          ensemble: 104
+          has_ocean_bgc: True
+        - case: b.e11.BRCP85C5CNBDRD.f09_g16.105
+          sequence_order: 1
+          ensemble: 105
+          has_ocean_bgc: True
