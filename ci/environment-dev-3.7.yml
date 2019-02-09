@@ -18,6 +18,7 @@ dependencies:
   - numpy
   - numpydoc
   - pandoc
+  - pre_commit
   - pytest
   - pytest-cov
   - pytest-icdiff

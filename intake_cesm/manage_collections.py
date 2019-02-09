@@ -12,7 +12,8 @@ from tqdm import tqdm
 
 from .config import SETTINGS
 
-logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+logger.setLevel(level=logging.INFO)
 
 
 class StorageResource(object):
@@ -66,7 +67,7 @@ class StorageResource(object):
     def _list_files_hsi(self):
         """Get a list of files from HPSS"""
         if shutil.which("hsi") is None:
-            logging.warning(f"no hsi; cannot access [HSI]{self.urlpath}")
+            logger.warning(f"no hsi; cannot access [HSI]{self.urlpath}")
             return []
 
         p = Popen(
@@ -163,7 +164,7 @@ class CESMCollections(object):
             b = filename.split(".")[-2]
             return b
         except Exception:
-            logging.warning(f"Cannot extract date string from : {filename}")
+            logger.warning(f"Cannot extract date string from : {filename}")
             return
 
     def _cesm_filename_parts(self, filename, component_streams):
@@ -195,7 +196,7 @@ class CESMCollections(object):
 
                         # ensure that file name conforms to expectation
                         if datestr_nc != f"{datestr}.nc":
-                            logging.warning(
+                            logger.warning(
                                 f"Filename: {filename} does" " not conform to expected" " pattern"
                             )
                             return
@@ -208,7 +209,7 @@ class CESMCollections(object):
                             "datestr": datestr,
                         }
 
-            logging.warning(f"could not identify CESM fileparts: {filename}")
+            logger.warning(f"could not identify CESM fileparts: {filename}")
             return
 
         else:
@@ -236,7 +237,7 @@ class CESMCollections(object):
         if not filelist:
             return pd.DataFrame(entries)
 
-        logging.info(f"building file database: {resource_key}")
+        logger.info(f"building file database: {resource_key}")
 
         for f in tqdm(filelist):
             fileparts = self._cesm_filename_parts(os.path.basename(f), self.component_streams)
@@ -264,7 +265,7 @@ class CESMCollections(object):
         # -- loop over experiments
         df_files = {}
         for experiment, experiment_attrs in collection_attrs["data_sources"].items():
-            logging.info(f"working on experiment: {experiment}")
+            logger.info(f"working on experiment: {experiment}")
 
             component_attrs = experiment_attrs["component_attrs"]
             ensembles = experiment_attrs["case_members"]
@@ -274,7 +275,7 @@ class CESMCollections(object):
                 res_key = ":".join([location["name"], location["type"], location["urlpath"]])
 
                 if res_key not in df_files:
-                    logging.info("getting file listing: %s", res_key)
+                    logger.info("getting file listing: %s", res_key)
                     resource = StorageResource(urlpath=location["urlpath"], type=location["type"])
 
                     df_files[res_key] = self._build_cesm_collection_df_files(
@@ -287,7 +288,7 @@ class CESMCollections(object):
             if self.include_cache_dir:
                 res_key = ":".join(["CACHE", "posix", self.cache_dir])
                 if res_key not in df_files:
-                    logging.info("getting file listing: %s", res_key)
+                    logger.info("getting file listing: %s", res_key)
                     resource = StorageResource(urlpath=self.cache_dir, type="posix")
 
                     df_files[res_key] = self._build_cesm_collection_df_files(
@@ -384,11 +385,11 @@ class CESMCollections(object):
         for collection_name, collection_attrs in self.collections.items():
             self._validate(self.collection_definition)
             self._set_active_collection(collection_name)
-            logging.info(f"Active collection : {self.active_collection}")
-            logging.info(f"Active database: {self.active_db}")
+            logger.info(f"Active collection : {self.active_collection}")
+            logger.info(f"Active database: {self.active_db}")
 
             if collection_attrs["type"].lower() == "cesm":
-                logging.info("calling build")
+                logger.info("calling build")
 
                 self.component_streams = self.collection_definition["component_streams"]
                 if "replacements" in self.collection_definition:

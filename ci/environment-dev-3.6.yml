@@ -8,8 +8,10 @@ dependencies:
   - distributed
   - intake
   - intake-xarray
+  - ipykernel
   - netcdf4
   - numpy
+  - pre_commit
   - pytest
   - pytest-cov
   - pytest-icdiff
