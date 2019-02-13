@@ -14,8 +14,7 @@ from tqdm import tqdm
 from .config import SETTINGS
 
 logger = logging.getLogger(__name__)
-logger.setLevel(level=logging.INFO)
-
+logger.setLevel(level=logging.DEBUG)
 
 class StorageResource(object):
     """ Defines a storage resource object"""
@@ -264,6 +263,7 @@ class CESMCollections(object):
         for exclude_dir in exclude_dirs:
             condition_exclude_dir = ~df["files_dirname"].apply(
                 fnmatch.fnmatch, pat=exclude_dir).to_numpy()
+            logger.debug(f"excluding {np.sum(condition_exclude_dir)} files from {exclude_dir}")
             condition = condition & condition_exclude_dir
 
         return df.loc[condition]
