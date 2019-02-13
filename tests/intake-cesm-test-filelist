@@ -1,3 +1,5 @@
 example_input/sample_data/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.ecosys.nday1.CaCO3_form_zint.02490101-03161231.nc
 example_input/sample_data/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.ECOSYS_XKW.024901-031612.nc
 example_input/sample_data/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.sigma.O2.024901-031612.nc
+example_input/sample_data/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.ECOSYS_XKW.024901-031612.nc
+example_input/avoid-this-dir/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.not-a-file-we-want.024901-031612.nc

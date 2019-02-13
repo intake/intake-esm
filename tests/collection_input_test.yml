@@ -7,6 +7,7 @@ cesm_dple_test_collection:
           type: input-file
           direct_access: False
           urlpath: tests/intake-cesm-test-filelist
+          exclude_dirs: ['*/avoid-this-dir/*']
       component_attrs:
         ocn: {grid: POP_gx1v6}
       case_members:
@@ -24,4 +25,3 @@ cesm_dple_test_collection:
       case_members:
         - case: g.e11_LENS.GECOIAF.T62_g16.009
           year_offset: 1699
-

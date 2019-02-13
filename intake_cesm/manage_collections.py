@@ -5,6 +5,7 @@ import re
 import shutil
 from subprocess import PIPE, Popen
 
+import numpy as np
 import pandas as pd
 import yaml
 from intake.catalog import Catalog
@@ -215,7 +216,7 @@ class CESMCollections(object):
         else:
             return
 
-    def _build_cesm_collection_df_files(self, resource_key, resource_type, direct_access, filelist):
+    def _build_cesm_collection_df_files(self, resource_key, resource_type, direct_access, filelist, exclude_dirs):
 
         entries = {
             key: []
@@ -258,12 +259,18 @@ class CESMCollections(object):
             entries["files_dirname"].append(os.path.dirname(f) + "/")
             entries["files"].append(f)
 
-        return pd.DataFrame(entries)
+        df = pd.DataFrame(entries)
+        condition = np.ones(len(df), dtype=bool)
+        for exclude_dir in exclude_dirs:
+            condition_exclude_dir = ~df["files_dirname"].apply(
+                fnmatch.fnmatch, pat=exclude_dir).to_numpy()
+            condition = condition & condition_exclude_dir
+
+        return df.loc[condition]
 
     def _build_cesm_collection(self, collection_attrs):
 
         # -- loop over experiments
-        df_files = {}
         for experiment, experiment_attrs in collection_attrs["data_sources"].items():
             logger.info(f"working on experiment: {experiment}")
 
@@ -271,6 +278,7 @@ class CESMCollections(object):
             ensembles = experiment_attrs["case_members"]
 
             # -- loop over "locations" and assemble filelist databases
+            df_files = {}
             for location in experiment_attrs["locations"]:
                 res_key = ":".join([location["name"], location["type"], location["urlpath"]])
 
@@ -278,11 +286,16 @@ class CESMCollections(object):
                     logger.info("getting file listing: %s", res_key)
                     resource = StorageResource(urlpath=location["urlpath"], type=location["type"])
 
+                    exclude_dirs = []
+                    if "exclude_dirs" in location:
+                        exclude_dirs = location["exclude_dirs"]
+
                     df_files[res_key] = self._build_cesm_collection_df_files(
                         resource_key=res_key,
                         resource_type=location["type"],
                         direct_access=location["direct_access"],
                         filelist=resource.filelist,
+                        exclude_dirs=exclude_dirs,
                     )
 
             if self.include_cache_dir:
@@ -306,10 +319,6 @@ class CESMCollections(object):
                 # -- get attributes from ensemble_attrs
                 case = ensemble_attrs["case"]
 
-                exclude_dirs = []
-                if "exclude_dirs" in ensemble_attrs:
-                    exclude_dirs = ensemble_attrs["exclude_dirs"]
-
                 if "ensemble" not in ensemble_attrs:
                     input_attrs_base.update({"ensemble": ensemble})
 
@@ -321,11 +330,11 @@ class CESMCollections(object):
                     # ensemble memeber:
                     # - "case" matches
                     # - "files_dirname" not in exclude_dirs
-                    condition = df_f["case"] == case
+                    condition = (df_f["case"] == case)
                     for exclude_dir in exclude_dirs:
-                        condition = condition & (
-                            ~df_f["files_dirname"].apply(fnmatch.fnmatch, pat=exclude_dir)
-                        )
+                        condition_exclude_dir = ~df_f["files_dirname"].apply(
+                            fnmatch.fnmatch, pat=exclude_dir).to_numpy()
+                        condition = condition & condition_exclude_dir
 
                     # if there are any matching files, append to self.df
                     if any(condition):
