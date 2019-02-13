@@ -19,7 +19,7 @@ logger.setLevel(level=logging.DEBUG)
 class StorageResource(object):
     """ Defines a storage resource object"""
 
-    def __init__(self, urlpath, type, file_extension=".nc"):
+    def __init__(self, urlpath, type, exclude_dirs, file_extension=".nc"):
         """
 
         Parameters
@@ -37,20 +37,27 @@ class StorageResource(object):
         self.urlpath = urlpath
         self.type = type
         self.file_extension = file_extension
-
+        self.exclude_dirs = exclude_dirs
         self.filelist = self._list_files()
 
     def _list_files(self):
         if self.type == "posix":
-            return self._list_files_posix()
+            filelist = self._list_files_posix()
 
-        if self.type == "hsi":
-            return self._list_files_hsi()
+        elif self.type == "hsi":
+            filelist = self._list_files_hsi()
 
-        if self.type == "input-file":
-            return self._list_files_input_file()
+        elif self.type == "input-file":
+            filelist = self._list_files_input_file()
 
-        raise ValueError(f"unknown resource type: {self.type}")
+        else:
+            raise ValueError(f"unknown resource type: {self.type}")
+
+        filter_func = lambda path: not any(fnmatch.fnmatch(path, pat=exclude_dir)
+                                           for exclude_dir in self.exclude_dirs)
+
+        return filter(filter_func, filelist)
+
 
     def _list_files_posix(self):
         """Get a list of files"""
@@ -215,7 +222,7 @@ class CESMCollections(object):
         else:
             return
 
-    def _build_cesm_collection_df_files(self, resource_key, resource_type, direct_access, filelist, exclude_dirs):
+    def _build_cesm_collection_df_files(self, resource_key, resource_type, direct_access, filelist):
 
         entries = {
             key: []
@@ -258,15 +265,7 @@ class CESMCollections(object):
             entries["files_dirname"].append(os.path.dirname(f) + "/")
             entries["files"].append(f)
 
-        df = pd.DataFrame(entries)
-        condition = np.ones(len(df), dtype=bool)
-        for exclude_dir in exclude_dirs:
-            condition_exclude_dir = ~df["files_dirname"].apply(
-                fnmatch.fnmatch, pat=exclude_dir).to_numpy()
-            logger.debug(f"excluding {np.sum(~condition_exclude_dir)} files from {exclude_dir}")
-            condition = condition & condition_exclude_dir
-
-        return df.loc[condition]
+        return pd.DataFrame(entries)
 
     def _build_cesm_collection(self, collection_attrs):
 
@@ -284,18 +283,19 @@ class CESMCollections(object):
 
                 if res_key not in df_files:
                     logger.info("getting file listing: %s", res_key)
-                    resource = StorageResource(urlpath=location["urlpath"], type=location["type"])
 
-                    exclude_dirs = []
-                    if "exclude_dirs" in location:
-                        exclude_dirs = location["exclude_dirs"]
+                    if "exclude_dirs" not in location:
+                        location['exclude_dirs'] = []
+
+                    resource = StorageResource(urlpath=location["urlpath"],
+                                               type=location["type"],
+                                               exclude_dirs=location['exclude_dirs'])
 
                     df_files[res_key] = self._build_cesm_collection_df_files(
                         resource_key=res_key,
                         resource_type=location["type"],
                         direct_access=location["direct_access"],
                         filelist=resource.filelist,
-                        exclude_dirs=exclude_dirs,
                     )
 
             if self.include_cache_dir:
