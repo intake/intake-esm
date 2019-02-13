@@ -329,12 +329,7 @@ class CESMCollections(object):
                     # build query to find entries relevant to *this*
                     # ensemble memeber:
                     # - "case" matches
-                    # - "files_dirname" not in exclude_dirs
                     condition = (df_f["case"] == case)
-                    for exclude_dir in exclude_dirs:
-                        condition_exclude_dir = ~df_f["files_dirname"].apply(
-                            fnmatch.fnmatch, pat=exclude_dir).to_numpy()
-                        condition = condition & condition_exclude_dir
 
                     # if there are any matching files, append to self.df
                     if any(condition):
