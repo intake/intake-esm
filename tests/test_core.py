@@ -31,18 +31,6 @@ def test_constructor(collection):
     assert isinstance(c, CesmMetadataStoreCatalog)
 
 
-def test_set_collection_success():
-    c = intake.open_cesm_metadatastore("cesm_dple")
-    c.set_collection("cesm_dple")
-    assert isinstance(c, CesmMetadataStoreCatalog)
-
-
-def test_set_collection_fail():
-    with pytest.raises(FileNotFoundError):
-        c = intake.open_cesm_metadatastore("cesm_dple")
-        c.set_collection("cesm")
-
-
 def test_search():
     c = intake.open_cesm_metadatastore("cesm_dple")
     cat = c.search(experiment="g.e11_LENS.GECOIAF.T62_g16.009", component="ocn", variable="FG_CO2")
