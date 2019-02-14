@@ -45,16 +45,12 @@ class CesmMetadataStoreCatalog(Catalog):
             self.df = self.build_collections()
         else:
             self.df = open_collection(collection)
-        print(f"Active collection: {collection}")
+
         kwargs.setdefault("name", collection)
         super(CesmMetadataStoreCatalog, self).__init__(**kwargs)
         if self.metadata is None:
             self.metadata = {}
         self._entries = {}
-
-    def set_collection(self, collection):
-        """Set the active collection"""
-        self.__init__(collection)
 
     def build_collections(self):
         """ Build CESM collection

@@ -5,6 +5,7 @@ import re
 import shutil
 from subprocess import PIPE, Popen
 
+import numpy as np
 import pandas as pd
 import yaml
 from intake.catalog import Catalog
@@ -13,13 +14,13 @@ from tqdm import tqdm
 from .config import SETTINGS
 
 logger = logging.getLogger(__name__)
-logger.setLevel(level=logging.INFO)
+logger.setLevel(level=logging.DEBUG)
 
 
 class StorageResource(object):
     """ Defines a storage resource object"""
 
-    def __init__(self, urlpath, type, file_extension=".nc"):
+    def __init__(self, urlpath, type, exclude_dirs, file_extension=".nc"):
         """
 
         Parameters
@@ -37,20 +38,26 @@ class StorageResource(object):
         self.urlpath = urlpath
         self.type = type
         self.file_extension = file_extension
-
+        self.exclude_dirs = exclude_dirs
         self.filelist = self._list_files()
 
     def _list_files(self):
         if self.type == "posix":
-            return self._list_files_posix()
+            filelist = self._list_files_posix()
 
-        if self.type == "hsi":
-            return self._list_files_hsi()
+        elif self.type == "hsi":
+            filelist = self._list_files_hsi()
 
-        if self.type == "input-file":
-            return self._list_files_input_file()
+        elif self.type == "input-file":
+            filelist = self._list_files_input_file()
 
-        raise ValueError(f"unknown resource type: {self.type}")
+        else:
+            raise ValueError(f"unknown resource type: {self.type}")
+
+        return filter(self._filter_func, filelist)
+
+    def _filter_func(self, path):
+        return not any(fnmatch.fnmatch(path, pat=exclude_dir) for exclude_dir in self.exclude_dirs)
 
     def _list_files_posix(self):
         """Get a list of files"""
@@ -263,7 +270,6 @@ class CESMCollections(object):
     def _build_cesm_collection(self, collection_attrs):
 
         # -- loop over experiments
-        df_files = {}
         for experiment, experiment_attrs in collection_attrs["data_sources"].items():
             logger.info(f"working on experiment: {experiment}")
 
@@ -271,12 +277,21 @@ class CESMCollections(object):
             ensembles = experiment_attrs["case_members"]
 
             # -- loop over "locations" and assemble filelist databases
+            df_files = {}
             for location in experiment_attrs["locations"]:
                 res_key = ":".join([location["name"], location["type"], location["urlpath"]])
 
                 if res_key not in df_files:
                     logger.info("getting file listing: %s", res_key)
-                    resource = StorageResource(urlpath=location["urlpath"], type=location["type"])
+
+                    if "exclude_dirs" not in location:
+                        location['exclude_dirs'] = []
+
+                    resource = StorageResource(
+                        urlpath=location["urlpath"],
+                        type=location["type"],
+                        exclude_dirs=location['exclude_dirs'],
+                    )
 
                     df_files[res_key] = self._build_cesm_collection_df_files(
                         resource_key=res_key,
@@ -306,10 +321,6 @@ class CESMCollections(object):
                 # -- get attributes from ensemble_attrs
                 case = ensemble_attrs["case"]
 
-                exclude_dirs = []
-                if "exclude_dirs" in ensemble_attrs:
-                    exclude_dirs = ensemble_attrs["exclude_dirs"]
-
                 if "ensemble" not in ensemble_attrs:
                     input_attrs_base.update({"ensemble": ensemble})
 
@@ -320,12 +331,7 @@ class CESMCollections(object):
                     # build query to find entries relevant to *this*
                     # ensemble memeber:
                     # - "case" matches
-                    # - "files_dirname" not in exclude_dirs
                     condition = df_f["case"] == case
-                    for exclude_dir in exclude_dirs:
-                        condition = condition & (
-                            ~df_f["files_dirname"].apply(fnmatch.fnmatch, pat=exclude_dir)
-                        )
 
                     # if there are any matching files, append to self.df
                     if any(condition):
