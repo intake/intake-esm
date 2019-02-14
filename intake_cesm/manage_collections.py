@@ -16,6 +16,7 @@ from .config import SETTINGS
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.DEBUG)
 
+
 class StorageResource(object):
     """ Defines a storage resource object"""
 
@@ -53,11 +54,10 @@ class StorageResource(object):
         else:
             raise ValueError(f"unknown resource type: {self.type}")
 
-        filter_func = lambda path: not any(fnmatch.fnmatch(path, pat=exclude_dir)
-                                           for exclude_dir in self.exclude_dirs)
+        return filter(self._filter_func, filelist)
 
-        return filter(filter_func, filelist)
-
+    def _filter_func(self, path):
+        return not any(fnmatch.fnmatch(path, pat=exclude_dir) for exclude_dir in self.exclude_dirs)
 
     def _list_files_posix(self):
         """Get a list of files"""
@@ -287,9 +287,11 @@ class CESMCollections(object):
                     if "exclude_dirs" not in location:
                         location['exclude_dirs'] = []
 
-                    resource = StorageResource(urlpath=location["urlpath"],
-                                               type=location["type"],
-                                               exclude_dirs=location['exclude_dirs'])
+                    resource = StorageResource(
+                        urlpath=location["urlpath"],
+                        type=location["type"],
+                        exclude_dirs=location['exclude_dirs'],
+                    )
 
                     df_files[res_key] = self._build_cesm_collection_df_files(
                         resource_key=res_key,
@@ -329,7 +331,7 @@ class CESMCollections(object):
                     # build query to find entries relevant to *this*
                     # ensemble memeber:
                     # - "case" matches
-                    condition = (df_f["case"] == case)
+                    condition = df_f["case"] == case
 
                     # if there are any matching files, append to self.df
                     if any(condition):
