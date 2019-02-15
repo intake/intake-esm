@@ -1,5 +1,5 @@
 ============================
-Contribution getting started
+Contributing to intake-esm
 ============================
 
 Contributions are highly welcomed and appreciated.  Every little help counts,
@@ -94,9 +94,10 @@ Preparing Pull Requests
 
     $ git clone git@github.com:YOUR_GITHUB_USERNAME/intake-esm.git
     $ cd intake-esm
+
     # now, to fix a bug or add feature create your own branch off "master":
 
-        $ git checkout -b your-bugfix-feature-branch-name master
+    $ git checkout -b your-bugfix-feature-branch-name master
 
 
 #. Install `pre-commit <https://pre-commit.com>`_ and its hook on the intake-esm repo::
@@ -139,4 +140,5 @@ Preparing Pull Requests
     compare: your-branch-name
 
     base-fork: NCAR/intake-esm
-    base: master          # if it's a bugfix or feature
+    base: master         
+
