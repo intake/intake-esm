@@ -21,20 +21,20 @@ else:
 
 
 setup(
-    name="intake-cesm",
-    description="An intake plugin for loading CESM Large Ensemble data sets",
+    name="intake-esm",
+    description="An intake plugin for loading earth system data sets such as CMIP, CESM Large Ensemble",
     long_description=long_description,
     python_requires=">3.5",
     maintainer="Anderson Banihirwe",
     maintainer_email="abanihi@ucar.edu",
-    url="https://github.com/NCAR/intake-cesm",
+    url="https://github.com/NCAR/intake-esm",
     packages=find_packages(),
-    package_dir={"intake-cesm": "intake-cesm"},
+    package_dir={"intake-esm": "intake-esm"},
     include_package_data=True,
     install_requires=install_requires,
     license="Apache 2.0",
     zip_safe=False,
-    keywords="intake-cesm",
+    keywords="intake-esm",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
 )

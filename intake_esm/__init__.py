@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Top-level module for intake_cesm."""
+"""Top-level module for intake_esm."""
 from ._version import get_versions
 
 __version__ = get_versions()["version"]

@@ -5,8 +5,8 @@ include README.rst
 include requirements.txt
 
 recursive-include example_input
-recursive-include intake_cesm *.py
+recursive-include intake_esm *.py
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 include versioneer.py
-include intake_cesm/_version.py
+include intake_esm/_version.py

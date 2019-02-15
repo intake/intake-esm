@@ -14,7 +14,7 @@ exclude = '''
   | dist
   | docs
   | versioneer.py
-  | intake_cesm/_version.py
+  | intake_esm/_version.py
 )/
 '''
 skip-string-normalization = true

@@ -3,7 +3,7 @@ API reference
 
 This is a reference API class listing, and modules.
 
-.. currentmodule:: intake_cesm
+.. currentmodule:: intake_esm
 
 .. autosummary::
    core.CesmMetadataStoreCatalog
@@ -12,7 +12,7 @@ This is a reference API class listing, and modules.
    manage_collections.CESMCollections
   
 
-.. currentmodule:: intake_cesm.core
+.. currentmodule:: intake_esm.core
 
 .. autoclass:: CesmMetadataStoreCatalog
    :members: __init__, search 
@@ -21,7 +21,7 @@ This is a reference API class listing, and modules.
    :members: __init__, to_xarray
 
 
-.. currentmodule:: intake_cesm.manage_collections
+.. currentmodule:: intake_esm.manage_collections
 
 .. autoclass:: StorageResource
    :members: __init__
