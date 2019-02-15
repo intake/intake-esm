@@ -14,10 +14,10 @@ so do not hesitate!
 Feature requests and feedback
 -----------------------------
 
-Do you like intake-cesm?  Share some love on Twitter or in your blog posts!
+Do you like intake-esm?  Share some love on Twitter or in your blog posts!
 
 We'd also like to hear about your propositions and suggestions.  Feel free to
-`submit them as issues <https://github.com/NCAR/intake-cesm>`_ and:
+`submit them as issues <https://github.com/NCAR/intake-esm>`_ and:
 
 * Explain in detail how they should work.
 * Keep the scope as narrow as possible.  This will make it easier to implement.
@@ -28,13 +28,13 @@ We'd also like to hear about your propositions and suggestions.  Feel free to
 Report bugs
 -----------
 
-Report bugs for intake-cesm in the `issue tracker <https://github.com/NCAR/intake-cesm>`_.
+Report bugs for intake-esm in the `issue tracker <https://github.com/NCAR/intake-esm>`_.
 
 If you are reporting a bug, please include:
 
 * Your operating system name and version.
 * Any details about your local setup that might be helpful in troubleshooting,
-  specifically the Python interpreter version, installed libraries, and intake-cesm
+  specifically the Python interpreter version, installed libraries, and intake-esm
   version.
 * Detailed steps to reproduce the bug.
 
@@ -48,7 +48,7 @@ fix the bug itself.
 Fix bugs
 --------
 
-Look through the `GitHub issues for bugs <https://github.com/NCAR/intake-cesm/labels/type:%20bug>`_.
+Look through the `GitHub issues for bugs <https://github.com/NCAR/intake-esm/labels/type:%20bug>`_.
 
 Talk to developers to find out how you can fix specific bugs.
 
@@ -56,7 +56,7 @@ Talk to developers to find out how you can fix specific bugs.
 Write documentation
 -------------------
 
-intake-cesm could always use more documentation.  What exactly is needed?
+intake-esm could always use more documentation.  What exactly is needed?
 
 * More complementary documentation.  Have you perhaps found something unclear?
 * Docstrings.  There can never be too many of them.
@@ -69,10 +69,13 @@ without using a local copy.  This can be convenient for small fixes.
     Build the documentation locally with the following command:
 
     .. code:: bash
-
-        $ tox -e docs
+        
+        $ conda env update -f ci/environment-dev-3.7.yml
+        $ cd docs
+        $ make html
 
     The built documentation should be available in the ``docs/_build/``.
+
 
  
  .. _`pull requests`:
@@ -83,22 +86,20 @@ Preparing Pull Requests
 
 
 #. Fork the
-   `intake-cesm GitHub repository <https://github.com/NCAR/intake-cesm>`__.  It's
-   fine to use ``intake-cesm`` as your fork repository name because it will live
+   `intake-esm GitHub repository <https://github.com/NCAR/intake-esm>`__.  It's
+   fine to use ``intake-esm`` as your fork repository name because it will live
    under your user.
 
 #. Clone your fork locally using `git <https://git-scm.com/>`_ and create a branch::
 
-    $ git clone git@github.com:YOUR_GITHUB_USERNAME/intake-cesm.git
-    $ cd intake-cesm
+    $ git clone git@github.com:YOUR_GITHUB_USERNAME/intake-esm.git
+    $ cd intake-esm
     # now, to fix a bug or add feature create your own branch off "master":
 
         $ git checkout -b your-bugfix-feature-branch-name master
 
-   If you need some help with Git, follow this quick start
-   guide: https://git.wiki.kernel.org/index.php/QuickStart
 
-#. Install `pre-commit <https://pre-commit.com>`_ and its hook on the intake-cesm repo::
+#. Install `pre-commit <https://pre-commit.com>`_ and its hook on the intake-esm repo::
 
      $ pip install --user pre-commit
      $ pre-commit install
@@ -107,24 +108,20 @@ Preparing Pull Requests
 
    https://pre-commit.com/ is a framework for managing and maintaining multi-language pre-commit hooks
    to ensure code-style and code formatting is consistent.
+#. Install dependencies into a new conda environment::
 
-#. Install tox
+    $ conda env update -f ci/environment-dev-3.7.yml
 
-   Tox is used to run all the tests and will automatically setup virtualenvs
-   to run the tests in.
-   (will implicitly use http://www.virtualenv.org/en/latest/)::
-
-    $ pip install tox
-
+   
 #. Run all the tests
 
-   You need to have Python 3.6 and 3.7 available in your system.  Now
-   running tests is as simple as issuing this command::
+   Now running tests is as simple as issuing this command::
 
-    $ tox -e linting,py36,py37
+    $ conda activate intake-esm-dev
+    $ pytest --junitxml=test-reports/junit.xml --cov=./ --verbose
 
-   This command will run tests via the "tox" tool against Python 3.6 and 3.7
-   and also perform "lint" coding-style checks.
+
+   This command will run tests via the "pytest" tool against Python 3.7.
 
 #. You can now edit your local working copy and run the tests again as necessary. Please follow PEP-8 for naming.
 
@@ -135,16 +132,11 @@ Preparing Pull Requests
     $ git commit -a -m "<commit message>"
     $ git push -u
 
-#. Create a new changelog entry in ``changelog``. The file should be named ``<issueid>.<type>``,
-   where *issueid* is the number of the issue related to the change and *type* is one of
-   ``bugfix``, ``removal``, ``feature``, ``vendor``, ``doc`` or ``trivial``.
-
-#. Add yourself to ``AUTHORS`` file if not there yet, in alphabetical order.
 
 #. Finally, submit a pull request through the GitHub website using this data::
 
-    head-fork: YOUR_GITHUB_USERNAME/intake-cesm
+    head-fork: YOUR_GITHUB_USERNAME/intake-esm
     compare: your-branch-name
 
-    base-fork: NCAR/intake-cesm
+    base-fork: NCAR/intake-esm
     base: master          # if it's a bugfix or feature

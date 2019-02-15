@@ -1,4 +1,4 @@
-name: intake-cesm-dev
+name: intake-esm-dev
 channels:
   - conda-forge
 dependencies:

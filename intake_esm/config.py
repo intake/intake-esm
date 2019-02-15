@@ -12,14 +12,14 @@ DATABASE_DIRECTORY = "database_directory"
 CACHE_DIRECTORY = "cache_directory"
 
 SETTINGS = {}
-if "INTAKE_CESM_CONFIG" in os.environ:
-    _config_dir = os.environ["INTAKE_CESM_CONFIG"]
+if "INTAKE_ESM_CONFIG" in os.environ:
+    _config_dir = os.environ["INTAKE_ESM_CONFIG"]
 else:
-    _config_dir = os.path.join(os.path.expanduser("~"), ".intake-cesm")
+    _config_dir = os.path.join(os.path.expanduser("~"), ".intake-esm")
 
 _path_config_yml = os.path.join(_config_dir, "config.yml")
-if os.path.exists(".config-intake-cesm.yml"):
-    _path_config_yml = os.path.join(".config-intake-cesm.yml")
+if os.path.exists(".config-intake-esm.yml"):
+    _path_config_yml = os.path.join(".config-intake-esm.yml")
 
 
 SETTINGS = {

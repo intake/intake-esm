@@ -16,7 +16,7 @@ jobs:
 
     environment:
       PYTHON: "3.6"
-      ENV_NAME: "intake-cesm-dev"
+      ENV_NAME: "intake-esm-dev"
 
     steps:
       - checkout
@@ -61,7 +61,7 @@ jobs:
 
     environment:
       PYTHON: "3.7"
-      ENV_NAME: "intake-cesm-dev"
+      ENV_NAME: "intake-esm-dev"
 
     steps:
     
@@ -110,7 +110,7 @@ jobs:
 
     environment:
       PYTHON: "3.7"
-      ENV_NAME: "intake-cesm-dev"
+      ENV_NAME: "intake-esm-dev"
 
     steps:
     

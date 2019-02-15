@@ -1,6 +1,6 @@
 plugins:
   source:
-  - module: intake_cesm.core
+  - module: intake_esm.core
 sources:
   cesm_dple-cff53aef-6938-4c6e-b6ae-efa5035bed7e:
     args:

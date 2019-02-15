@@ -106,7 +106,7 @@ class CesmMetadataStoreCatalog(Catalog):
         cat = LocalCatalogEntry(
             name=name,
             description=description,
-            driver="intake_cesm.core.CesmSource",
+            driver="intake_esm.core.CesmSource",
             direct_access=True,
             args=args,
             cache={},
