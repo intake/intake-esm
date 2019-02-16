@@ -126,12 +126,7 @@ def _check_path_write_access(value):
             return False
         return True
 
-    try:
-        os.makedirs(value)
-        return True
-    except (OSError, PermissionError) as err:
-        print(f"could not make directory: {value}")
-        raise err
+    os.makedirs(value, exist_ok=True)
 
 
 def _full_path(value):
