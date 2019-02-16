@@ -103,11 +103,14 @@ cesm_definition = {
     },
 }
 
+cmip5_definition = {}
+cmip6_definition = {}
+
 
 SETTINGS = {
     "database_directory": DATABASE_DIRECTORY,
     "data_cache_directory": DATA_CACHE_DIRECTORY,
-    "collections": {"cesm": cesm_definition},
+    "collections": {"cesm": cesm_definition, "cmip5": cmip5_definition, "cmip6": cmip6_definition},
 }
 
 
