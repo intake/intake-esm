@@ -11,103 +11,11 @@ import yaml
 from intake.catalog import Catalog
 from tqdm import tqdm
 
+from .common import StorageResource
 from .config import SETTINGS
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.DEBUG)
-
-
-class StorageResource(object):
-    """ Defines a storage resource object"""
-
-    def __init__(self, urlpath, type, exclude_dirs, file_extension=".nc"):
-        """
-
-        Parameters
-        -----------
-
-        urlpath : str
-              Path to storage resource
-        type : str
-              Type of storage resource. Supported resources include: posix, hsi (tape)
-        file_extension : str, default `.nc`
-              File extension
-
-        """
-
-        self.urlpath = urlpath
-        self.type = type
-        self.file_extension = file_extension
-        self.exclude_dirs = exclude_dirs
-        self.filelist = self._list_files()
-
-    def _list_files(self):
-        if self.type == "posix":
-            filelist = self._list_files_posix()
-
-        elif self.type == "hsi":
-            filelist = self._list_files_hsi()
-
-        elif self.type == "input-file":
-            filelist = self._list_files_input_file()
-
-        else:
-            raise ValueError(f"unknown resource type: {self.type}")
-
-        return filter(self._filter_func, filelist)
-
-    def _filter_func(self, path):
-        return not any(fnmatch.fnmatch(path, pat=exclude_dir) for exclude_dir in self.exclude_dirs)
-
-    def _list_files_posix(self):
-        """Get a list of files"""
-        w = os.walk(self.urlpath)
-
-        filelist = []
-
-        for root, dirs, files in w:
-            filelist.extend(
-                [os.path.join(root, f) for f in files if f.endswith(self.file_extension)]
-            )
-
-        return filelist
-
-    def _list_files_hsi(self):
-        """Get a list of files from HPSS"""
-        if shutil.which("hsi") is None:
-            logger.warning(f"no hsi; cannot access [HSI]{self.urlpath}")
-            return []
-
-        p = Popen(
-            [
-                "hsi",
-                'find {urlpath} -name "*{file_extension}"'.format(
-                    urlpath=self.urlpath, file_extension=self.file_extension
-                ),
-            ],
-            stdout=PIPE,
-            stderr=PIPE,
-        )
-
-        stdout, stderr = p.communicate()
-        lines = stderr.decode("UTF-8").strip().split("\n")[1:]
-
-        filelist = []
-        i = 0
-        while i < len(lines):
-            if "***" in lines[i]:
-                i += 2
-                continue
-            else:
-                filelist.append(lines[i])
-                i += 1
-
-        return filelist
-
-    def _list_files_input_file(self):
-        """return a list of files from a file containing a list of files"""
-        with open(self.urlpath, "r") as fid:
-            return fid.read().splitlines()
 
 
 class CESMCollections(object):
