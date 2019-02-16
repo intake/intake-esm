@@ -8,18 +8,14 @@ import xarray as xr
 # pytest imports this package last, so plugin is not auto-added
 from intake_esm.core import CesmMetadataStoreCatalog
 
-intake.registry["cesm_metadatastore"] = CesmMetadataStoreCatalog
-
 here = os.path.abspath(os.path.dirname(__file__))
 
 
-@pytest.mark.skip
 def test_build_collection():
     collection_input_file = os.path.join(here, 'collection_input_test.yml')
-    collection_type_def_file = os.path.join('intake_esm/cesm_definitions.yml')
     build_args = {
         'collection_input_file': collection_input_file,
-        'collection_type_def_file': collection_type_def_file,
+        'collection_type': "cesm",
         'overwrite_existing': True,
     }
     col = intake.open_cesm_metadatastore(collection='test', build_args=build_args)

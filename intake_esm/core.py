@@ -59,14 +59,14 @@ class CesmMetadataStoreCatalog(Catalog):
         if "collection_input_file" in self.build_args:
             collection_input_file = self.build_args.get("collection_input_file")
 
-        if "collection_type_def_file" in self.build_args:
-            collection_type_def_file = self.build_args.get("collection_type_def_file")
+        if "collection_type" in self.build_args:
+            collection_type = self.build_args.get("collection_type")
 
         overwrite_existing = self.build_args.get("overwrite_existing", False)
         include_cache_dir = self.build_args.get("include_cache_dir", False)
 
         cc = CESMCollections(
-            collection_input_file, collection_type_def_file, overwrite_existing, include_cache_dir
+            collection_input_file, collection_type, overwrite_existing, include_cache_dir
         )
         return cc.get_built_collection()
 
