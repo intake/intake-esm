@@ -21,5 +21,5 @@ def test_set_options():
 
 
 def test_set_options_failure():
-    with pytest.raises(PermissionError):
-        set_options(database_directory="/dev/test")
+    with pytest.raises((PermissionError, ValueError, OSError)):
+        set_options(database_directory="/test")
