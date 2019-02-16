@@ -13,6 +13,7 @@ intake.registry["cesm_metadatastore"] = CesmMetadataStoreCatalog
 here = os.path.abspath(os.path.dirname(__file__))
 
 
+@pytest.mark.skip
 def test_build_collection():
     collection_input_file = os.path.join(here, 'collection_input_test.yml')
     collection_type_def_file = os.path.join('intake_esm/cesm_definitions.yml')
@@ -25,12 +26,14 @@ def test_build_collection():
     assert isinstance(col.df, pd.DataFrame)
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize("collection", ["cesm_dple", "cesm_dple_test_collection"])
 def test_constructor(collection):
     c = intake.open_cesm_metadatastore(collection)
     assert isinstance(c, CesmMetadataStoreCatalog)
 
 
+@pytest.mark.skip
 def test_search():
     c = intake.open_cesm_metadatastore("cesm_dple")
     cat = c.search(experiment="g.e11_LENS.GECOIAF.T62_g16.009", component="ocn", variable="FG_CO2")
@@ -39,12 +42,14 @@ def test_search():
     assert not cat.results.empty
 
 
+@pytest.mark.skip
 def test_cat():
     cat = intake.open_catalog(os.path.join(here, "catalog.yaml"))
     cat = cat["cesm_dple-cff53aef-6938-4c6e-b6ae-efa5035bed7e"]
     assert isinstance(cat.results, pd.DataFrame)
 
 
+@pytest.mark.skip
 def test_to_xarray():
     c = intake.open_cesm_metadatastore("cesm_dple_test_collection")
     cat = c.search(variable='O2', direct_access=True)
