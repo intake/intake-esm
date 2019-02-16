@@ -11,20 +11,20 @@ import yaml
 from intake.catalog import Catalog
 from tqdm import tqdm
 
-from .common import StorageResource
+from .common import AbstractCollections, StorageResource
 from .config import SETTINGS
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.DEBUG)
 
 
-class CESMCollections(object):
+class CESMCollections(AbstractCollections):
     """CESM collections builder"""
 
     def __init__(
         self,
         collection_input_file,
-        collection_type_def_file,
+        collection_type,
         overwrite_existing=False,
         include_cache_dir=False,
     ):
@@ -35,8 +35,8 @@ class CESMCollections(object):
 
         collection_input_file : str, Path, file
                         Path to a YAML file containing collection metadata
-        collection_type_def_file : str, Path, file
-                        Path to a YAML file containing collection type definition info
+        collection_type: str
+                        Collection type name
         overwrite_existing : bool, default `False`
                         Whether to overwrite existing collection database
         include_cache_dir : bool, default `False`
@@ -44,12 +44,12 @@ class CESMCollections(object):
         """
 
         self.db_dir = SETTINGS["database_directory"]
-        self.cache_dir = SETTINGS["cache_directory"]
+        self.cache_dir = SETTINGS["data_cache_directory"]
 
         with open(collection_input_file) as f:
             self.collections = yaml.load(f)
-        with open(collection_type_def_file) as f:
-            self.collection_definition = yaml.load(f)
+
+        self.collection_definition = SETTINGS["collections"][collection_type]
 
         self.columns = None
         self.active_collection = None
