@@ -1,6 +1,6 @@
 import os
 
-import intake
+import pytest
 
 from intake_esm.config import get_options, save_to_disk, set_options
 
@@ -18,3 +18,8 @@ def test_set_options():
     s2 = get_options()["database_directory"]
 
     assert not s1 == s2
+
+
+def test_set_options_failure():
+    with pytest.raises(ValueError):
+        set_options(database_directory="/usr/bin")
