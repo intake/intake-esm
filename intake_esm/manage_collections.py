@@ -64,6 +64,7 @@ class StorageResource(object):
         w = os.walk(self.urlpath)
 
         filelist = []
+
         for root, dirs, files in w:
             filelist.extend(
                 [os.path.join(root, f) for f in files if f.endswith(self.file_extension)]
