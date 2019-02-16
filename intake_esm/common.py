@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import shutil
+from abc import ABC, abstractclassmethod
 from subprocess import PIPE, Popen
 
 import numpy as np
@@ -108,6 +109,24 @@ class StorageResource(object):
         """return a list of files from a file containing a list of files"""
         with open(self.urlpath, "r") as fid:
             return fid.read().splitlines()
+
+
+class AbstractCollections(ABC):
+    @abstractclassmethod
+    def __init__(self):
+        pass
+
+    @abstractclassmethod
+    def _validate(self):
+        pass
+
+    @abstractclassmethod
+    def _build_collections(self):
+        pass
+
+    @abstractclassmethod
+    def get_built_collection(self):
+        pass
 
 
 def open_collection(collection):
