@@ -11,9 +11,9 @@ def test_default_config():
 
 
 def test_set_options():
-    set_options(database_directory="./tests/test_collections_2")
+    set_options(database_directory="/tmp/collections")
     s1 = get_options()["database_directory"]
-    assert s1 == os.path.abspath(os.path.expanduser("./tests/test_collections_2"))
+    assert s1 == os.path.abspath(os.path.expanduser("/tmp/collections"))
     set_options(database_directory="./tests/test_collections")
     s2 = get_options()["database_directory"]
 

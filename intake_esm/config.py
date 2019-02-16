@@ -120,13 +120,12 @@ for key in ["database_directory", "data_cache_directory"]:
 
 def _check_path_write_access(value):
     value = os.path.abspath(os.path.expanduser(value))
-    if os.path.exists(value):
-        if not os.access(value, os.W_OK):
-            print(f"no write access to: {value}")
-            return False
+    try:
+        os.makedirs(value, exist_ok=True)
         return True
 
-    os.makedirs(value, exist_ok=True)
+    except Exception:
+        return False
 
 
 def _full_path(value):
