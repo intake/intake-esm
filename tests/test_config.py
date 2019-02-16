@@ -22,4 +22,4 @@ def test_set_options():
 
 def test_set_options_failure():
     with pytest.raises(ValueError):
-        set_options(database_directory="/dev/test")
+        set_options(database="/tmp/test")
