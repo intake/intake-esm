@@ -4,13 +4,11 @@ import os
 import re
 import shutil
 from abc import ABC, abstractclassmethod
+from glob import glob
 from subprocess import PIPE, Popen
 
 import numpy as np
 import pandas as pd
-import yaml
-from intake.catalog import Catalog
-from tqdm import tqdm
 
 from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
 
@@ -18,10 +16,41 @@ logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.DEBUG)
 
 
+class Collection(ABC):
+    def __init__(self, collection_name, collection_type, collection_vals):
+        self.collection_name = collection_name
+        self.collection_vals = collection_vals
+        self.collection_type = collection_type
+        self.df = pd.DataFrame()
+
+        self.collection_definition = SETTINGS["collections"].get(collection_type, None)
+        self.db_dir_base = SETTINGS.get("database_directory", None)
+        if self.db_dir_base:
+            self.db_dir = f"{self.db_dir_base}/{self.collection_type}"
+            self.collection_db_file = f"{self.db_dir}/{self.collection_name}.csv"
+            os.makedirs(self.db_dir, exist_ok=True)
+
+        self.data_cache_dir = SETTINGS.get("data_cache_directory", None)
+        if not self.collection_definition:
+            raise ValueError(
+                f"*** {collection_type} *** is not a defined collection type in {INTAKE_ESM_CONFIG_FILE}"
+            )
+
+        self.columns = self.collection_definition.get("collection_columns", None)
+        if not self.columns:
+            raise ValueError(
+                f"Unable to locate collection columns for {collection_type} collection type in {INTAKE_ESM_CONFIG_FILE}"
+            )
+
+    @abstractclassmethod
+    def _validate(self):
+        pass
+
+
 class StorageResource(object):
     """ Defines a storage resource object"""
 
-    def __init__(self, urlpath, type, exclude_dirs, file_extension=".nc"):
+    def __init__(self, urlpath, loc_type, exclude_dirs, file_extension=".nc"):
         """
 
         Parameters
@@ -29,7 +58,7 @@ class StorageResource(object):
 
         urlpath : str
               Path to storage resource
-        type : str
+        loc_type : str
               Type of storage resource. Supported resources include: posix, hsi (tape)
         file_extension : str, default `.nc`
               File extension
@@ -37,7 +66,7 @@ class StorageResource(object):
         """
 
         self.urlpath = urlpath
-        self.type = type
+        self.type = loc_type
         self.file_extension = file_extension
         self.exclude_dirs = exclude_dirs
         self.filelist = self._list_files()
@@ -111,47 +140,41 @@ class StorageResource(object):
             return fid.read().splitlines()
 
 
-class Collection(ABC):
-    def __init__(self, collection_name, collection_type, collection_vals):
-        self.collection_name = collection_name
-        self.collection_vals = collection_vals
-        self.collection_type = collection_type
-        self.collection_definition = SETTINGS["collections"].get(collection_type, None)
-        self.db_dir = SETTINGS.get("database_directory", None)
-        self.data_cache_dir = SETTINGS.get("data_cache_directory", None)
-        if not self.collection_definition:
-            raise ValueError(
-                f"*** {collection_type} *** is not a defined collection type in {INTAKE_ESM_CONFIG_FILE}"
-            )
+def _get_built_collections():
 
-        self.columns = self.collection_definition.get("collection_columns", None)
-        if not self.columns:
-            raise ValueError(
-                f"Unable to locate collection columns for {collection_type} collection type in {INTAKE_ESM_CONFIG_FILE}"
-            )
-        print(collection_name, collection_type)
-
-    @abstractclassmethod
-    def _validate(self):
-        pass
-
-
-def open_collection(collection):
-    """ Open a CESM collection and return a Pandas dataframe """
+    """Loads built collections in a dictionary with key=collection_name, value=collection_db_file_path"""
     try:
-        db_dir = SETTINGS["database_directory"]
-        collection_path = os.path.join(db_dir, f"{collection}.csv")
-        df = pd.read_csv(collection_path, index_col=0)
-        return df
+        cc = [
+            y
+            for x in os.walk(SETTINGS["database_directory"])
+            for y in glob(os.path.join(x[0], '*.csv'))
+        ]
+        collections = {os.path.splitext(os.path.basename(x))[0]: x for x in cc}
+    except Exception:
+        collections = {}
 
-    except (FileNotFoundError) as err:
+    return collections
+
+
+def _open_collection(collection_name, collection_type):
+    """ Open an ESM collection"""
+    collection_types = {"cesm", "cmip"}
+    collections = _get_built_collections()
+    try:
+        if (collection_type in collection_types) and collections:
+            df = pd.read_csv(collections[collection_name], index_col=0)
+            return df, collection_name, collection_type
+        else:
+            raise ValueError(f"****** The specified collection type is not valid. ******")
+
+    except Exception as err:
         print("****** The specified collection does not exit. ******")
         raise err
 
 
-def get_subset(collection, query):
+def get_subset(collection_name, collection_type, query):
     """ Get a subset of collection entries that match a query """
-    df = open_collection(collection)
+    df, _, _ = _open_collection(collection_name, collection_type)
 
     condition = np.ones(len(df), dtype=bool)
 
@@ -169,9 +192,3 @@ def get_subset(collection, query):
     query_results = df.loc[condition].sort_values(by=["sequence_order", "files"], ascending=True)
 
     return query_results
-
-
-def get_collection_def(collection):
-    """Return list of columns defining a collection.
-    """
-    return open_collection(collection).columns.tolist()

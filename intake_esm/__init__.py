@@ -5,6 +5,5 @@ from ._version import get_versions
 __version__ = get_versions()["version"]
 del get_versions
 
-from .config import set_options, get_options
-from .manage_collections import CESMCollections
-from .core import CesmSource, CesmMetadataStoreCatalog
+from .config import set_options, get_options, SETTINGS, SOURCES
+from .core import ESMMetadataStoreCatalog

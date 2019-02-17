@@ -12,7 +12,7 @@ INTAKE_ESM_DIR = os.path.join(os.path.expanduser("~"), ".intake_esm")
 INTAKE_ESM_CONFIG_FILE = os.path.join(INTAKE_ESM_DIR, "config.yaml")
 DATABASE_DIRECTORY = os.path.join(INTAKE_ESM_DIR, "database_directory")
 DATA_CACHE_DIRECTORY = os.path.join(INTAKE_ESM_DIR, "data_cache")
-
+SOURCES = {"cesm": "intake_esm.cesm.CESMSource", "cmip": "intake_esm.esm.CMIPSource"}
 
 cesm_definition = {
     "collection_columns": [

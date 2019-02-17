@@ -2,9 +2,9 @@ import intake
 import pytest
 
 from intake_esm.config import get_options, set_options
-from intake_esm.core import CesmMetadataStoreCatalog
+from intake_esm.core import ESMMetadataStoreCatalog
 
-intake.registry["cesm_metadatastore"] = CesmMetadataStoreCatalog
+intake.registry["esm_metadatastore"] = ESMMetadataStoreCatalog
 
 
 @pytest.fixture

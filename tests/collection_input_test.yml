@@ -1,12 +1,14 @@
 cesm_dple_test_collection:
-  type: cesm
+  collection_type: cesm
+  overwrite_existing: true 
+  include_cache_dir: true
   data_sources:
     g.e11_LENS.GECOIAF.T62_g16.009:
       locations:
         - name: TEST-LIST
-          type: input-file
+          loc_type: input-file
           direct_access: False
-          urlpath: tests/intake-cesm-test-filelist
+          urlpath: /Users/abanihi/devel/ncar/intake-cesm/tests/intake-cesm-test-filelist
           exclude_dirs: ['*/avoid-this-dir/*']
       component_attrs:
         ocn: {grid: POP_gx1v6}
@@ -17,9 +19,9 @@ cesm_dple_test_collection:
     g.e11_LENS.GECOIAF.T62_g16.009-copy:
       locations:
         - name: SAMPLE-DATA
-          type: posix
+          loc_type: posix
           direct_access: True
-          urlpath: tests/sample_data
+          urlpath: /Users/abanihi/devel/ncar/intake-cesm/tests/sample_data
       component_attrs:
         ocn: {grid: POP_gx1v6}
       case_members:
