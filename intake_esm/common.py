@@ -60,6 +60,8 @@ class StorageResource(object):
               Path to storage resource
         loc_type : str
               Type of storage resource. Supported resources include: posix, hsi (tape)
+        exclude_dirs : str, list
+               Directories to exclude during catalog generation
         file_extension : str, default `.nc`
               File extension
 
@@ -141,7 +143,6 @@ class StorageResource(object):
 
 
 def _get_built_collections():
-
     """Loads built collections in a dictionary with key=collection_name, value=collection_db_file_path"""
     try:
         cc = [

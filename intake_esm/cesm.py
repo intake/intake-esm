@@ -1,3 +1,4 @@
+import logging
 import os
 
 import numpy as np
@@ -9,6 +10,9 @@ from intake_esm import __version__
 
 from .common import Collection, StorageResource, _open_collection, get_subset
 from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
+
+logger = logging.getLogger(__name__)
+logger.setLevel(level=logging.DEBUG)
 
 
 class CESMCollection(Collection):
@@ -31,7 +35,7 @@ class CESMCollection(Collection):
         self._validate()
         # Loop over experiments
         for experiment, experiment_attrs in self.collection_vals["data_sources"].items():
-            print(f"Working on experiment: {experiment}")
+            logger.info(f"Working on experiment: {experiment}")
 
             component_attrs = experiment_attrs["component_attrs"]
             ensembles = experiment_attrs["case_members"]
@@ -43,7 +47,7 @@ class CESMCollection(Collection):
         for location in experiment_attrs["locations"]:
             res_key = ":".join([location["name"], location["loc_type"], location["urlpath"]])
             if res_key not in df_files:
-                print(f"Getting file listing : {res_key}")
+                logger.info(f"Getting file listing : {res_key}")
 
                 if "exclude_dirs" not in location:
                     location["exclude_dirs"] = []
@@ -65,7 +69,7 @@ class CESMCollection(Collection):
         if self.include_cache_dir:
             res_key = ":".join(["CACHE", "posix", self.data_cache_dir])
             if res_key not in df_files:
-                print(f"Getting file listing : {res_key}")
+                logger.info(f"Getting file listing : {res_key}")
                 resource = StorageResource(
                     urlpath=self.data_cache_dir, loc_type="posix", exclude_dirs=[]
                 )
@@ -144,7 +148,7 @@ class CESMCollection(Collection):
             drop=True
         )
 
-        print(f"Persisting {self.collection_name} at : {self.collection_db_file}")
+        logger.info(f"Persisting {self.collection_name} at : {self.collection_db_file}")
         self.df.to_csv(self.collection_db_file, index=True)
 
     def _assemble_collection_df_files(self, resource_key, resource_type, direct_access, filelist):
@@ -169,7 +173,7 @@ class CESMCollection(Collection):
         if not filelist:
             return pd.DataFrame(entries)
 
-        print(f"Building file database : {resource_key}")
+        logger.info(f"Building file database : {resource_key}")
         for f in filelist:
             fileparts = self._get_filename_parts(os.path.basename(f), self.component_streams)
 
@@ -232,7 +236,7 @@ class CESMCollection(Collection):
                             "datestr": datestr,
                         }
 
-            print(f"Could not identify CESM fileparts for : {filename}")
+            logger.warning(f"Could not identify CESM fileparts for : {filename}")
             return
         else:
             return
@@ -243,7 +247,7 @@ class CESMCollection(Collection):
             b = filename.split(".")[-2]
             return b
         except Exception:
-            print(f"Could not extract date string from : {filename}")
+            logger.warning(f"Could not extract date string from : {filename}")
             return
 
 

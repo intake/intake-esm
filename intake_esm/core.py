@@ -25,7 +25,7 @@ logger.setLevel(level=logging.DEBUG)
 
 
 class ESMMetadataStoreCatalog(Catalog):
-    """ CESM collection Metadata store """
+    """ESM collection Metadata store. This class servers as an entry point for `intake_esm`. """
 
     name = "esm_metadatastore"
     version = __version__
@@ -38,6 +38,19 @@ class ESMMetadataStoreCatalog(Catalog):
         """
         Parameters
         ----------
+
+        collection_input_file : str,  Path, file
+                    Path to a YAML file containing collection metadata
+        collection_name : str
+                 Collection name
+        collection_type : str,
+                 Collection type. Accepted values include:
+
+                 - `cesm`
+                 - `cmip`
+
+        **kwargs
+
         """
         self.collections = {}
         self.get_built_collections()
@@ -63,7 +76,7 @@ class ESMMetadataStoreCatalog(Catalog):
     def build_collections(self):
         """ Builds collections defined in a collection input YAML file"""
         for collection_name, collection_vals in self.input_collections.items():
-            print(f"Calling build_collection on {collection_name}")
+            logger.info(f"Calling build_collection on {collection_name}")
             collection_type = collection_vals["collection_type"]
             cc = ESMMetadataStoreCatalog.collection_types[collection_type]
             cc = cc(collection_name, collection_type, collection_vals)
