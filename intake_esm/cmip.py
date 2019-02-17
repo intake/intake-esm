@@ -1,19 +1,25 @@
 import os
 
 import pandas as pd
+from intake_xarray.netcdf import NetCDFSource
+
+from intake_esm import __version__
 
 from .common import Collection, StorageResource
 from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
 
 
 class CMIPCollection(Collection):
-    def __init__(self, collection_name, collection_type, collection_vals):
-        super(CMIPCollection, self).__init__(collection_name, collection_type, collection_vals)
-        self.df = pd.DataFrame()
+    def __init__(self):
+        raise NotImplementedError
 
     def _validate(self):
-        pass
+        raise NotImplementedError
 
 
-class CMIPSource:
-    pass
+class CMIPSource(NetCDFSource):
+    """ Read CMIP data sets into xarray datasets
+    """
+
+    def __init__(self):
+        raise NotImplementedError
