@@ -3,8 +3,6 @@ import os
 import pandas as pd
 from intake_xarray.netcdf import NetCDFSource
 
-from intake_esm import __version__
-
 from .common import Collection, StorageResource
 from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
 

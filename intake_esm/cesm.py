@@ -6,10 +6,13 @@ import pandas as pd
 import xarray as xr
 from intake_xarray.netcdf import NetCDFSource
 
-from intake_esm import __version__
-
+from ._version import get_versions
 from .common import Collection, StorageResource, _open_collection, get_subset
 from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
+
+__version__ = get_versions()["version"]
+del get_versions
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.DEBUG)

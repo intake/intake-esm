@@ -12,13 +12,15 @@ from intake.catalog import Catalog
 from intake.catalog.local import LocalCatalogEntry
 from intake_xarray.netcdf import NetCDFSource
 
-from intake_esm import __version__
-
 from ._version import get_versions
 from .cesm import CESMCollection, CESMSource
 from .cmip import CMIPCollection, CMIPSource
 from .common import _get_built_collections, _open_collection
 from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
+
+__version__ = get_versions()["version"]
+del get_versions
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.DEBUG)
