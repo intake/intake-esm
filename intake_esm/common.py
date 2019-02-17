@@ -12,7 +12,7 @@ import yaml
 from intake.catalog import Catalog
 from tqdm import tqdm
 
-from .config import SETTINGS
+from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.DEBUG)
@@ -111,21 +111,28 @@ class StorageResource(object):
             return fid.read().splitlines()
 
 
-class AbstractCollections(ABC):
-    @abstractclassmethod
-    def __init__(self):
-        pass
+class Collection(ABC):
+    def __init__(self, collection_name, collection_type, collection_vals):
+        self.collection_name = collection_name
+        self.collection_vals = collection_vals
+        self.collection_type = collection_type
+        self.collection_definition = SETTINGS["collections"].get(collection_type, None)
+        self.db_dir = SETTINGS.get("database_directory", None)
+        self.data_cache_dir = SETTINGS.get("data_cache_directory", None)
+        if not self.collection_definition:
+            raise ValueError(
+                f"*** {collection_type} *** is not a defined collection type in {INTAKE_ESM_CONFIG_FILE}"
+            )
+
+        self.columns = self.collection_definition.get("collection_columns", None)
+        if not self.columns:
+            raise ValueError(
+                f"Unable to locate collection columns for {collection_type} collection type in {INTAKE_ESM_CONFIG_FILE}"
+            )
+        print(collection_name, collection_type)
 
     @abstractclassmethod
     def _validate(self):
-        pass
-
-    @abstractclassmethod
-    def _build_collections(self):
-        pass
-
-    @abstractclassmethod
-    def get_built_collection(self):
         pass
 
 
