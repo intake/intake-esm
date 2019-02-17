@@ -70,9 +70,9 @@ class ESMMetadataStoreCatalog(Catalog):
 
             # If collection exists in database_directory, continue
             if cc.overwrite_existing:
-                continue
-            else:
                 cc.build()
+            else:
+                continue
 
         self.get_built_collections()
         return self
