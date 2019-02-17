@@ -6,27 +6,14 @@ This is a reference API class listing, and modules.
 .. currentmodule:: intake_esm
 
 .. autosummary::
-   core.CesmMetadataStoreCatalog
-   core.CesmSource
-   manage_collections.StorageResource
-   manage_collections.CESMCollections
-  
+   core.ESMMetadataStoreCatalog
+
 
 .. currentmodule:: intake_esm.core
 
-.. autoclass:: CesmMetadataStoreCatalog
-   :members: __init__, search 
-
-.. autoclass:: CesmSource
-   :members: __init__, to_xarray
+.. autoclass:: ESMMetadataStoreCatalog
+   :members: __init__, search, build_collections, open_collection, get_built_collections 
 
 
-.. currentmodule:: intake_esm.manage_collections
-
-.. autoclass:: StorageResource
-   :members: __init__
-
-.. autoclass:: CESMCollections
-   :members: __init__, get_built_collection
 
 
