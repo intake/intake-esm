@@ -13,7 +13,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 def test_build_collection():
     collection_input_file = os.path.join(here, 'collection_input_test.yml')
-    col = intake.open_esm_metadatastore(collection_input_file)
+    col = intake.open_esm_metadatastore(collection_input_file).build_collections()
     col = col.open_collection("cesm_dple_test_collection", collection_type="cesm")
     assert isinstance(col.df, pd.DataFrame)
 

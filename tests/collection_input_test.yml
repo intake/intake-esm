@@ -8,7 +8,7 @@ cesm_dple_test_collection:
         - name: TEST-LIST
           loc_type: input-file
           direct_access: False
-          urlpath: /Users/abanihi/devel/ncar/intake-cesm/tests/intake-cesm-test-filelist
+          urlpath: ./tests/intake-cesm-test-filelist
           exclude_dirs: ['*/avoid-this-dir/*']
       component_attrs:
         ocn: {grid: POP_gx1v6}
@@ -21,7 +21,7 @@ cesm_dple_test_collection:
         - name: SAMPLE-DATA
           loc_type: posix
           direct_access: True
-          urlpath: /Users/abanihi/devel/ncar/intake-cesm/tests/sample_data
+          urlpath: ./tests/sample_data
       component_attrs:
         ocn: {grid: POP_gx1v6}
       case_members:

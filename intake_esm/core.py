@@ -66,14 +66,20 @@ class ESMMetadataStoreCatalog(Catalog):
             print(f"Calling build_collection on {collection_name}")
             collection_type = collection_vals["collection_type"]
             cc = ESMMetadataStoreCatalog.collection_types[collection_type]
-            cc(collection_name, collection_type, collection_vals).build()
+            cc = cc(collection_name, collection_type, collection_vals)
+
+            # If collection exists in database_directory, continue
+            if cc.overwrite_existing and os.path.exists(cc.collection_db_file):
+                continue
+            else:
+                cc.build()
 
         self.get_built_collections()
+        return self
 
     def get_built_collections(self):
         """Loads built collections in a dictionary with key=collection_name, value=collection_db_file_path"""
         self.collections = _get_built_collections()
-        return self
 
     def open_collection(self, collection_name, collection_type):
         """ Open an ESM collection"""

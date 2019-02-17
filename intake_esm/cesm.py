@@ -16,8 +16,8 @@ class CESMCollection(Collection):
         super(CESMCollection, self).__init__(collection_name, collection_type, collection_vals)
         self.component_streams = self.collection_definition.get("component_streams", None)
         self.replacements = self.collection_definition.get("replacements", {})
-        self.overwrite_existing = self.collection_vals.get("overwrite_existing", False)
-        self.include_cache_dir = self.collection_vals.get("include_cache_dir", False)
+        self.overwrite_existing = self.collection_vals.get("overwrite_existing", True)
+        self.include_cache_dir = self.collection_vals.get("include_cache_dir", True)
 
     def _validate(self):
         for req_col in ["files", "sequence_order"]:
