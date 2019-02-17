@@ -18,15 +18,17 @@ def test_build_collection():
     assert isinstance(col.df, pd.DataFrame)
 
 
-@pytest.mark.parametrize("collection", ["cesm_dple", "cesm_dple_test_collection"])
+@pytest.mark.parametrize("collection", ["cesm_dple_test_collection"])
 def test_constructor(collection):
     c = intake.open_esm_metadatastore(collection_name=collection, collection_type="cesm")
     assert isinstance(c, ESMMetadataStoreCatalog)
 
 
 def test_search():
-    c = intake.open_esm_metadatastore(collection_name="cesm_dple", collection_type="cesm")
-    cat = c.search(experiment="g.e11_LENS.GECOIAF.T62_g16.009", component="ocn", variable="FG_CO2")
+    c = intake.open_esm_metadatastore(
+        collection_name="cesm_dple_test_collection", collection_type="cesm"
+    )
+    cat = c.search(variable='O2', direct_access=True)
 
     assert isinstance(cat.results, pd.DataFrame)
     assert not cat.results.empty
