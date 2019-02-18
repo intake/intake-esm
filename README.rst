@@ -22,7 +22,7 @@ Intake-esm
     :alt: Conda Version
 
 
-Intake-esm provides a plug for reading esm Large Ensemble data sets using intake.
+Intake-esm provides a plugin for building and loading intake catalogs for CMIP and CESM data sets holdings. 
 See documentation_ for more information.
 
 .. _documentation: https://intake-esm.readthedocs.io/en/latest/
