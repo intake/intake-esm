@@ -22,7 +22,7 @@ else:
 
 setup(
     name="intake-esm",
-    description="An intake plugin for loading earth system data sets such as CMIP, CESM Large Ensemble",
+    description="An intake plugin for building and loading earth system data sets such as CMIP, CESM Large Ensemble",
     long_description=long_description,
     python_requires=">3.5",
     maintainer="Anderson Banihirwe",
