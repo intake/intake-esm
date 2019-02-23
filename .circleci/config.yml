@@ -135,10 +135,10 @@ jobs:
             flake8 
 
             echo "[black]"
-            black --check . 
+            black --check --line-length=100 -S --exclude='intake_esm/_version.py|versioneer.py' .  
 
             echo "[isort]"
-            isort --recursive --check-only .
+            isort --recursive -w 100 --check-only .
       - run:
           name: Check documentation build 
           command: |
