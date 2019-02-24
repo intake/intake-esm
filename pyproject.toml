@@ -21,4 +21,4 @@ skip-string-normalization = true
 
 [build-system]
 requires = ["setuptools", "wheel", "versioneer"]
-build-backend = "setuptools.build_meta"
+build-backend = "setuptools.build_meta:__legacy__"
