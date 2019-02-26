@@ -6,13 +6,17 @@ repos:
       args: ["--line-length", "100", "--skip-string-normalization", 
             "--exclude", '''/(intake_esm/_version.py|versioneer.py)/''']
 
+-   repo: https://github.com/pre-commit/mirrors-autopep8
+    rev: v1.4.3
+    hooks:
+    -   id: autopep8
+        entry: autopep8
+        args: ["--in-place", "--aggressive"]
 
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.1.0
     hooks:
     - id: flake8
-      entry: autopep8
-      args: ["--in-place", "--aggressive"]
 
 -   repo: https://github.com/asottile/seed-isort-config
     rev: v1.6.0
