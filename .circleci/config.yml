@@ -6,9 +6,10 @@ workflows:
     jobs:
       - "python-3.7"
       - "python-3.6"
-      - "docs-and-linting"
+      - "docs-build"
+      - "test-linting"
 
-        
+
 jobs:
   "python-3.6":
     docker:
@@ -26,7 +27,7 @@ jobs:
           key: deps-{{ .Branch }}-3.6-{{ checksum "ci/environment-dev-3.6.yml" }}
 
       - run: # install and activate conda environment
-          name: configure conda 
+          name: Install conda environment
           command: ./ci/install-circle.sh
 
       - run:
@@ -36,7 +37,7 @@ jobs:
 
 
       - run:
-          name: Code Coverage 
+          name: Code Coverage
           command: |
             source activate ${ENV_NAME}
 
@@ -64,7 +65,7 @@ jobs:
       ENV_NAME: "intake-esm-dev"
 
     steps:
-    
+
       # Get our data and merge with upstream
       - checkout
 
@@ -73,7 +74,7 @@ jobs:
           key: deps-{{ .Branch }}-3.7-{{ checksum "ci/environment-dev-3.7.yml" }}
 
       - run: # install and activate conda environment
-          name: configure conda 
+          name: Install conda environment
           command: ./ci/install-circle.sh
       - run:
           command: |
@@ -81,14 +82,14 @@ jobs:
             pytest --junitxml=test-reports/junit.xml --cov=./ --verbose
 
       - run:
-          name: Code Coverage 
+          name: Code Coverage
           command: |
             source activate ${ENV_NAME}
 
             echo "[Upload coverage]"
             codecov
 
-     
+
       # Cache some files for a speedup in subsequent builds
       - save_cache:
           key: deps-{{ .Branch }}-3.7-{{ checksum "ci/environment-dev-3.7.yml" }}
@@ -101,10 +102,10 @@ jobs:
 
       - store_artifacts:
           path: test-reports
-   
-  
 
-  "docs-and-linting":
+
+
+  "test-linting":
     docker:
       - image: conda/miniconda3:latest
 
@@ -113,7 +114,7 @@ jobs:
       ENV_NAME: "intake-esm-dev"
 
     steps:
-    
+
       # Get our data and merge with upstream
       - checkout
 
@@ -122,32 +123,62 @@ jobs:
           key: deps-{{ .Branch }}-3.7-{{ checksum "ci/environment-dev-3.7.yml" }}
 
       - run: # install and activate conda environment
-          name: configure conda 
+          name: Install conda environment
           command: ./ci/install-circle.sh
-     
+
 
       - run:
           name: Code Styling with (black, flake8, isort)
           command: |
             source activate ${ENV_NAME}
-            
+
             echo "[flake8]"
-            flake8 
+            flake8
 
             echo "[black]"
-            black --check --line-length=100 -S --exclude='intake_esm/_version.py|versioneer.py' .  
+            black --check --line-length=100 -S --exclude='intake_esm/_version.py|versioneer.py' .
 
             echo "[isort]"
             isort --recursive -w 100 --check-only .
+
+      # Cache some files for a speedup in subsequent builds
+      - save_cache:
+          key: deps-{{ .Branch }}-3.7-{{ checksum "ci/environment-dev-3.7.yml" }}
+          paths:
+            - "/opt/conda/envs/${ENV_NAME}/"
+            - "/opt/conda/pkgs"
+
+
+  "docs-build":
+    docker:
+      - image: conda/miniconda3:latest
+
+    environment:
+      PYTHON: "3.7"
+      ENV_NAME: "intake-esm-dev"
+
+    steps:
+
+      # Get our data and merge with upstream
+      - checkout
+
+      # Restore cached files to speed things up
+      - restore_cache:
+          key: deps-{{ .Branch }}-3.7-{{ checksum "ci/environment-dev-3.7.yml" }}
+
+      - run: # install and activate conda environment
+          name: Install conda environment
+          command: ./ci/install-circle.sh
+
       - run:
-          name: Check documentation build 
+          name: Check documentation build
           command: |
             source activate ${ENV_NAME}
             pushd docs
             make html
             popd
 
-     
+
       # Cache some files for a speedup in subsequent builds
       - save_cache:
           key: deps-{{ .Branch }}-3.7-{{ checksum "ci/environment-dev-3.7.yml" }}
@@ -156,6 +187,6 @@ jobs:
             - "/opt/conda/pkgs"
 
       # Tell Circle to store the documentation output in a folder that we can access later
-      - store_artifacts: 
+      - store_artifacts:
           path: docs/_build/html
           destination: html
