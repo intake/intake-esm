@@ -106,7 +106,7 @@ jobs:
 
   "docs-and-linting":
     docker:
-      - image: cconda/miniconda3:latest
+      - image: conda/miniconda3:latest
 
     environment:
       PYTHON: "3.7"
