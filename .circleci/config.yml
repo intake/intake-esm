@@ -12,7 +12,7 @@ workflows:
 jobs:
   "python-3.6":
     docker:
-      - image: continuumio/miniconda:latest
+      - image: conda/miniconda3:latest
 
     environment:
       PYTHON: "3.6"
@@ -57,7 +57,7 @@ jobs:
 
   "python-3.7":
     docker:
-      - image: continuumio/miniconda:latest
+      - image: conda/miniconda3:latest
 
     environment:
       PYTHON: "3.7"
@@ -106,7 +106,7 @@ jobs:
 
   "docs-and-linting":
     docker:
-      - image: continuumio/miniconda:latest
+      - image: cconda/miniconda3:latest
 
     environment:
       PYTHON: "3.7"
