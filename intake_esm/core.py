@@ -18,7 +18,7 @@ from .cmip import CMIPCollection, CMIPSource
 from .common import _get_built_collections, _open_collection
 from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
 
-__version__ = get_versions()["version"]
+__version__ = get_versions()['version']
 del get_versions
 
 
@@ -29,10 +29,10 @@ logger.setLevel(level=logging.DEBUG)
 class ESMMetadataStoreCatalog(Catalog):
     """ESM collection Metadata store. This class servers as an entry point for `intake_esm`. """
 
-    name = "esm_metadatastore"
+    name = 'esm_metadatastore'
     version = __version__
-    collection_types = {"cesm": CESMCollection, "cmip": CMIPCollection}
-    SOURCES = {"cesm": "intake_esm.cesm.CESMSource", "cmip": "intake_esm.esm.CMIPSource"}
+    collection_types = {'cesm': CESMCollection, 'cmip': CMIPCollection}
+    SOURCES = {'cesm': 'intake_esm.cesm.CESMSource', 'cmip': 'intake_esm.esm.CMIPSource'}
 
     def __init__(
         self, collection_input_file=None, collection_name=None, collection_type=None, **kwargs
@@ -45,13 +45,13 @@ class ESMMetadataStoreCatalog(Catalog):
                     Path to a YAML file containing collection metadata
         collection_name : str
                  Collection name
+
         collection_type : str,
                  Collection type. Accepted values include:
 
                  - `cesm`
                  - `cmip`
 
-        **kwargs
 
         """
         self.collections = {}
@@ -61,13 +61,13 @@ class ESMMetadataStoreCatalog(Catalog):
             self.open_collection(collection_name, collection_type)
 
         elif collection_input_file:
-            with open(collection_input_file) as f:
-                self.input_collections = yaml.load(f)
+            self.input_collection = self._validate_collection_input_file(collection_input_file)
+            self.build_collection()
 
         else:
             raise ValueError(
                 "Cannot instantiate class with empty arguments. Please provide either 'collection_input_file' \
-                  \n\t\tor 'collection_name' and `collection_type`"
+                  \n\t\tor 'collection_name' "
             )
         super(ESMMetadataStoreCatalog, self).__init__(**kwargs)
         if self.metadata is None:
@@ -75,21 +75,31 @@ class ESMMetadataStoreCatalog(Catalog):
 
         self._entries = {}
 
-    def build_collections(self):
-        """ Builds collections defined in a collection input YAML file"""
-        for collection_name, collection_vals in self.input_collections.items():
-            logger.info(f"Calling build_collection on {collection_name}")
-            collection_type = collection_vals["collection_type"]
-            cc = ESMMetadataStoreCatalog.collection_types[collection_type]
-            cc = cc(collection_name, collection_type, collection_vals)
+    def _validate_collection_input_file(self, filepath):
+        if os.path.exists(filepath):
+            with open(filepath) as f:
+                input_collection = yaml.safe_load(f)
+                name = input_collection.get('name', None)
+                collection_type = input_collection.get('collection_type', None)
+                if name is None or collection_type is None:
+                    raise ValueError(
+                        f'name and/or collection_type keys are missing from {filepath} '
+                    )
+                else:
+                    return input_collection
 
-            # If collection exists in database_directory, continue
-            if cc.overwrite_existing:
-                cc.build()
-            else:
-                continue
+        else:
+            raise FileNotFoundError(f'Specified collection input file: {filepath} doesn’t exist.')
 
+    def build_collection(self):
+        ctype = self.input_collection['collection_type']
+        cc = ESMMetadataStoreCatalog.collection_types[ctype]
+        cc = cc(self.input_collection)
+        cc.build()
         self.get_built_collections()
+        self.open_collection(
+            self.input_collection['name'], self.input_collection['collection_type']
+        )
         return self
 
     def get_built_collections(self):
@@ -107,23 +117,23 @@ class ESMMetadataStoreCatalog(Catalog):
         collection_columns = self.df.columns.tolist()
         for key in query.keys():
             if key not in collection_columns:
-                raise ValueError(f"{key} is not in {self.collection_name}")
+                raise ValueError(f'{key} is not in {self.collection_name}')
         for key in collection_columns:
             if key not in query:
                 query[key] = None
-        name = self.collection_name + "_" + str(uuid.uuid4())
+        name = self.collection_name + '_' + str(uuid.uuid4())
         args = {
-            "collection_name": self.collection_name,
-            "collection_type": self.collection_type,
-            "query": query,
-            "chunks": {"time": 1},
-            "engine": "netcdf4",
-            "decode_times": False,
-            "decode_coords": False,
-            "concat_dim": "time",
+            'collection_name': self.collection_name,
+            'collection_type': self.collection_type,
+            'query': query,
+            'chunks': {'time': 1},
+            'engine': 'netcdf4',
+            'decode_times': False,
+            'decode_coords': False,
+            'concat_dim': 'time',
         }
         driver = ESMMetadataStoreCatalog.SOURCES[self.collection_type]
-        description = f"Catalog entry from {self.collection_name} collection"
+        description = f'Catalog entry from {self.collection_name} collection'
         cat = LocalCatalogEntry(
             name=name,
             description=description,
@@ -133,7 +143,7 @@ class ESMMetadataStoreCatalog(Catalog):
             cache={},
             parameters={},
             metadata=self.metadata.copy(),
-            catalog_dir="",
+            catalog_dir='',
             getenv=False,
             getshell=False,
         )

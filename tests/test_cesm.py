@@ -13,20 +13,19 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 def test_build_collection():
     collection_input_file = os.path.join(here, 'collection_input_test.yml')
-    col = intake.open_esm_metadatastore(collection_input_file).build_collections()
-    col = col.open_collection("cesm_dple_test_collection", collection_type="cesm")
+    col = intake.open_esm_metadatastore(collection_input_file)
     assert isinstance(col.df, pd.DataFrame)
 
 
-@pytest.mark.parametrize("collection", ["cesm_dple_test_collection"])
+@pytest.mark.parametrize('collection', ['cesm_dple_test_collection'])
 def test_constructor(collection):
-    c = intake.open_esm_metadatastore(collection_name=collection, collection_type="cesm")
+    c = intake.open_esm_metadatastore(collection_name=collection, collection_type='cesm')
     assert isinstance(c, ESMMetadataStoreCatalog)
 
 
 def test_search():
     c = intake.open_esm_metadatastore(
-        collection_name="cesm_dple_test_collection", collection_type="cesm"
+        collection_name='cesm_dple_test_collection', collection_type='cesm'
     )
     cat = c.search(variable='O2', direct_access=True)
 
@@ -35,14 +34,14 @@ def test_search():
 
 
 def test_cat():
-    cat = intake.open_catalog(os.path.join(here, "catalog.yaml"))
-    cat = cat["cesm_dple_test_collection_7afe8a3a-8d2f-40a8-9ede-899f48ce83b2"]
+    cat = intake.open_catalog(os.path.join(here, 'catalog.yaml'))
+    cat = cat['cesm_dple_test_collection_7afe8a3a-8d2f-40a8-9ede-899f48ce83b2']
     assert isinstance(cat.results, pd.DataFrame)
 
 
 def test_to_xarray():
     c = intake.open_esm_metadatastore(
-        collection_name="cesm_dple_test_collection", collection_type="cesm"
+        collection_name='cesm_dple_test_collection', collection_type='cesm'
     )
     cat = c.search(variable='O2', direct_access=True)
     ds = cat.to_xarray()

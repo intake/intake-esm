@@ -13,44 +13,42 @@ import pandas as pd
 from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
 
 logger = logging.getLogger(__name__)
-logger.setLevel(level=logging.DEBUG)
+logger.setLevel(level=logging.WARNING)
 
 
 class Collection(ABC):
-    def __init__(self, collection_name, collection_type, collection_vals):
-        self.collection_name = collection_name
-        self.collection_vals = collection_vals
-        self.collection_type = collection_type
-        self.df = pd.DataFrame()
-
-        self.collection_definition = SETTINGS["collections"].get(collection_type, None)
-        self.db_dir_base = SETTINGS.get("database_directory", None)
-        if self.db_dir_base:
-            self.db_dir = f"{self.db_dir_base}/{self.collection_type}"
-            self.collection_db_file = f"{self.db_dir}/{self.collection_name}.csv"
-            os.makedirs(self.db_dir, exist_ok=True)
-
-        self.data_cache_dir = SETTINGS.get("data_cache_directory", None)
-        if not self.collection_definition:
+    def __init__(self, collection_spec):
+        self.collection_spec = collection_spec
+        self.collection_definition = SETTINGS['collections'].get(
+            collection_spec['collection_type'], None
+        )
+        if self.collection_definition is None:
             raise ValueError(
-                f"*** {collection_type} *** is not a defined collection type in {INTAKE_ESM_CONFIG_FILE}"
+                f"*** {collection_spec['collection_type']} *** is not a defined collection type in {INTAKE_ESM_CONFIG_FILE}"
             )
 
-        self.columns = self.collection_definition.get("collection_columns", None)
-        if not self.columns:
+        self.columns = self.collection_definition.get('collection_columns', None)
+        if self.columns is None:
             raise ValueError(
-                f"Unable to locate collection columns for {collection_type} collection type in {INTAKE_ESM_CONFIG_FILE}"
+                f"Unable to locate collection columns for {collection_spec['collection_type']} collection type in {INTAKE_ESM_CONFIG_FILE}"
             )
+        self.data_cache_dir = SETTINGS.get('data_cache_directory', None)
+        self.database_base_dir = SETTINGS.get('database_directory', None)
+
+        if self.database_base_dir:
+            self.database_dir = f"{self.database_base_dir}/{collection_spec['collection_type']}"
+            self.collection_db_file = f"{self.database_dir}/{collection_spec['name']}.csv"
+            os.makedirs(self.database_dir, exist_ok=True)
 
     @abstractclassmethod
-    def _validate(self):
+    def build(self):
         pass
 
 
 class StorageResource(object):
     """ Defines a storage resource object"""
 
-    def __init__(self, urlpath, loc_type, exclude_dirs, file_extension=".nc"):
+    def __init__(self, urlpath, loc_type, exclude_dirs, file_extension='.nc'):
         """
 
         Parameters
@@ -74,17 +72,17 @@ class StorageResource(object):
         self.filelist = self._list_files()
 
     def _list_files(self):
-        if self.type == "posix":
+        if self.type == 'posix':
             filelist = self._list_files_posix()
 
-        elif self.type == "hsi":
+        elif self.type == 'hsi':
             filelist = self._list_files_hsi()
 
-        elif self.type == "input-file":
+        elif self.type == 'input-file':
             filelist = self._list_files_input_file()
 
         else:
-            raise ValueError(f"unknown resource type: {self.type}")
+            raise ValueError(f'unknown resource type: {self.type}')
 
         return filter(self._filter_func, filelist)
 
@@ -106,13 +104,13 @@ class StorageResource(object):
 
     def _list_files_hsi(self):
         """Get a list of files from HPSS"""
-        if shutil.which("hsi") is None:
-            logger.warning(f"no hsi; cannot access [HSI]{self.urlpath}")
+        if shutil.which('hsi') is None:
+            logger.warning(f'no hsi; cannot access [HSI]{self.urlpath}')
             return []
 
         p = Popen(
             [
-                "hsi",
+                'hsi',
                 'find {urlpath} -name "*{file_extension}"'.format(
                     urlpath=self.urlpath, file_extension=self.file_extension
                 ),
@@ -122,12 +120,12 @@ class StorageResource(object):
         )
 
         stdout, stderr = p.communicate()
-        lines = stderr.decode("UTF-8").strip().split("\n")[1:]
+        lines = stderr.decode('UTF-8').strip().split('\n')[1:]
 
         filelist = []
         i = 0
         while i < len(lines):
-            if "***" in lines[i]:
+            if '***' in lines[i]:
                 i += 2
                 continue
             else:
@@ -138,7 +136,7 @@ class StorageResource(object):
 
     def _list_files_input_file(self):
         """return a list of files from a file containing a list of files"""
-        with open(self.urlpath, "r") as fid:
+        with open(self.urlpath, 'r') as fid:
             return fid.read().splitlines()
 
 
@@ -147,7 +145,7 @@ def _get_built_collections():
     try:
         cc = [
             y
-            for x in os.walk(SETTINGS["database_directory"])
+            for x in os.walk(SETTINGS['database_directory'])
             for y in glob(os.path.join(x[0], '*.csv'))
         ]
         collections = {os.path.splitext(os.path.basename(x))[0]: x for x in cc}
@@ -159,17 +157,17 @@ def _get_built_collections():
 
 def _open_collection(collection_name, collection_type):
     """ Open an ESM collection"""
-    collection_types = {"cesm", "cmip"}
+    collection_types = {'cesm', 'cmip'}
     collections = _get_built_collections()
     try:
         if (collection_type in collection_types) and collections:
             df = pd.read_csv(collections[collection_name], index_col=0)
             return df, collection_name, collection_type
         else:
-            raise ValueError(f"****** The specified collection type is not valid. ******")
+            raise ValueError(f'****** The specified collection type is not valid. ******')
 
     except Exception as err:
-        print("****** The specified collection does not exit. ******")
+        print('****** The specified collection does not exit. ******')
         raise err
 
 
@@ -190,6 +188,6 @@ def get_subset(collection_name, collection_type, query):
         elif val is not None:
             condition = condition & (df[key] == val)
 
-    query_results = df.loc[condition].sort_values(by=["sequence_order", "files"], ascending=True)
+    query_results = df.loc[condition].sort_values(by=['sequence_order', 'files'], ascending=True)
 
     return query_results

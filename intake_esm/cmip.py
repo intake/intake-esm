@@ -11,7 +11,7 @@ class CMIPCollection(Collection):
     def __init__(self):
         raise NotImplementedError
 
-    def _validate(self):
+    def build(self):
         raise NotImplementedError
 
 
