@@ -5,8 +5,8 @@ Contents:
    :maxdepth: 2
 
    installation
-   getting-started.ipynb
    building-collections.ipynb
+   using-collections.ipynb
    api
    contributing
    changelog

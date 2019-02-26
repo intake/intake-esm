@@ -1,8 +1,8 @@
-cesm_dple:
-  collection_type: cesm
-  overwrite_existing : True
-  include_cache_dir: False
-  data_sources:
+name: cesm_dple
+collection_type: cesm
+overwrite_existing : True
+include_cache_dir: False
+data_sources:
     g.e11_LENS.GECOIAF.T62_g16.009:
       locations:
         - name: GLADE
