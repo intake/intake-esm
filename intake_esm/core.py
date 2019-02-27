@@ -34,7 +34,7 @@ class ESMMetadataStoreCatalog(Catalog):
     collection_types = {'cesm': CESMCollection, 'cmip': CMIPCollection}
 
     def __init__(
-        self, collection_input_file=None, collection_name=None, collection_type=None, **kwargs
+        self, collection_input_file=None, collection_name=None, collection_type=None, metadata=None
     ):
         """
         Parameters
@@ -50,6 +50,9 @@ class ESMMetadataStoreCatalog(Catalog):
 
                  - `cesm`
                  - `cmip`
+
+        metadata : dict
+               Arbitrary information to carry along with the data collection source specs.
 
 
         """
@@ -68,7 +71,7 @@ class ESMMetadataStoreCatalog(Catalog):
                 "Cannot instantiate class with provided arguments. Please provide either 'collection_input_file' \
                   \n\t\tor 'collection_name' and 'collection_type' "
             )
-        super(ESMMetadataStoreCatalog, self).__init__(**kwargs)
+        super(ESMMetadataStoreCatalog, self).__init__(metadata)
         if self.metadata is None:
             self.metadata = {}
 
