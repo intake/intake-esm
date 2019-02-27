@@ -1,10 +1,12 @@
-cesm_dple:
-  type: cesm
-  data_sources:
+name: cesm_dple
+collection_type: cesm
+overwrite_existing : True
+include_cache_dir: False
+data_sources:
     g.e11_LENS.GECOIAF.T62_g16.009:
       locations:
         - name: GLADE
-          type: posix
+          loc_type: posix
           direct_access: True
           urlpath: /glade/p/cesm/community/CESM-DPLE/CESM-DPLE_POPCICEhindcast
       component_attrs:
@@ -15,7 +17,7 @@ cesm_dple:
     g.e11_LENS.GECOIAF.T62_g16.009_sigma_coord:
       locations:
         - name: GLADE
-          type: posix
+          loc_type: posix
           direct_access: True
           urlpath: /glade/p/cgd/oce/projects/DPLE_O2/sigma_coord/CESM-DPLE_POPCICEhindcast
       component_attrs:

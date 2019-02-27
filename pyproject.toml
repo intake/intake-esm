@@ -20,5 +20,5 @@ exclude = '''
 skip-string-normalization = true
 
 [build-system]
-requires = ["setuptools", "wheel"]
-
+requires = ["setuptools", "wheel", "versioneer"]
+build-backend = "setuptools.build_meta:__legacy__"

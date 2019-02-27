@@ -1,12 +1,13 @@
 plugins:
   source:
-  - module: intake_esm.core
+  - module: intake_esm.cesm
 sources:
-  cesm_dple-cff53aef-6938-4c6e-b6ae-efa5035bed7e:
+  cesm_dple_test_collection_7afe8a3a-8d2f-40a8-9ede-899f48ce83b2:
     args:
       chunks:
         time: 1
-      collection: cesm_dple
+      collection_name: cesm_dple_test_collection
+      collection_type: cesm
       concat_dim: time
       decode_coords: false
       decode_times: false
@@ -16,19 +17,39 @@ sources:
         component: null
         ctrl_branch_year: null
         date_range: null
+        direct_access: true
         ensemble: null
-        experiment: g.e11_LENS.GECOIAF.T62_g16.009
+        experiment: null
         files: null
         files_basename: null
         files_dirname: null
         grid: null
         has_ocean_bgc: null
+        resource: null
+        resource_type: null
         sequence_order: null
         stream: null
-        variable: FG_CO2
+        variable: O2
         year_offset: null
-    description: Catalog from cesm_dple collection
+    description: Catalog entry from cesm_dple_test_collection collection
     driver: cesm
     metadata:
       cache: {}
       catalog_dir: ''
+      coords: !!python/tuple
+      - sigma
+      - time
+      data_vars:
+        O2:
+        - sigma
+        - time
+        TLAT: []
+        TLONG: []
+        ULAT: []
+        ULONG: []
+      dims:
+        ens: 1
+        nlat: 5
+        nlon: 5
+        sigma: 5
+        time: 12

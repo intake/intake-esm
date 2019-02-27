@@ -8,43 +8,124 @@ import os
 
 import yaml
 
-DATABASE_DIRECTORY = "database_directory"
-CACHE_DIRECTORY = "cache_directory"
+INTAKE_ESM_DIR = os.path.join(os.path.expanduser("~"), ".intake_esm")
+INTAKE_ESM_CONFIG_FILE = os.path.join(INTAKE_ESM_DIR, "config.yaml")
+DATABASE_DIRECTORY = os.path.join(INTAKE_ESM_DIR, "database_directory")
+DATA_CACHE_DIRECTORY = os.path.join(INTAKE_ESM_DIR, "data_cache")
+SOURCES = {"cesm": "intake_esm.cesm.CESMSource", "cmip": "intake_esm.esm.CMIPSource"}
 
-SETTINGS = {}
-if "INTAKE_ESM_CONFIG" in os.environ:
-    _config_dir = os.environ["INTAKE_ESM_CONFIG"]
-else:
-    _config_dir = os.path.join(os.path.expanduser("~"), ".intake-esm")
+cesm_definition = {
+    "collection_columns": [
+        "resource",
+        "resource_type",
+        "direct_access",
+        "experiment",
+        "case",
+        "component",
+        "stream",
+        "variable",
+        "date_range",
+        "ensemble",
+        "files",
+        "files_basename",
+        "files_dirname",
+        "ctrl_branch_year",
+        "year_offset",
+        "sequence_order",
+        "has_ocean_bgc",
+        "grid",
+    ],
+    "replacements": {"freq": {"monthly": "month_1", "daily": "day_1", "yearly": "year_1"}},
+    "component_streams": {
+        "ocn": [
+            "pop.h.nday1",
+            "pop.h.nyear1",
+            "pop.h.ecosys.nday1",
+            "pop.h.ecosys.nyear1",
+            "pop.h",
+            "pop.h.sigma",
+        ],
+        "atm": [
+            "cam.h0",
+            "cam.h1",
+            "cam.h2",
+            "cam.h3",
+            "cam.h4",
+            "cam.h5",
+            "cam.h6",
+            "cam.h7",
+            "cam.h8",
+        ],
+        "lnd": [
+            "clm2.h0",
+            "clm2.h1",
+            "clm2.h2",
+            "clm2.h3",
+            "clm2.h4",
+            "clm2.h5",
+            "clm2.h6",
+            "clm2.h7",
+            "clm2.h8",
+        ],
+        "rof": [
+            "rtm.h0",
+            "rtm.h1",
+            "rtm.h2",
+            "rtm.h3",
+            "rtm.h4",
+            "rtm.h5",
+            "rtm.h6",
+            "rtm.h7",
+            "rtm.h8",
+            "mosart.h0",
+            "mosart.h1",
+            "mosart.h2",
+            "mosart.h3",
+            "mosart.h4",
+            "mosart.h5",
+            "mosart.h6",
+            "mosart.h7",
+            "mosart.h8",
+        ],
+        "ice": ["cice.h2_06h", "cice.h1", "cice.h"],
+        "glc": [
+            "cism.h",
+            "cism.h0",
+            "cism.h1",
+            "cism.h2",
+            "cism.h3",
+            "cism.h4",
+            "cism.h5",
+            "cism.h6",
+            "cism.h7",
+            "cism.h8",
+        ],
+    },
+}
 
-_path_config_yml = os.path.join(_config_dir, "config.yml")
-if os.path.exists(".config-intake-esm.yml"):
-    _path_config_yml = os.path.join(".config-intake-esm.yml")
+cmip5_definition = {}
+cmip6_definition = {}
 
 
 SETTINGS = {
-    DATABASE_DIRECTORY: os.path.join(_config_dir, "collections"),
-    CACHE_DIRECTORY: os.path.join(_config_dir, "data-cache"),
+    "database_directory": DATABASE_DIRECTORY,
+    "data_cache_directory": DATA_CACHE_DIRECTORY,
+    "collections": {"cesm": cesm_definition, "cmip5": cmip5_definition, "cmip6": cmip6_definition},
 }
 
-for key in [DATABASE_DIRECTORY, CACHE_DIRECTORY]:
+
+for key in ["database_directory", "data_cache_directory"]:
     os.makedirs(SETTINGS[key], exist_ok=True)
 
 
 def _check_path_write_access(value):
     value = os.path.abspath(os.path.expanduser(value))
-    if os.path.exists(value):
-        if not os.access(value, os.W_OK):
-            print(f"no write access to: {value}")
-            return False
+    try:
+        os.makedirs(value, exist_ok=True)
         return True
 
-    try:
-        os.makedirs(value)
-        return True
-    except (OSError, PermissionError) as err:
-        print(f"could not make directory: {value}")
-        raise err
+    except Exception:
+        return False
 
 
 def _full_path(value):
@@ -52,12 +133,17 @@ def _full_path(value):
 
 
 _VALIDATORS = {
-    DATABASE_DIRECTORY: _check_path_write_access,
-    CACHE_DIRECTORY: _check_path_write_access,
+    "database_directory": _check_path_write_access,
+    "data_cache_directory": _check_path_write_access,
 }
 
 
-_SETTERS = {DATABASE_DIRECTORY: _full_path, CACHE_DIRECTORY: _full_path}
+_SETTERS = {"database_directory": _full_path, "data_cache_directory": _full_path}
+
+
+def save_to_disk():
+    with open(INTAKE_ESM_CONFIG_FILE, 'w') as outfile:
+        yaml.dump(get_options(), outfile, default_flow_style=False)
 
 
 class set_options(object):
@@ -78,6 +164,7 @@ class set_options(object):
             if key in _SETTERS:
                 settings_dict[key] = _SETTERS[key](val)
         SETTINGS.update(settings_dict)
+        save_to_disk()
 
     def __enter__(self):
         return
@@ -90,8 +177,11 @@ def get_options():
     return SETTINGS
 
 
-if os.path.exists(_path_config_yml):
-    with open(_path_config_yml) as f:
+if os.path.exists(INTAKE_ESM_CONFIG_FILE):
+    with open(INTAKE_ESM_CONFIG_FILE) as f:
         dot_file_settings = yaml.load(f)
     if dot_file_settings:
         set_options(**dot_file_settings)
+
+else:
+    save_to_disk()
