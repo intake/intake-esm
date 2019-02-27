@@ -16,7 +16,7 @@ from ._version import get_versions
 from .cesm import CESMCollection, CESMSource
 from .cmip import CMIPCollection, CMIPSource
 from .common import _get_built_collections, _open_collection
-from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
+from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS, SOURCES
 
 __version__ = get_versions()['version']
 del get_versions
@@ -27,12 +27,11 @@ logger.setLevel(level=logging.DEBUG)
 
 
 class ESMMetadataStoreCatalog(Catalog):
-    """ESM collection Metadata store. This class servers as an entry point for `intake_esm`. """
+    """ESM collection Metadata store. This class acts as an entry point for `intake_esm`. """
 
     name = 'esm_metadatastore'
     version = __version__
     collection_types = {'cesm': CESMCollection, 'cmip': CMIPCollection}
-    SOURCES = {'cesm': 'intake_esm.cesm.CESMSource', 'cmip': 'intake_esm.esm.CMIPSource'}
 
     def __init__(
         self, collection_input_file=None, collection_name=None, collection_type=None, **kwargs
@@ -130,7 +129,7 @@ class ESMMetadataStoreCatalog(Catalog):
             'decode_coords': False,
             'concat_dim': 'time',
         }
-        driver = ESMMetadataStoreCatalog.SOURCES[self.collection_type]
+        driver = SOURCES[self.collection_type]
         description = f'Catalog entry from {self.collection_name} collection'
         cat = LocalCatalogEntry(
             name=name,
