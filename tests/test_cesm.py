@@ -13,8 +13,15 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 def test_build_collection():
     collection_input_file = os.path.join(here, 'collection_input_test.yml')
-    col = intake.open_esm_metadatastore(collection_input_file)
+    col = intake.open_esm_metadatastore(collection_input_file=collection_input_file)
     assert isinstance(col.df, pd.DataFrame)
+
+    with pytest.raises(ValueError):
+        col = intake.open_esm_metadatastore(
+            collection_input_file=collection_input_file,
+            collection_name='cesm_dple',
+            collection_type='cesm',
+        )
 
 
 @pytest.mark.parametrize('collection', ['cesm_dple_test_collection'])

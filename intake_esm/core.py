@@ -57,17 +57,17 @@ class ESMMetadataStoreCatalog(Catalog):
         self.collections = {}
         self.get_built_collections()
 
-        if collection_name and collection_type:
+        if (collection_name and collection_type) and collection_input_file is None:
             self.open_collection(collection_name, collection_type)
 
-        elif collection_input_file:
+        elif collection_input_file and (collection_name is None or collection_type is None):
             self.input_collection = self._validate_collection_input_file(collection_input_file)
             self.build_collection()
 
         else:
             raise ValueError(
-                "Cannot instantiate class with empty arguments. Please provide either 'collection_input_file' \
-                  \n\t\tor 'collection_name' "
+                "Cannot instantiate class with provided arguments. Please provide either 'collection_input_file' \
+                  \n\t\tor 'collection_name' and 'collection_type' "
             )
         super(ESMMetadataStoreCatalog, self).__init__(**kwargs)
         if self.metadata is None:
@@ -100,7 +100,6 @@ class ESMMetadataStoreCatalog(Catalog):
         self.open_collection(
             self.input_collection['name'], self.input_collection['collection_type']
         )
-        return self
 
     def get_built_collections(self):
         """Loads built collections in a dictionary with key=collection_name, value=collection_db_file_path"""
@@ -111,7 +110,6 @@ class ESMMetadataStoreCatalog(Catalog):
         self.df, self.collection_name, self.collection_type = _open_collection(
             collection_name, collection_type
         )
-        return self
 
     def search(self, **query):
         collection_columns = self.df.columns.tolist()
