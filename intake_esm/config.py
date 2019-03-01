@@ -147,17 +147,26 @@ def _full_path(value):
     return os.path.abspath(os.path.expanduser(value))
 
 
+def _get_collections(collection_dict):
+    return collection_dict
+
+
 _VALIDATORS = {
     'database_directory': _check_path_write_access,
     'data_cache_directory': _check_path_write_access,
 }
 
 
-_SETTERS = {'database_directory': _full_path, 'data_cache_directory': _full_path}
+_SETTERS = {
+    'database_directory': _full_path,
+    'data_cache_directory': _full_path,
+    'collections': _get_collections,
+}
 
 
 def save_to_disk():
     with open(INTAKE_ESM_CONFIG_FILE, 'w') as outfile:
+
         yaml.dump(get_options(), outfile, default_flow_style=False)
 
 
