@@ -2,6 +2,16 @@
 Changelog history
 =================
 
+Intake-esm v2019.3 (2019-03-)
+===================================
+
+
+Features
+---------
+
+- Add implementations for ``CMIPCollection`` and ``CMIPSource`` (:pr:`38`) `Anderson Banihirwe`_
+
+
 
 Intake-esm v2019.2.28 (2019-02-28)
 ===================================
