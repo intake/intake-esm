@@ -8,6 +8,7 @@ from pathlib import Path
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
+import xarray as xr
 from dask import delayed
 from intake_xarray.netcdf import NetCDFSource
 
@@ -194,14 +195,40 @@ class CMIPSource(NetCDFSource):
             return self.query_results
 
     def _open_dataset(self):
-        url = self.urlpath
-        kwargs = self._kwargs
 
-        if '*' in url or isinstance(url, list):
-            if 'concat_dim' not in kwargs.keys():
-                kwargs.update(concat_dim=self.concat_dim)
-            if self.pattern:
-                kwargs.update(preprocess=self._add_path_to_ds)
+        kwargs = self._kwargs
+        if 'concat_dim' not in kwargs.keys():
+            kwargs.update(concat_dim=self.concat_dim)
+        if self.pattern:
+            kwargs.update(preprocess=self._add_path_to_ds)
+
+        # Check that the same variable is not in multiple realms
+        realm_list = self.query_results['realm'].unique()
+        if len(realm_list) != 1:
+            raise ValueError(
+                f"Found in multiple realms:\n \
+                          '\t{realm_list}. Please specify the realm to use"
+            )
+
+        ds_dict = OrderedDict()
+        for ens in self.query_results['ensemble'].unique():
+            ens_match = self.query_results['ensemble'] == ens
+            paths = self.query_results.loc[ens_match]['file_fullpath'].tolist()
+            ds_dict[ens] = paths
+
+        ds_list = [
+            xr.open_mfdataset(paths_, chunks=self.chunks, **kwargs) for paths_ in ds_dict.values()
+        ]
+        ens_list = list(ds_dict.keys())
+        self._ds = xr.concat(ds_list, dim='ensemble')
+        self._ds['ensemble'] = ens_list
+
+    def to_xarray(self, dask=True):
+
+        """Return dataset as an xarray instance"""
+        if dask:
+            return self.to_dask()
+        return self.read()
 
 
 def get_subset(collection_name, collection_type, query):

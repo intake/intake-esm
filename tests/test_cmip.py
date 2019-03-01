@@ -3,6 +3,7 @@ import os
 import intake
 import pandas as pd
 import pytest
+import xarray as xr
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -28,3 +29,15 @@ def test_cat():
     cat = intake.open_catalog(os.path.join(here, 'cmip_catalog.yaml'))
     cat = cat['cmip_test_collection_a4fa3aaa-d4f5-4da0-9f6e-dc10e79d1452']
     assert isinstance(cat.results, pd.DataFrame)
+
+
+def test_to_xarray():
+    c = intake.open_esm_metadatastore(
+        collection_name='cmip_test_collection', collection_type='cmip'
+    )
+    cat = c.search(
+        model='CanESM2', experiment='rcp85', frequency='mon', realm='atmos', ensemble='r2i1p1'
+    )
+
+    ds = cat.to_xarray()
+    assert isinstance(ds, xr.Dataset)
