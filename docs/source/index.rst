@@ -6,6 +6,7 @@ Contents:
 
    installation
    building-collections.ipynb
+   building-cmip-collections.ipynb
    using-collections.ipynb
    api
    contributing
