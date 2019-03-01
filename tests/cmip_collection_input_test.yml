@@ -4,7 +4,7 @@ overwriting_existing: true
 include_cache_dir : true
 data_sources:
   root_dir:
-      - name: GLADE
-        loc_type: posix
-        direct_access: True
-        urlpath: ./tests/sample_data/cmip
+    name: GLADE
+    loc_type: posix
+    direct_access: True
+    urlpath: ./tests/sample_data/cmip
