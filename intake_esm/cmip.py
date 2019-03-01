@@ -144,7 +144,7 @@ def _parse_directory(directory, columns):
             except BaseException:
                 continue
         if fs:
-            temp_df = pd.DataFrame(fs)
+            temp_df = pd.DataFrame(fs, columns=columns)
 
         else:
             temp_df = pd.DataFrame()
