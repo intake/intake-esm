@@ -2,15 +2,21 @@ import logging
 import os
 import re
 import shutil
+from collections import OrderedDict
 from pathlib import Path
 
 import dask.dataframe as dd
+import numpy as np
 import pandas as pd
 from dask import delayed
 from intake_xarray.netcdf import NetCDFSource
 
-from .common import Collection, StorageResource
+from ._version import get_versions
+from .common import Collection, StorageResource, _open_collection
 from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
+
+__version__ = get_versions()['version']
+del get_versions
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.WARNING)
@@ -150,5 +156,74 @@ class CMIPSource(NetCDFSource):
     """ Read CMIP data sets into xarray datasets
     """
 
-    def __init__(self):
-        raise NotImplementedError
+    name = 'cmip'
+    partition_access = True
+    version = __version__
+
+    def __init__(
+        self,
+        collection_name,
+        collection_type,
+        query={},
+        chunks={'time': 1},
+        concat_dim='time',
+        **kwargs,
+    ):
+        self.collection_name = collection_name
+        self.collection_type = collection_type
+        self.query = query
+        self.query_results = get_subset(self.collection_name, self.collection_type, self.query)
+        self._ds = None
+        urlpath = get_subset(self.collection_name, self.collection_type, self.query)[
+            'file_fullpath'
+        ].tolist()
+        super(CMIPSource, self).__init__(
+            urlpath, chunks, concat_dim=concat_dim, path_as_pattern=False, **kwargs
+        )
+        if self.metadata is None:
+            self.metadata = {}
+
+    @property
+    def results(self):
+        """ Return collection entries matching query"""
+        if self.query_results is not None:
+            return self.query_results
+
+        else:
+            self.query_results = get_subset(self.collection_name, self.collection_type, self.query)
+            return self.query_results
+
+    def _open_dataset(self):
+        url = self.urlpath
+        kwargs = self._kwargs
+
+        if '*' in url or isinstance(url, list):
+            if 'concat_dim' not in kwargs.keys():
+                kwargs.update(concat_dim=self.concat_dim)
+            if self.pattern:
+                kwargs.update(preprocess=self._add_path_to_ds)
+
+
+def get_subset(collection_name, collection_type, query):
+    """ Get a subset of collection entries that match a query """
+    df, _, _ = _open_collection(collection_name, collection_type)
+
+    condition = np.ones(len(df), dtype=bool)
+
+    for key, val in query.items():
+
+        if isinstance(val, list):
+            condition_i = np.zeros(len(df), dtype=bool)
+            for val_i in val:
+                condition_i = condition_i | (df[key] == val_i)
+            condition = condition & condition_i
+
+        elif val is not None:
+            condition = condition & (df[key] == val)
+
+    query_results = df.loc[condition]
+
+    if query_results.empty:
+        raise ValueError(f'No results found for query = {query}')
+
+    return query_results

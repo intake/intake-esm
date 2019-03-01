@@ -41,7 +41,7 @@ def test_search():
 
 
 def test_cat():
-    cat = intake.open_catalog(os.path.join(here, 'catalog.yaml'))
+    cat = intake.open_catalog(os.path.join(here, 'cesm_catalog.yaml'))
     cat = cat['cesm_dple_test_collection_7afe8a3a-8d2f-40a8-9ede-899f48ce83b2']
     assert isinstance(cat.results, pd.DataFrame)
 
