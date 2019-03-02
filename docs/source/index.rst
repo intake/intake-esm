@@ -5,9 +5,9 @@ Contents:
    :maxdepth: 2
 
    installation
-   building-collections.ipynb
-   building-cmip-collections.ipynb
-   using-collections.ipynb
+   notebooks/building-collections.ipynb
+   notebooks/building-cmip-collections.ipynb
+   notebooks/using-collections.ipynb
    api
    contributing
    changelog
