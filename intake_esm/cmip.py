@@ -1,9 +1,7 @@
 import logging
 import os
 import re
-import shutil
 from collections import OrderedDict
-from pathlib import Path
 
 import dask.dataframe as dd
 import numpy as np

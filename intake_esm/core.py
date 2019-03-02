@@ -1,12 +1,7 @@
-import fnmatch
 import logging
 import os
 import uuid
-from glob import glob
 
-import numpy as np
-import pandas as pd
-import xarray as xr
 import yaml
 from intake.catalog import Catalog
 from intake.catalog.local import LocalCatalogEntry
@@ -41,10 +36,9 @@ class ESMMetadataStoreCatalog(Catalog):
         ----------
 
         collection_input_file : str,  Path, file
-                    Path to a YAML file containing collection metadata
+                    Path to a YAML file containing collection definition
         collection_name : str
-                 Collection name
-
+                 name of the collection to use
         collection_type : str,
                  Collection type. Accepted values include:
 
@@ -94,6 +88,7 @@ class ESMMetadataStoreCatalog(Catalog):
             raise FileNotFoundError(f'Specified collection input file: {filepath} doesn’t exist.')
 
     def build_collection(self):
+        """ Build a collection defined in an YAML input file"""
         ctype = self.input_collection['collection_type']
         cc = ESMMetadataStoreCatalog.collection_types[ctype]
         cc = cc(self.input_collection)
@@ -114,6 +109,7 @@ class ESMMetadataStoreCatalog(Catalog):
         )
 
     def search(self, **query):
+        """ Search for entries in the collection catalog"""
         collection_columns = self.df.columns.tolist()
         for key in query.keys():
             if key not in collection_columns:
