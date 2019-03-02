@@ -5,15 +5,17 @@ This is a reference API class listing, and modules.
 
 .. currentmodule:: intake_esm
 
-.. autosummary::
-   core.ESMMetadataStoreCatalog
+.. autoclass:: intake_esm.core.ESMMetadataStoreCatalog
+   :members:
 
+.. autoclass:: intake_esm.cesm.CESMCollection
+   :members:
 
-.. currentmodule:: intake_esm.core
+.. autoclass:: intake_esm.cesm.CESMSource
+   :members:
 
-.. autoclass:: ESMMetadataStoreCatalog
-   :members: __init__, search, build_collections, open_collection, get_built_collections 
+.. autoclass:: intake_esm.cmip.CMIPCollection
+   :members:
 
-
-
-
+.. autoclass:: intake_esm.cesm.CMIPSource
+   :members:
