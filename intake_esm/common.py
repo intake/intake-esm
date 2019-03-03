@@ -7,6 +7,7 @@ from abc import ABC, abstractclassmethod
 from glob import glob
 from subprocess import PIPE, Popen
 
+import intake_xarray
 import numpy as np
 import pandas as pd
 
@@ -43,6 +44,43 @@ class Collection(ABC):
     @abstractclassmethod
     def build(self):
         pass
+
+
+class BaseSource(intake_xarray.netcdf.NetCDFSource):
+    def __init__(
+        self,
+        collection_name,
+        collection_type,
+        query={},
+        chunks={'time': 1},
+        concat_dim='time',
+        **kwargs,
+    ):
+        self.collection_name = collection_name
+        self.collection_type = collection_type
+        self.query = query
+        self.query_results = None
+        self._ds = None
+        urlpath = ''
+        super(BaseSource, self).__init__(
+            urlpath, chunks, concat_dim=concat_dim, path_as_pattern=False, **kwargs
+        )
+
+    @property
+    def results(self):
+        """Return collection entries matching query"""
+        raise NotImplementedError()
+
+    @abstractclassmethod
+    def _open_dataset(self):
+        pass
+
+    def to_xarray(self, dask=True):
+
+        """Return dataset as an xarray instance"""
+        if dask:
+            return self.to_dask()
+        return self.read()
 
 
 class StorageResource(object):

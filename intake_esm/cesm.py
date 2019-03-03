@@ -4,10 +4,9 @@ import os
 import numpy as np
 import pandas as pd
 import xarray as xr
-from intake_xarray.netcdf import NetCDFSource
 
 from ._version import get_versions
-from .common import Collection, StorageResource, _open_collection, get_subset
+from .common import BaseSource, Collection, StorageResource, _open_collection, get_subset
 from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
 
 __version__ = get_versions()['version']
@@ -256,8 +255,35 @@ class CESMCollection(Collection):
             return
 
 
-class CESMSource(NetCDFSource):
-    """ Read CESM data sets into xarray datasets
+class CESMSource(BaseSource):
+    """ Read CESM collection datasets into an xarray dataset
+
+    Parameters
+    ----------
+
+    collection_name : str
+          Name of the collection to use.
+
+    collection_type : str
+          Type of the collection to load. Accepted values are:
+
+          - `cesm`
+          - `cmip`
+
+    query : dict
+         A query to execute against the specified collection
+
+    chunks : int or dict, optional
+        Chunks is used to load the new dataset into dask
+        arrays. ``chunks={}`` loads the dataset with dask using a single
+        chunk for all arrays.
+
+    concat_dim : str, optional
+        Name of dimension along which to concatenate the files. Can
+        be new or pre-existing. Default is 'concat_dim'.
+
+    kwargs :
+        Further parameters are passed to xr.open_mfdataset
     """
 
     name = 'cesm'
@@ -273,15 +299,14 @@ class CESMSource(NetCDFSource):
         concat_dim='time',
         **kwargs,
     ):
-        self.collection_name = collection_name
-        self.collection_type = collection_type
-        self.query = query
-        self.query_results = get_subset(self.collection_name, self.collection_type, self.query)
-        self._ds = None
-        urlpath = get_subset(self.collection_name, self.collection_type, self.query).files.tolist()
+
         super(CESMSource, self).__init__(
-            urlpath, chunks, concat_dim=concat_dim, path_as_pattern=False, **kwargs
+            collection_name, collection_type, query, chunks, concat_dim, **kwargs
         )
+        self.urlpath = get_subset(
+            self.collection_name, self.collection_type, self.query
+        ).files.tolist()
+        self.query_results = get_subset(self.collection_name, self.collection_type, self.query)
         if self.metadata is None:
             self.metadata = {}
 

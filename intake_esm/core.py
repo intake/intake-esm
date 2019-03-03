@@ -22,16 +22,8 @@ logger.setLevel(level=logging.DEBUG)
 
 
 class ESMMetadataStoreCatalog(Catalog):
-    """ESM collection Metadata store. This class acts as an entry point for `intake_esm`. """
+    """ESM collection Metadata store. This class acts as an entry point for `intake_esm`.
 
-    name = 'esm_metadatastore'
-    version = __version__
-    collection_types = {'cesm': CESMCollection, 'cmip': CMIPCollection}
-
-    def __init__(
-        self, collection_input_file=None, collection_name=None, collection_type=None, metadata=None
-    ):
-        """
         Parameters
         ----------
 
@@ -49,7 +41,16 @@ class ESMMetadataStoreCatalog(Catalog):
                Arbitrary information to carry along with the data collection source specs.
 
 
-        """
+    """
+
+    name = 'esm_metadatastore'
+    version = __version__
+    collection_types = {'cesm': CESMCollection, 'cmip': CMIPCollection}
+
+    def __init__(
+        self, collection_input_file=None, collection_name=None, collection_type=None, metadata=None
+    ):
+
         self.collections = {}
         self.get_built_collections()
 
@@ -99,7 +100,7 @@ class ESMMetadataStoreCatalog(Catalog):
         )
 
     def get_built_collections(self):
-        """Loads built collections in a dictionary with key=collection_name, value=collection_db_file_path"""
+        """ Load built collections in a dictionary with key=collection_name, value=collection_db_file_path"""
         self.collections = _get_built_collections()
 
     def open_collection(self, collection_name, collection_type):
@@ -123,7 +124,6 @@ class ESMMetadataStoreCatalog(Catalog):
             'collection_type': self.collection_type,
             'query': query,
             'chunks': {'time': 1},
-            'engine': 'netcdf4',
             'decode_times': False,
             'decode_coords': False,
             'concat_dim': 'time',

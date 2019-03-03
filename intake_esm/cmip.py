@@ -8,10 +8,9 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from dask import delayed
-from intake_xarray.netcdf import NetCDFSource
 
 from ._version import get_versions
-from .common import Collection, StorageResource, _open_collection
+from .common import BaseSource, Collection, StorageResource, _open_collection
 from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
 
 __version__ = get_versions()['version']
@@ -22,6 +21,14 @@ logger.setLevel(level=logging.WARNING)
 
 
 class CMIPCollection(Collection):
+    """ Defines a CMIP collection
+
+       Parameters
+       ----------
+       collection_spec : dict
+
+       """
+
     def __init__(self, collection_spec):
         super(CMIPCollection, self).__init__(collection_spec)
         self.df = pd.DataFrame()
@@ -151,8 +158,35 @@ def _parse_directory(directory, columns):
     return df
 
 
-class CMIPSource(NetCDFSource):
-    """ Read CMIP data sets into xarray datasets
+class CMIPSource(BaseSource):
+    """ Read CMIP collection datasets into an xarray dataset
+
+    Parameters
+    ----------
+
+    collection_name : str
+          Name of the collection to use.
+
+    collection_type : str
+          Type of the collection to load. Accepted values are:
+
+          - `cesm`
+          - `cmip`
+
+    query : dict
+         A query to execute against the specified collection
+
+    chunks : int or dict, optional
+        Chunks is used to load the new dataset into dask
+        arrays. ``chunks={}`` loads the dataset with dask using a single
+        chunk for all arrays.
+
+    concat_dim : str, optional
+        Name of dimension along which to concatenate the files. Can
+        be new or pre-existing. Default is 'concat_dim'.
+
+    kwargs :
+        Further parameters are passed to xr.open_mfdataset
     """
 
     name = 'cmip'
@@ -168,17 +202,14 @@ class CMIPSource(NetCDFSource):
         concat_dim='time',
         **kwargs,
     ):
-        self.collection_name = collection_name
-        self.collection_type = collection_type
-        self.query = query
-        self.query_results = get_subset(self.collection_name, self.collection_type, self.query)
-        self._ds = None
-        urlpath = get_subset(self.collection_name, self.collection_type, self.query)[
+
+        super(CMIPSource, self).__init__(
+            collection_name, collection_type, query, chunks, concat_dim, **kwargs
+        )
+        self.urlpath = get_subset(self.collection_name, self.collection_type, self.query)[
             'file_fullpath'
         ].tolist()
-        super(CMIPSource, self).__init__(
-            urlpath, chunks, concat_dim=concat_dim, path_as_pattern=False, **kwargs
-        )
+        self.query_results = get_subset(self.collection_name, self.collection_type, self.query)
         if self.metadata is None:
             self.metadata = {}
 
@@ -220,13 +251,6 @@ class CMIPSource(NetCDFSource):
         ens_list = list(ds_dict.keys())
         self._ds = xr.concat(ds_list, dim='ensemble')
         self._ds['ensemble'] = ens_list
-
-    def to_xarray(self, dask=True):
-
-        """Return dataset as an xarray instance"""
-        if dask:
-            return self.to_dask()
-        return self.read()
 
 
 def get_subset(collection_name, collection_type, query):
