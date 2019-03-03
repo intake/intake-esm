@@ -375,9 +375,3 @@ class CESMSource(BaseSource):
             self._ds = xr.concat(ds_ens_list, dim='ens', data_vars=variables)
         else:
             self._ds = xr.open_dataset(url, chunks=self.chunks, **kwargs)
-
-    def to_xarray(self, dask=True):
-        """Return dataset as an xarray instance"""
-        if dask:
-            return self.to_dask()
-        return self.read()
