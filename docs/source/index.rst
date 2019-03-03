@@ -18,6 +18,7 @@ please open an issue at the GitHub `main repository <http://github.com/NCAR/inta
    :maxdepth: 2
    :caption: Documentation Contents
 
+   notebooks/overview.ipynb
    installation
    notebooks/building-collections.ipynb
    notebooks/building-cmip-collections.ipynb
