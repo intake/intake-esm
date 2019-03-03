@@ -12,7 +12,7 @@ This is a reference API class listing, and modules.
 
 
 .. autoclass:: intake_esm.core.ESMMetadataStoreCatalog
-   :members: search, build_collections, open_collection, get_built_collections
+   :members: search, open_collection
 
 
 .. autoclass:: intake_esm.cesm.CESMSource

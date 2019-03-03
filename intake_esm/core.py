@@ -52,14 +52,14 @@ class ESMMetadataStoreCatalog(Catalog):
     ):
 
         self.collections = {}
-        self.get_built_collections()
+        self._get_built_collections()
 
         if (collection_name and collection_type) and collection_input_file is None:
             self.open_collection(collection_name, collection_type)
 
         elif collection_input_file and (collection_name is None or collection_type is None):
             self.input_collection = self._validate_collection_input_file(collection_input_file)
-            self.build_collection()
+            self._build_collection()
 
         else:
             raise ValueError(
@@ -88,18 +88,18 @@ class ESMMetadataStoreCatalog(Catalog):
         else:
             raise FileNotFoundError(f'Specified collection input file: {filepath} doesn’t exist.')
 
-    def build_collection(self):
+    def _build_collection(self):
         """ Build a collection defined in an YAML input file"""
         ctype = self.input_collection['collection_type']
         cc = ESMMetadataStoreCatalog.collection_types[ctype]
         cc = cc(self.input_collection)
         cc.build()
-        self.get_built_collections()
+        self._get_built_collections()
         self.open_collection(
             self.input_collection['name'], self.input_collection['collection_type']
         )
 
-    def get_built_collections(self):
+    def _get_built_collections(self):
         """ Load built collections in a dictionary with key=collection_name, value=collection_db_file_path"""
         self.collections = _get_built_collections()
 
