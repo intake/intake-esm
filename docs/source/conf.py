@@ -67,8 +67,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'intake-esm'
-copyright = u'2019 onwards, NCAR'
+project = u'Intake-esm'
+copyright = u'2019 onwards, University Corporation for Atmospheric Research'
 author = u'Earth System Informatics Team'
 
 # The version info for the project you're documenting, acts as replacement for
