@@ -209,7 +209,7 @@ def _open_collection(collection_name, collection_type):
         raise err
 
 
-def get_subset(collection_name, collection_type, query):
+def get_subset(collection_name, collection_type, query, order_by=None):
     """ Get a subset of collection entries that match a query """
     df, _, _ = _open_collection(collection_name, collection_type)
 
@@ -226,6 +226,9 @@ def get_subset(collection_name, collection_type, query):
         elif val is not None:
             condition = condition & (df[key] == val)
 
-    query_results = df.loc[condition].sort_values(by=['sequence_order', 'files'], ascending=True)
+    query_results = df.loc[condition]
+
+    if order_by and isinstance(order_by, list):
+        query_results = query_results.sort_values(by=order_by, ascending=True)
 
     return query_results

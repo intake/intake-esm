@@ -110,7 +110,10 @@ class ESMMetadataStoreCatalog(Catalog):
         )
 
     def search(self, **query):
-        """ Search for entries in the collection catalog"""
+        """ Search for entries in the collection catalog
+        query :
+             Entries to search for in the collection
+        """
         collection_columns = self.df.columns.tolist()
         for key in query.keys():
             if key not in collection_columns:

@@ -304,9 +304,17 @@ class CESMSource(BaseSource):
             collection_name, collection_type, query, chunks, concat_dim, **kwargs
         )
         self.urlpath = get_subset(
-            self.collection_name, self.collection_type, self.query
+            self.collection_name,
+            self.collection_type,
+            self.query,
+            order_by=['sequence_order', 'files'],
         ).files.tolist()
-        self.query_results = get_subset(self.collection_name, self.collection_type, self.query)
+        self.query_results = get_subset(
+            self.collection_name,
+            self.collection_type,
+            self.query,
+            order_by=['sequence_order', 'files'],
+        )
         if self.metadata is None:
             self.metadata = {}
 
@@ -317,7 +325,12 @@ class CESMSource(BaseSource):
             return self.query_results
 
         else:
-            self.query_results = get_subset(self.collection_name, self.collection_type, self.query)
+            self.query_results = get_subset(
+                self.collection_name,
+                self.collection_type,
+                self.query,
+                order_by=['sequence_order', 'files'],
+            )
             return self.query_results
 
     def _open_dataset(self):
@@ -343,7 +356,10 @@ class CESMSource(BaseSource):
 
                     query['variable'] = var_i
                     urlpath_ei_vi = get_subset(
-                        self.collection_name, self.collection_type, query
+                        self.collection_name,
+                        self.collection_type,
+                        query,
+                        order_by=['sequence_order', 'files'],
                     ).files.tolist()
                     dsi = xr.merge(
                         (

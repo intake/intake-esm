@@ -10,7 +10,7 @@ import xarray as xr
 from dask import delayed
 
 from ._version import get_versions
-from .common import BaseSource, Collection, StorageResource, _open_collection
+from .common import BaseSource, Collection, StorageResource, _open_collection, get_subset
 from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
 
 __version__ = get_versions()['version']
@@ -251,28 +251,3 @@ class CMIPSource(BaseSource):
         ens_list = list(ds_dict.keys())
         self._ds = xr.concat(ds_list, dim='ensemble')
         self._ds['ensemble'] = ens_list
-
-
-def get_subset(collection_name, collection_type, query):
-    """ Get a subset of collection entries that match a query """
-    df, _, _ = _open_collection(collection_name, collection_type)
-
-    condition = np.ones(len(df), dtype=bool)
-
-    for key, val in query.items():
-
-        if isinstance(val, list):
-            condition_i = np.zeros(len(df), dtype=bool)
-            for val_i in val:
-                condition_i = condition_i | (df[key] == val_i)
-            condition = condition & condition_i
-
-        elif val is not None:
-            condition = condition & (df[key] == val)
-
-    query_results = df.loc[condition]
-
-    if query_results.empty:
-        raise ValueError(f'No results found for query = {query}')
-
-    return query_results
