@@ -40,7 +40,11 @@ def test_update():
 
 
 def test_expand_environment_variables():
-    expected_user = os.environ.get('USER')
+
+    expected_user = os.environ.get('USER', None)
+    if expected_user is None:
+        os.environ['USER'] = 'root'
+        expected_user = 'root'
     expected_output = {'x': [1, 2, expected_user]}
     a = expand_environment_variables({'x': [1, 2, '$USER']})
     assert a == expected_output
