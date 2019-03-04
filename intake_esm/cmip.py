@@ -9,9 +9,9 @@ import pandas as pd
 import xarray as xr
 from dask import delayed
 
+from . import config
 from ._version import get_versions
 from .common import BaseSource, Collection, StorageResource, _open_collection, get_subset
-from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
 
 __version__ = get_versions()['version']
 del get_versions
@@ -38,7 +38,7 @@ class CMIPCollection(Collection):
         for req_col in ['realm', 'frequency', 'ensemble', 'experiment', 'file_fullpath']:
             if req_col not in self.columns:
                 raise ValueError(
-                    f"Missing required column: {req_col} for {self.collection_spec['collection_type']} in {INTAKE_ESM_CONFIG_FILE}"
+                    f"Missing required column: {req_col} for {self.collection_spec['collection_type']} in {config.PATH}"
                 )
 
     def build(self):

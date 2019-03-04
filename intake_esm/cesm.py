@@ -5,9 +5,9 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from . import config
 from ._version import get_versions
 from .common import BaseSource, Collection, StorageResource, _open_collection, get_subset
-from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
 
 __version__ = get_versions()['version']
 del get_versions
@@ -20,7 +20,9 @@ logger.setLevel(level=logging.WARNING)
 class CESMCollection(Collection):
     def __init__(self, collection_spec):
         super(CESMCollection, self).__init__(collection_spec)
-        self.component_streams = self.collection_definition.get('component_streams', None)
+        self.component_streams = self.collection_definition.get(
+            config.normalize_key('component_streams'), None
+        )
         self.replacements = self.collection_definition.get('replacements', {})
         self.overwrite_existing = self.collection_spec.get('overwriting_existing', True)
         self.include_cache_dir = self.collection_spec.get('include_cache_dir', False)
@@ -30,7 +32,7 @@ class CESMCollection(Collection):
         for req_col in ['files', 'sequence_order']:
             if req_col not in self.columns:
                 raise ValueError(
-                    f"Missing required column: {req_col} for {self.collection_spec['collection_type']} in {INTAKE_ESM_CONFIG_FILE}"
+                    f"Missing required column: {req_col} for {self.collection_spec['collection_type']} in {config.PATH}"
                 )
 
     def build(self):

@@ -31,4 +31,3 @@ repos:
     rev: v4.3.4
     hooks:
     -   id: isort
-        args: ["line_length=100"]

@@ -7,11 +7,11 @@ from intake.catalog import Catalog
 from intake.catalog.local import LocalCatalogEntry
 from intake_xarray.netcdf import NetCDFSource
 
+from . import config as config
 from ._version import get_versions
-from .cesm import CESMCollection, CESMSource
-from .cmip import CMIPCollection, CMIPSource
+from .cesm import CESMCollection
+from .cmip import CMIPCollection
 from .common import _get_built_collections, _open_collection
-from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS, SOURCES
 
 __version__ = get_versions()['version']
 del get_versions
@@ -131,7 +131,7 @@ class ESMMetadataStoreCatalog(Catalog):
             'decode_coords': False,
             'concat_dim': 'time',
         }
-        driver = SOURCES[self.collection_type]
+        driver = config.get('sources')[self.collection_type]
         description = f'Catalog entry from {self.collection_name} collection'
         cat = LocalCatalogEntry(
             name=name,
