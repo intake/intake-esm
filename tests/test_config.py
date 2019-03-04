@@ -39,6 +39,13 @@ def test_update():
     assert b == {'x': 2, 'y': {'a': 3, 'b': 2}, 'z': 3}
 
 
+def test_expand_environment_variables():
+    expected_user = os.environ.get('USER')
+    expected_output = {'x': [1, 2, expected_user]}
+    a = expand_environment_variables({'x': [1, 2, '$USER']})
+    assert a == expected_output
+
+
 def test_merge():
     a = {'x': 1, 'y': {'a': 1}}
     b = {'x': 2, 'z': 3, 'y': {'b': 2}}
