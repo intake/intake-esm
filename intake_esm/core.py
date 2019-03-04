@@ -36,6 +36,10 @@ class ESMMetadataStoreCatalog(Catalog):
 
                  - `cesm`
                  - `cmip`
+        overwrite_existing : bool,
+                Whether to overwrite existing built collection catalog
+
+        include_cache_dir : bool
 
         metadata : dict
                Arbitrary information to carry along with the data collection source specs.
@@ -48,9 +52,18 @@ class ESMMetadataStoreCatalog(Catalog):
     collection_types = {'cesm': CESMCollection, 'cmip': CMIPCollection}
 
     def __init__(
-        self, collection_input_file=None, collection_name=None, collection_type=None, metadata=None
+        self,
+        collection_input_file=None,
+        collection_name=None,
+        collection_type=None,
+        overwrite_existing=True,
+        include_cache_dir=False,
+        metadata={},
     ):
 
+        self.overwrite_existing = overwrite_existing
+        self.include_cache_dir = include_cache_dir
+        self.metadata = metadata
         self.collections = {}
         self._get_built_collections()
 
@@ -66,9 +79,6 @@ class ESMMetadataStoreCatalog(Catalog):
                 "Cannot instantiate class with provided arguments. Please provide either 'collection_input_file' \
                   \n\t\tor 'collection_name' and 'collection_type' "
             )
-        super(ESMMetadataStoreCatalog, self).__init__(metadata)
-        if self.metadata is None:
-            self.metadata = {}
 
         self._entries = {}
 
@@ -92,7 +102,7 @@ class ESMMetadataStoreCatalog(Catalog):
         """ Build a collection defined in an YAML input file"""
         ctype = self.input_collection['collection_type']
         cc = ESMMetadataStoreCatalog.collection_types[ctype]
-        cc = cc(self.input_collection)
+        cc = cc(self.input_collection, self.overwrite_existing, self.include_cache_dir)
         cc.build()
         self._get_built_collections()
         self.open_collection(

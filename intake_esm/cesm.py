@@ -18,8 +18,22 @@ logger.setLevel(level=logging.WARNING)
 
 
 class CESMCollection(Collection):
-    def __init__(self, collection_spec):
-        super(CESMCollection, self).__init__(collection_spec)
+    """ Defines a CESM collection
+
+       Parameters
+       ----------
+       collection_spec : dict
+       overwrite_existiong : bool
+       include_cache_dir : bool
+
+       See Also
+       --------
+       intake_esm.core.ESMMetadataStoreCatalog
+       intake_esm.cmip.CMIPCollection
+    """
+
+    def __init__(self, collection_spec, overwrite_existing, include_cache_dir):
+        super(CESMCollection, self).__init__(collection_spec, overwrite_existing, include_cache_dir)
         self.component_streams = self.collection_definition.get(
             config.normalize_key('component_streams'), None
         )
@@ -45,8 +59,8 @@ class CESMCollection(Collection):
             ensembles = experiment_attrs['case_members']
             self.assemble_file_list(experiment, experiment_attrs, component_attrs, ensembles)
         logger.warning(self.df.info())
-        logger.warning(f"Persisting {self.collection_spec['name']} at : {self.collection_db_file}")
-        self.df.to_csv(self.collection_db_file, index=True)
+        if self.overwrite_existing:
+            self.persist_db_file()
         return self.df
 
     def assemble_file_list(self, experiment, experiment_attrs, component_attrs, ensembles):

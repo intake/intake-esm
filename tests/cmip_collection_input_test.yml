@@ -1,7 +1,5 @@
 name: cmip_test_collection
 collection_type: cmip
-overwriting_existing: true
-include_cache_dir : true
 data_sources:
   root_dir:
     name: GLADE

@@ -26,11 +26,17 @@ class CMIPCollection(Collection):
        Parameters
        ----------
        collection_spec : dict
+       overwrite_existiong : bool
+       include_cache_dir : bool
 
+       See Also
+       --------
+       intake_esm.core.ESMMetadataStoreCatalog
+       intake_esm.cesm.CESMCollection
        """
 
-    def __init__(self, collection_spec):
-        super(CMIPCollection, self).__init__(collection_spec)
+    def __init__(self, collection_spec, overwrite_existing, include_cache_dir):
+        super(CMIPCollection, self).__init__(collection_spec, overwrite_existing, include_cache_dir)
         self.df = pd.DataFrame()
         self.root_dir = self.collection_spec['data_sources']['root_dir']['urlpath']
 
@@ -64,8 +70,8 @@ class CMIPCollection(Collection):
         )
         self.df = sorted_df.copy()
         logger.warning(self.df.info())
-        logger.warning(f"Persisting {self.collection_spec['name']} at : {self.collection_db_file}")
-        self.df.to_csv(self.collection_db_file, index=True)
+        if self.overwrite_existing:
+            self.persist_db_file()
         return self.df
 
 

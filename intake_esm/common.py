@@ -18,12 +18,15 @@ logger.setLevel(level=logging.WARNING)
 
 
 class Collection(ABC):
-    def __init__(self, collection_spec):
+    def __init__(self, collection_spec, overwrite_existing, include_cache_dir):
 
         self.collection_spec = collection_spec
+        self.overwrite_existing = overwrite_existing
+        self.include_cache_dir = include_cache_dir
         self.collection_definition = config.get('collections').get(
             collection_spec['collection_type'], None
         )
+        self.df = pd.DataFrame()
         if self.collection_definition is None:
             raise ValueError(
                 f"*** {collection_spec['collection_type']} *** is not a defined collection type in {config.PATH}"
@@ -47,6 +50,13 @@ class Collection(ABC):
     @abstractclassmethod
     def build(self):
         pass
+
+    def persist_db_file(self):
+        if not self.df.empty:
+            logger.warning(
+                f"Persisting {self.collection_spec['name']} at : {self.collection_db_file}"
+            )
+            self.df.to_csv(self.collection_db_file, index=True)
 
 
 class BaseSource(intake_xarray.netcdf.NetCDFSource):
