@@ -4,208 +4,485 @@
 
 from __future__ import absolute_import, print_function
 
+import ast
 import os
+import threading
+from collections import Mapping
 
 import yaml
 
-INTAKE_ESM_DIR = os.path.join(os.path.expanduser('~'), '.intake_esm')
-INTAKE_ESM_CONFIG_FILE = os.path.join(INTAKE_ESM_DIR, 'config.yaml')
-DATABASE_DIRECTORY = os.path.join(INTAKE_ESM_DIR, 'database_directory')
-DATA_CACHE_DIRECTORY = os.path.join(INTAKE_ESM_DIR, 'data_cache')
-SOURCES = {'cesm': 'intake_esm.cesm.CESMSource', 'cmip': 'intake_esm.cmip.CMIPSource'}
+no_default = '__no_default__'
 
-cesm_definition = {
-    'collection_columns': [
-        'resource',
-        'resource_type',
-        'direct_access',
-        'experiment',
-        'case',
-        'component',
-        'stream',
-        'variable',
-        'date_range',
-        'ensemble',
-        'files',
-        'files_basename',
-        'files_dirname',
-        'ctrl_branch_year',
-        'year_offset',
-        'sequence_order',
-        'has_ocean_bgc',
-        'grid',
-    ],
-    'replacements': {'freq': {'monthly': 'month_1', 'daily': 'day_1', 'yearly': 'year_1'}},
-    'component_streams': {
-        'ocn': [
-            'pop.h.nday1',
-            'pop.h.nyear1',
-            'pop.h.ecosys.nday1',
-            'pop.h.ecosys.nyear1',
-            'pop.h',
-            'pop.h.sigma',
-        ],
-        'atm': [
-            'cam.h0',
-            'cam.h1',
-            'cam.h2',
-            'cam.h3',
-            'cam.h4',
-            'cam.h5',
-            'cam.h6',
-            'cam.h7',
-            'cam.h8',
-        ],
-        'lnd': [
-            'clm2.h0',
-            'clm2.h1',
-            'clm2.h2',
-            'clm2.h3',
-            'clm2.h4',
-            'clm2.h5',
-            'clm2.h6',
-            'clm2.h7',
-            'clm2.h8',
-        ],
-        'rof': [
-            'rtm.h0',
-            'rtm.h1',
-            'rtm.h2',
-            'rtm.h3',
-            'rtm.h4',
-            'rtm.h5',
-            'rtm.h6',
-            'rtm.h7',
-            'rtm.h8',
-            'mosart.h0',
-            'mosart.h1',
-            'mosart.h2',
-            'mosart.h3',
-            'mosart.h4',
-            'mosart.h5',
-            'mosart.h6',
-            'mosart.h7',
-            'mosart.h8',
-        ],
-        'ice': ['cice.h2_06h', 'cice.h1', 'cice.h'],
-        'glc': [
-            'cism.h',
-            'cism.h0',
-            'cism.h1',
-            'cism.h2',
-            'cism.h3',
-            'cism.h4',
-            'cism.h5',
-            'cism.h6',
-            'cism.h7',
-            'cism.h8',
-        ],
-    },
-}
+paths = [os.path.join(os.path.expanduser('~'), '.intake_esm')]
 
-cmip_definition = {
-    'collection_columns': [
-        'ensemble',
-        'experiment',
-        'file_basename',
-        'file_fullpath',
-        'frequency',
-        'institution',
-        'model',
-        'realm',
-        'files_dirname',
-        'variable',
-        'version',
-    ],
-    'frequencies': {'yr', 'mon', 'day', '6hr', '3hr', 'subhr', 'monclim', 'fx'},
-    'realms': {'atmos', 'ocean', 'land', 'landice', 'seaIce', 'aerosol', 'atmoschem', 'ocnbgchem'},
-}
-
-
-SETTINGS = {
-    'database_directory': DATABASE_DIRECTORY,
-    'data_cache_directory': DATA_CACHE_DIRECTORY,
-    'collections': {'cesm': cesm_definition, 'cmip': cmip_definition},
-}
-
-
-for key in ['database_directory', 'data_cache_directory']:
-    os.makedirs(SETTINGS[key], exist_ok=True)
-
-
-def _check_path_write_access(value):
-    value = os.path.abspath(os.path.expanduser(value))
-    try:
-        os.makedirs(value, exist_ok=True)
-        return True
-
-    except Exception:
-        return False
-
-
-def _full_path(value):
-    return os.path.abspath(os.path.expanduser(value))
-
-
-def _get_collections(collection_dict):
-    return collection_dict
-
-
-_VALIDATORS = {
-    'database_directory': _check_path_write_access,
-    'data_cache_directory': _check_path_write_access,
-}
-
-
-_SETTERS = {
-    'database_directory': _full_path,
-    'data_cache_directory': _full_path,
-    'collections': _get_collections,
-}
-
-
-def save_to_disk():
-    with open(INTAKE_ESM_CONFIG_FILE, 'w') as outfile:
-
-        yaml.dump(get_options(), outfile, default_flow_style=False)
-
-
-class set_options(object):
-    """Set configurable settings."""
-
-    def __init__(self, **kwargs):
-        self.old = {}
-        for key, val in kwargs.items():
-            if key not in SETTINGS:
-                raise ValueError(f'{key} is not in the set of valid settings:\n {set(SETTINGS)}')
-            if key in _VALIDATORS and not _VALIDATORS[key](val):
-                raise ValueError(f'{val} is not a valid value for {key}')
-            self.old[key] = SETTINGS[key]
-        self._apply_update(kwargs)
-
-    def _apply_update(self, settings_dict):
-        for key, val in settings_dict.items():
-            if key in _SETTERS:
-                settings_dict[key] = _SETTERS[key](val)
-        SETTINGS.update(settings_dict)
-        save_to_disk()
-
-    def __enter__(self):
-        return
-
-    def __exit__(self, type, value, traceback):
-        self._apply_update(self.old)
-
-
-def get_options():
-    return SETTINGS
-
-
-if os.path.exists(INTAKE_ESM_CONFIG_FILE):
-    with open(INTAKE_ESM_CONFIG_FILE) as f:
-        dot_file_settings = yaml.load(f)
-    if dot_file_settings:
-        set_options(**dot_file_settings)
+if 'INTAKE_ESM_CONFIG' in os.environ:
+    PATH = os.environ['INTAKE_CONFIG']
+    paths.append(PATH)
 
 else:
-    save_to_disk()
+    PATH = os.path.join(os.path.expanduser('~'), '.intake_esm')
+
+
+global_config = config = {}
+
+config_lock = threading.Lock()
+
+defaults = []
+
+
+def update(old, new, priority='new'):
+    """ Update a nested dictionary with values from another
+    This is like dict.update except that it smoothly merges nested values
+    This operates in-place and modifies old
+    Parameters
+    ----------
+    priority: string {'old', 'new'}
+        If new (default) then the new dictionary has preference.
+        Otherwise the old dictionary does.
+
+    """
+
+    for k, v in new.items():
+        if k not in old and isinstance(v, Mapping):
+            old[k] = {}
+        if isinstance(v, Mapping):
+            if old[k] is None:
+                old[k] = {}
+
+            update(old[k], v, priority=priority)
+
+        else:
+            if priority == 'new' or k not in old:
+                old[k] = v
+
+    return old
+
+
+def merge(*dicts):
+    """ Update a sequence of nested dictionaries
+
+    This prefers the values in the latter dictionaries to those in the former
+    """
+
+    result = {}
+    for d in dicts:
+        update(result, d)
+    return result
+
+
+def normalize_key(key):
+    """ Replaces underscores with hyphens in string keys
+
+    Parameters
+    ----------
+    key : string, int, or float
+        Key to assign.
+    """
+    if isinstance(key, str):
+        key = key.replace('_', '-')
+    return key
+
+
+def normalize_nested_keys(config):
+    """ Replaces underscores with hyphens for keys for a nested Mapping
+
+    Examples
+    --------
+    >>> a = {'x': 1, 'y_1': {'a_2': 2}}
+    >>> normalize_nested_keys(a)
+    {'x': 1, 'y-1': {'a-2': 2}}
+    """
+    config_norm = {}
+    for key, value in config.items():
+        if isinstance(value, Mapping):
+            value = normalize_nested_keys(value)
+        key_norm = normalize_key(key)
+        config_norm[key_norm] = value
+
+    return config_norm
+
+
+def collect_yaml(paths=paths):
+    """ Collect configuration from yaml files
+
+    This searches through a list of paths, expands to find all yaml or json
+    files, and then parses each file.
+    """
+    # Find all paths
+    file_paths = []
+    for path in paths:
+        if os.path.exists(path):
+            if os.path.isdir(path):
+                try:
+                    file_paths.extend(
+                        sorted(
+                            [
+                                os.path.join(path, p)
+                                for p in os.listdir(path)
+                                if os.path.splitext(p)[1].lower() in ('.yaml', '.yml')
+                            ]
+                        )
+                    )
+                except OSError:
+                    # Ignore permission errors
+                    pass
+            else:
+                file_paths.append(path)
+
+    configs = []
+
+    # Parse yaml files
+    for path in file_paths:
+        try:
+            with open(path) as f:
+                data = yaml.load(f.read()) or {}
+                data = normalize_nested_keys(data)
+                configs.append(data)
+        except (OSError, IOError):
+            # Ignore permission errors
+            pass
+
+    return configs
+
+
+def collect_env(env=None):
+    """ Collect config from environment variables
+
+    This grabs environment variables of the form "INTAKE_ESM_FOO__BAR_BAZ=123" and
+    turns these into config variables of the form ``{"foo": {"bar-baz": 123}}``
+    It transforms the key and value in the following way:
+
+    -  Lower-cases the key text
+    -  Treats ``__`` (double-underscore) as nested access
+    -  Replaces ``_`` (underscore) with a hyphen.
+    -  Calls ``ast.literal_eval`` on the value
+    """
+
+    if env is None:
+        env = os.environ
+
+    d = {}
+    for name, value in env.items():
+        if name.startswith('INTAKE_ESM_'):
+            varname = name[5:].lower().replace('__', '.')
+            varname = normalize_key(varname)
+            try:
+                d[varname] = ast.literal_eval(value)
+
+            except (SyntaxError, ValueError):
+                d[varname] = value
+
+    result = {}
+    set(d, config=result)
+    return result
+
+
+def ensure_file(source, destination=None, comment=True):
+    """
+    Copy file to default location if it does not already exist
+
+    This tries to move a default configuration file to a default location if
+    if does not already exist.  It also comments out that file by default.
+
+    This is to be used by downstream modules (like dask.distributed) that may
+    have default configuration files that they wish to include in the default
+    configuration path.
+
+    Parameters
+    ----------
+    source : string, filename
+        Source configuration file, typically within a source directory.
+    destination : string, directory
+        Destination directory. Configurable by ``INTAKE_ESM_CONFIG`` environment
+        variable, falling back to ~/.intake_esm.
+    comment : bool, True by default
+        Whether or not to comment out the config file when copying.
+    """
+    if destination is None:
+        destination = PATH
+
+    # destination is a file and already exists, never overwrite
+    if os.path.isfile(destination):
+        return
+
+    # If destination is not an existing file, interpret as a directory,
+    # use the source basename as the filename
+    directory = destination
+    destination = os.path.join(directory, os.path.basename(source))
+
+    try:
+        if not os.path.exists(destination):
+            os.makedirs(directory, exist_ok=True)
+
+            # Atomically create destination.  Parallel testing discovered
+            # a race condition where a process can be busy creating the
+            # destination while another process reads an empty config file.
+            tmp = '%s.tmp.%d' % (destination, os.getpid())
+            with open(source) as f:
+                lines = list(f)
+
+            if comment:
+                lines = [
+                    '# ' + line if line.strip() and not line.startswith('#') else line
+                    for line in lines
+                ]
+
+            with open(tmp, 'w') as f:
+                f.write(''.join(lines))
+
+            try:
+                os.rename(tmp, destination)
+            except OSError:
+                os.remove(tmp)
+    except OSError:
+        pass
+
+
+class set(object):
+    """ Temporarily set configuration values within a context manager
+
+    Examples
+    --------
+    >>> import intake_esm
+    >>> with intake_esm.config.set({'foo': 123}):
+    ...     pass
+
+    See Also
+    --------
+    intake_esm.config.get
+    """
+
+    def __init__(self, arg=None, config=config, lock=config_lock, **kwargs):
+        if arg and not kwargs:
+            kwargs = arg
+
+        with lock:
+            self.config = config
+            self.old = {}
+
+            for key, value in kwargs.items():
+                self._assign(key.split('.'), value, config, old=self.old)
+
+    def __enter__(self):
+        return self.config
+
+    def __exit__(self, type, value, traceback):
+        for keys, value in self.old.items():
+            if value == '--delete--':
+                d = self.config
+                try:
+                    while len(keys) > 1:
+                        d = d[keys[0]]
+                        keys = keys[1:]
+                    del d[keys[0]]
+                except KeyError:
+                    pass
+            else:
+                self._assign(keys, value, self.config)
+
+    @classmethod
+    def _assign(cls, keys, value, d, old=None, path=[]):
+        """ Assign value into a nested configuration dictionary
+
+        Optionally record the old values in old
+
+        Parameters
+        ----------
+        keys: Sequence[str]
+            The nested path of keys to assign the value, similar to toolz.put_in
+        value: object
+        d: dict
+            The part of the nested dictionary into which we want to assign the
+            value
+        old: dict, optional
+            If provided this will hold the old values
+        path: List[str]
+            Used internally to hold the path of old values
+        """
+        key = normalize_key(keys[0])
+        if len(keys) == 1:
+            if old is not None:
+                path_key = tuple(path + [key])
+                if key in d:
+                    old[path_key] = d[key]
+                else:
+                    old[path_key] = '--delete--'
+            d[key] = value
+        else:
+            if key not in d:
+                d[key] = {}
+                if old is not None:
+                    old[tuple(path + [key])] = '--delete--'
+                old = None
+            cls._assign(keys[1:], value, d[key], path=path + [key], old=old)
+
+
+def collect(paths=paths, env=None):
+    """
+    Collect configuration from paths and environment variables
+
+    Parameters
+    ----------
+    paths : List[str]
+        A list of paths to search for yaml config files
+
+    env : dict
+        The system environment variables
+
+    Returns
+    -------
+    config: dict
+
+    See Also
+    --------
+    intake_esm.config.refresh: collect configuration and update into primary config
+    """
+    if env is None:
+        env = os.environ
+    configs = []
+
+    if yaml:
+        configs.extend(collect_yaml(paths=paths))
+
+    configs.append(collect_env(env=env))
+
+    return merge(*configs)
+
+
+def refresh(config=config, defaults=defaults, **kwargs):
+    """
+    Update configuration by re-reading yaml files and env variables
+
+    This mutates the global intake_esm.config.config, or the config parameter if
+    passed in.
+
+    This goes through the following stages:
+
+    1.  Clearing out all old configuration
+    2.  Updating from the stored defaults from downstream libraries
+        (see update_defaults)
+    3.  Updating from yaml files and environment variables
+
+    Note that some functionality only checks configuration once at startup and
+    may not change behavior, even if configuration changes.  It is recommended
+    to restart your python process if convenient to ensure that new
+    configuration changes take place.
+
+    See Also
+    --------
+    intake_esm.config.collect: for parameters
+    intake_esm.config.update_defaults
+    """
+    config.clear()
+
+    for d in defaults:
+        update(config, d, priority='old')
+
+    update(config, collect(**kwargs))
+
+
+def get(key, default=no_default, config=config):
+    """
+    Get elements from global config
+
+    Use '.' for nested access
+
+    Examples
+    --------
+    >>> from intake_esm import config
+    >>> config.get('foo')  # doctest: +SKIP
+    {'x': 1, 'y': 2}
+
+    >>> config.get('foo.x')  # doctest: +SKIP
+    1
+
+    >>> config.get('foo.x.y', default=123)  # doctest: +SKIP
+    123
+
+    See Also
+    --------
+    intake_esm.config.set
+    """
+    keys = key.split('.')
+    result = config
+    for k in keys:
+        k = normalize_key(k)
+        try:
+            result = result[k]
+        except (TypeError, IndexError, KeyError):
+            if default is not no_default:
+                return default
+            else:
+                raise
+    return result
+
+
+def rename(aliases, config=config):
+    """ Rename old keys to new keys
+
+    This helps migrate older configuration versions over time
+    """
+    old = list()
+    new = dict()
+    for o, n in aliases.items():
+        value = get(o, None, config=config)
+        if value is not None:
+            old.append(o)
+            new[n] = value
+
+    for k in old:
+        del config[k]  # TODO: support nested keys
+
+    set(new, config=config)
+
+
+def update_defaults(new, config=config, defaults=defaults):
+    """ Add a new set of defaults to the configuration
+
+    It does two things:
+
+    1.  Add the defaults to a global collection to be used by refresh later
+    2.  Updates the global config with the new configuration
+        prioritizing older values over newer ones
+    """
+    defaults.append(new)
+    update(config, new, priority='old')
+
+
+def expand_environment_variables(config):
+    ''' Expand environment variables in a nested config dictionary
+
+    This function will recursively search through any nested dictionaries
+    and/or lists.
+
+    Parameters
+    ----------
+    config : dict, iterable, or str
+        Input object to search for environment variables
+
+    Returns
+    -------
+    config : same type as input
+
+    Examples
+    --------
+    >>> expand_environment_variables({'x': [1, 2, '$USER']})  # doctest: +SKIP
+    {'x': [1, 2, 'my-username']}
+    '''
+    if isinstance(config, Mapping):
+        return {k: expand_environment_variables(v) for k, v in config.items()}
+    elif isinstance(config, str):
+        return os.path.expandvars(config)
+    elif isinstance(config, (list, tuple, set)):
+        return type(config)([expand_environment_variables(v) for v in config])
+    else:
+        return config
+
+
+fn = os.path.join(os.path.dirname(__file__), 'config.yaml')
+ensure_file(source=fn, comment=False)
+
+with open(fn) as f:
+    defaults = yaml.load(f)
+
+refresh()

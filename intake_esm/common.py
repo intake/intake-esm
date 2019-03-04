@@ -11,7 +11,7 @@ import intake_xarray
 import numpy as np
 import pandas as pd
 
-from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
+from . import config
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.WARNING)
@@ -19,22 +19,25 @@ logger.setLevel(level=logging.WARNING)
 
 class Collection(ABC):
     def __init__(self, collection_spec):
+
         self.collection_spec = collection_spec
-        self.collection_definition = SETTINGS['collections'].get(
+        self.collection_definition = config.get('collections').get(
             collection_spec['collection_type'], None
         )
         if self.collection_definition is None:
             raise ValueError(
-                f"*** {collection_spec['collection_type']} *** is not a defined collection type in {INTAKE_ESM_CONFIG_FILE}"
+                f"*** {collection_spec['collection_type']} *** is not a defined collection type in {config.PATH}"
             )
 
-        self.columns = self.collection_definition.get('collection_columns', None)
+        self.columns = self.collection_definition.get(
+            config.normalize_key('collection_columns'), None
+        )
         if self.columns is None:
             raise ValueError(
-                f"Unable to locate collection columns for {collection_spec['collection_type']} collection type in {INTAKE_ESM_CONFIG_FILE}"
+                f"Unable to locate collection columns for {collection_spec['collection_type']} collection type in {config.PATH}"
             )
-        self.data_cache_dir = SETTINGS.get('data_cache_directory', None)
-        self.database_base_dir = SETTINGS.get('database_directory', None)
+        self.data_cache_dir = config.get('data_cache_directory', None)
+        self.database_base_dir = config.get('database_directory', None)
 
         if self.database_base_dir:
             self.database_dir = f"{self.database_base_dir}/{collection_spec['collection_type']}"
@@ -183,7 +186,7 @@ def _get_built_collections():
     try:
         cc = [
             y
-            for x in os.walk(SETTINGS['database_directory'])
+            for x in os.walk(config.get('database_directory'))
             for y in glob(os.path.join(x[0], '*.csv'))
         ]
         collections = {os.path.splitext(os.path.basename(x))[0]: x for x in cc}

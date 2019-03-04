@@ -4,6 +4,7 @@ include LICENSE
 include README.rst
 include requirements.txt
 
+recursive-include intake_esm *.yaml
 recursive-include tests
 recursive-include example_input
 recursive-include intake_esm *.py
