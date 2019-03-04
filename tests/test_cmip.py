@@ -22,9 +22,7 @@ def test_search():
         c = intake.open_esm_metadatastore(
             collection_name='cmip_test_collection', collection_type='cmip'
         )
-        cat = c.search(
-            model='CanESM2', experiment='rcp85', frequency='mon', realm='atmos', ensemble='r2i1p1'
-        )
+        cat = c.search(model=['CanESM2', 'CSIRO-Mk3-6-0'])
         assert isinstance(cat.results, pd.DataFrame)
         assert not cat.results.empty
 
