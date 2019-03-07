@@ -164,7 +164,7 @@ def collect_env(env=None):
     d = {}
     for name, value in env.items():
         if name.startswith('INTAKE_ESM_'):
-            varname = name[5:].lower().replace('__', '.')
+            varname = name[11:].lower().replace('__', '.')
             varname = normalize_key(varname)
             try:
                 d[varname] = ast.literal_eval(value)

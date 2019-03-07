@@ -158,8 +158,7 @@ def _parse_directory(directory, columns):
             temp_df = pd.DataFrame(fs, columns=columns)
 
         else:
-            temp_df = pd.DataFrame()
-            temp_df.columns = df.columns
+            temp_df = pd.DataFrame(columns=columns)
         df = pd.concat([temp_df, df], ignore_index=True, sort=False)
     return df
 

@@ -117,3 +117,12 @@ def test_set_options():
     s2 = _config.get('database_directory')
 
     assert not s1 == s2
+
+
+def test_collect_env():
+    env = {}
+    env['INTAKE_ESM_FOO__BAR_BAZ'] = 123
+
+    results = collect_env(env)
+    expected = {'foo': {'bar-baz': 123}}
+    assert expected == results
