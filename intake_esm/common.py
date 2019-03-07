@@ -208,18 +208,18 @@ def _get_built_collections():
 
 def _open_collection(collection_name, collection_type):
     """ Open an ESM collection"""
+
     collection_types = {'cesm', 'cmip'}
     collections = _get_built_collections()
-    try:
-        if (collection_type in collection_types) and collections:
+    if (collection_type in collection_types) and collections:
+        try:
             df = pd.read_csv(collections[collection_name], index_col=0)
             return df, collection_name, collection_type
-        else:
-            raise ValueError(f'****** The specified collection type is not valid. ******')
+        except Exception as err:
+            raise err
 
-    except Exception as err:
-        print('****** The specified collection does not exit. ******')
-        raise err
+    else:
+        raise ValueError("Couldn't open specified collection")
 
 
 def get_subset(collection_name, collection_type, query, order_by=None):
