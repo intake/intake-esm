@@ -10,7 +10,7 @@ from subprocess import PIPE, Popen
 import numpy as np
 import pandas as pd
 
-from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
+from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS, SOURCES
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.WARNING)
@@ -157,7 +157,7 @@ def _get_built_collections():
 
 def _open_collection(collection_name, collection_type):
     """ Open an ESM collection"""
-    collection_types = {'cesm', 'cmip'}
+    collection_types = list(SOURCES.keys())
     collections = _get_built_collections()
     try:
         if (collection_type in collection_types) and collections:
