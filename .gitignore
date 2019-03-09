@@ -111,3 +111,4 @@ notes/
 intake_cesm/collections/*
 collections/cesm1_le.csv
 docs/source/collections/*
+pip-wheel-metadata/*
