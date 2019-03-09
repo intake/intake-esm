@@ -3,17 +3,26 @@ API reference
 
 This is a reference API class listing, and modules.
 
-.. currentmodule:: intake_esm
-
 .. autosummary::
-   core.ESMMetadataStoreCatalog
+   intake_esm.core.ESMMetadataStoreCatalog
+   intake_esm.cmip.CMIPSource
+   intake_esm.cmip.CMIPCollection
+   intake_esm.cesm.CESMSource
+   intake_esm.cesm.CESMCollection
 
 
-.. currentmodule:: intake_esm.core
-
-.. autoclass:: ESMMetadataStoreCatalog
-   :members: __init__, search, build_collections, open_collection, get_built_collections 
+.. autoclass:: intake_esm.core.ESMMetadataStoreCatalog
+   :members: search, open_collection
 
 
+.. autoclass:: intake_esm.cesm.CESMSource
+   :members: to_xarray, results
 
+.. autoclass:: intake_esm.cesm.CESMCollection
+   :members:
 
+.. autoclass:: intake_esm.cmip.CMIPSource
+   :members: to_xarray, results
+
+.. autoclass:: intake_esm.cmip.CMIPCollection
+   :members:

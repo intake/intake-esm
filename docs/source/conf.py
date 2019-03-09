@@ -52,6 +52,11 @@ extlinks = {
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
+# Generate the API documentation when building
+autosummary_generate = True
+numpydoc_show_class_members = False
+
+
 # The suffix of source filenames.
 source_suffix = '.rst'
 
@@ -62,8 +67,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'intake-esm'
-copyright = u'2019 onwards, NCAR'
+project = u'Intake-esm'
+copyright = u'2019 onwards, University Corporation for Atmospheric Research'
 author = u'Earth System Informatics Team'
 
 # The version info for the project you're documenting, acts as replacement for

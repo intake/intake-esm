@@ -36,7 +36,7 @@ sources:
     metadata:
       cache: {}
       catalog_dir: ''
-      coords: !!python/tuple
+      coords:
       - sigma
       - time
       data_vars:

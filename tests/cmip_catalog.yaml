@@ -1,0 +1,31 @@
+plugins:
+  source:
+  - module: intake_esm.cmip
+sources:
+  cmip_test_collection_a4fa3aaa-d4f5-4da0-9f6e-dc10e79d1452:
+    args:
+      chunks:
+        time: 1
+      collection_name: cmip_test_collection
+      collection_type: cmip
+      concat_dim: time
+      decode_coords: false
+      decode_times: false
+      engine: netcdf4
+      query:
+        ensemble: r2i1p1
+        experiment: rcp85
+        file_basename: null
+        file_fullpath: null
+        files_dirname: null
+        frequency: mon
+        institution: null
+        model: CanESM2
+        realm: atmos
+        variable: null
+        version: null
+    description: Catalog entry from cmip_test_collection collection
+    driver: cmip
+    metadata:
+      cache: {}
+      catalog_dir: ''

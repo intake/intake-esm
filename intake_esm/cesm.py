@@ -4,11 +4,10 @@ import os
 import numpy as np
 import pandas as pd
 import xarray as xr
-from intake_xarray.netcdf import NetCDFSource
 
+from . import config
 from ._version import get_versions
-from .common import Collection, StorageResource, _open_collection, get_subset
-from .config import INTAKE_ESM_CONFIG_FILE, SETTINGS
+from .common import BaseSource, Collection, StorageResource, _open_collection, get_subset
 
 __version__ = get_versions()['version']
 del get_versions
@@ -19,9 +18,24 @@ logger.setLevel(level=logging.WARNING)
 
 
 class CESMCollection(Collection):
+    """ Defines a CESM collection
+
+       Parameters
+       ----------
+       collection_spec : dict
+
+
+       See Also
+       --------
+       intake_esm.core.ESMMetadataStoreCatalog
+       intake_esm.cmip.CMIPCollection
+    """
+
     def __init__(self, collection_spec):
         super(CESMCollection, self).__init__(collection_spec)
-        self.component_streams = self.collection_definition.get('component_streams', None)
+        self.component_streams = self.collection_definition.get(
+            config.normalize_key('component_streams'), None
+        )
         self.replacements = self.collection_definition.get('replacements', {})
         self.include_cache_dir = self.collection_spec.get('include_cache_dir', False)
         self.df = pd.DataFrame(columns=self.columns)
@@ -30,7 +44,7 @@ class CESMCollection(Collection):
         for req_col in ['files', 'sequence_order']:
             if req_col not in self.columns:
                 raise ValueError(
-                    f"Missing required column: {req_col} for {self.collection_spec['collection_type']} in {INTAKE_ESM_CONFIG_FILE}"
+                    f"Missing required column: {req_col} for {self.collection_spec['collection_type']} in {config.PATH}"
                 )
 
     def build(self):
@@ -43,8 +57,7 @@ class CESMCollection(Collection):
             ensembles = experiment_attrs['case_members']
             self.assemble_file_list(experiment, experiment_attrs, component_attrs, ensembles)
         logger.warning(self.df.info())
-        logger.warning(f"Persisting {self.collection_spec['name']} at : {self.collection_db_file}")
-        self.df.to_csv(self.collection_db_file, index=True)
+        self.persist_db_file()
         return self.df
 
     def assemble_file_list(self, experiment, experiment_attrs, component_attrs, ensembles):
@@ -255,8 +268,35 @@ class CESMCollection(Collection):
             return
 
 
-class CESMSource(NetCDFSource):
-    """ Read CESM data sets into xarray datasets
+class CESMSource(BaseSource):
+    """ Read CESM collection datasets into an xarray dataset
+
+    Parameters
+    ----------
+
+    collection_name : str
+          Name of the collection to use.
+
+    collection_type : str
+          Type of the collection to load. Accepted values are:
+
+          - `cesm`
+          - `cmip`
+
+    query : dict
+         A query to execute against the specified collection
+
+    chunks : int or dict, optional
+        Chunks is used to load the new dataset into dask
+        arrays. ``chunks={}`` loads the dataset with dask using a single
+        chunk for all arrays.
+
+    concat_dim : str, optional
+        Name of dimension along which to concatenate the files. Can
+        be new or pre-existing. Default is 'concat_dim'.
+
+    kwargs :
+        Further parameters are passed to xr.open_mfdataset
     """
 
     name = 'cesm'
@@ -272,14 +312,21 @@ class CESMSource(NetCDFSource):
         concat_dim='time',
         **kwargs,
     ):
-        self.collection_name = collection_name
-        self.collection_type = collection_type
-        self.query = query
-        self.query_results = get_subset(self.collection_name, self.collection_type, self.query)
-        self._ds = None
-        urlpath = get_subset(self.collection_name, self.collection_type, self.query).files.tolist()
+
         super(CESMSource, self).__init__(
-            urlpath, chunks, concat_dim=concat_dim, path_as_pattern=False, **kwargs
+            collection_name, collection_type, query, chunks, concat_dim, **kwargs
+        )
+        self.urlpath = get_subset(
+            self.collection_name,
+            self.collection_type,
+            self.query,
+            order_by=['sequence_order', 'files'],
+        ).files.tolist()
+        self.query_results = get_subset(
+            self.collection_name,
+            self.collection_type,
+            self.query,
+            order_by=['sequence_order', 'files'],
         )
         if self.metadata is None:
             self.metadata = {}
@@ -291,7 +338,12 @@ class CESMSource(NetCDFSource):
             return self.query_results
 
         else:
-            self.query_results = get_subset(self.collection_name, self.collection_type, self.query)
+            self.query_results = get_subset(
+                self.collection_name,
+                self.collection_type,
+                self.query,
+                order_by=['sequence_order', 'files'],
+            )
             return self.query_results
 
     def _open_dataset(self):
@@ -317,7 +369,10 @@ class CESMSource(NetCDFSource):
 
                     query['variable'] = var_i
                     urlpath_ei_vi = get_subset(
-                        self.collection_name, self.collection_type, query
+                        self.collection_name,
+                        self.collection_type,
+                        query,
+                        order_by=['sequence_order', 'files'],
                     ).files.tolist()
                     dsi = xr.merge(
                         (
@@ -333,9 +388,3 @@ class CESMSource(NetCDFSource):
             self._ds = xr.concat(ds_ens_list, dim='ens', data_vars=variables)
         else:
             self._ds = xr.open_dataset(url, chunks=self.chunks, **kwargs)
-
-    def to_xarray(self, dask=True):
-        """Return dataset as an xarray instance"""
-        if dask:
-            return self.to_dask()
-        return self.read()
