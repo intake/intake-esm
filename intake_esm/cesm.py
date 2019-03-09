@@ -23,7 +23,6 @@ class CESMCollection(Collection):
         super(CESMCollection, self).__init__(collection_spec)
         self.component_streams = self.collection_definition.get('component_streams', None)
         self.replacements = self.collection_definition.get('replacements', {})
-        self.overwrite_existing = self.collection_spec.get('overwriting_existing', True)
         self.include_cache_dir = self.collection_spec.get('include_cache_dir', False)
         self.df = pd.DataFrame(columns=self.columns)
 

@@ -34,7 +34,12 @@ class ESMMetadataStoreCatalog(Catalog):
     collection_types = {'cesm': CESMCollection, 'cmip': CMIPCollection}
 
     def __init__(
-        self, collection_input_file=None, collection_name=None, collection_type=None, metadata=None
+        self,
+        collection_input_file=None,
+        collection_name=None,
+        collection_type=None,
+        overwrite_existing=False,
+        metadata=None,
     ):
         """
         Parameters
@@ -64,7 +69,7 @@ class ESMMetadataStoreCatalog(Catalog):
 
         elif collection_input_file and (collection_name is None or collection_type is None):
             self.input_collection = self._validate_collection_input_file(collection_input_file)
-            self.build_collection()
+            self.build_collection(overwrite_existing)
 
         else:
             raise ValueError(
@@ -93,12 +98,14 @@ class ESMMetadataStoreCatalog(Catalog):
         else:
             raise FileNotFoundError(f'Specified collection input file: {filepath} doesn’t exist.')
 
-    def build_collection(self):
-        ctype = self.input_collection['collection_type']
-        cc = ESMMetadataStoreCatalog.collection_types[ctype]
-        cc = cc(self.input_collection)
-        cc.build()
-        self.get_built_collections()
+    def build_collection(self, overwrite_existing):
+        name = self.input_collection['name']
+        if name not in self.collections or overwrite_existing:
+            ctype = self.input_collection['collection_type']
+            cc = ESMMetadataStoreCatalog.collection_types[ctype]
+            cc = cc(self.input_collection)
+            cc.build()
+            self.get_built_collections()
         self.open_collection(
             self.input_collection['name'], self.input_collection['collection_type']
         )
