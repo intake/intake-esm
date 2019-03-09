@@ -1,6 +1,5 @@
 name: cesm_dple_test_collection
 collection_type: cesm
-overwrite_existing: true
 include_cache_dir: false
 data_sources:
   g.e11_LENS.GECOIAF.T62_g16.009:
