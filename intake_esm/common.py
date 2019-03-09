@@ -18,11 +18,9 @@ logger.setLevel(level=logging.WARNING)
 
 
 class Collection(ABC):
-    def __init__(self, collection_spec, overwrite_existing, include_cache_dir):
+    def __init__(self, collection_spec):
 
         self.collection_spec = collection_spec
-        self.overwrite_existing = overwrite_existing
-        self.include_cache_dir = include_cache_dir
         self.collection_definition = config.get('collections').get(
             collection_spec['collection_type'], None
         )

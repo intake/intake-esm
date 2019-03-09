@@ -23,8 +23,7 @@ class CESMCollection(Collection):
        Parameters
        ----------
        collection_spec : dict
-       overwrite_existiong : bool
-       include_cache_dir : bool
+
 
        See Also
        --------
@@ -32,13 +31,12 @@ class CESMCollection(Collection):
        intake_esm.cmip.CMIPCollection
     """
 
-    def __init__(self, collection_spec, overwrite_existing, include_cache_dir):
-        super(CESMCollection, self).__init__(collection_spec, overwrite_existing, include_cache_dir)
+    def __init__(self, collection_spec):
+        super(CESMCollection, self).__init__(collection_spec)
         self.component_streams = self.collection_definition.get(
             config.normalize_key('component_streams'), None
         )
         self.replacements = self.collection_definition.get('replacements', {})
-        self.overwrite_existing = self.collection_spec.get('overwriting_existing', True)
         self.include_cache_dir = self.collection_spec.get('include_cache_dir', False)
         self.df = pd.DataFrame(columns=self.columns)
 
@@ -59,8 +57,7 @@ class CESMCollection(Collection):
             ensembles = experiment_attrs['case_members']
             self.assemble_file_list(experiment, experiment_attrs, component_attrs, ensembles)
         logger.warning(self.df.info())
-        if self.overwrite_existing:
-            self.persist_db_file()
+        self.persist_db_file()
         return self.df
 
     def assemble_file_list(self, experiment, experiment_attrs, component_attrs, ensembles):

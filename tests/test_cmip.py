@@ -13,7 +13,9 @@ here = os.path.abspath(os.path.dirname(__file__))
 def test_build_collection():
     with config.set({'database-directory': './tests/test_collections'}):
         collection_input_file = os.path.join(here, 'cmip_collection_input_test.yml')
-        col = intake.open_esm_metadatastore(collection_input_file=collection_input_file)
+        col = intake.open_esm_metadatastore(
+            collection_input_file=collection_input_file, overwrite_existing=True
+        )
         assert isinstance(col.df, pd.DataFrame)
 
 

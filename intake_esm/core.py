@@ -39,8 +39,6 @@ class ESMMetadataStoreCatalog(Catalog):
         overwrite_existing : bool,
                 Whether to overwrite existing built collection catalog
 
-        include_cache_dir : bool
-
         metadata : dict
                Arbitrary information to carry along with the data collection source specs.
 
@@ -57,22 +55,19 @@ class ESMMetadataStoreCatalog(Catalog):
         collection_name=None,
         collection_type=None,
         overwrite_existing=True,
-        include_cache_dir=False,
         metadata={},
     ):
 
-        self.overwrite_existing = overwrite_existing
-        self.include_cache_dir = include_cache_dir
         self.metadata = metadata
         self.collections = {}
-        self._get_built_collections()
+        self.get_built_collections()
 
         if (collection_name and collection_type) and collection_input_file is None:
             self.open_collection(collection_name, collection_type)
 
         elif collection_input_file and (collection_name is None or collection_type is None):
             self.input_collection = self._validate_collection_input_file(collection_input_file)
-            self._build_collection()
+            self.build_collection(overwrite_existing)
 
         else:
             raise ValueError(
@@ -98,18 +93,18 @@ class ESMMetadataStoreCatalog(Catalog):
         else:
             raise FileNotFoundError(f'Specified collection input file: {filepath} doesn’t exist.')
 
-    def _build_collection(self):
+    def build_collection(self, overwrite_existing):
         """ Build a collection defined in an YAML input file"""
-        ctype = self.input_collection['collection_type']
-        cc = ESMMetadataStoreCatalog.collection_types[ctype]
-        cc = cc(self.input_collection, self.overwrite_existing, self.include_cache_dir)
-        cc.build()
-        self._get_built_collections()
-        self.open_collection(
-            self.input_collection['name'], self.input_collection['collection_type']
-        )
+        name = self.input_collection['name']
+        if name not in self.collections or overwrite_existing:
+            ctype = self.input_collection['collection_type']
+            cc = ESMMetadataStoreCatalog.collection_types[ctype]
+            cc = cc(self.input_collection)
+            cc.build()
+            self.get_built_collections()
+        self.open_collection(name, self.input_collection['collection_type'])
 
-    def _get_built_collections(self):
+    def get_built_collections(self):
         """ Load built collections in a dictionary with key=collection_name, value=collection_db_file_path"""
         self.collections = _get_built_collections()
 
