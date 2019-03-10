@@ -37,8 +37,8 @@ class Collection(ABC):
             raise ValueError(
                 f"Unable to locate collection columns for {collection_spec['collection_type']} collection type in {config.PATH}"
             )
-        self.data_cache_dir = config.get('data_cache_directory', None)
-        self.database_base_dir = config.get('database_directory', None)
+        self.data_cache_dir = config.get('data-cache-directory', None)
+        self.database_base_dir = config.get('database-directory', None)
 
         if self.database_base_dir:
             self.database_dir = f"{self.database_base_dir}/{collection_spec['collection_type']}"
@@ -194,7 +194,7 @@ def _get_built_collections():
     try:
         cc = [
             y
-            for x in os.walk(config.get('database_directory'))
+            for x in os.walk(config.get('database-directory'))
             for y in glob(os.path.join(x[0], '*.csv'))
         ]
         collections = {os.path.splitext(os.path.basename(x))[0]: x for x in cc}

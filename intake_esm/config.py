@@ -19,6 +19,10 @@ if 'INTAKE_ESM_CONFIG' in os.environ:
     PATH = os.environ['INTAKE_CONFIG']
     paths.append(PATH)
 
+elif os.path.exists(os.path.join(os.getcwd(), '.intake_esm')):
+    PATH = os.path.join(os.getcwd(), '.intake_esm')
+    paths.append(PATH)
+
 else:
     PATH = os.path.join(os.path.expanduser('~'), '.intake_esm')
 
@@ -137,6 +141,7 @@ def collect_yaml(paths=paths):
             with open(path) as f:
                 data = yaml.load(f.read()) or {}
                 data = normalize_nested_keys(data)
+                data = expand_environment_variables(data)
                 configs.append(data)
         except (OSError, IOError):
             # Ignore permission errors
@@ -472,7 +477,7 @@ def expand_environment_variables(config):
     if isinstance(config, Mapping):
         return {k: expand_environment_variables(v) for k, v in config.items()}
     elif isinstance(config, str):
-        return os.path.expandvars(config)
+        return os.path.expanduser(os.path.expandvars(config))
     elif isinstance(config, (list, tuple, set)):
         return type(config)([expand_environment_variables(v) for v in config])
     else:
