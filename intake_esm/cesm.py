@@ -5,10 +5,9 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from . import config
+from . import aggregate, config
 from ._version import get_versions
 from .common import BaseSource, Collection, StorageResource, _open_collection, get_subset
-from . import aggregate
 
 __version__ = get_versions()['version']
 del get_versions
@@ -351,6 +350,9 @@ class CESMSource(BaseSource):
         url = self.urlpath
         kwargs = self._kwargs
 
+        if len(self.query_results) == 0:
+            raise ValueError('query results are empty')
+
         query = dict(self.query)
         if '*' in url or isinstance(url, list):
             if 'concat_dim' not in kwargs.keys():
@@ -383,7 +385,6 @@ class CESMSource(BaseSource):
                 ds_ens_i = aggregate.merge(ds_var_list)
                 ds_ens_list.append(ds_ens_i)
 
-            self._ds = aggregate.concat_ensembles(ds_ens_list, member_ids=ensembles,
-                                                  join='inner')
+            self._ds = aggregate.concat_ensembles(ds_ens_list, member_ids=ensembles, join='outer')
         else:
             self._ds = xr.open_dataset(url, chunks=self.chunks, **kwargs)
