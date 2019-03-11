@@ -166,6 +166,10 @@ def concat_ensembles(dsets, member_ids=None, join='inner'):
     ensemble_dim = xr.DataArray(member_ids, dims=ensemble_dim_name, name=ensemble_dim_name)
     ds = xr.concat(objs_to_concat, dim=ensemble_dim, coords='minimal')
 
+    # restore non_dim_coords to variables
+    non_dim_coords_reset = set(ds.coords) - set(ds.dims)
+    ds = ds.reset_coords(non_dim_coords_reset)
+
     new_history = (
         f"\n{datetime.now()} xarray.concat(<ALL_MEMBERS>, dim='member_id', coords='minimal')"
     )
