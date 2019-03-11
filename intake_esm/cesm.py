@@ -378,7 +378,9 @@ class CESMSource(BaseSource):
                         order_by=['sequence_order', 'files'],
                     ).files.tolist()
 
-                    dsets = [aggregate.open_dataset(url, data_vars=var_i) for url in urlpath_ei_vi]
+                    dsets = [
+                        aggregate.open_dataset(url, data_vars=[var_i]) for url in urlpath_ei_vi
+                    ]
                     ds_var_i = aggregate.concat_time_levels(dsets)
                     ds_var_list.append(ds_var_i)
 
