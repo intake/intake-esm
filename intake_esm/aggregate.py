@@ -119,10 +119,12 @@ def concat_time_levels(dsets):
     time_coord_name = infer_time_coord_name(first)
 
     def drop_unnecessary_coords(ds):
-        """Drop N-D coords."""
-        ndcoords = set(ds.coords) - set(ds.dims)
-        ndcoords_drop = [coord for coord in ndcoords if time_coord_name not in ds[coord].dims]
-        return ds.drop(ndcoords_drop)
+        """Drop coordinates that do not correspond with dimensions."""
+        non_dim_coords = set(ds.coords) - set(ds.dims)
+        non_dim_coords_drop = [
+            coord for coord in non_dim_coords if time_coord_name not in ds[coord].dims
+        ]
+        return ds.drop(non_dim_coords_drop)
 
     rest = [drop_unnecessary_coords(ds) for ds in dsets[1:]]
     objs_to_concat = [first] + rest
