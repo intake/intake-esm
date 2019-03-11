@@ -1,4 +1,5 @@
-import uuid
+"""Tools to support merge/concat of datasets."""
+
 from datetime import datetime
 from functools import reduce
 
@@ -8,7 +9,6 @@ import xarray as xr
 
 time_coord_name_default = 'time'
 ensemble_dim_name = 'member_id'
-new_dim_coord = 'time_' + uuid.uuid4().hex
 default_chunk_size = '12MiB'
 
 
