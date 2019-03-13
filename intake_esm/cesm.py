@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from . import config
+from . import aggregate, config
 from ._version import get_versions
 from .common import BaseSource, Collection, StorageResource, _open_collection, get_subset
 
@@ -350,6 +350,9 @@ class CESMSource(BaseSource):
         url = self.urlpath
         kwargs = self._kwargs
 
+        if len(self.query_results) == 0:
+            raise ValueError('query results are empty')
+
         query = dict(self.query)
         if '*' in url or isinstance(url, list):
             if 'concat_dim' not in kwargs.keys():
@@ -364,7 +367,7 @@ class CESMSource(BaseSource):
             for ens_i in ensembles:
                 query['ensemble'] = ens_i
 
-                dsi = xr.Dataset()
+                ds_var_list = []
                 for var_i in variables:
 
                     query['variable'] = var_i
@@ -374,17 +377,16 @@ class CESMSource(BaseSource):
                         query,
                         order_by=['sequence_order', 'files'],
                     ).files.tolist()
-                    dsi = xr.merge(
-                        (
-                            dsi,
-                            xr.open_mfdataset(
-                                urlpath_ei_vi, data_vars=[var_i], chunks=self.chunks, **kwargs
-                            ),
-                        )
-                    )
 
-                    ds_ens_list.append(dsi)
+                    dsets = [
+                        aggregate.open_dataset(url, data_vars=[var_i]) for url in urlpath_ei_vi
+                    ]
+                    ds_var_i = aggregate.concat_time_levels(dsets)
+                    ds_var_list.append(ds_var_i)
 
-            self._ds = xr.concat(ds_ens_list, dim='ens', data_vars=variables)
+                ds_ens_i = aggregate.merge(ds_var_list)
+                ds_ens_list.append(ds_ens_i)
+
+            self._ds = aggregate.concat_ensembles(ds_ens_list, member_ids=ensembles, join='outer')
         else:
             self._ds = xr.open_dataset(url, chunks=self.chunks, **kwargs)
