@@ -4,14 +4,8 @@ plugins:
 sources:
   cesm_dple_test_collection_7afe8a3a-8d2f-40a8-9ede-899f48ce83b2:
     args:
-      chunks:
-        time: 1
       collection_name: cesm_dple_test_collection
       collection_type: cesm
-      concat_dim: time
-      decode_coords: false
-      decode_times: false
-      engine: netcdf4
       query:
         case: null
         component: null

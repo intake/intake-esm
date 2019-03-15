@@ -131,10 +131,6 @@ class ESMMetadataStoreCatalog(Catalog):
             'collection_name': self.collection_name,
             'collection_type': self.collection_type,
             'query': query,
-            'chunks': {'time': 1},
-            'decode_times': False,
-            'decode_coords': False,
-            'concat_dim': 'time',
         }
         driver = config.get('sources')[self.collection_type]
         description = f'Catalog entry from {self.collection_name} collection'

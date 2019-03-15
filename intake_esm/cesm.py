@@ -303,19 +303,9 @@ class CESMSource(BaseSource):
     partition_access = True
     version = __version__
 
-    def __init__(
-        self,
-        collection_name,
-        collection_type,
-        query={},
-        chunks={'time': 1},
-        concat_dim='time',
-        **kwargs,
-    ):
+    def __init__(self, collection_name, collection_type, query={}, **kwargs):
 
-        super(CESMSource, self).__init__(
-            collection_name, collection_type, query, chunks, concat_dim, **kwargs
-        )
+        super(CESMSource, self).__init__(collection_name, collection_type, query, **kwargs)
         self.urlpath = get_subset(
             self.collection_name,
             self.collection_type,
@@ -346,9 +336,16 @@ class CESMSource(BaseSource):
             )
             return self.query_results
 
+    def to_xarray(self, **kwargs):
+        """Return dataset as an xarray instance"""
+        _kwargs = self.kwargs.copy()
+        _kwargs.update(kwargs)
+        self.kwargs = _kwargs
+        return self.to_dask()
+
     def _open_dataset(self):
         url = self.urlpath
-        kwargs = self._kwargs
+        kwargs = self.kwargs
 
         if len(self.query_results) == 0:
             raise ValueError('query results are empty')
@@ -356,9 +353,7 @@ class CESMSource(BaseSource):
         query = dict(self.query)
         if '*' in url or isinstance(url, list):
             if 'concat_dim' not in kwargs.keys():
-                kwargs.update(concat_dim=self.concat_dim)
-            if self.pattern:
-                kwargs.update(preprocess=self._add_path_to_ds)
+                kwargs.update(concat_dim='time')
 
             ensembles = self.query_results.ensemble.unique()
             variables = self.query_results.variable.unique()
@@ -389,4 +384,4 @@ class CESMSource(BaseSource):
 
             self._ds = aggregate.concat_ensembles(ds_ens_list, member_ids=ensembles, join='outer')
         else:
-            self._ds = xr.open_dataset(url, chunks=self.chunks, **kwargs)
+            self._ds = xr.open_dataset(url, **kwargs)

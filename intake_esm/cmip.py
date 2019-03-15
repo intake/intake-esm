@@ -195,19 +195,9 @@ class CMIPSource(BaseSource):
     partition_access = True
     version = __version__
 
-    def __init__(
-        self,
-        collection_name,
-        collection_type,
-        query={},
-        chunks={'time': 1},
-        concat_dim='time',
-        **kwargs,
-    ):
+    def __init__(self, collection_name, collection_type, query={}, **kwargs):
 
-        super(CMIPSource, self).__init__(
-            collection_name, collection_type, query, chunks, concat_dim, **kwargs
-        )
+        super(CMIPSource, self).__init__(collection_name, collection_type, query, **kwargs)
         self.urlpath = get_subset(self.collection_name, self.collection_type, self.query)[
             'file_fullpath'
         ].tolist()
@@ -225,13 +215,18 @@ class CMIPSource(BaseSource):
             self.query_results = get_subset(self.collection_name, self.collection_type, self.query)
             return self.query_results
 
+    def to_xarray(self, **kwargs):
+        """Return dataset as an xarray instance"""
+        _kwargs = self.kwargs.copy()
+        _kwargs.update(kwargs)
+        self.kwargs = _kwargs
+        return self.to_dask()
+
     def _open_dataset(self):
 
-        kwargs = self._kwargs
+        kwargs = self.kwargs
         if 'concat_dim' not in kwargs.keys():
-            kwargs.update(concat_dim=self.concat_dim)
-        if self.pattern:
-            kwargs.update(preprocess=self._add_path_to_ds)
+            kwargs.update(concat_dim='time')
 
         # Check that the same variable is not in multiple realms
         realm_list = self.query_results['realm'].unique()
@@ -248,8 +243,10 @@ class CMIPSource(BaseSource):
             ds_dict[ens] = paths
 
         ds_list = [
-            xr.open_mfdataset(paths_, chunks=self.chunks, **kwargs) for paths_ in ds_dict.values()
+            xr.open_mfdataset(paths_, decode_times=kwargs['decode_times'])
+            for paths_ in ds_dict.values()
         ]
         ens_list = list(ds_dict.keys())
         self._ds = xr.concat(ds_list, dim='ensemble')
+        self._ds = self._ds.chunk(kwargs['chunks'])
         self._ds['ensemble'] = ens_list

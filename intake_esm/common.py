@@ -57,25 +57,15 @@ class Collection(ABC):
             self.df.to_csv(self.collection_db_file, index=True)
 
 
-class BaseSource(intake_xarray.netcdf.NetCDFSource):
-    def __init__(
-        self,
-        collection_name,
-        collection_type,
-        query={},
-        chunks={'time': 1},
-        concat_dim='time',
-        **kwargs,
-    ):
+class BaseSource(intake_xarray.base.DataSourceMixin):
+    def __init__(self, collection_name, collection_type, query={}, **kwargs):
         self.collection_name = collection_name
         self.collection_type = collection_type
         self.query = query
         self.query_results = None
         self._ds = None
-        urlpath = ''
-        super(BaseSource, self).__init__(
-            urlpath, chunks, concat_dim=concat_dim, path_as_pattern=False, **kwargs
-        )
+        self.kwargs = {'decode_times': False, 'chunks': {'time': 1}}
+        super(BaseSource, self).__init__(**kwargs)
 
     @property
     def results(self):
@@ -86,12 +76,9 @@ class BaseSource(intake_xarray.netcdf.NetCDFSource):
     def _open_dataset(self):
         pass
 
-    def to_xarray(self, dask=True):
-
+    def to_xarray(self, **kwargs):
         """Return dataset as an xarray instance"""
-        if dask:
-            return self.to_dask()
-        return self.read()
+        raise NotImplementedError()
 
 
 class StorageResource(object):
