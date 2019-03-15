@@ -7,15 +7,13 @@ import dask
 import numpy as np
 import xarray as xr
 
-time_coord_name_default = 'time'
-ensemble_dim_name = 'member_id'
-default_chunk_size = '12MiB'
+from . import config
 
 
 def infer_time_coord_name(ds):
     """Infer the name of the time coordinate in a dataset."""
-    if time_coord_name_default in ds.variables:
-        return time_coord_name_default
+    if config.get('time_coord_name_default') in ds.variables:
+        return config.get('time_coord_name_default')
     unlimited_dims = ds.encoding.get('unlimited_dims', None)
     if len(unlimited_dims) == 1:
         return list(unlimited_dims)[0]
@@ -71,7 +69,7 @@ def merge_vars_two_datasets(ds1, ds2):
     return ds
 
 
-def merge(dsets):
+def merge(dsets, chunks={}):
     """Merge datasets."""
 
     if len(dsets) == 1:
@@ -87,8 +85,8 @@ def merge(dsets):
 
     # rechunk
     chunks = {'time': 'auto'}
-    if ensemble_dim_name in dsm.dims:
-        chunks.update({ensemble_dim_name: 1})
+    if config.get('ensemble_dim_name') in dsm.dims:
+        chunks.update({config.get('ensemble_dim_name'): 1})
 
     return dsm.chunk(chunks)
 
@@ -163,7 +161,9 @@ def concat_ensembles(dsets, member_ids=None, join='inner'):
     rest = [ds.reset_coords(drop=True) for ds in dsets_aligned[1:]]
     objs_to_concat = [first] + rest
 
-    ensemble_dim = xr.DataArray(member_ids, dims=ensemble_dim_name, name=ensemble_dim_name)
+    ensemble_dim = xr.DataArray(
+        member_ids, dims=config.get('ensemble_dim_name'), name=config.get('ensemble_dim_name')
+    )
     ds = xr.concat(objs_to_concat, dim=ensemble_dim, coords='minimal')
 
     # restore non_dim_coords to variables
@@ -188,10 +188,10 @@ def set_coords(ds, varname):
     return ds.set_coords(coord_vars)
 
 
-def open_dataset(url, data_vars, chunk_size=default_chunk_size):
+def open_dataset(url, data_vars, chunk_size=config.get('default_chunk_size'), **kwargs):
     """open dataset with chunks determined."""
     with dask.config.set({'array.chunk-size': chunk_size}):
-        ds = xr.open_dataset(url, chunks={'time': 'auto'}, decode_times=False)
+        ds = xr.open_dataset(url, chunks={'time': 'auto'}, **kwargs)
     ds.attrs['history'] = f"{datetime.now()} xarray.open_dataset('{url}')"
 
     return set_coords(ds, data_vars)

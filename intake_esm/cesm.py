@@ -337,7 +337,13 @@ class CESMSource(BaseSource):
             return self.query_results
 
     def to_xarray(self, **kwargs):
-        """Return dataset as an xarray instance"""
+        """Return dataset as an xarray dataset
+
+        Parameters
+        ----------
+        ** kwargs :
+               Additional keyword arguments are passed through to methods in aggregate.py
+        """
         _kwargs = self.kwargs.copy()
         _kwargs.update(kwargs)
         self.kwargs = _kwargs
@@ -351,9 +357,11 @@ class CESMSource(BaseSource):
             raise ValueError('query results are empty')
 
         query = dict(self.query)
-        if '*' in url or isinstance(url, list):
+        if isinstance(url, list) and len(url) >= 1:
             if 'concat_dim' not in kwargs.keys():
                 kwargs.update(concat_dim='time')
+            if 'decode_times' not in kwargs.keys():
+                kwargs.update(decode_times=False)
 
             ensembles = self.query_results.ensemble.unique()
             variables = self.query_results.variable.unique()
@@ -374,7 +382,10 @@ class CESMSource(BaseSource):
                     ).files.tolist()
 
                     dsets = [
-                        aggregate.open_dataset(url, data_vars=[var_i]) for url in urlpath_ei_vi
+                        aggregate.open_dataset(
+                            url, data_vars=[var_i], decode_times=kwargs['decode_times']
+                        )
+                        for url in urlpath_ei_vi
                     ]
                     ds_var_i = aggregate.concat_time_levels(dsets)
                     ds_var_list.append(ds_var_i)
@@ -384,4 +395,4 @@ class CESMSource(BaseSource):
 
             self._ds = aggregate.concat_ensembles(ds_ens_list, member_ids=ensembles, join='outer')
         else:
-            self._ds = xr.open_dataset(url, **kwargs)
+            raise ValueError('Query returned empty results')
