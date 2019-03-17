@@ -36,7 +36,7 @@ def test_cat():
         assert isinstance(cat.results, pd.DataFrame)
 
 
-def test_to_xarray():
+def test_to_xarray_cmip_empty():
     with config.set({'database-directory': './tests/test_collections'}):
         c = intake.open_esm_metadatastore(
             collection_name='cmip_test_collection', collection_type='cmip'
@@ -45,5 +45,5 @@ def test_to_xarray():
             model='CanESM2', experiment='rcp85', frequency='mon', realm='atmos', ensemble='r2i1p1'
         )
 
-        ds = cat.to_xarray()
-        assert isinstance(ds, xr.Dataset)
+        with pytest.raises(ValueError):
+            cat.to_xarray()
