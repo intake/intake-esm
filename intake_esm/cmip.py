@@ -9,7 +9,7 @@ import pandas as pd
 import xarray as xr
 from dask import delayed
 
-from . import config
+from . import aggregate, config
 from ._version import get_versions
 from .common import BaseSource, Collection, StorageResource, _open_collection, get_subset
 
@@ -198,9 +198,7 @@ class CMIPSource(BaseSource):
     def __init__(self, collection_name, collection_type, query={}, **kwargs):
 
         super(CMIPSource, self).__init__(collection_name, collection_type, query, **kwargs)
-        self.urlpath = get_subset(self.collection_name, self.collection_type, self.query)[
-            'file_fullpath'
-        ].tolist()
+        self.urlpath = ''
         self.query_results = get_subset(self.collection_name, self.collection_type, self.query)
         if self.metadata is None:
             self.metadata = {}
@@ -225,28 +223,57 @@ class CMIPSource(BaseSource):
     def _open_dataset(self):
 
         kwargs = self.kwargs
-        if 'concat_dim' not in kwargs.keys():
-            kwargs.update(concat_dim='time')
+        if self.query_results.empty:
+            raise ValueError(f'Query={self.query} returned empty results')
 
+        query = dict(self.query)
+
+        if 'decode_times' not in kwargs.keys():
+            kwargs.update(decode_times=False)
+        if 'time_coord_name' not in kwargs.keys():
+            kwargs.update(time_coord_name='time')
+        if 'ensemble_dim_name' not in kwargs.keys():
+            kwargs.update(ensemble_dim_name='member_id')
+        if 'chunks' not in kwargs.keys():
+            kwargs.update(chunks=None)
+
+        ensembles = self.query_results['ensemble'].unique()
+        variables = self.query_results['variable'].unique()
         # Check that the same variable is not in multiple realms
         realm_list = self.query_results['realm'].unique()
+        frequency_list = self.query_results['frequency'].unique()
         if len(realm_list) != 1:
             raise ValueError(
-                f"Found in multiple realms:\n \
-                          '\t{realm_list}. Please specify the realm to use"
+                f'Found multiple realms: {realm_list} in query results. Please specify the realm to use'
             )
 
-        ds_dict = OrderedDict()
-        for ens in self.query_results['ensemble'].unique():
-            ens_match = self.query_results['ensemble'] == ens
-            paths = self.query_results.loc[ens_match]['file_fullpath'].tolist()
-            ds_dict[ens] = paths
+        if len(frequency_list) != 1:
+            raise ValueError(
+                f'Found multiple data frequencies: {frequency_list} in query results. Please specify the frequency to use'
+            )
 
-        ds_list = [
-            xr.open_mfdataset(paths_, decode_times=kwargs['decode_times'])
-            for paths_ in ds_dict.values()
-        ]
-        ens_list = list(ds_dict.keys())
-        self._ds = xr.concat(ds_list, dim='ensemble')
-        self._ds = self._ds.chunk(kwargs['chunks'])
-        self._ds['ensemble'] = ens_list
+        ds_ens_list = []
+        for ens_i in ensembles:
+            query['ensemble'] = ens_i
+            ds_var_list = []
+            for var_i in variables:
+                query['variable'] = var_i
+                urlpath_ei_vi = get_subset(self.collection_name, self.collection_type, query)[
+                    'file_fullpath'
+                ].tolist()
+                dsets = [
+                    aggregate.open_dataset(
+                        url, data_vars=[var_i], decode_times=kwargs['decode_times']
+                    )
+                    for url in urlpath_ei_vi
+                ]
+
+                ds_var_i = aggregate.concat_time_levels(dsets, kwargs['time_coord_name'])
+                ds_var_list.append(ds_var_i)
+
+            ds_ens_i = aggregate.merge(dsets=ds_var_list)
+            ds_ens_list.append(ds_ens_i)
+
+        self._ds = aggregate.concat_ensembles(
+            ds_ens_list, member_ids=ensembles, join='inner', chunks=kwargs['chunks']
+        )
