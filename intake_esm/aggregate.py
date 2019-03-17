@@ -10,10 +10,10 @@ import xarray as xr
 from . import config
 
 
-def infer_time_coord_name(ds):
+def infer_time_coord_name(ds, time_coord_name_default):
     """Infer the name of the time coordinate in a dataset."""
-    if config.get('time_coord_name_default') in ds.variables:
-        return config.get('time_coord_name_default')
+    if time_coord_name_default in ds.variables:
+        return time_coord_name_default
     unlimited_dims = ds.encoding.get('unlimited_dims', None)
     if len(unlimited_dims) == 1:
         return list(unlimited_dims)[0]
@@ -69,7 +69,7 @@ def merge_vars_two_datasets(ds1, ds2):
     return ds
 
 
-def merge(dsets, chunks={}):
+def merge(dsets):
     """Merge datasets."""
 
     if len(dsets) == 1:
@@ -82,16 +82,10 @@ def merge(dsets, chunks={}):
         dsm.attrs['history'] += new_history
     else:
         dsm.attrs['history'] = new_history
-
-    # rechunk
-    chunks = {'time': 'auto'}
-    if config.get('ensemble_dim_name') in dsm.dims:
-        chunks.update({config.get('ensemble_dim_name'): 1})
-
-    return dsm.chunk(chunks)
+    return dsm
 
 
-def concat_time_levels(dsets):
+def concat_time_levels(dsets, time_coord_name_default):
     """
     Concatenate datasets across "time" levels, taking time invariant variables
     from the first dataset.
@@ -101,12 +95,15 @@ def concat_time_levels(dsets):
     dsets : list
         A list of datasets to concatenate.
 
+    time_coord_name_default : string
+        Default name of the time coordinate
+
     Returns
     -------
     dset : xarray.Dataset,
         The concatenated dataset.
     """
-
+    dsets = dask.compute(*dsets)
     if len(dsets) == 1:
         return dsets[0]
 
@@ -114,7 +111,7 @@ def concat_time_levels(dsets):
 
     # get static vars from first dataset
     first = dsets[0]
-    time_coord_name = infer_time_coord_name(first)
+    time_coord_name = infer_time_coord_name(first, time_coord_name_default)
 
     def drop_unnecessary_coords(ds):
         """Drop coordinates that do not correspond with dimensions."""
@@ -139,7 +136,14 @@ def concat_time_levels(dsets):
     return ds
 
 
-def concat_ensembles(dsets, member_ids=None, join='inner'):
+def concat_ensembles(
+    dsets,
+    member_ids=None,
+    join='inner',
+    ensemble_dim_name='member_id',
+    time_coord_name_default='time',
+    chunks=None,
+):
     """Concatenate datasets across an ensemble dimension, taking coordinates and
     time-invariant variables from the first ensemble member.
     """
@@ -161,9 +165,7 @@ def concat_ensembles(dsets, member_ids=None, join='inner'):
     rest = [ds.reset_coords(drop=True) for ds in dsets_aligned[1:]]
     objs_to_concat = [first] + rest
 
-    ensemble_dim = xr.DataArray(
-        member_ids, dims=config.get('ensemble_dim_name'), name=config.get('ensemble_dim_name')
-    )
+    ensemble_dim = xr.DataArray(member_ids, dims=ensemble_dim_name, name=ensemble_dim_name)
     ds = xr.concat(objs_to_concat, dim=ensemble_dim, coords='minimal')
 
     # restore non_dim_coords to variables
@@ -179,6 +181,13 @@ def concat_ensembles(dsets, member_ids=None, join='inner'):
         attrs['history'] = new_history
     ds.attrs = attrs
 
+    # rechunk
+    if chunks is None:
+        time_coord_name = infer_time_coord_name(ds, time_coord_name_default)
+        chunks = {time_coord_name: 'auto'}
+    if ensemble_dim_name in ds.dims:
+        chunks.update({ensemble_dim_name: 1})
+    ds = ds.chunk(chunks)
     return ds
 
 
@@ -188,7 +197,7 @@ def set_coords(ds, varname):
     return ds.set_coords(coord_vars)
 
 
-def open_dataset(url, data_vars, chunk_size=config.get('default_chunk_size'), **kwargs):
+def _open_dataset(url, data_vars, chunk_size=config.get('default_chunk_size'), **kwargs):
     """open dataset with chunks determined."""
     with dask.config.set({'array.chunk-size': chunk_size}):
         ds = xr.open_dataset(url, chunks={'time': 'auto'}, **kwargs)
@@ -197,4 +206,4 @@ def open_dataset(url, data_vars, chunk_size=config.get('default_chunk_size'), **
     return set_coords(ds, data_vars)
 
 
-open_dataset_delayed = dask.delayed(open_dataset)
+open_dataset = dask.delayed(_open_dataset)
