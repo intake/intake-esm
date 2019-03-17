@@ -117,8 +117,6 @@ collections:
       - ocean
       - ocnbgchem
       - seaIce
-time_coord_name_default: time
-ensemble_dim_name: member_id
 default_chunk_size: 12MiB
 data_cache_directory: ~/.intake_esm/data_cache
 database_directory: ~/.intake_esm/collections
