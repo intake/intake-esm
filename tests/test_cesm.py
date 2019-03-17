@@ -68,17 +68,14 @@ def test_cat():
         assert isinstance(cat.results, pd.DataFrame)
 
 
-def test_to_xarray():
-    with config.set({'database-directory': './tests/test_collections'}):
-        c = intake.open_esm_metadatastore(
-            collection_name='cesm_dple_test_collection', collection_type='cesm'
-        )
-        cat = c.search(variable='O2', direct_access=True)
-        ds = cat.to_xarray()
-        assert isinstance(ds, xr.Dataset)
-
-
-def test_to_xarray_cesm():
+@pytest.mark.parametrize(
+    'chunks, expected_chunks',
+    [
+        ({'member_id': 1, 'time': 100, 'nlat': 2, 'nlon': 2}, (1, 100, 2, 2)),
+        ({'member_id': 1, 'time': 200, 'nlat': 1, 'nlon': 1}, (1, 200, 1, 1)),
+    ],
+)
+def test_to_xarray_cesm(chunks, expected_chunks):
     with config.set({'database-directory': './tests/test_collections'}):
         c = intake.open_esm_metadatastore(collection_name='cesm1-le', collection_type='cesm')
         cat = c.search(
@@ -87,5 +84,5 @@ def test_to_xarray_cesm():
             experiment=['20C', 'RCP85'],
             direct_access=True,
         )
-        ds = cat.to_xarray()
-        assert isinstance(ds, xr.Dataset)
+        ds = cat.to_xarray(chunks=chunks)
+        assert ds['SHF'].data.chunksize == expected_chunks

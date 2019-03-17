@@ -306,12 +306,6 @@ class CESMSource(BaseSource):
     def __init__(self, collection_name, collection_type, query={}, **kwargs):
 
         super(CESMSource, self).__init__(collection_name, collection_type, query, **kwargs)
-        self.urlpath = get_subset(
-            self.collection_name,
-            self.collection_type,
-            self.query,
-            order_by=['sequence_order', 'files'],
-        ).files.tolist()
         self.query_results = get_subset(
             self.collection_name,
             self.collection_type,
@@ -320,6 +314,7 @@ class CESMSource(BaseSource):
         )
         if self.metadata is None:
             self.metadata = {}
+        self.urlpath = ''
 
     @property
     def results(self):
@@ -350,49 +345,52 @@ class CESMSource(BaseSource):
         return self.to_dask()
 
     def _open_dataset(self):
-        url = self.urlpath
         kwargs = self.kwargs
 
-        if len(self.query_results) == 0:
-            raise ValueError('query results are empty')
+        if self.query_results.empty:
+            raise ValueError(f'Query={self.query} returned empty results')
 
         query = dict(self.query)
-        if isinstance(url, list) and len(url) >= 1:
-            if 'concat_dim' not in kwargs.keys():
-                kwargs.update(concat_dim='time')
-            if 'decode_times' not in kwargs.keys():
-                kwargs.update(decode_times=False)
 
-            ensembles = self.query_results.ensemble.unique()
-            variables = self.query_results.variable.unique()
+        if 'decode_times' not in kwargs.keys():
+            kwargs.update(decode_times=False)
+        if 'time_coord_name' not in kwargs.keys():
+            kwargs.update(time_coord_name='time')
+        if 'ensemble_dim_name' not in kwargs.keys():
+            kwargs.update(ensemble_dim_name='member_id')
+        if 'chunks' not in kwargs.keys():
+            kwargs.update(chunks=None)
 
-            ds_ens_list = []
-            for ens_i in ensembles:
-                query['ensemble'] = ens_i
+        ensembles = self.query_results.ensemble.unique()
+        variables = self.query_results.variable.unique()
 
-                ds_var_list = []
-                for var_i in variables:
+        ds_ens_list = []
+        for ens_i in ensembles:
+            query['ensemble'] = ens_i
 
-                    query['variable'] = var_i
-                    urlpath_ei_vi = get_subset(
-                        self.collection_name,
-                        self.collection_type,
-                        query,
-                        order_by=['sequence_order', 'files'],
-                    ).files.tolist()
+            ds_var_list = []
+            for var_i in variables:
 
-                    dsets = [
-                        aggregate.open_dataset(
-                            url, data_vars=[var_i], decode_times=kwargs['decode_times']
-                        )
-                        for url in urlpath_ei_vi
-                    ]
-                    ds_var_i = aggregate.concat_time_levels(dsets)
-                    ds_var_list.append(ds_var_i)
+                query['variable'] = var_i
+                urlpath_ei_vi = get_subset(
+                    self.collection_name,
+                    self.collection_type,
+                    query,
+                    order_by=['sequence_order', 'files'],
+                ).files.tolist()
 
-                ds_ens_i = aggregate.merge(ds_var_list)
-                ds_ens_list.append(ds_ens_i)
+                dsets = [
+                    aggregate.open_dataset(
+                        url, data_vars=[var_i], decode_times=kwargs['decode_times']
+                    )
+                    for url in urlpath_ei_vi
+                ]
+                ds_var_i = aggregate.concat_time_levels(dsets, kwargs['time_coord_name'])
+                ds_var_list.append(ds_var_i)
 
-            self._ds = aggregate.concat_ensembles(ds_ens_list, member_ids=ensembles, join='outer')
-        else:
-            raise ValueError('Query returned empty results')
+            ds_ens_i = aggregate.merge(dsets=ds_var_list)
+            ds_ens_list.append(ds_ens_i)
+
+        self._ds = aggregate.concat_ensembles(
+            ds_ens_list, member_ids=ensembles, join='outer', chunks=kwargs['chunks']
+        )
