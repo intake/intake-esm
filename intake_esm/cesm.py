@@ -41,7 +41,7 @@ class CESMCollection(Collection):
         self.df = pd.DataFrame(columns=self.columns)
 
     def _validate(self):
-        for req_col in ['files', 'sequence_order']:
+        for req_col in ['file_fullpath', 'sequence_order']:
             if req_col not in self.columns:
                 raise ValueError(
                     f"Missing required column: {req_col} for {self.collection_spec['collection_type']} in {config.PATH}"
@@ -162,9 +162,9 @@ class CESMCollection(Collection):
         self.df = self.df[self.columns]
 
         # Remove duplicates
-        self.df = self.df.drop_duplicates(subset=['resource', 'files'], keep='last').reset_index(
-            drop=True
-        )
+        self.df = self.df.drop_duplicates(
+            subset=['resource', 'file_fullpath'], keep='last'
+        ).reset_index(drop=True)
 
     def _assemble_collection_df_files(self, resource_key, resource_type, direct_access, filelist):
         entries = {
@@ -178,9 +178,9 @@ class CESMCollection(Collection):
                 'stream',
                 'variable',
                 'date_range',
-                'files_basename',
-                'files_dirname',
-                'files',
+                'file_basename',
+                'file_dirname',
+                'file_fullpath',
             ]
         }
 
@@ -205,9 +205,9 @@ class CESMCollection(Collection):
             entries['variable'].append(fileparts['variable'])
             entries['date_range'].append(fileparts['datestr'])
 
-            entries['files_basename'].append(os.path.basename(f))
-            entries['files_dirname'].append(os.path.dirname(f) + '/')
-            entries['files'].append(f)
+            entries['file_basename'].append(os.path.basename(f))
+            entries['file_dirname'].append(os.path.dirname(f) + '/')
+            entries['file_fullpath'].append(f)
 
         return pd.DataFrame(entries)
 
@@ -310,7 +310,7 @@ class CESMSource(BaseSource):
             self.collection_name,
             self.collection_type,
             self.query,
-            order_by=['sequence_order', 'files'],
+            order_by=['sequence_order', 'file_fullpath'],
         )
         if self.metadata is None:
             self.metadata = {}
@@ -327,7 +327,7 @@ class CESMSource(BaseSource):
                 self.collection_name,
                 self.collection_type,
                 self.query,
-                order_by=['sequence_order', 'files'],
+                order_by=['sequence_order', 'file_fullpath'],
             )
             return self.query_results
 
@@ -376,8 +376,8 @@ class CESMSource(BaseSource):
                     self.collection_name,
                     self.collection_type,
                     query,
-                    order_by=['sequence_order', 'files'],
-                ).files.tolist()
+                    order_by=['sequence_order', 'file_fullpath'],
+                )['file_fullpath'].tolist()
 
                 dsets = [
                     aggregate.open_dataset(
