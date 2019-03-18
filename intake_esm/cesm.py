@@ -40,13 +40,6 @@ class CESMCollection(Collection):
         self.include_cache_dir = self.collection_spec.get('include_cache_dir', False)
         self.df = pd.DataFrame(columns=self.columns)
 
-    def _validate(self):
-        for req_col in ['file_fullpath', 'sequence_order']:
-            if req_col not in self.columns:
-                raise ValueError(
-                    f"Missing required column: {req_col} for {self.collection_spec['collection_type']} in {config.PATH}"
-                )
-
     def build(self):
         self._validate()
         # Loop over data sources/experiments
@@ -345,24 +338,11 @@ class CESMSource(BaseSource):
         return self.to_dask()
 
     def _open_dataset(self):
-        kwargs = self.kwargs
-
-        if self.query_results.empty:
-            raise ValueError(f'Query={self.query} returned empty results')
-
+        kwargs = self._validate_kwargs(self.kwargs)
         query = dict(self.query)
 
-        if 'decode_times' not in kwargs.keys():
-            kwargs.update(decode_times=False)
-        if 'time_coord_name' not in kwargs.keys():
-            kwargs.update(time_coord_name='time')
-        if 'ensemble_dim_name' not in kwargs.keys():
-            kwargs.update(ensemble_dim_name='member_id')
-        if 'chunks' not in kwargs.keys():
-            kwargs.update(chunks=None)
-
-        ensembles = self.query_results.ensemble.unique()
-        variables = self.query_results.variable.unique()
+        ensembles = self.query_results['ensemble'].unique()
+        variables = self.query_results['variable'].unique()
 
         ds_ens_list = []
         for ens_i in ensembles:
@@ -376,7 +356,7 @@ class CESMSource(BaseSource):
                     self.collection_name,
                     self.collection_type,
                     query,
-                    order_by=['sequence_order', 'file_fullpath'],
+                    order_by=config.get('collections')['cesm']['order-by-columns'],
                 )['file_fullpath'].tolist()
 
                 dsets = [

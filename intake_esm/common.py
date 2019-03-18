@@ -50,6 +50,15 @@ class Collection(ABC):
     def build(self):
         pass
 
+    def _validate(self):
+        for req_col in config.get('collections')[self.collection_spec['collection_type']][
+            'required-columns'
+        ]:
+            if req_col not in self.columns:
+                raise ValueError(
+                    f"Missing required column: {req_col} for {self.collection_spec['collection_type']} in {config.PATH}"
+                )
+
     def persist_db_file(self):
         if not self.df.empty:
             logger.warning(
@@ -72,6 +81,21 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
     def results(self):
         """Return collection entries matching query"""
         raise NotImplementedError()
+
+    def _validate_kwargs(self, kwargs):
+
+        _kwargs = kwargs.copy()
+        if self.query_results.empty:
+            raise ValueError(f'Query={self.query} returned empty results')
+        if 'decode_times' not in _kwargs.keys():
+            _kwargs.update(decode_times=False)
+        if 'time_coord_name' not in _kwargs.keys():
+            _kwargs.update(time_coord_name='time')
+        if 'ensemble_dim_name' not in _kwargs.keys():
+            _kwargs.update(ensemble_dim_name='member_id')
+        if 'chunks' not in _kwargs.keys():
+            _kwargs.update(chunks=None)
+        return _kwargs
 
     @abstractclassmethod
     def _open_dataset(self):

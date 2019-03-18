@@ -38,13 +38,6 @@ class CMIPCollection(Collection):
         self.df = pd.DataFrame()
         self.root_dir = self.collection_spec['data_sources']['root_dir']['urlpath']
 
-    def _validate(self):
-        for req_col in ['realm', 'frequency', 'ensemble', 'experiment', 'file_fullpath']:
-            if req_col not in self.columns:
-                raise ValueError(
-                    f"Missing required column: {req_col} for {self.collection_spec['collection_type']} in {config.PATH}"
-                )
-
     def build(self):
         """ Build collection and return a pandas Dataframe"""
         self._validate()
@@ -222,21 +215,8 @@ class CMIPSource(BaseSource):
 
     def _open_dataset(self):
 
-        kwargs = self.kwargs
-        if self.query_results.empty:
-            raise ValueError(f'Query={self.query} returned empty results')
-
+        kwargs = self._validate_kwargs(self.kwargs)
         query = dict(self.query)
-
-        if 'decode_times' not in kwargs.keys():
-            kwargs.update(decode_times=False)
-        if 'time_coord_name' not in kwargs.keys():
-            kwargs.update(time_coord_name='time')
-        if 'ensemble_dim_name' not in kwargs.keys():
-            kwargs.update(ensemble_dim_name='member_id')
-        if 'chunks' not in kwargs.keys():
-            kwargs.update(chunks=None)
-
         # Check that the same variable is not in multiple realms
         realm_list = self.query_results['realm'].unique()
         frequency_list = self.query_results['frequency'].unique()
