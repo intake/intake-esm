@@ -196,8 +196,10 @@ def set_coords(ds, varname):
     return ds.set_coords(coord_vars)
 
 
-def open_dataset(url, data_vars, chunk_size=config.get('default_chunk_size'), **kwargs):
+def open_dataset(url, data_vars, chunk_size=None, **kwargs):
     """open dataset with chunks determined."""
+    if chunk_size is None:
+        chunk_size = config.get('default_chunk_size')
     with dask.config.set({'array.chunk-size': chunk_size}):
         ds = xr.open_dataset(url, chunks={'time': 'auto'}, **kwargs)
     ds.attrs['history'] = f"{datetime.now()} xarray.open_dataset('{url}')"
