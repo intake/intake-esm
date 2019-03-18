@@ -86,7 +86,23 @@ collections:
         daily: day_1
         monthly: month_1
         yearly: year_1
-  cmip:
+  cmip5:
+    collection_columns:
+    - activity
+    - product
+    - institute
+    - model
+    - experiment
+    - frequency
+    - modeling_realm
+    - mip_table
+    - ensemble_member
+    - file_basename
+    - file_fullpath
+    - file_dirname
+    - variable
+    - version
+  cmip6:
     collection_columns:
     - mip_era
     - activity_id
@@ -110,4 +126,5 @@ data_cache_directory: ~/.intake_esm/data_cache
 database_directory: ~/.intake_esm/collections
 sources:
   cesm: intake_esm.cesm.CESMSource
-  cmip: intake_esm.cmip.CMIPSource
+  cmip5: intake_esm.cmip.CMIP5Source
+  cmip6: intake_esm.cmip.CMIP6Source

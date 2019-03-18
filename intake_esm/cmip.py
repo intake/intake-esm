@@ -20,7 +20,29 @@ logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.WARNING)
 
 
-class CMIPCollection(Collection):
+class CMIPBaseCollection(Collection):
+    def __init__(self, collection_spec):
+        super(CMIPBaseCollection, self).__init__(collection_spec)
+        self.df = pd.DataFrame()
+        self.root_dir = self.collection_spec['data_sources']['root_dir']['urlpath']
+
+    def _validate(self):
+        raise NotImplementedError()
+
+    def build(self):
+        raise NotImplementedError()
+
+    def _parse_root_dir(self):
+        raise NotImplementedError()
+
+    def _parse_directory(self):
+        raise NotImplementedError()
+
+    def _get_entry(self):
+        raise NotImplementedError()
+
+
+class CMIP5Collection(CMIPBaseCollection):
     """ Defines a CMIP collection
 
        Parameters
@@ -34,12 +56,16 @@ class CMIPCollection(Collection):
        """
 
     def __init__(self, collection_spec):
-        super(CMIPCollection, self).__init__(collection_spec)
-        self.df = pd.DataFrame()
-        self.root_dir = self.collection_spec['data_sources']['root_dir']['urlpath']
+        super(CMIP5Collection, self).__init__(collection_spec)
 
     def _validate(self):
-        for req_col in ['realm', 'frequency', 'ensemble', 'experiment', 'file_fullpath']:
+        for req_col in [
+            'modeling_realm',
+            'frequency',
+            'ensemble_member',
+            'experiment',
+            'file_fullpath',
+        ]:
             if req_col not in self.columns:
                 raise ValueError(
                     f"Missing required column: {req_col} for {self.collection_spec['collection_type']} in {config.PATH}"
@@ -51,15 +77,15 @@ class CMIPCollection(Collection):
         if not os.path.exists(self.root_dir):
             raise NotADirectoryError(f'{self.root_dir} does not exist')
 
-        dirs = _parse_dirs(self.root_dir)
-        dfs = [_parse_directory(directory, self.columns) for directory in dirs]
+        dirs = self._parse_dirs(self.root_dir)
+        dfs = [self._parse_directory(directory, self.columns) for directory in dirs]
         df = dd.from_delayed(dfs).compute()
 
         # NOTE: This is not a robust solution in case the root dir does not match the pattern
         vYYYYMMDD = r'v\d{4}\d{2}\d{2}'
         vN = r'v\d{1}'
         v = re.compile('|'.join([vYYYYMMDD, vN]))  # Combine both regex into one
-        df['version'] = df['files_dirname'].str.findall(v)
+        df['version'] = df['file_dirname'].str.findall(v)
         df['version'] = df['version'].apply(lambda x: x[0] if x else 'v0')
         sorted_df = (
             df.sort_values('version')
@@ -71,96 +97,97 @@ class CMIPCollection(Collection):
         self.persist_db_file()
         return self.df
 
+    def _parse_dirs(self, root_dir):
+        institute_dirs = [
+            os.path.join(root_dir, activity, institute)
+            for activity in os.listdir(root_dir)
+            for institute in os.listdir(os.path.join(root_dir, activity))
+            if os.path.isdir(os.path.join(root_dir, activity, institute))
+        ]
 
-def _parse_dirs(root_dir):
-    institution_dirs = [
-        os.path.join(root_dir, activity, institution)
-        for activity in os.listdir(root_dir)
-        for institution in os.listdir(os.path.join(root_dir, activity))
-        if os.path.isdir(os.path.join(root_dir, activity, institution))
-    ]
+        model_dirs = [
+            os.path.join(institute_dir, model)
+            for institute_dir in institute_dirs
+            for model in os.listdir(institute_dir)
+            if os.path.isdir(os.path.join(institute_dir, model))
+        ]
 
-    model_dirs = [
-        os.path.join(institution_dir, model)
-        for institution_dir in institution_dirs
-        for model in os.listdir(institution_dir)
-        if os.path.isdir(os.path.join(institution_dir, model))
-    ]
+        experiment_dirs = [
+            os.path.join(model_dir, exp)
+            for model_dir in model_dirs
+            for exp in os.listdir(model_dir)
+            if os.path.isdir(os.path.join(model_dir, exp))
+        ]
 
-    experiment_dirs = [
-        os.path.join(model_dir, exp)
-        for model_dir in model_dirs
-        for exp in os.listdir(model_dir)
-        if os.path.isdir(os.path.join(model_dir, exp))
-    ]
+        freq_dirs = [
+            os.path.join(experiment_dir, freq)
+            for experiment_dir in experiment_dirs
+            for freq in os.listdir(experiment_dir)
+            if os.path.isdir(os.path.join(experiment_dir, freq))
+        ]
 
-    freq_dirs = [
-        os.path.join(experiment_dir, freq)
-        for experiment_dir in experiment_dirs
-        for freq in os.listdir(experiment_dir)
-        if os.path.isdir(os.path.join(experiment_dir, freq))
-    ]
+        modeling_realm_dirs = [
+            os.path.join(freq_dir, modeling_realm)
+            for freq_dir in freq_dirs
+            for modeling_realm in os.listdir(freq_dir)
+            if os.path.isdir(os.path.join(freq_dir, modeling_realm))
+        ]
 
-    realm_dirs = [
-        os.path.join(freq_dir, realm)
-        for freq_dir in freq_dirs
-        for realm in os.listdir(freq_dir)
-        if os.path.isdir(os.path.join(freq_dir, realm))
-    ]
+        return modeling_realm_dirs
 
-    return realm_dirs
+    def _get_entry(self, directory):
+        dir_split = directory.split('/')
+        entry = {}
+        entry['activity'] = 'CMIP5'
+        entry['modeling_realm'] = dir_split[-1]
+        entry['frequency'] = dir_split[-2]
+        entry['experiment'] = dir_split[-3]
+        entry['model'] = dir_split[-4]
+        entry['institute'] = dir_split[-5]
+        entry['product'] = dir_split[-6]
+        return entry
 
+    @delayed
+    def _parse_directory(self, directory, columns):
+        exclude = set(['files', 'latest'])  # directories to exclude
 
-def _get_entry(directory):
-    dir_split = directory.split('/')
-    entry = {}
-    entry['realm'] = dir_split[-1]
-    entry['frequency'] = dir_split[-2]
-    entry['experiment'] = dir_split[-3]
-    entry['model'] = dir_split[-4]
-    entry['institution'] = dir_split[-5]
-    return entry
+        df = pd.DataFrame(columns=columns)
 
+        entry = self._get_entry(directory)
 
-@delayed
-def _parse_directory(directory, columns):
-    exclude = set(['files', 'latests'])  # directories to exclude
-
-    df = pd.DataFrame(columns=columns)
-
-    entry = _get_entry(directory)
-
-    for root, dirs, files in os.walk(directory):
-        # print(root)
-        dirs[:] = [d for d in dirs if d not in exclude]
-        if not files:
-            continue
-        sfiles = sorted([f for f in files if os.path.splitext(f)[1] == '.nc'])
-        if not sfiles:
-            continue
-
-        fs = []
-        for f in sfiles:
-            try:
-                f_split = f.split('_')
-                entry['variable'] = f_split[0]
-                entry['ensemble'] = f_split[-2]
-                entry['files_dirname'] = root
-                entry['file_basename'] = f
-                entry['file_fullpath'] = os.path.join(root, f)
-                fs.append(entry)
-            except BaseException:
+        for root, dirs, files in os.walk(directory):
+            # print(root)
+            dirs[:] = [d for d in dirs if d not in exclude]
+            if not files:
                 continue
-        if fs:
-            temp_df = pd.DataFrame(fs, columns=columns)
+            sfiles = sorted([f for f in files if os.path.splitext(f)[1] == '.nc'])
+            if not sfiles:
+                continue
 
-        else:
-            temp_df = pd.DataFrame(columns=columns)
-        df = pd.concat([temp_df, df], ignore_index=True, sort=False)
-    return df
+            fs = []
+            for f in sfiles:
+                try:
+                    f_split = f.split('_')
+                    entry['variable'] = f_split[0]
+                    entry['mip_table'] = f_split[1]
+                    entry['ensemble_member'] = f_split[-2]
+                    entry['temporal_subset'] = f_split[-1].split('.')[0]
+                    entry['file_dirname'] = root
+                    entry['file_basename'] = f
+                    entry['file_fullpath'] = os.path.join(root, f)
+                    fs.append(entry)
+                except BaseException:
+                    continue
+            if fs:
+                temp_df = pd.DataFrame(fs, columns=columns)
+
+            else:
+                temp_df = pd.DataFrame(columns=columns)
+            df = pd.concat([temp_df, df], ignore_index=True, sort=False)
+        return df
 
 
-class CMIPSource(BaseSource):
+class CMIP5Source(BaseSource):
     """ Read CMIP collection datasets into an xarray dataset
 
     Parameters
@@ -191,13 +218,13 @@ class CMIPSource(BaseSource):
         Further parameters are passed to xr.open_mfdataset
     """
 
-    name = 'cmip'
+    name = 'cmip5'
     partition_access = True
     version = __version__
 
     def __init__(self, collection_name, collection_type, query={}, **kwargs):
 
-        super(CMIPSource, self).__init__(collection_name, collection_type, query, **kwargs)
+        super(CMIP5Source, self).__init__(collection_name, collection_type, query, **kwargs)
         self.urlpath = ''
         self.query_results = get_subset(self.collection_name, self.collection_type, self.query)
         if self.metadata is None:
@@ -237,14 +264,14 @@ class CMIPSource(BaseSource):
         if 'chunks' not in kwargs.keys():
             kwargs.update(chunks=None)
 
-        ensembles = self.query_results['ensemble'].unique()
+        ensembles = self.query_results['ensemble_member'].unique()
         variables = self.query_results['variable'].unique()
-        # Check that the same variable is not in multiple realms
-        realm_list = self.query_results['realm'].unique()
+        # Check that the same variable is not in multiple modeling_realms
+        modeling_realm_list = self.query_results['modeling_realm'].unique()
         frequency_list = self.query_results['frequency'].unique()
-        if len(realm_list) != 1:
+        if len(modeling_realm_list) != 1:
             raise ValueError(
-                f'Found multiple realms: {realm_list} in query results. Please specify the realm to use'
+                f'Found multiple modeling_realms: {modeling_realm_list} in query results. Please specify the modeling_realm to use'
             )
 
         if len(frequency_list) != 1:
@@ -254,7 +281,7 @@ class CMIPSource(BaseSource):
 
         ds_ens_list = []
         for ens_i in ensembles:
-            query['ensemble'] = ens_i
+            query['ensemble_member'] = ens_i
             ds_var_list = []
             for var_i in variables:
                 query['variable'] = var_i

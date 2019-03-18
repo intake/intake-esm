@@ -194,7 +194,7 @@ def _get_built_collections():
 def _open_collection(collection_name, collection_type):
     """ Open an ESM collection"""
 
-    collection_types = {'cesm', 'cmip'}
+    collection_types = config.get('sources').keys()
     collections = _get_built_collections()
     if (collection_type in collection_types) and collections:
         try:

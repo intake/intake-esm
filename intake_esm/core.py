@@ -10,7 +10,7 @@ from intake_xarray.netcdf import NetCDFSource
 from . import config as config
 from ._version import get_versions
 from .cesm import CESMCollection
-from .cmip import CMIPCollection
+from .cmip import CMIP5Collection
 from .common import _get_built_collections, _open_collection
 
 __version__ = get_versions()['version']
@@ -47,7 +47,7 @@ class ESMMetadataStoreCatalog(Catalog):
 
     name = 'esm_metadatastore'
     version = __version__
-    collection_types = {'cesm': CESMCollection, 'cmip': CMIPCollection}
+    collection_types = {'cesm': CESMCollection, 'cmip5': CMIP5Collection}
 
     def __init__(
         self,
