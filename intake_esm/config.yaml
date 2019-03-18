@@ -88,35 +88,23 @@ collections:
         yearly: year_1
   cmip:
     collection_columns:
-    - ensemble
-    - experiment
+    - mip_era
+    - activity_id
+    - institution_id
+    - source_id
+    - experiment_id
+    - member_id
+    - table_id
+    - variable_id
+    - grid_label
     - file_basename
     - file_fullpath
     - frequency
-    - institution
     - model
     - realm
-    - files_dirname
+    - file_dirname
     - variable
     - version
-    frequencies:
-      - 3hr
-      - 6hr
-      - day
-      - fx
-      - mon
-      - monclim
-      - subhr
-      - yr
-    realms:
-      - aerosol
-      - atmos
-      - atmoschem
-      - land
-      - landice
-      - ocean
-      - ocnbgchem
-      - seaIce
 default_chunk_size: 12MiB
 data_cache_directory: ~/.intake_esm/data_cache
 database_directory: ~/.intake_esm/collections
