@@ -10,6 +10,7 @@ from subprocess import PIPE, Popen
 import intake_xarray
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 from . import config
 
@@ -79,6 +80,32 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
     def to_xarray(self, **kwargs):
         """Return dataset as an xarray instance"""
         raise NotImplementedError()
+
+    def _get_schema(self):
+        """Make schema object, which embeds xarray object and some details"""
+        from intake.source.base import Schema
+
+        self.urlpath = self._get_cache(self.urlpath)[0]
+
+        if self._ds is None:
+            self._open_dataset()
+
+            if isinstance(self._ds, xr.Dataset):
+                metadata = {
+                    'dims': dict(self._ds.dims),
+                    'data_vars': {k: list(self._ds[k].coords) for k in self._ds.data_vars.keys()},
+                    'coords': tuple(self._ds.coords.keys()),
+                }
+                metadata.update(self._ds.attrs)
+
+            else:
+                metadata = {}
+
+            self._schema = Schema(
+                datashape=None, dtype=None, shape=None, npartitions=None, extra_metadata=metadata
+            )
+
+        return self._schema
 
 
 class StorageResource(object):

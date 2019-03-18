@@ -237,43 +237,47 @@ class CMIPSource(BaseSource):
         if 'chunks' not in kwargs.keys():
             kwargs.update(chunks=None)
 
-        ensembles = self.query_results['ensemble'].unique()
-        variables = self.query_results['variable'].unique()
         # Check that the same variable is not in multiple realms
         realm_list = self.query_results['realm'].unique()
         frequency_list = self.query_results['frequency'].unique()
-        if len(realm_list) != 1:
+        if len(realm_list) > 1:
             raise ValueError(
                 f'Found multiple realms: {realm_list} in query results. Please specify the realm to use'
             )
 
-        if len(frequency_list) != 1:
+        if len(frequency_list) > 1:
             raise ValueError(
                 f'Found multiple data frequencies: {frequency_list} in query results. Please specify the frequency to use'
             )
 
-        ds_ens_list = []
-        for ens_i in ensembles:
-            query['ensemble'] = ens_i
-            ds_var_list = []
-            for var_i in variables:
-                query['variable'] = var_i
-                urlpath_ei_vi = get_subset(self.collection_name, self.collection_type, query)[
-                    'file_fullpath'
-                ].tolist()
-                dsets = [
-                    aggregate.open_dataset(
-                        url, data_vars=[var_i], decode_times=kwargs['decode_times']
-                    )
-                    for url in urlpath_ei_vi
-                ]
-
-                ds_var_i = aggregate.concat_time_levels(dsets, kwargs['time_coord_name'])
-                ds_var_list.append(ds_var_i)
-
-            ds_ens_i = aggregate.merge(dsets=ds_var_list)
-            ds_ens_list.append(ds_ens_i)
-
-        self._ds = aggregate.concat_ensembles(
-            ds_ens_list, member_ids=ensembles, join='inner', chunks=kwargs['chunks']
+        _ds_dict = {}
+        grouped = get_subset(self.collection_name, self.collection_type, query).groupby(
+            'institution'
         )
+        for name, group in grouped:
+            ensembles = group['ensemble'].unique()
+            ds_ens_list = []
+            for _, group_ens in group.groupby('ensemble'):
+                ds_var_list = []
+                for var_i, group_var in group_ens.groupby('variable'):
+                    urlpath_ei_vi = group_var['file_fullpath'].tolist()
+                    dsets = [
+                        aggregate.open_dataset(
+                            url, data_vars=[var_i], decode_times=kwargs['decode_times']
+                        )
+                        for url in urlpath_ei_vi
+                    ]
+                    ds_var_i = aggregate.concat_time_levels(dsets, kwargs['time_coord_name'])
+                    ds_var_list.append(ds_var_i)
+                ds_ens_i = aggregate.merge(dsets=ds_var_list)
+                ds_ens_list.append(ds_ens_i)
+            _ds = aggregate.concat_ensembles(
+                ds_ens_list, member_ids=ensembles, join='inner', chunks=kwargs['chunks']
+            )
+            _ds_dict[name] = _ds
+        keys = list(_ds_dict.keys())
+        print(_ds_dict)
+        if len(keys) == 1:
+            self._ds = _ds_dict[keys[0]]
+        else:
+            self._ds = _ds_dict
