@@ -360,7 +360,7 @@ class CESMSource(BaseSource):
                 )['file_fullpath'].tolist()
 
                 dsets = [
-                    aggregate.open_dataset(
+                    aggregate.open_dataset_delayed(
                         url, data_vars=[var_i], decode_times=kwargs['decode_times']
                     )
                     for url in urlpath_ei_vi

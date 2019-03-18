@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from dask import delayed
+from tqdm.autonotebook import tqdm, trange
 
 from . import aggregate, config
 from ._version import get_versions
@@ -234,15 +235,15 @@ class CMIPSource(BaseSource):
         grouped = get_subset(self.collection_name, self.collection_type, query).groupby(
             'institution'
         )
-        for name, group in grouped:
+        for name, group in tqdm(grouped, desc='institution'):
             ensembles = group['ensemble'].unique()
             ds_ens_list = []
-            for _, group_ens in group.groupby('ensemble'):
+            for _, group_ens in tqdm(group.groupby('ensemble'), desc='ensemble'):
                 ds_var_list = []
-                for var_i, group_var in group_ens.groupby('variable'):
+                for var_i, group_var in tqdm(group_ens.groupby('variable'), desc='variable'):
                     urlpath_ei_vi = group_var['file_fullpath'].tolist()
                     dsets = [
-                        aggregate.open_dataset(
+                        aggregate.open_dataset_delayed(
                             url, data_vars=[var_i], decode_times=kwargs['decode_times']
                         )
                         for url in urlpath_ei_vi
