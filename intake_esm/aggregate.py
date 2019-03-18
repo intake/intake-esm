@@ -103,7 +103,6 @@ def concat_time_levels(dsets, time_coord_name_default):
     dset : xarray.Dataset,
         The concatenated dataset.
     """
-    dsets = dask.compute(*dsets)
     if len(dsets) == 1:
         return dsets[0]
 
@@ -197,7 +196,7 @@ def set_coords(ds, varname):
     return ds.set_coords(coord_vars)
 
 
-def _open_dataset(url, data_vars, chunk_size=config.get('default_chunk_size'), **kwargs):
+def open_dataset(url, data_vars, chunk_size=config.get('default_chunk_size'), **kwargs):
     """open dataset with chunks determined."""
     with dask.config.set({'array.chunk-size': chunk_size}):
         ds = xr.open_dataset(url, chunks={'time': 'auto'}, **kwargs)
@@ -206,4 +205,4 @@ def _open_dataset(url, data_vars, chunk_size=config.get('default_chunk_size'), *
     return set_coords(ds, data_vars)
 
 
-open_dataset = dask.delayed(_open_dataset)
+open_dataset_delayed = dask.delayed(open_dataset)
