@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from dask import delayed
-from tqdm.autonotebook import tqdm, trange
+from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
 from ._version import get_versions
@@ -253,7 +253,7 @@ class CMIPSource(BaseSource):
                 ds_ens_i = aggregate.merge(dsets=ds_var_list)
                 ds_ens_list.append(ds_ens_i)
             _ds = aggregate.concat_ensembles(
-                ds_ens_list, member_ids=ensembles, join='inner', chunks=kwargs['chunks']
+                ds_ens_list, member_ids=ensembles, join=kwargs['join'], chunks=kwargs['chunks']
             )
             _ds_dict[name] = _ds
         keys = list(_ds_dict.keys())

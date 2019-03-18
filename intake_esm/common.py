@@ -95,6 +95,8 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
             _kwargs.update(ensemble_dim_name='member_id')
         if 'chunks' not in _kwargs.keys():
             _kwargs.update(chunks=None)
+        if 'join' not in _kwargs.keys():
+            _kwargs.update(join='outer')
         return _kwargs
 
     @abstractclassmethod

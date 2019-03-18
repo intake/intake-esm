@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 import xarray as xr
+from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
 from ._version import get_versions
@@ -345,11 +346,11 @@ class CESMSource(BaseSource):
         variables = self.query_results['variable'].unique()
 
         ds_ens_list = []
-        for ens_i in ensembles:
+        for ens_i in tqdm(ensembles, desc='ensembles'):
             query['ensemble'] = ens_i
 
             ds_var_list = []
-            for var_i in variables:
+            for var_i in tqdm(variables, desc='variables'):
 
                 query['variable'] = var_i
                 urlpath_ei_vi = get_subset(
@@ -372,5 +373,5 @@ class CESMSource(BaseSource):
             ds_ens_list.append(ds_ens_i)
 
         self._ds = aggregate.concat_ensembles(
-            ds_ens_list, member_ids=ensembles, join='outer', chunks=kwargs['chunks']
+            ds_ens_list, member_ids=ensembles, join=kwargs['join'], chunks=kwargs['chunks']
         )
