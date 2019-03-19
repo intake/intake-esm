@@ -115,6 +115,9 @@ catalog database. This database is persisted on disk as an CSV file to the locat
 Building a CMIP5 Collection Catalog
 -----------------------------------
 
+Collection Catalog Definition
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Collections are built from a ``YAML`` input file or a dictionary containing nested dictionaries of entries.
 An example of such a dictionary is provided below for a CMIP5 collection catalog:
 
@@ -129,8 +132,8 @@ An example of such a dictionary is provided below for a CMIP5 collection catalog
 
 
 
-Build the Collection
-~~~~~~~~~~~~~~~~~~~~~~
+Building the Collection Catalog
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Let's begin by importing ``intake``.
 
@@ -163,8 +166,8 @@ dictionary defined above:
    col.df["model"].nunique()  # Find the total number of unique climate models
    col.df.groupby('model').nunique()
 
-Search For Entries in the Built Catalog
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Search For Entries in the Built Collection Catalog
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 One of the features supported in ``intake-esm`` is querying the collection catalog.
 This is achieved through the ``search()`` method. The ``search`` method allows the user to
