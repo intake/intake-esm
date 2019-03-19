@@ -57,15 +57,15 @@ def test_search():
         )
         cat = c.search(variable='O2', direct_access=True)
 
-        assert isinstance(cat.results, pd.DataFrame)
-        assert not cat.results.empty
+        assert isinstance(cat.query_results, pd.DataFrame)
+        assert not cat.query_results.empty
 
 
 def test_cat():
     with config.set({'database-directory': './tests/test_collections'}):
         cat = intake.open_catalog(os.path.join(here, 'cesm_catalog.yaml'))
         cat = cat['cesm_dple_test_collection_7afe8a3a-8d2f-40a8-9ede-899f48ce83b2']
-        assert isinstance(cat.results, pd.DataFrame)
+        assert isinstance(cat.query_results, pd.DataFrame)
 
 
 @pytest.mark.parametrize(

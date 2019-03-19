@@ -25,15 +25,15 @@ def test_search():
             collection_name='cmip5_test_collection', collection_type='cmip5'
         )
         cat = c.search(model=['CanESM2', 'CSIRO-Mk3-6-0'])
-        assert isinstance(cat.results, pd.DataFrame)
-        assert not cat.results.empty
+        assert isinstance(cat.query_results, pd.DataFrame)
+        assert not cat.query_results.empty
 
 
 def test_cat():
     with config.set({'database-directory': './tests/test_collections'}):
         cat = intake.open_catalog(os.path.join(here, 'cmip5_catalog.yaml'))
         cat = cat['cmip5_test_collection_b4cf52c3-4879-44c6-955e-f341b1f9b2d9']
-        assert isinstance(cat.results, pd.DataFrame)
+        assert isinstance(cat.query_results, pd.DataFrame)
 
 
 def test_to_xarray_cmip_empty():

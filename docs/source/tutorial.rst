@@ -168,7 +168,7 @@ with all the entries that match the query.
 
 .. ipython:: python
 
-   cat = col.search(variable=['hfls'], frequency='mon', realm='atmos')
-   cat.results
+   cat = col.search(variable=['hfls'], frequency='mon', modeling_realm='atmos')
+   cat.query_results
    ds = cat.to_xarray(decode_times=False)
    ds

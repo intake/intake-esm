@@ -300,39 +300,10 @@ class CESMSource(BaseSource):
     def __init__(self, collection_name, collection_type, query={}, **kwargs):
 
         super(CESMSource, self).__init__(collection_name, collection_type, query, **kwargs)
-        self.query_results = get_subset(
-            self.collection_name,
-            self.collection_type,
-            self.query,
-            order_by=['sequence_order', 'file_fullpath'],
-        )
+        self.query_results = self.get_results()
         if self.metadata is None:
             self.metadata = {}
         self.urlpath = ''
-
-    @property
-    def results(self):
-        """ Return collection entries matching query"""
-        if self.query_results is not None:
-            return self.query_results
-
-        else:
-            self.query_results = get_subset(
-                self.collection_name,
-                self.collection_type,
-                self.query,
-                order_by=['sequence_order', 'file_fullpath'],
-            )
-            return self.query_results
-
-    def to_xarray(self, **kwargs):
-        """Return dataset as an xarray dataset
-        Additional keyword arguments are passed through to methods in aggregate.py
-        """
-        _kwargs = self.kwargs.copy()
-        _kwargs.update(kwargs)
-        self.kwargs = _kwargs
-        return self.to_dask()
 
     def _open_dataset(self):
         kwargs = self._validate_kwargs(self.kwargs)

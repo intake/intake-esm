@@ -108,6 +108,8 @@ collections:
     - product
     - variable
     - version
+    order_by_columns:
+      - file_fullpath
     required_columns:
       - modeling_realm
       - frequency
@@ -133,6 +135,8 @@ collections:
     - variable
     - variable_id
     - version
+    order_by_columns:
+      - file_fullpath
     required_columns:
       - member_id
       - experiment_id

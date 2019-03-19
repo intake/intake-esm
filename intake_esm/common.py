@@ -74,13 +74,18 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
         self.query = query
         self.query_results = None
         self._ds = None
-        self.kwargs = {'decode_times': False, 'chunks': {'time': 1}}
+        self.kwargs = kwargs
         super(BaseSource, self).__init__(**kwargs)
 
-    @property
-    def results(self):
-        """Return collection entries matching query"""
-        raise NotImplementedError()
+    def get_results(self):
+        """ Return collection entries matching query"""
+        query_results = get_subset(
+            self.collection_name,
+            self.collection_type,
+            self.query,
+            order_by=config.get('collections')[self.collection_type]['order-by-columns'],
+        )
+        return query_results
 
     def _validate_kwargs(self, kwargs):
 
@@ -104,8 +109,13 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
         pass
 
     def to_xarray(self, **kwargs):
-        """Return dataset as an xarray instance"""
-        raise NotImplementedError()
+        """Return dataset as an xarray dataset
+        Additional keyword arguments are passed through to methods in aggregate.py
+        """
+        _kwargs = self.kwargs.copy()
+        _kwargs.update(kwargs)
+        self.kwargs = _kwargs
+        return self.to_dask()
 
     def _get_schema(self):
         """Make schema object, which embeds xarray object and some details"""

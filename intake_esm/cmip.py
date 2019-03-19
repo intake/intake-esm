@@ -41,7 +41,7 @@ class CMIPBaseCollection(Collection):
 
 
 class CMIP5Collection(CMIPBaseCollection):
-    """ Defines a CMIP collection
+    """ Defines a CMIP5 collection
 
     Parameters
     ----------
@@ -211,26 +211,9 @@ class CMIP5Source(BaseSource):
 
         super(CMIP5Source, self).__init__(collection_name, collection_type, query, **kwargs)
         self.urlpath = ''
-        self.query_results = get_subset(self.collection_name, self.collection_type, self.query)
+        self.query_results = self.get_results()
         if self.metadata is None:
             self.metadata = {}
-
-    @property
-    def results(self):
-        """ Return collection entries matching query"""
-        if self.query_results is not None:
-            return self.query_results
-
-        else:
-            self.query_results = get_subset(self.collection_name, self.collection_type, self.query)
-            return self.query_results
-
-    def to_xarray(self, **kwargs):
-        """Return dataset as an xarray instance"""
-        _kwargs = self.kwargs.copy()
-        _kwargs.update(kwargs)
-        self.kwargs = _kwargs
-        return self.to_dask()
 
     def _open_dataset(self):
 
