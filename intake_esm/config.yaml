@@ -11,14 +11,20 @@ collections:
     - variable
     - date_range
     - ensemble
-    - files
-    - files_basename
-    - files_dirname
+    - file_fullpath
+    - file_basename
+    - file_dirname
     - ctrl_branch_year
     - year_offset
     - sequence_order
     - has_ocean_bgc
     - grid
+    order_by_columns:
+      - sequence_order
+      - file_fullpath
+    required_columns:
+      - sequence_order
+      - file_fullpath
     component_streams:
       atm:
       - cam.h0
@@ -99,6 +105,12 @@ collections:
     - files_dirname
     - variable
     - version
+    required_columns:
+      - realm
+      - frequency
+      - ensemble
+      - experiment
+      - file_fullpath
     frequencies:
       - 3hr
       - 6hr
@@ -117,9 +129,9 @@ collections:
       - ocean
       - ocnbgchem
       - seaIce
+default_chunk_size: 128MiB
 data_cache_directory: ~/.intake_esm/data_cache
 database_directory: ~/.intake_esm/collections
 sources:
   cesm: intake_esm.cesm.CESMSource
   cmip: intake_esm.cmip.CMIPSource
-# database_directory: ~/devel/ncar/intake-cesm/tests/test_collections

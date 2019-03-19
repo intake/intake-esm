@@ -36,7 +36,7 @@ def test_cat():
         assert isinstance(cat.results, pd.DataFrame)
 
 
-def test_to_xarray():
+def test_to_xarray_cmip_empty():
     with config.set({'database-directory': './tests/test_collections'}):
         c = intake.open_esm_metadatastore(
             collection_name='cmip_test_collection', collection_type='cmip'
@@ -45,5 +45,29 @@ def test_to_xarray():
             model='CanESM2', experiment='rcp85', frequency='mon', realm='atmos', ensemble='r2i1p1'
         )
 
-        ds = cat.to_xarray()
-        assert isinstance(ds, xr.Dataset)
+        with pytest.raises(ValueError):
+            cat.to_xarray()
+
+
+@pytest.mark.parametrize(
+    'chunks, expected_chunks',
+    [
+        ({'member_id': 1, 'time': 1, 'lat': 2, 'lon': 2}, (1, 1, 2, 2)),
+        ({'member_id': 1, 'time': 2, 'lat': 1, 'lon': 1}, (1, 2, 1, 1)),
+    ],
+)
+def test_to_xarray_cmip(chunks, expected_chunks):
+    with config.set({'database-directory': './tests/test_collections'}):
+        c = intake.open_esm_metadatastore(
+            collection_name='cmip_test_collection', collection_type='cmip'
+        )
+        cat = c.search(variable=['hfls'], frequency='mon', realm='atmos', model=['CNRM-CM5'])
+
+        ds = cat.to_xarray(decode_times=True, chunks=chunks)
+        assert ds['hfls'].data.chunksize == expected_chunks
+
+        # Test for data from multiple institutions
+        cat = c.search(variable=['hfls'], frequency='mon', realm='atmos')
+        ds = cat.to_xarray(decode_times=False, chunks=chunks)
+        assert isinstance(ds, dict)
+        assert 'CCCma' in ds.keys()

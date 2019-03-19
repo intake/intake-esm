@@ -10,6 +10,7 @@ from subprocess import PIPE, Popen
 import intake_xarray
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 from . import config
 
@@ -49,6 +50,15 @@ class Collection(ABC):
     def build(self):
         pass
 
+    def _validate(self):
+        for req_col in config.get('collections')[self.collection_spec['collection_type']][
+            'required-columns'
+        ]:
+            if req_col not in self.columns:
+                raise ValueError(
+                    f"Missing required column: {req_col} for {self.collection_spec['collection_type']} in {config.PATH}"
+                )
+
     def persist_db_file(self):
         if not self.df.empty:
             logger.warning(
@@ -57,41 +67,71 @@ class Collection(ABC):
             self.df.to_csv(self.collection_db_file, index=True)
 
 
-class BaseSource(intake_xarray.netcdf.NetCDFSource):
-    def __init__(
-        self,
-        collection_name,
-        collection_type,
-        query={},
-        chunks={'time': 1},
-        concat_dim='time',
-        **kwargs,
-    ):
+class BaseSource(intake_xarray.base.DataSourceMixin):
+    def __init__(self, collection_name, collection_type, query={}, **kwargs):
         self.collection_name = collection_name
         self.collection_type = collection_type
         self.query = query
         self.query_results = None
         self._ds = None
-        urlpath = ''
-        super(BaseSource, self).__init__(
-            urlpath, chunks, concat_dim=concat_dim, path_as_pattern=False, **kwargs
-        )
+        self.kwargs = {'decode_times': False, 'chunks': {'time': 1}}
+        super(BaseSource, self).__init__(**kwargs)
 
     @property
     def results(self):
         """Return collection entries matching query"""
         raise NotImplementedError()
 
+    def _validate_kwargs(self, kwargs):
+
+        _kwargs = kwargs.copy()
+        if self.query_results.empty:
+            raise ValueError(f'Query={self.query} returned empty results')
+        if 'decode_times' not in _kwargs.keys():
+            _kwargs.update(decode_times=False)
+        if 'time_coord_name' not in _kwargs.keys():
+            _kwargs.update(time_coord_name='time')
+        if 'ensemble_dim_name' not in _kwargs.keys():
+            _kwargs.update(ensemble_dim_name='member_id')
+        if 'chunks' not in _kwargs.keys():
+            _kwargs.update(chunks=None)
+        if 'join' not in _kwargs.keys():
+            _kwargs.update(join='outer')
+        return _kwargs
+
     @abstractclassmethod
     def _open_dataset(self):
         pass
 
-    def to_xarray(self, dask=True):
-
+    def to_xarray(self, **kwargs):
         """Return dataset as an xarray instance"""
-        if dask:
-            return self.to_dask()
-        return self.read()
+        raise NotImplementedError()
+
+    def _get_schema(self):
+        """Make schema object, which embeds xarray object and some details"""
+        from intake.source.base import Schema
+
+        self.urlpath = self._get_cache(self.urlpath)[0]
+
+        if self._ds is None:
+            self._open_dataset()
+
+            if isinstance(self._ds, xr.Dataset):
+                metadata = {
+                    'dims': dict(self._ds.dims),
+                    'data_vars': {k: list(self._ds[k].coords) for k in self._ds.data_vars.keys()},
+                    'coords': tuple(self._ds.coords.keys()),
+                }
+                metadata.update(self._ds.attrs)
+
+            else:
+                metadata = {}
+
+            self._schema = Schema(
+                datashape=None, dtype=None, shape=None, npartitions=None, extra_metadata=metadata
+            )
+
+        return self._schema
 
 
 class StorageResource(object):

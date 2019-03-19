@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 import xarray as xr
+from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
 from ._version import get_versions
@@ -20,15 +21,15 @@ logger.setLevel(level=logging.WARNING)
 class CESMCollection(Collection):
     """ Defines a CESM collection
 
-       Parameters
-       ----------
-       collection_spec : dict
+    Parameters
+    ----------
+    collection_spec : dict
 
 
-       See Also
-       --------
-       intake_esm.core.ESMMetadataStoreCatalog
-       intake_esm.cmip.CMIPCollection
+    See Also
+    --------
+    intake_esm.core.ESMMetadataStoreCatalog
+    intake_esm.cmip.CMIPCollection
     """
 
     def __init__(self, collection_spec):
@@ -39,13 +40,6 @@ class CESMCollection(Collection):
         self.replacements = self.collection_definition.get('replacements', {})
         self.include_cache_dir = self.collection_spec.get('include_cache_dir', False)
         self.df = pd.DataFrame(columns=self.columns)
-
-    def _validate(self):
-        for req_col in ['files', 'sequence_order']:
-            if req_col not in self.columns:
-                raise ValueError(
-                    f"Missing required column: {req_col} for {self.collection_spec['collection_type']} in {config.PATH}"
-                )
 
     def build(self):
         self._validate()
@@ -162,9 +156,9 @@ class CESMCollection(Collection):
         self.df = self.df[self.columns]
 
         # Remove duplicates
-        self.df = self.df.drop_duplicates(subset=['resource', 'files'], keep='last').reset_index(
-            drop=True
-        )
+        self.df = self.df.drop_duplicates(
+            subset=['resource', 'file_fullpath'], keep='last'
+        ).reset_index(drop=True)
 
     def _assemble_collection_df_files(self, resource_key, resource_type, direct_access, filelist):
         entries = {
@@ -178,9 +172,9 @@ class CESMCollection(Collection):
                 'stream',
                 'variable',
                 'date_range',
-                'files_basename',
-                'files_dirname',
-                'files',
+                'file_basename',
+                'file_dirname',
+                'file_fullpath',
             ]
         }
 
@@ -205,9 +199,9 @@ class CESMCollection(Collection):
             entries['variable'].append(fileparts['variable'])
             entries['date_range'].append(fileparts['datestr'])
 
-            entries['files_basename'].append(os.path.basename(f))
-            entries['files_dirname'].append(os.path.dirname(f) + '/')
-            entries['files'].append(f)
+            entries['file_basename'].append(os.path.basename(f))
+            entries['file_dirname'].append(os.path.dirname(f) + '/')
+            entries['file_fullpath'].append(f)
 
         return pd.DataFrame(entries)
 
@@ -303,33 +297,18 @@ class CESMSource(BaseSource):
     partition_access = True
     version = __version__
 
-    def __init__(
-        self,
-        collection_name,
-        collection_type,
-        query={},
-        chunks={'time': 1},
-        concat_dim='time',
-        **kwargs,
-    ):
+    def __init__(self, collection_name, collection_type, query={}, **kwargs):
 
-        super(CESMSource, self).__init__(
-            collection_name, collection_type, query, chunks, concat_dim, **kwargs
-        )
-        self.urlpath = get_subset(
-            self.collection_name,
-            self.collection_type,
-            self.query,
-            order_by=['sequence_order', 'files'],
-        ).files.tolist()
+        super(CESMSource, self).__init__(collection_name, collection_type, query, **kwargs)
         self.query_results = get_subset(
             self.collection_name,
             self.collection_type,
             self.query,
-            order_by=['sequence_order', 'files'],
+            order_by=['sequence_order', 'file_fullpath'],
         )
         if self.metadata is None:
             self.metadata = {}
+        self.urlpath = ''
 
     @property
     def results(self):
@@ -342,51 +321,53 @@ class CESMSource(BaseSource):
                 self.collection_name,
                 self.collection_type,
                 self.query,
-                order_by=['sequence_order', 'files'],
+                order_by=['sequence_order', 'file_fullpath'],
             )
             return self.query_results
 
+    def to_xarray(self, **kwargs):
+        """Return dataset as an xarray dataset
+        Additional keyword arguments are passed through to methods in aggregate.py
+        """
+        _kwargs = self.kwargs.copy()
+        _kwargs.update(kwargs)
+        self.kwargs = _kwargs
+        return self.to_dask()
+
     def _open_dataset(self):
-        url = self.urlpath
-        kwargs = self._kwargs
-
-        if len(self.query_results) == 0:
-            raise ValueError('query results are empty')
-
+        kwargs = self._validate_kwargs(self.kwargs)
         query = dict(self.query)
-        if '*' in url or isinstance(url, list):
-            if 'concat_dim' not in kwargs.keys():
-                kwargs.update(concat_dim=self.concat_dim)
-            if self.pattern:
-                kwargs.update(preprocess=self._add_path_to_ds)
 
-            ensembles = self.query_results.ensemble.unique()
-            variables = self.query_results.variable.unique()
+        ensembles = self.query_results['ensemble'].unique()
+        variables = self.query_results['variable'].unique()
 
-            ds_ens_list = []
-            for ens_i in ensembles:
-                query['ensemble'] = ens_i
+        ds_ens_list = []
+        for ens_i in tqdm(ensembles, desc='ensembles'):
+            query['ensemble'] = ens_i
 
-                ds_var_list = []
-                for var_i in variables:
+            ds_var_list = []
+            for var_i in tqdm(variables, desc='variables'):
 
-                    query['variable'] = var_i
-                    urlpath_ei_vi = get_subset(
-                        self.collection_name,
-                        self.collection_type,
-                        query,
-                        order_by=['sequence_order', 'files'],
-                    ).files.tolist()
+                query['variable'] = var_i
+                urlpath_ei_vi = get_subset(
+                    self.collection_name,
+                    self.collection_type,
+                    query,
+                    order_by=config.get('collections')['cesm']['order-by-columns'],
+                )['file_fullpath'].tolist()
 
-                    dsets = [
-                        aggregate.open_dataset(url, data_vars=[var_i]) for url in urlpath_ei_vi
-                    ]
-                    ds_var_i = aggregate.concat_time_levels(dsets)
-                    ds_var_list.append(ds_var_i)
+                dsets = [
+                    aggregate.open_dataset_delayed(
+                        url, data_vars=[var_i], decode_times=kwargs['decode_times']
+                    )
+                    for url in urlpath_ei_vi
+                ]
+                ds_var_i = aggregate.concat_time_levels(dsets, kwargs['time_coord_name'])
+                ds_var_list.append(ds_var_i)
 
-                ds_ens_i = aggregate.merge(ds_var_list)
-                ds_ens_list.append(ds_ens_i)
+            ds_ens_i = aggregate.merge(dsets=ds_var_list)
+            ds_ens_list.append(ds_ens_i)
 
-            self._ds = aggregate.concat_ensembles(ds_ens_list, member_ids=ensembles, join='outer')
-        else:
-            self._ds = xr.open_dataset(url, chunks=self.chunks, **kwargs)
+        self._ds = aggregate.concat_ensembles(
+            ds_ens_list, member_ids=ensembles, join=kwargs['join'], chunks=kwargs['chunks']
+        )

@@ -7,12 +7,10 @@ import dask
 import numpy as np
 import xarray as xr
 
-time_coord_name_default = 'time'
-ensemble_dim_name = 'member_id'
-default_chunk_size = '12MiB'
+from . import config
 
 
-def infer_time_coord_name(ds):
+def ensure_time_coord_name(ds, time_coord_name_default):
     """Infer the name of the time coordinate in a dataset."""
     if time_coord_name_default in ds.variables:
         return time_coord_name_default
@@ -84,16 +82,10 @@ def merge(dsets):
         dsm.attrs['history'] += new_history
     else:
         dsm.attrs['history'] = new_history
-
-    # rechunk
-    chunks = {'time': 'auto'}
-    if ensemble_dim_name in dsm.dims:
-        chunks.update({ensemble_dim_name: 1})
-
-    return dsm.chunk(chunks)
+    return dsm
 
 
-def concat_time_levels(dsets):
+def concat_time_levels(dsets, time_coord_name_default):
     """
     Concatenate datasets across "time" levels, taking time invariant variables
     from the first dataset.
@@ -103,12 +95,15 @@ def concat_time_levels(dsets):
     dsets : list
         A list of datasets to concatenate.
 
+    time_coord_name_default : string
+        Default name of the time coordinate
+
     Returns
     -------
     dset : xarray.Dataset,
         The concatenated dataset.
     """
-
+    dsets = dask.compute(*dsets)
     if len(dsets) == 1:
         return dsets[0]
 
@@ -116,7 +111,7 @@ def concat_time_levels(dsets):
 
     # get static vars from first dataset
     first = dsets[0]
-    time_coord_name = infer_time_coord_name(first)
+    time_coord_name = ensure_time_coord_name(first, time_coord_name_default)
 
     def drop_unnecessary_coords(ds):
         """Drop coordinates that do not correspond with dimensions."""
@@ -141,7 +136,14 @@ def concat_time_levels(dsets):
     return ds
 
 
-def concat_ensembles(dsets, member_ids=None, join='inner'):
+def concat_ensembles(
+    dsets,
+    member_ids=None,
+    join='inner',
+    ensemble_dim_name='member_id',
+    time_coord_name_default='time',
+    chunks=None,
+):
     """Concatenate datasets across an ensemble dimension, taking coordinates and
     time-invariant variables from the first ensemble member.
     """
@@ -179,6 +181,15 @@ def concat_ensembles(dsets, member_ids=None, join='inner'):
         attrs['history'] = new_history
     ds.attrs = attrs
 
+    # rechunk
+    if chunks is None:
+        time_coord_name = ensure_time_coord_name(ds, time_coord_name_default)
+        chunks = {time_coord_name: 'auto'}
+    if ensemble_dim_name in ds.dims:
+        chunks.update({ensemble_dim_name: 1})
+    chunk_size = config.get('default_chunk_size')
+    with dask.config.set({'array.chunk-size': chunk_size}):
+        ds = ds.chunk(chunks)
     return ds
 
 
@@ -188,10 +199,9 @@ def set_coords(ds, varname):
     return ds.set_coords(coord_vars)
 
 
-def open_dataset(url, data_vars, chunk_size=default_chunk_size):
+def open_dataset(url, data_vars, **kwargs):
     """open dataset with chunks determined."""
-    with dask.config.set({'array.chunk-size': chunk_size}):
-        ds = xr.open_dataset(url, chunks={'time': 'auto'}, decode_times=False)
+    ds = xr.open_dataset(url, **kwargs)
     ds.attrs['history'] = f"{datetime.now()} xarray.open_dataset('{url}')"
 
     return set_coords(ds, data_vars)
