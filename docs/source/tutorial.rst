@@ -115,12 +115,17 @@ catalog database. This database is persisted on disk as an CSV file to the locat
 Building a CMIP5 Collection Catalog
 -----------------------------------
 
-Collections are built from a ``YAML`` input file containing a nested dictionary of entries.
-An example of such a file is provided below for a CMIP5 collection catalog:
+Collections are built from a ``YAML`` input file or a dictionary containing nested dictionaries of entries.
+An example of such a dictionary is provided below for a CMIP5 collection catalog:
 
 .. ipython:: python
 
-    !cat source/cmip_collection_input_test.yml
+    collection_definition = {'name': 'cmip5_test_collection',
+                        'collection_type': 'cmip5',
+                        'data_sources': {'root_dir': {'name': 'GLADE',
+                        'loc_type': 'posix',
+                        'direct_access': True,
+                        'urlpath': '../tests/sample_data/cmip/cmip5'}}}
 
 
 
@@ -146,13 +151,13 @@ function is created at import time.
    intake.registry
 
 To build a collection catalog, we instatiate an ``esm_metadatastore`` class in ``intake-esm``
-with a collection input YAML file.
+with a collection input YAML file or dictionary. For this example, we will use ``collection_definition``
+dictionary defined above:
 
 
 .. ipython:: python
 
-   collection_file = "source/cmip_collection_input_test.yml"
-   col = intake.open_esm_metadatastore(collection_input_file=collection_file, overwrite_existing=True)
+   col = intake.open_esm_metadatastore(collection_input_definition=collection_definition, overwrite_existing=True)
    col.df.head()
    col.df["model"].unique()
    col.df["model"].nunique()  # Find the total number of unique climate models

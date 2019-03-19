@@ -27,8 +27,10 @@ class ESMMetadataStoreCatalog(Catalog):
     Parameters
     ----------
 
-    collection_input_file : str,  Path, file
-                Path to a YAML file containing collection definition
+    collection_input_definition : Path, file_object or dict
+                Path to a YAML file containing collection definition or
+                a dictionary containing nested dictionaries of entries.
+
     collection_name : str
                 name of the collection to use
     collection_type : str,
@@ -51,7 +53,7 @@ class ESMMetadataStoreCatalog(Catalog):
 
     def __init__(
         self,
-        collection_input_file=None,
+        collection_input_definition=None,
         collection_name=None,
         collection_type=None,
         overwrite_existing=True,
@@ -62,38 +64,38 @@ class ESMMetadataStoreCatalog(Catalog):
         self.collections = {}
         self.get_built_collections()
 
-        if (collection_name and collection_type) and collection_input_file is None:
+        if (collection_name and collection_type) and collection_input_definition is None:
             self.open_collection(collection_name, collection_type)
 
-        elif collection_input_file and (collection_name is None or collection_type is None):
-            self.input_collection = self._validate_collection_input_file(collection_input_file)
+        elif collection_input_definition and (collection_name is None or collection_type is None):
+            self.input_collection = self._validate_collection_definition(
+                collection_input_definition
+            )
             self.build_collection(overwrite_existing)
 
         else:
             raise ValueError(
-                "Cannot instantiate class with provided arguments. Please provide either 'collection_input_file' \
+                "Cannot instantiate class with provided arguments. Please provide either 'collection_input_definition' \
                   \n\t\tor 'collection_name' and 'collection_type' "
             )
 
         self._entries = {}
 
-    def _validate_collection_input_file(self, filepath):
-        if os.path.exists(filepath):
-            with open(filepath) as f:
-                input_collection = yaml.safe_load(f)
-                name = input_collection.get('name', None)
-                collection_type = input_collection.get('collection_type', None)
-                if name is None or collection_type is None:
-                    raise ValueError(
-                        f'name and/or collection_type keys are missing from {filepath} '
-                    )
-                else:
-                    return input_collection
+    def _validate_collection_definition(self, definition):
 
+        if isinstance(definition, dict):
+            input_collection = definition.copy()
+
+        elif os.path.exists(definition):
+            with open(definition) as f:
+                input_collection = yaml.safe_load(f)
+
+        name = input_collection.get('name', None)
+        collection_type = input_collection.get('collection_type', None)
+        if name is None or collection_type is None:
+            raise ValueError(f'name and/or collection_type keys are missing from {definition}')
         else:
-            raise FileNotFoundError(
-                f'Specified collection input file: {os.path.abspath(filepath)} doesn’t exist.'
-            )
+            return input_collection
 
     def build_collection(self, overwrite_existing):
         """ Build a collection defined in an YAML input file"""

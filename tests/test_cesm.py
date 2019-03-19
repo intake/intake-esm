@@ -13,15 +13,15 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 def test_build_collection():
     with config.set({'database-directory': './tests/test_collections'}):
-        collection_input_file = os.path.join(here, 'collection_input_test.yml')
+        collection_input_definition = os.path.join(here, 'collection_input_test.yml')
         col = intake.open_esm_metadatastore(
-            collection_input_file=collection_input_file, overwrite_existing=True
+            collection_input_definition=collection_input_definition, overwrite_existing=True
         )
         assert isinstance(col.df, pd.DataFrame)
 
         with pytest.raises(ValueError):
             col = intake.open_esm_metadatastore(
-                collection_input_file=collection_input_file,
+                collection_input_definition=collection_input_definition,
                 collection_name='cesm_dple',
                 collection_type='cesm',
             )
@@ -29,15 +29,15 @@ def test_build_collection():
 
 def test_build_collection_cesm1_le():
     with config.set({'database-directory': './tests/test_collections'}):
-        collection_input_file = os.path.join(here, 'cesm1-le_collection-input.yml')
+        collection_input_definition = os.path.join(here, 'cesm1-le_collection-input.yml')
         col = intake.open_esm_metadatastore(
-            collection_input_file=collection_input_file, overwrite_existing=True
+            collection_input_definition=collection_input_definition, overwrite_existing=True
         )
         assert isinstance(col.df, pd.DataFrame)
 
         with pytest.raises(ValueError):
             col = intake.open_esm_metadatastore(
-                collection_input_file=collection_input_file,
+                collection_input_definition=collection_input_definition,
                 collection_name='cesm_dple',
                 collection_type='cesm',
             )

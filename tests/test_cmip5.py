@@ -10,11 +10,31 @@ from intake_esm import config
 here = os.path.abspath(os.path.dirname(__file__))
 
 
-def test_build_collection():
+def test_build_collection_file():
     with config.set({'database-directory': './tests/test_collections'}):
-        collection_input_file = os.path.join(here, 'cmip5_collection_input_test.yml')
+        collection_input_definition = os.path.join(here, 'cmip5_collection_input_test.yml')
         col = intake.open_esm_metadatastore(
-            collection_input_file=collection_input_file, overwrite_existing=True
+            collection_input_definition=collection_input_definition, overwrite_existing=True
+        )
+        assert isinstance(col.df, pd.DataFrame)
+
+
+def test_build_collection_dict():
+    with config.set({'database-directory': './tests/test_collections'}):
+        collection_definition = {
+            'name': 'cmip5_test_collection',
+            'collection_type': 'cmip5',
+            'data_sources': {
+                'root_dir': {
+                    'name': 'GLADE',
+                    'loc_type': 'posix',
+                    'direct_access': True,
+                    'urlpath': './tests/sample_data/cmip/cmip5',
+                }
+            },
+        }
+        col = intake.open_esm_metadatastore(
+            collection_input_definition=collection_definition, overwrite_existing=True
         )
         assert isinstance(col.df, pd.DataFrame)
 
