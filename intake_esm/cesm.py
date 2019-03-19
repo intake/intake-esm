@@ -21,15 +21,15 @@ logger.setLevel(level=logging.WARNING)
 class CESMCollection(Collection):
     """ Defines a CESM collection
 
-       Parameters
-       ----------
-       collection_spec : dict
+    Parameters
+    ----------
+    collection_spec : dict
 
 
-       See Also
-       --------
-       intake_esm.core.ESMMetadataStoreCatalog
-       intake_esm.cmip.CMIPCollection
+    See Also
+    --------
+    intake_esm.core.ESMMetadataStoreCatalog
+    intake_esm.cmip.CMIPCollection
     """
 
     def __init__(self, collection_spec):
@@ -327,11 +327,7 @@ class CESMSource(BaseSource):
 
     def to_xarray(self, **kwargs):
         """Return dataset as an xarray dataset
-
-        Parameters
-        ----------
-        ** kwargs :
-               Additional keyword arguments are passed through to methods in aggregate.py
+        Additional keyword arguments are passed through to methods in aggregate.py
         """
         _kwargs = self.kwargs.copy()
         _kwargs.update(kwargs)

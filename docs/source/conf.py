@@ -11,6 +11,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import intake
 import intake_esm
 import sys
 import os
@@ -272,3 +273,4 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 # texinfo_no_detailmenu = False
+ipython_execlines = ['import intake', 'import intake_esm']

@@ -24,15 +24,15 @@ logger.setLevel(level=logging.WARNING)
 class CMIPCollection(Collection):
     """ Defines a CMIP collection
 
-       Parameters
-       ----------
-       collection_spec : dict
+    Parameters
+    ----------
+    collection_spec : dict
 
-       See Also
-       --------
-       intake_esm.core.ESMMetadataStoreCatalog
-       intake_esm.cesm.CESMCollection
-       """
+    See Also
+    --------
+    intake_esm.core.ESMMetadataStoreCatalog
+    intake_esm.cesm.CESMCollection
+    """
 
     def __init__(self, collection_spec):
         super(CMIPCollection, self).__init__(collection_spec)
@@ -43,7 +43,7 @@ class CMIPCollection(Collection):
         """ Build collection and return a pandas Dataframe"""
         self._validate()
         if not os.path.exists(self.root_dir):
-            raise NotADirectoryError(f'{self.root_dir} does not exist')
+            raise NotADirectoryError(f'{os.path.abspath(self.root_dir)} does not exist')
 
         dirs = _parse_dirs(self.root_dir)
         dfs = [_parse_directory(directory, self.columns) for directory in dirs]
