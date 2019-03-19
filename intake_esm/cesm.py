@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 import xarray as xr
+from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
 from ._version import get_versions
@@ -20,15 +21,15 @@ logger.setLevel(level=logging.WARNING)
 class CESMCollection(Collection):
     """ Defines a CESM collection
 
-       Parameters
-       ----------
-       collection_spec : dict
+    Parameters
+    ----------
+    collection_spec : dict
 
 
-       See Also
-       --------
-       intake_esm.core.ESMMetadataStoreCatalog
-       intake_esm.cmip.CMIPCollection
+    See Also
+    --------
+    intake_esm.core.ESMMetadataStoreCatalog
+    intake_esm.cmip.CMIPCollection
     """
 
     def __init__(self, collection_spec):
@@ -39,13 +40,6 @@ class CESMCollection(Collection):
         self.replacements = self.collection_definition.get('replacements', {})
         self.include_cache_dir = self.collection_spec.get('include_cache_dir', False)
         self.df = pd.DataFrame(columns=self.columns)
-
-    def _validate(self):
-        for req_col in ['file_fullpath', 'sequence_order']:
-            if req_col not in self.columns:
-                raise ValueError(
-                    f"Missing required column: {req_col} for {self.collection_spec['collection_type']} in {config.PATH}"
-                )
 
     def build(self):
         self._validate()
@@ -333,11 +327,7 @@ class CESMSource(BaseSource):
 
     def to_xarray(self, **kwargs):
         """Return dataset as an xarray dataset
-
-        Parameters
-        ----------
-        ** kwargs :
-               Additional keyword arguments are passed through to methods in aggregate.py
+        Additional keyword arguments are passed through to methods in aggregate.py
         """
         _kwargs = self.kwargs.copy()
         _kwargs.update(kwargs)
@@ -345,42 +335,29 @@ class CESMSource(BaseSource):
         return self.to_dask()
 
     def _open_dataset(self):
-        kwargs = self.kwargs
-
-        if self.query_results.empty:
-            raise ValueError(f'Query={self.query} returned empty results')
-
+        kwargs = self._validate_kwargs(self.kwargs)
         query = dict(self.query)
 
-        if 'decode_times' not in kwargs.keys():
-            kwargs.update(decode_times=False)
-        if 'time_coord_name' not in kwargs.keys():
-            kwargs.update(time_coord_name='time')
-        if 'ensemble_dim_name' not in kwargs.keys():
-            kwargs.update(ensemble_dim_name='member_id')
-        if 'chunks' not in kwargs.keys():
-            kwargs.update(chunks=None)
-
-        ensembles = self.query_results.ensemble.unique()
-        variables = self.query_results.variable.unique()
+        ensembles = self.query_results['ensemble'].unique()
+        variables = self.query_results['variable'].unique()
 
         ds_ens_list = []
-        for ens_i in ensembles:
+        for ens_i in tqdm(ensembles, desc='ensembles'):
             query['ensemble'] = ens_i
 
             ds_var_list = []
-            for var_i in variables:
+            for var_i in tqdm(variables, desc='variables'):
 
                 query['variable'] = var_i
                 urlpath_ei_vi = get_subset(
                     self.collection_name,
                     self.collection_type,
                     query,
-                    order_by=['sequence_order', 'file_fullpath'],
+                    order_by=config.get('collections')['cesm']['order-by-columns'],
                 )['file_fullpath'].tolist()
 
                 dsets = [
-                    aggregate.open_dataset(
+                    aggregate.open_dataset_delayed(
                         url, data_vars=[var_i], decode_times=kwargs['decode_times']
                     )
                     for url in urlpath_ei_vi
@@ -392,5 +369,5 @@ class CESMSource(BaseSource):
             ds_ens_list.append(ds_ens_i)
 
         self._ds = aggregate.concat_ensembles(
-            ds_ens_list, member_ids=ensembles, join='outer', chunks=kwargs['chunks']
+            ds_ens_list, member_ids=ensembles, join=kwargs['join'], chunks=kwargs['chunks']
         )

@@ -10,7 +10,7 @@ import xarray as xr
 from . import config
 
 
-def infer_time_coord_name(ds, time_coord_name_default):
+def ensure_time_coord_name(ds, time_coord_name_default):
     """Infer the name of the time coordinate in a dataset."""
     if time_coord_name_default in ds.variables:
         return time_coord_name_default
@@ -111,7 +111,7 @@ def concat_time_levels(dsets, time_coord_name_default):
 
     # get static vars from first dataset
     first = dsets[0]
-    time_coord_name = infer_time_coord_name(first, time_coord_name_default)
+    time_coord_name = ensure_time_coord_name(first, time_coord_name_default)
 
     def drop_unnecessary_coords(ds):
         """Drop coordinates that do not correspond with dimensions."""
@@ -183,11 +183,13 @@ def concat_ensembles(
 
     # rechunk
     if chunks is None:
-        time_coord_name = infer_time_coord_name(ds, time_coord_name_default)
+        time_coord_name = ensure_time_coord_name(ds, time_coord_name_default)
         chunks = {time_coord_name: 'auto'}
     if ensemble_dim_name in ds.dims:
         chunks.update({ensemble_dim_name: 1})
-    ds = ds.chunk(chunks)
+    chunk_size = config.get('default_chunk_size')
+    with dask.config.set({'array.chunk-size': chunk_size}):
+        ds = ds.chunk(chunks)
     return ds
 
 
@@ -197,13 +199,12 @@ def set_coords(ds, varname):
     return ds.set_coords(coord_vars)
 
 
-def _open_dataset(url, data_vars, chunk_size=config.get('default_chunk_size'), **kwargs):
+def open_dataset(url, data_vars, **kwargs):
     """open dataset with chunks determined."""
-    with dask.config.set({'array.chunk-size': chunk_size}):
-        ds = xr.open_dataset(url, chunks={'time': 'auto'}, **kwargs)
+    ds = xr.open_dataset(url, **kwargs)
     ds.attrs['history'] = f"{datetime.now()} xarray.open_dataset('{url}')"
 
     return set_coords(ds, data_vars)
 
 
-open_dataset = dask.delayed(_open_dataset)
+open_dataset_delayed = dask.delayed(open_dataset)

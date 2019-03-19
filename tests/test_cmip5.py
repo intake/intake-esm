@@ -71,3 +71,9 @@ def test_to_xarray_cmip(chunks, expected_chunks):
 
         ds = cat.to_xarray(decode_times=True, chunks=chunks)
         assert ds['hfls'].data.chunksize == expected_chunks
+
+        # Test for data from multiple institutions
+        cat = c.search(variable=['hfls'], frequency='mon', modeling_realm='atmos')
+        ds = cat.to_xarray(decode_times=False, chunks=chunks)
+        assert isinstance(ds, dict)
+        assert 'CCCma' in ds.keys()

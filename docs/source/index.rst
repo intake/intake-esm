@@ -1,4 +1,4 @@
-===========
+==========
 Intake-esm
 ==========
 
@@ -20,9 +20,7 @@ please open an issue at the GitHub `main repository <http://github.com/NCAR/inta
 
    notebooks/overview.ipynb
    installation
-   notebooks/building-collections.ipynb
-   notebooks/building-cmip-collections.ipynb
-   notebooks/using-collections.ipynb
+   tutorial
    api
    contributing
    changelog

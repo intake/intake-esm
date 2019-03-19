@@ -19,6 +19,12 @@ collections:
     - sequence_order
     - has_ocean_bgc
     - grid
+    order_by_columns:
+      - sequence_order
+      - file_fullpath
+    required_columns:
+      - sequence_order
+      - file_fullpath
     component_streams:
       atm:
       - cam.h0
@@ -89,39 +95,49 @@ collections:
   cmip5:
     collection_columns:
     - activity
-    - product
-    - institute
-    - model
-    - experiment
-    - frequency
-    - modeling_realm
-    - mip_table
     - ensemble_member
+    - experiment
     - file_basename
-    - file_fullpath
     - file_dirname
+    - file_fullpath
+    - frequency
+    - institute
+    - mip_table
+    - model
+    - modeling_realm
+    - product
     - variable
     - version
+    required_columns:
+      - modeling_realm
+      - frequency
+      - ensemble_member
+      - experiment
+      - file_fullpath
   cmip6:
     collection_columns:
-    - mip_era
     - activity_id
-    - institution_id
-    - source_id
     - experiment_id
-    - member_id
-    - table_id
-    - variable_id
-    - grid_label
     - file_basename
+    - file_dirname
     - file_fullpath
     - frequency
+    - grid_label
+    - institution_id
+    - member_id
+    - mip_era
     - model
     - realm
-    - file_dirname
+    - source_id
+    - table_id
     - variable
+    - variable_id
     - version
-default_chunk_size: 12MiB
+    required_columns:
+      - member_id
+      - experiment_id
+      - file_fullpath
+default_chunk_size: 128MiB
 data_cache_directory: ~/.intake_esm/data_cache
 database_directory: ~/.intake_esm/collections
 sources:

@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from dask import delayed
+from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
 from ._version import get_versions
@@ -26,9 +27,6 @@ class CMIPBaseCollection(Collection):
         self.df = pd.DataFrame()
         self.root_dir = self.collection_spec['data_sources']['root_dir']['urlpath']
 
-    def _validate(self):
-        raise NotImplementedError()
-
     def build(self):
         raise NotImplementedError()
 
@@ -45,37 +43,24 @@ class CMIPBaseCollection(Collection):
 class CMIP5Collection(CMIPBaseCollection):
     """ Defines a CMIP collection
 
-       Parameters
-       ----------
-       collection_spec : dict
+    Parameters
+    ----------
+    collection_spec : dict
 
-       See Also
-       --------
-       intake_esm.core.ESMMetadataStoreCatalog
-       intake_esm.cesm.CESMCollection
-       """
+    See Also
+    --------
+    intake_esm.core.ESMMetadataStoreCatalog
+    intake_esm.cesm.CESMCollection
+    """
 
     def __init__(self, collection_spec):
         super(CMIP5Collection, self).__init__(collection_spec)
-
-    def _validate(self):
-        for req_col in [
-            'modeling_realm',
-            'frequency',
-            'ensemble_member',
-            'experiment',
-            'file_fullpath',
-        ]:
-            if req_col not in self.columns:
-                raise ValueError(
-                    f"Missing required column: {req_col} for {self.collection_spec['collection_type']} in {config.PATH}"
-                )
 
     def build(self):
         """ Build collection and return a pandas Dataframe"""
         self._validate()
         if not os.path.exists(self.root_dir):
-            raise NotADirectoryError(f'{self.root_dir} does not exist')
+            raise NotADirectoryError(f'{os.path.abspath(self.root_dir)} does not exist')
 
         dirs = self._parse_dirs(self.root_dir)
         dfs = [self._parse_directory(directory, self.columns) for directory in dirs]
@@ -249,58 +234,46 @@ class CMIP5Source(BaseSource):
 
     def _open_dataset(self):
 
-        kwargs = self.kwargs
-        if self.query_results.empty:
-            raise ValueError(f'Query={self.query} returned empty results')
-
+        kwargs = self._validate_kwargs(self.kwargs)
         query = dict(self.query)
-
-        if 'decode_times' not in kwargs.keys():
-            kwargs.update(decode_times=False)
-        if 'time_coord_name' not in kwargs.keys():
-            kwargs.update(time_coord_name='time')
-        if 'ensemble_dim_name' not in kwargs.keys():
-            kwargs.update(ensemble_dim_name='member_id')
-        if 'chunks' not in kwargs.keys():
-            kwargs.update(chunks=None)
-
-        ensembles = self.query_results['ensemble_member'].unique()
-        variables = self.query_results['variable'].unique()
-        # Check that the same variable is not in multiple modeling_realms
+        # Check that the same variable is not in multiple realms
         modeling_realm_list = self.query_results['modeling_realm'].unique()
         frequency_list = self.query_results['frequency'].unique()
-        if len(modeling_realm_list) != 1:
+        if len(modeling_realm_list) > 1:
             raise ValueError(
                 f'Found multiple modeling_realms: {modeling_realm_list} in query results. Please specify the modeling_realm to use'
             )
 
-        if len(frequency_list) != 1:
+        if len(frequency_list) > 1:
             raise ValueError(
                 f'Found multiple data frequencies: {frequency_list} in query results. Please specify the frequency to use'
             )
 
-        ds_ens_list = []
-        for ens_i in ensembles:
-            query['ensemble_member'] = ens_i
-            ds_var_list = []
-            for var_i in variables:
-                query['variable'] = var_i
-                urlpath_ei_vi = get_subset(self.collection_name, self.collection_type, query)[
-                    'file_fullpath'
-                ].tolist()
-                dsets = [
-                    aggregate.open_dataset(
-                        url, data_vars=[var_i], decode_times=kwargs['decode_times']
-                    )
-                    for url in urlpath_ei_vi
-                ]
-
-                ds_var_i = aggregate.concat_time_levels(dsets, kwargs['time_coord_name'])
-                ds_var_list.append(ds_var_i)
-
-            ds_ens_i = aggregate.merge(dsets=ds_var_list)
-            ds_ens_list.append(ds_ens_i)
-
-        self._ds = aggregate.concat_ensembles(
-            ds_ens_list, member_ids=ensembles, join='inner', chunks=kwargs['chunks']
-        )
+        _ds_dict = {}
+        grouped = get_subset(self.collection_name, self.collection_type, query).groupby('institute')
+        for name, group in tqdm(grouped, desc='institute'):
+            ensembles = group['ensemble_member'].unique()
+            ds_ens_list = []
+            for _, group_ens in tqdm(group.groupby('ensemble_member'), desc='ensemble_member'):
+                ds_var_list = []
+                for var_i, group_var in tqdm(group_ens.groupby('variable'), desc='variable'):
+                    urlpath_ei_vi = group_var['file_fullpath'].tolist()
+                    dsets = [
+                        aggregate.open_dataset_delayed(
+                            url, data_vars=[var_i], decode_times=kwargs['decode_times']
+                        )
+                        for url in urlpath_ei_vi
+                    ]
+                    ds_var_i = aggregate.concat_time_levels(dsets, kwargs['time_coord_name'])
+                    ds_var_list.append(ds_var_i)
+                ds_ens_i = aggregate.merge(dsets=ds_var_list)
+                ds_ens_list.append(ds_ens_i)
+            _ds = aggregate.concat_ensembles(
+                ds_ens_list, member_ids=ensembles, join=kwargs['join'], chunks=kwargs['chunks']
+            )
+            _ds_dict[name] = _ds
+        keys = list(_ds_dict.keys())
+        if len(keys) == 1:
+            self._ds = _ds_dict[keys[0]]
+        else:
+            self._ds = _ds_dict
