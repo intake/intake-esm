@@ -257,7 +257,6 @@ class CMIPSource(BaseSource):
             )
             _ds_dict[name] = _ds
         keys = list(_ds_dict.keys())
-        print(_ds_dict)
         if len(keys) == 1:
             self._ds = _ds_dict[keys[0]]
         else:
