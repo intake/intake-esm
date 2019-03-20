@@ -68,7 +68,7 @@ class CMIP5Collection(Collection):
             return {}
 
     @delayed
-    def _parse_directory(self, directory, columns, exclude_dirs):
+    def _parse_directory(self, directory, columns, exclude_dirs=[]):
         exclude = set(exclude_dirs)  # directories to exclude
 
         df = pd.DataFrame(columns=columns)
@@ -148,7 +148,8 @@ class CMIP6Collection(Collection):
             return {}
 
     @delayed
-    def _parse_directory(self, directory, columns):
+    def _parse_directory(self, directory, columns, exclude_dirs=[]):
+        exclude = set(exclude_dirs)
         time_range = r'\d{6}-\d{6}'
         time_range_regex = re.compile(time_range)
         df = pd.DataFrame(columns=columns)
@@ -156,6 +157,7 @@ class CMIP6Collection(Collection):
         if not entry:
             return df
         for root, dirs, files in os.walk(directory):
+            dirs[:] = [d for d in dirs if d not in exclude]
             if not files:
                 continue
             sfiles = sorted([f for f in files if os.path.splitext(f)[1] == '.nc'])

@@ -11,6 +11,7 @@ import intake_xarray
 import numpy as np
 import pandas as pd
 import xarray as xr
+from dask import delayed
 
 from . import config
 
@@ -68,6 +69,7 @@ class Collection(ABC):
     def build(self):
         raise NotImplementedError()
 
+    @delayed
     def _parse_directory(self, directory, columns, exclude_dirs=[]):
         raise NotImplementedError()
 
