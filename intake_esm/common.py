@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from dask import delayed
+from tqdm.autonotebook import tqdm
 
 from . import config
 
@@ -56,14 +57,16 @@ class Collection(ABC):
                     yield x
 
     def get_directories(self, root_dir, depth, exclude_dirs=[]):
+        print('Getting list of directories')
         y = [x[0] for x in self.walk(root_dir, depth)]
         diff = depth - 1
         base = len(root_dir.split('/'))
         valid_dirs = [
             x
-            for x in y
+            for x in tqdm(y, desc='directories')
             if len(x.split('/')) - base == diff and x.split('/')[-1] not in set(exclude_dirs)
         ]
+        print(f'Found {len(valid_dirs)} directories')
         return valid_dirs
 
     def build(self):
@@ -81,8 +84,7 @@ class Collection(ABC):
         dfs = [self._parse_directory(directory, self.columns, exclude_dirs) for directory in dirs]
         df = dd.from_delayed(dfs).compute()
         vYYYYMMDD = r'v\d{4}\d{2}\d{2}'
-        vN = r'v\d{1}'
-        v = re.compile('|'.join([vYYYYMMDD, vN]))  # Combine both regex into one
+        v = re.compile(vYYYYMMDD)
         df['version'] = df['file_dirname'].str.findall(v)
         df['version'] = df['version'].apply(lambda x: x[0] if x else 'v0')
         sorted_df = (
