@@ -14,7 +14,7 @@ import xarray as xr
 from dask import delayed
 from tqdm.autonotebook import tqdm
 
-from . import config
+from . import aggregate, config
 
 
 class Collection(ABC):
@@ -188,6 +188,45 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
 
     def _open_dataset(self):
         raise NotImplementedError()
+
+    def _open_cmip_dataset(
+        self, dataset_fields, member_column_name, variable_column_name, file_fullpath_column_name
+    ):
+        kwargs = self._validate_kwargs(self.kwargs)
+        all_dsets = {}
+        grouped = get_subset(self.collection_name, self.collection_type, self.query).groupby(
+            dataset_fields
+        )
+        for dset_keys, dset_files in tqdm(grouped, desc='dataset'):
+            dset_id = '.'.join(dset_keys)
+            member_ids = []
+            member_dsets = []
+            for m_id, m_files in tqdm(dset_files.groupby(member_column_name)):
+                var_dsets = []
+                for v_id, v_files in tqdm(m_files.groupby(variable_column_name)):
+                    urlpath_ei_vi = v_files[file_fullpath_column_name].tolist()
+                    dsets = [
+                        aggregate.open_dataset_delayed(
+                            url, data_vars=[v_id], decode_times=kwargs['decode_times']
+                        )
+                        for url in urlpath_ei_vi
+                    ]
+
+                    var_dset_i = aggregate.concat_time_levels(dsets, kwargs['time_coord_name'])
+                    var_dsets.append(var_dset_i)
+                member_ids.append(m_id)
+                member_dset_i = aggregate.merge(dsets=var_dsets)
+                member_dsets.append(member_dset_i)
+            _ds = aggregate.concat_ensembles(
+                member_dsets, member_ids=member_ids, join=kwargs['join'], chunks=kwargs['chunks']
+            )
+            all_dsets[dset_id] = _ds
+
+        keys = list(all_dsets.keys())
+        if len(keys) == 1:
+            self._ds = all_dsets[keys[0]]
+        else:
+            self._ds = all_dsets
 
     def to_xarray(self, **kwargs):
         """Return dataset as an xarray dataset

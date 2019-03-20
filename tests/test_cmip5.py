@@ -96,4 +96,4 @@ def test_to_xarray_cmip(chunks, expected_chunks):
         cat = c.search(variable=['hfls'], frequency='mon', modeling_realm='atmos')
         ds = cat.to_xarray(decode_times=False, chunks=chunks)
         assert isinstance(ds, dict)
-        assert 'CCCma' in ds.keys()
+        assert 'CCCma.CanCM4.historical.mon.atmos' in ds.keys()
