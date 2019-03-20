@@ -221,7 +221,7 @@ class CMIP5Source(BaseSource):
                 f'Found multiple data frequencies: {frequency_list} in query results. Please specify the frequency to use'
             )
 
-        _ds_dict = {}
+        all_dsets = {}
         grouped = get_subset(self.collection_name, self.collection_type, query).groupby('institute')
         for name, group in tqdm(grouped, desc='institute'):
             ensembles = group['ensemble_member'].unique()
@@ -243,9 +243,55 @@ class CMIP5Source(BaseSource):
             _ds = aggregate.concat_ensembles(
                 ds_ens_list, member_ids=ensembles, join=kwargs['join'], chunks=kwargs['chunks']
             )
-            _ds_dict[name] = _ds
-        keys = list(_ds_dict.keys())
+            all_dsets[name] = _ds
+        keys = list(all_dsets.keys())
         if len(keys) == 1:
-            self._ds = _ds_dict[keys[0]]
+            self._ds = all_dsets[keys[0]]
         else:
-            self._ds = _ds_dict
+            self._ds = all_dsets
+
+
+class CMIP6Source(BaseSource):
+    name = 'cmip6'
+    partition_access = True
+    version = __version__
+
+    def _open_dataset(self):
+        kwargs = self._validate_kwargs(self.kwargs)
+        query = dict(self.query)
+        # fields which define a single dataset
+        dataset_fields = ['institution_id', 'source_id', 'experiment_id', 'table_id', 'grid_label']
+        all_dsets = {}
+        grouped = get_subset(self.collection_name, self.collection_type, query).groupby(
+            dataset_fields
+        )
+        for dset_keys, dset_files in tqdm(grouped, desc='dataset'):
+            dset_id = '.'.join(dset_keys)
+            member_ids = []
+            member_dsets = []
+            for m_id, m_files in tqdm(dset_files.groupby('member_id')):
+                var_dsets = []
+                for v_id, v_files in tqdm(m_files.groupby('variable_id')):
+                    urlpath_ei_vi = v_files['file_fullpath'].tolist()
+                    dsets = [
+                        aggregate.open_dataset_delayed(
+                            url, data_vars=[v_id], decode_times=kwargs['decode_times']
+                        )
+                        for url in urlpath_ei_vi
+                    ]
+
+                    var_dset_i = aggregate.concat_time_levels(dsets, kwargs['time_coord_name'])
+                    var_dsets.append(var_dset_i)
+                member_ids.append(m_id)
+                member_dset_i = aggregate.merge(dsets=var_dsets)
+                member_dsets.append(member_dset_i)
+            _ds = aggregate.concat_ensembles(
+                member_dsets, member_ids=member_ids, join=kwargs['join'], chunks=kwargs['chunks']
+            )
+            all_dsets[dset_id] = _ds
+
+        keys = list(all_dsets.keys())
+        if len(keys) == 1:
+            self._ds = all_dsets[keys[0]]
+        else:
+            self._ds = all_dsets

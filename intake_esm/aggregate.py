@@ -185,7 +185,7 @@ def concat_ensembles(
     if chunks is None:
         time_coord_name = ensure_time_coord_name(ds, time_coord_name_default)
         chunks = {time_coord_name: 'auto'}
-    if ensemble_dim_name in ds.dims:
+    if ensemble_dim_name in ds.dims and ensemble_dim_name not in chunks.keys():
         chunks.update({ensemble_dim_name: 1})
     chunk_size = config.get('default_chunk_size')
     with dask.config.set({'array.chunk-size': chunk_size}):
