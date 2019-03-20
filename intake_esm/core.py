@@ -1,24 +1,18 @@
-import logging
 import os
 import uuid
 
 import yaml
 from intake.catalog import Catalog
 from intake.catalog.local import LocalCatalogEntry
-from intake_xarray.netcdf import NetCDFSource
 
 from . import config as config
 from ._version import get_versions
 from .cesm import CESMCollection
-from .cmip import CMIP5Collection
+from .cmip import CMIP5Collection, CMIP6Collection
 from .common import _get_built_collections, _open_collection
 
 __version__ = get_versions()['version']
 del get_versions
-
-
-logger = logging.getLogger(__name__)
-logger.setLevel(level=logging.DEBUG)
 
 
 class ESMMetadataStoreCatalog(Catalog):
@@ -49,7 +43,7 @@ class ESMMetadataStoreCatalog(Catalog):
 
     name = 'esm_metadatastore'
     version = __version__
-    collection_types = {'cesm': CESMCollection, 'cmip5': CMIP5Collection}
+    collection_types = {'cesm': CESMCollection, 'cmip5': CMIP5Collection, 'cmip6': CMIP6Collection}
 
     def __init__(
         self,
@@ -98,7 +92,7 @@ class ESMMetadataStoreCatalog(Catalog):
             return input_collection
 
     def build_collection(self, overwrite_existing):
-        """ Build a collection defined in an YAML input file"""
+        """ Build a collection defined in a YAML input file or a dictionary of nested dictionaries"""
         name = self.input_collection['name']
         if name not in self.collections or overwrite_existing:
             ctype = self.input_collection['collection_type']
@@ -109,7 +103,8 @@ class ESMMetadataStoreCatalog(Catalog):
         self.open_collection(name, self.input_collection['collection_type'])
 
     def get_built_collections(self):
-        """ Load built collections in a dictionary with key=collection_name, value=collection_db_file_path """
+        """ Loads built collections in a dictionary with ``key=collection_name``,
+        ``value=collection_db_file_path`` """
         self.collections = _get_built_collections()
 
     def open_collection(self, collection_name, collection_type):
