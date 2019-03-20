@@ -180,6 +180,7 @@ with all the entries that match the query.
    cat = col.search(variable=['hfls'], frequency='mon',
                      modeling_realm='atmos', institute=['CCCma', 'CNRM-CERFACS'])
    cat.query_results
+   cat.query_results.groupby(['institute', 'model', 'ensemble_member']).count()
 
 
 Loading Query Results into Xarray Datasets
@@ -188,9 +189,9 @@ Loading Query Results into Xarray Datasets
 Once you are satisfied with the results of your query, you can use the ``to_xarray()`` method to load
 the data into an xarray dataset.
 
-.. note:: **to_xarray() method outputs**
+.. note::
 
-   ``to_xarray()`` method returns two types of output depending on the nature of the query results.
+   ``to_xarray()`` method returns two types of output depending on the nature of the query's results.
    If the query returns datasets that can be merged/concatenated, ``to_xarray()`` will return a single ``xarray`` dataset.
    However, if the datasets cannot be merged or concatenated, for example: outputs from different models, ``to_xarray()`` will
    return a dictionary of ``xarray`` datasets. The keys in this dictionary are constructed as follows:
