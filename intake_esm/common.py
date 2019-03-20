@@ -121,8 +121,13 @@ class Collection(ABC):
 
     def persist_db_file(self):
         if not self.df.empty:
-            print(f"Persisting {self.collection_spec['name']} at : {self.collection_db_file}")
+            print(
+                f"Persisting {self.collection_spec['name']} at : {os.path.abspath(self.collection_db_file)}"
+            )
             self.df.to_csv(self.collection_db_file, index=True)
+
+        else:
+            print(f"{self.df} is an empty dataframe. It won't be persisted to disk.")
 
 
 class BaseSource(intake_xarray.base.DataSourceMixin):
