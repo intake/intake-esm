@@ -1,8 +1,6 @@
 import os
 import re
-from collections import OrderedDict
 
-import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -48,30 +46,9 @@ class CMIP5Collection(Collection):
                                                             <version number>/
                                                                 <variable name>
         with ``depth=7``, we retrieve all directories up to ``realm`` level
+        Reference: CMIP5 DRS: https://cmip.llnl.gov/cmip5/docs/cmip5_data_reference_syntax_v1-00_clean.pdf
         """
-        self._validate()
-        if not os.path.exists(self.root_dir):
-            raise NotADirectoryError(f'{os.path.abspath(self.root_dir)} does not exist')
-        dirs = self.get_directories(
-            root_dir=self.root_dir, depth=7, exclude_dirs=['files', 'latest']
-        )
-        dfs = [self._parse_directory(directory, self.columns) for directory in dirs]
-        df = dd.from_delayed(dfs).compute()
-
-        vYYYYMMDD = r'v\d{4}\d{2}\d{2}'
-        vN = r'v\d{1}'
-        v = re.compile('|'.join([vYYYYMMDD, vN]))  # Combine both regex into one
-        df['version'] = df['file_dirname'].str.findall(v)
-        df['version'] = df['version'].apply(lambda x: x[0] if x else 'v0')
-        sorted_df = (
-            df.sort_values('version')
-            .drop_duplicates(subset='file_basename', keep='last')
-            .reset_index(drop=True)
-        )
-        self.df = sorted_df.copy()
-        print(self.df.info())
-        self.persist_db_file()
-        return self.df
+        self.build_cmip(depth=7, exclude_dirs=['files', 'latest'])
 
     def _get_entry(self, directory):
 
@@ -79,20 +56,20 @@ class CMIP5Collection(Collection):
             entry = {}
             dir_split = directory.split('/')
             entry['activity'] = 'CMIP5'
-            entry['modeling_realm'] = dir_split[-1]
-            entry['frequency'] = dir_split[-2]
-            entry['experiment'] = dir_split[-3]
-            entry['model'] = dir_split[-4]
-            entry['institute'] = dir_split[-5]
             entry['product'] = dir_split[-6]
+            entry['institute'] = dir_split[-5]
+            entry['model'] = dir_split[-4]
+            entry['experiment'] = dir_split[-3]
+            entry['frequency'] = dir_split[-2]
+            entry['modeling_realm'] = dir_split[-1]
             return entry
 
         except Exception:
             return {}
 
     @delayed
-    def _parse_directory(self, directory, columns):
-        exclude = set(['files', 'latest'])  # directories to exclude
+    def _parse_directory(self, directory, columns, exclude_dirs):
+        exclude = set(exclude_dirs)  # directories to exclude
 
         df = pd.DataFrame(columns=columns)
 
@@ -148,12 +125,62 @@ class CMIP6Collection(Collection):
                                                                 <version>
 
         with ``depth=9``, we retrieve all directories up to ``grid_label`` level
+        Reference: CMIP6 DRS: http://goo.gl/v1drZl
         """
-        self._validate()
-        if not os.path.exists(self.root_dir):
-            raise NotADirectoryError(f'{os.path.abspath(self.root_dir)} does not exist')
-        dirs = self.get_directories(root_dir=self.root_dir, depth=9, exclude_dirs=[])
-        print(dirs)
+        self.build_cmip(depth=9, exclude_dirs=[])
+
+    def _get_entry(self, directory):
+        try:
+            entry = {}
+            dir_split = directory.split('/')
+            entry['mip_era'] = 'CMIP6'
+            entry['activity_id'] = dir_split[-8]
+            entry['institution_id'] = dir_split[-7]
+            entry['source_id'] = dir_split[-6]
+            entry['experiment_id'] = dir_split[-5]
+            entry['member_id'] = dir_split[-4]
+            entry['table_id'] = dir_split[-3]
+            entry['variable_id'] = dir_split[-2]
+            entry['grid_label'] = dir_split[-1]
+            return entry
+
+        except Exception:
+            return {}
+
+    @delayed
+    def _parse_directory(self, directory, columns):
+        time_range = r'\d{6}-\d{6}'
+        time_range_regex = re.compile(time_range)
+        df = pd.DataFrame(columns=columns)
+        entry = self._get_entry(directory)
+        if not entry:
+            return df
+        for root, dirs, files in os.walk(directory):
+            if not files:
+                continue
+            sfiles = sorted([f for f in files if os.path.splitext(f)[1] == '.nc'])
+            if not sfiles:
+                continue
+
+            fs = []
+            for f in sfiles:
+                try:
+                    temporal_subset = f.split('_')[-1].split('.')[0]
+                    match = time_range_regex.match(temporal_subset)
+                    entry['time_range'] = match.group() if match else 'fixed'
+                    entry['file_dirname'] = root
+                    entry['file_basename'] = f
+                    entry['file_fullpath'] = os.path.join(root, f)
+                    fs.append(entry)
+
+                except Exception:
+                    print(f'Could not parse metadata info for file: {f}')
+                    continue
+
+            temp_df = pd.DataFrame(fs, columns=columns)
+            df = pd.concat([temp_df, df], ignore_index=True, sort=False)
+
+        return df
 
 
 class CMIP5Source(BaseSource):

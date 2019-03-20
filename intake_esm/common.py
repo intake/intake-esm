@@ -6,6 +6,7 @@ from abc import ABC
 from glob import glob
 from subprocess import PIPE, Popen
 
+import dask.dataframe as dd
 import intake_xarray
 import numpy as np
 import pandas as pd
@@ -22,6 +23,7 @@ class Collection(ABC):
             collection_spec['collection_type'], None
         )
         self.df = pd.DataFrame()
+        self.root_dir = ''
         if self.collection_definition is None:
             raise ValueError(
                 f"*** {collection_spec['collection_type']} *** is not a defined collection type in {config.PATH}"
@@ -65,6 +67,31 @@ class Collection(ABC):
 
     def build(self):
         raise NotImplementedError()
+
+    def _parse_directory(self, directory, columns, exclude_dirs=[]):
+        raise NotImplementedError()
+
+    def build_cmip(self, depth, exclude_dirs=[]):
+        self._validate()
+        if not os.path.exists(self.root_dir):
+            raise NotADirectoryError(f'{os.path.abspath(self.root_dir)} does not exist')
+        dirs = self.get_directories(root_dir=self.root_dir, depth=depth, exclude_dirs=exclude_dirs)
+        dfs = [self._parse_directory(directory, self.columns, exclude_dirs) for directory in dirs]
+        df = dd.from_delayed(dfs).compute()
+        vYYYYMMDD = r'v\d{4}\d{2}\d{2}'
+        vN = r'v\d{1}'
+        v = re.compile('|'.join([vYYYYMMDD, vN]))  # Combine both regex into one
+        df['version'] = df['file_dirname'].str.findall(v)
+        df['version'] = df['version'].apply(lambda x: x[0] if x else 'v0')
+        sorted_df = (
+            df.sort_values('version')
+            .drop_duplicates(subset='file_basename', keep='last')
+            .reset_index(drop=True)
+        )
+        self.df = sorted_df.copy()
+        print(self.df.info())
+        self.persist_db_file()
+        return self.df
 
     def _validate(self):
         for req_col in config.get('collections')[self.collection_spec['collection_type']][

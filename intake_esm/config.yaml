@@ -130,7 +130,7 @@ collections:
     - mip_era
     - source_id
     - table_id
-    - temporal_subset
+    - time_range
     - variable_id
     - version
     order_by_columns:
