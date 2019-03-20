@@ -160,7 +160,8 @@ dictionary defined above:
 
 .. ipython:: python
 
-   col = intake.open_esm_metadatastore(collection_input_definition=collection_definition, overwrite_existing=True)
+   col = intake.open_esm_metadatastore(collection_input_definition=collection_definition,
+                                       overwrite_existing=True)
    col.df.head()
    col.df["model"].unique()
    col.df["model"].nunique()  # Find the total number of unique climate models

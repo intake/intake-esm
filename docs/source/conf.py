@@ -277,5 +277,5 @@ ipython_execlines = [
     'import intake',
     'import intake_esm',
     'import pandas as pd',
-    'pd.set_option("display.max_columns", 8)',
+    'pd.set_option("display.max_columns", 4)',
 ]

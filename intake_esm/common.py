@@ -1,9 +1,8 @@
 import fnmatch
-import logging
 import os
 import re
 import shutil
-from abc import ABC, abstractclassmethod
+from abc import ABC
 from glob import glob
 from subprocess import PIPE, Popen
 
@@ -13,9 +12,6 @@ import pandas as pd
 import xarray as xr
 
 from . import config
-
-logger = logging.getLogger(__name__)
-logger.setLevel(level=logging.WARNING)
 
 
 class Collection(ABC):
@@ -46,9 +42,29 @@ class Collection(ABC):
             self.collection_db_file = f"{self.database_dir}/{collection_spec['name']}.csv"
             os.makedirs(self.database_dir, exist_ok=True)
 
-    @abstractclassmethod
+    def walk(self, top, maxdepth):
+        dirs, nondirs = [], []
+        for entry in os.scandir(top):
+            (dirs if entry.is_dir() else nondirs).append(entry.path)
+        yield top, dirs, nondirs
+        if maxdepth > 1:
+            for path in dirs:
+                for x in self.walk(path, maxdepth - 1):
+                    yield x
+
+    def get_directories(self, root_dir, depth, exclude_dirs=[]):
+        y = [x[0] for x in self.walk(root_dir, depth)]
+        diff = depth - 1
+        base = len(root_dir.split('/'))
+        valid_dirs = [
+            x
+            for x in y
+            if len(x.split('/')) - base == diff and x.split('/')[-1] not in set(exclude_dirs)
+        ]
+        return valid_dirs
+
     def build(self):
-        pass
+        raise NotImplementedError()
 
     def _validate(self):
         for req_col in config.get('collections')[self.collection_spec['collection_type']][
@@ -61,9 +77,7 @@ class Collection(ABC):
 
     def persist_db_file(self):
         if not self.df.empty:
-            logger.warning(
-                f"Persisting {self.collection_spec['name']} at : {self.collection_db_file}"
-            )
+            print(f"Persisting {self.collection_spec['name']} at : {self.collection_db_file}")
             self.df.to_csv(self.collection_db_file, index=True)
 
 
@@ -104,9 +118,8 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
             _kwargs.update(join='outer')
         return _kwargs
 
-    @abstractclassmethod
     def _open_dataset(self):
-        pass
+        raise NotImplementedError()
 
     def to_xarray(self, **kwargs):
         """Return dataset as an xarray dataset
@@ -204,7 +217,7 @@ class StorageResource(object):
     def _list_files_hsi(self):
         """Get a list of files from HPSS"""
         if shutil.which('hsi') is None:
-            logger.warning(f'no hsi; cannot access [HSI]{self.urlpath}')
+            print(f'no hsi; cannot access [HSI]{self.urlpath}')
             return []
 
         p = Popen(

@@ -1,4 +1,3 @@
-import logging
 import os
 import re
 from collections import OrderedDict
@@ -17,30 +16,8 @@ from .common import BaseSource, Collection, StorageResource, _open_collection, g
 __version__ = get_versions()['version']
 del get_versions
 
-logger = logging.getLogger(__name__)
-logger.setLevel(level=logging.WARNING)
 
-
-class CMIPBaseCollection(Collection):
-    def __init__(self, collection_spec):
-        super(CMIPBaseCollection, self).__init__(collection_spec)
-        self.df = pd.DataFrame()
-        self.root_dir = self.collection_spec['data_sources']['root_dir']['urlpath']
-
-    def build(self):
-        raise NotImplementedError()
-
-    def _parse_root_dir(self):
-        raise NotImplementedError()
-
-    def _parse_directory(self):
-        raise NotImplementedError()
-
-    def _get_entry(self):
-        raise NotImplementedError()
-
-
-class CMIP5Collection(CMIPBaseCollection):
+class CMIP5Collection(Collection):
     """ Defines a CMIP5 collection
 
     Parameters
@@ -55,18 +32,32 @@ class CMIP5Collection(CMIPBaseCollection):
 
     def __init__(self, collection_spec):
         super(CMIP5Collection, self).__init__(collection_spec)
+        self.root_dir = self.collection_spec['data_sources']['root_dir']['urlpath']
 
     def build(self):
-        """ Build collection and return a pandas Dataframe"""
+        """ Build collection and return a pandas Dataframe
+        Directory structure = <activity>/
+                                <product>/
+                                    <institute>/
+                                        <model>/
+                                            <experiment>/
+                                                <frequency>/
+                                                <modeling_realm>/
+                                                    <MIP table>/
+                                                        <ensemble member>/
+                                                            <version number>/
+                                                                <variable name>
+        with ``depth=7``, we retrieve all directories up to ``realm`` level
+        """
         self._validate()
         if not os.path.exists(self.root_dir):
             raise NotADirectoryError(f'{os.path.abspath(self.root_dir)} does not exist')
-
-        dirs = self._parse_dirs(self.root_dir)
+        dirs = self.get_directories(
+            root_dir=self.root_dir, depth=7, exclude_dirs=['files', 'latest']
+        )
         dfs = [self._parse_directory(directory, self.columns) for directory in dirs]
         df = dd.from_delayed(dfs).compute()
 
-        # NOTE: This is not a robust solution in case the root dir does not match the pattern
         vYYYYMMDD = r'v\d{4}\d{2}\d{2}'
         vN = r'v\d{1}'
         v = re.compile('|'.join([vYYYYMMDD, vN]))  # Combine both regex into one
@@ -78,59 +69,26 @@ class CMIP5Collection(CMIPBaseCollection):
             .reset_index(drop=True)
         )
         self.df = sorted_df.copy()
-        logger.warning(self.df.info())
+        print(self.df.info())
         self.persist_db_file()
         return self.df
 
-    def _parse_dirs(self, root_dir):
-        institute_dirs = [
-            os.path.join(root_dir, activity, institute)
-            for activity in os.listdir(root_dir)
-            for institute in os.listdir(os.path.join(root_dir, activity))
-            if os.path.isdir(os.path.join(root_dir, activity, institute))
-        ]
-
-        model_dirs = [
-            os.path.join(institute_dir, model)
-            for institute_dir in institute_dirs
-            for model in os.listdir(institute_dir)
-            if os.path.isdir(os.path.join(institute_dir, model))
-        ]
-
-        experiment_dirs = [
-            os.path.join(model_dir, exp)
-            for model_dir in model_dirs
-            for exp in os.listdir(model_dir)
-            if os.path.isdir(os.path.join(model_dir, exp))
-        ]
-
-        freq_dirs = [
-            os.path.join(experiment_dir, freq)
-            for experiment_dir in experiment_dirs
-            for freq in os.listdir(experiment_dir)
-            if os.path.isdir(os.path.join(experiment_dir, freq))
-        ]
-
-        modeling_realm_dirs = [
-            os.path.join(freq_dir, modeling_realm)
-            for freq_dir in freq_dirs
-            for modeling_realm in os.listdir(freq_dir)
-            if os.path.isdir(os.path.join(freq_dir, modeling_realm))
-        ]
-
-        return modeling_realm_dirs
-
     def _get_entry(self, directory):
-        dir_split = directory.split('/')
-        entry = {}
-        entry['activity'] = 'CMIP5'
-        entry['modeling_realm'] = dir_split[-1]
-        entry['frequency'] = dir_split[-2]
-        entry['experiment'] = dir_split[-3]
-        entry['model'] = dir_split[-4]
-        entry['institute'] = dir_split[-5]
-        entry['product'] = dir_split[-6]
-        return entry
+
+        try:
+            entry = {}
+            dir_split = directory.split('/')
+            entry['activity'] = 'CMIP5'
+            entry['modeling_realm'] = dir_split[-1]
+            entry['frequency'] = dir_split[-2]
+            entry['experiment'] = dir_split[-3]
+            entry['model'] = dir_split[-4]
+            entry['institute'] = dir_split[-5]
+            entry['product'] = dir_split[-6]
+            return entry
+
+        except Exception:
+            return {}
 
     @delayed
     def _parse_directory(self, directory, columns):
@@ -139,9 +97,9 @@ class CMIP5Collection(CMIPBaseCollection):
         df = pd.DataFrame(columns=columns)
 
         entry = self._get_entry(directory)
-
+        if not entry:
+            return df
         for root, dirs, files in os.walk(directory):
-            # print(root)
             dirs[:] = [d for d in dirs if d not in exclude]
             if not files:
                 continue
@@ -156,23 +114,50 @@ class CMIP5Collection(CMIPBaseCollection):
                     entry['variable'] = f_split[0]
                     entry['mip_table'] = f_split[1]
                     entry['ensemble_member'] = f_split[-2]
-                    entry['temporal_subset'] = f_split[-1].split('.')[0]
+                    entry['temporal_subset'] = (
+                        'fixed' if entry['frequency'] == 'fx' else f_split[-1].split('.')[0]
+                    )
                     entry['file_dirname'] = root
                     entry['file_basename'] = f
                     entry['file_fullpath'] = os.path.join(root, f)
                     fs.append(entry)
-                except BaseException:
+                except Exception:
                     continue
-            if fs:
-                temp_df = pd.DataFrame(fs, columns=columns)
 
-            else:
-                temp_df = pd.DataFrame(columns=columns)
+            temp_df = pd.DataFrame(fs, columns=columns)
             df = pd.concat([temp_df, df], ignore_index=True, sort=False)
         return df
 
 
+class CMIP6Collection(Collection):
+    def __init__(self, collection_spec):
+        super(CMIP6Collection, self).__init__(collection_spec)
+        self.root_dir = self.collection_spec['data_sources']['root_dir']['urlpath']
+
+    def build(self):
+        """
+        Directory structure = <mip_era>/
+                                <activity_id>/
+                                    <institution_id>/
+                                        <source_id>/
+                                            <experiment_id>/
+                                                <member_id>/
+                                                    <table_id>/
+                                                        <variable_id>/
+                                                            <grid_label>/
+                                                                <version>
+
+        with ``depth=9``, we retrieve all directories up to ``grid_label`` level
+        """
+        self._validate()
+        if not os.path.exists(self.root_dir):
+            raise NotADirectoryError(f'{os.path.abspath(self.root_dir)} does not exist')
+        dirs = self.get_directories(root_dir=self.root_dir, depth=9, exclude_dirs=[])
+        print(dirs)
+
+
 class CMIP5Source(BaseSource):
+
     """ Read CMIP collection datasets into an xarray dataset
 
     Parameters

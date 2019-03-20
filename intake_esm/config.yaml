@@ -106,6 +106,7 @@ collections:
     - model
     - modeling_realm
     - product
+    - temporal_subset
     - variable
     - version
     order_by_columns:
@@ -123,19 +124,17 @@ collections:
     - file_basename
     - file_dirname
     - file_fullpath
-    - frequency
     - grid_label
     - institution_id
     - member_id
     - mip_era
-    - model
-    - realm
     - source_id
     - table_id
-    - variable
+    - temporal_subset
     - variable_id
     - version
     order_by_columns:
+      - member_id
       - file_fullpath
     required_columns:
       - member_id
