@@ -31,7 +31,8 @@ class ESMMetadataStoreCatalog(Catalog):
                 Collection type. Accepted values include:
 
                 - `cesm`
-                - `cmip`
+                - `cmip5`
+                - `cmip6`
     overwrite_existing : bool,
             Whether to overwrite existing built collection catalog
 

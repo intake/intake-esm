@@ -34,19 +34,22 @@ class CMIP5Collection(Collection):
         self.root_dir = self.collection_spec['data_sources']['root_dir']['urlpath']
 
     def build(self):
-        """ Build collection and return a pandas Dataframe
+        """ Builds CMIP5 collection and returns a pandas Dataframe
+
+        Notes
+        ------
         Directory structure = <activity>/
                                 <product>/
                                     <institute>/
                                         <model>/
                                             <experiment>/
                                                 <frequency>/
-                                                <modeling_realm>/
-                                                    <MIP table>/
+                                                   <modeling_realm>/
+                                                     <MIP table>/
                                                         <ensemble member>/
                                                             <version number>/
                                                                 <variable name>
-        with ``depth=7``, we retrieve all directories up to ``realm`` level
+        With ``depth=7``, we retrieve all directories up to ``modeling_realm`` level
         Reference: CMIP5 DRS: https://cmip.llnl.gov/cmip5/docs/cmip5_data_reference_syntax_v1-00_clean.pdf
         """
         self.build_cmip(depth=7, exclude_dirs=['files', 'latest'])
@@ -127,6 +130,10 @@ class CMIP6Collection(Collection):
 
     def build(self):
         """
+        Builds CMIP6 collection and returns a pandas Dataframe
+
+        Notes
+        -----
         Directory structure = <mip_era>/
                                 <activity_id>/
                                     <institution_id>/
@@ -137,8 +144,7 @@ class CMIP6Collection(Collection):
                                                         <variable_id>/
                                                             <grid_label>/
                                                                 <version>
-
-        with ``depth=9``, we retrieve all directories up to ``grid_label`` level
+        With ``depth=9``, we retrieve all directories up to ``grid_label`` level
         Reference: CMIP6 DRS: http://goo.gl/v1drZl
         """
         self.build_cmip(depth=9, exclude_dirs=[])

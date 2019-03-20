@@ -5,8 +5,10 @@ include README.rst
 include requirements.txt
 
 recursive-include intake_esm *.yaml
-recursive-include tests
-recursive-include example_input
+recursive-include tests *.py
+recursive-include tests *.nc
+recursive-include tests *yml
+recursive-include tests *yaml
 recursive-include intake_esm *.py
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]

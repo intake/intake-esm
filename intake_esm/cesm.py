@@ -29,7 +29,8 @@ class CESMCollection(Collection):
     See Also
     --------
     intake_esm.core.ESMMetadataStoreCatalog
-    intake_esm.cmip.CMIPCollection
+    intake_esm.cmip.CMIP5Collection
+    intake_esm.cmip.CMIP6Collection
     """
 
     def __init__(self, collection_spec):
