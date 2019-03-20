@@ -47,6 +47,13 @@ class Collection(ABC):
             os.makedirs(self.database_dir, exist_ok=True)
 
     def walk(self, top, maxdepth):
+        """ Travel directory tree with limited recursion depth
+
+        Note
+        ----
+        This functions is meant to work in CMIP collections only!
+        """
+
         dirs, nondirs = [], []
         for entry in os.scandir(top):
             (dirs if entry.is_dir() else nondirs).append(entry.path)
@@ -57,6 +64,12 @@ class Collection(ABC):
                     yield x
 
     def get_directories(self, root_dir, depth, exclude_dirs=[]):
+        """
+        Note
+        ----
+        This function should be used in conjunction with ``walk()`` only!
+        """
+
         print('Getting list of directories')
         y = [x[0] for x in self.walk(root_dir, depth)]
         diff = depth - 1
@@ -70,7 +83,7 @@ class Collection(ABC):
         return valid_dirs
 
     def build(self):
-        raise NotImplementedError()
+        raise NotImplementedError('Subclass needs to implement this method')
 
     @delayed
     def _parse_directory(self, directory, columns, exclude_dirs=[]):
@@ -113,14 +126,38 @@ class Collection(ABC):
 
 
 class BaseSource(intake_xarray.base.DataSourceMixin):
+    """ Base class used to load datasets from a defined collection into an xarray dataset
+
+    Parameters
+    ----------
+
+    collection_name : str
+          Name of the collection to use.
+
+    collection_type : str
+          Type of the collection to load. Accepted values are:
+
+          - `cesm`
+          - `cmip5`
+          - `cmip6`
+
+    query : dict
+
+    kwargs :
+        Further parameters are passed to to_xarray() method
+    """
+
     def __init__(self, collection_name, collection_type, query={}, **kwargs):
         self.collection_name = collection_name
         self.collection_type = collection_type
         self.query = query
-        self.query_results = None
+        self.urlpath = ''
+        self.query_results = self.get_results()
         self._ds = None
         self.kwargs = kwargs
         super(BaseSource, self).__init__(**kwargs)
+        if self.metadata is None:
+            self.metadata = {}
 
     def get_results(self):
         """ Return collection entries matching query"""

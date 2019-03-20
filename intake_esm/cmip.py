@@ -26,6 +26,7 @@ class CMIP5Collection(Collection):
     --------
     intake_esm.core.ESMMetadataStoreCatalog
     intake_esm.cesm.CESMCollection
+    intake_esm.cmip.CMIP6Collection
     """
 
     def __init__(self, collection_spec):
@@ -107,6 +108,19 @@ class CMIP5Collection(Collection):
 
 
 class CMIP6Collection(Collection):
+    """ Defines a CMIP6 collection
+
+    Parameters
+    ----------
+    collection_spec : dict
+
+    See Also
+    --------
+    intake_esm.core.ESMMetadataStoreCatalog
+    intake_esm.cesm.CESMCollection
+    intake_esm.cmip.CMIP5Collection
+    """
+
     def __init__(self, collection_spec):
         super(CMIP6Collection, self).__init__(collection_spec)
         self.root_dir = self.collection_spec['data_sources']['root_dir']['urlpath']
@@ -186,48 +200,9 @@ class CMIP6Collection(Collection):
 
 
 class CMIP5Source(BaseSource):
-
-    """ Read CMIP collection datasets into an xarray dataset
-
-    Parameters
-    ----------
-
-    collection_name : str
-          Name of the collection to use.
-
-    collection_type : str
-          Type of the collection to load. Accepted values are:
-
-          - `cesm`
-          - `cmip`
-
-    query : dict
-         A query to execute against the specified collection
-
-    chunks : int or dict, optional
-        Chunks is used to load the new dataset into dask
-        arrays. ``chunks={}`` loads the dataset with dask using a single
-        chunk for all arrays.
-
-    concat_dim : str, optional
-        Name of dimension along which to concatenate the files. Can
-        be new or pre-existing. Default is 'concat_dim'.
-
-    kwargs :
-        Further parameters are passed to xr.open_mfdataset
-    """
-
     name = 'cmip5'
     partition_access = True
     version = __version__
-
-    def __init__(self, collection_name, collection_type, query={}, **kwargs):
-
-        super(CMIP5Source, self).__init__(collection_name, collection_type, query, **kwargs)
-        self.urlpath = ''
-        self.query_results = self.get_results()
-        if self.metadata is None:
-            self.metadata = {}
 
     def _open_dataset(self):
 

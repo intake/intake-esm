@@ -263,47 +263,10 @@ class CESMCollection(Collection):
 
 
 class CESMSource(BaseSource):
-    """ Read CESM collection datasets into an xarray dataset
-
-    Parameters
-    ----------
-
-    collection_name : str
-          Name of the collection to use.
-
-    collection_type : str
-          Type of the collection to load. Accepted values are:
-
-          - `cesm`
-          - `cmip`
-
-    query : dict
-         A query to execute against the specified collection
-
-    chunks : int or dict, optional
-        Chunks is used to load the new dataset into dask
-        arrays. ``chunks={}`` loads the dataset with dask using a single
-        chunk for all arrays.
-
-    concat_dim : str, optional
-        Name of dimension along which to concatenate the files. Can
-        be new or pre-existing. Default is 'concat_dim'.
-
-    kwargs :
-        Further parameters are passed to xr.open_mfdataset
-    """
 
     name = 'cesm'
     partition_access = True
     version = __version__
-
-    def __init__(self, collection_name, collection_type, query={}, **kwargs):
-
-        super(CESMSource, self).__init__(collection_name, collection_type, query, **kwargs)
-        self.query_results = self.get_results()
-        if self.metadata is None:
-            self.metadata = {}
-        self.urlpath = ''
 
     def _open_dataset(self):
         kwargs = self._validate_kwargs(self.kwargs)
