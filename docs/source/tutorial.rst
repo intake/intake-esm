@@ -109,7 +109,7 @@ This configuration file is a YAML file with the following contents:
         cmip: intake_esm.cmip.CMIPSource
 
 ``collection_columns`` consists of a list of columns to include in a collection
-catalog database. This database is persisted on disk as an CSV file to the location specified in ``database_directory``.
+catalog database. This database is persisted on disk as an CSV file at the location specified by ``database_directory`` key.
 
 
 Building a CMIP5 Collection Catalog
@@ -167,8 +167,8 @@ dictionary defined above:
    col.df["model"].nunique()  # Find the total number of unique climate models
    col.df.groupby('model').nunique()
 
-Search For Entries in the Built Collection Catalog
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Searching for Entries in the Built Collection Catalog
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 One of the features supported in ``intake-esm`` is querying the collection catalog.
 This is achieved through the ``search()`` method. The ``search`` method allows the user to
@@ -177,7 +177,28 @@ with all the entries that match the query.
 
 .. ipython:: python
 
-   cat = col.search(variable=['hfls'], frequency='mon', modeling_realm='atmos')
+   cat = col.search(variable=['hfls'], frequency='mon',
+                     modeling_realm='atmos', institute=['CCCma', 'CNRM-CERFACS'])
    cat.query_results
+
+
+Loading Query Results into Xarray Datasets
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Once you are satisfied with the results of your query, you can use the ``to_xarray()`` method to load
+the data into an xarray dataset.
+
+.. note:: **to_xarray() method outputs**
+
+   ``to_xarray()`` method returns two types of output depending on the nature of the query results.
+   If the query returns datasets that can be merged/concatenated, ``to_xarray()`` will return a single ``xarray`` dataset.
+   However, if the datasets cannot be merged or concatenated, for example: outputs from different models, ``to_xarray()`` will
+   return a dictionary of ``xarray`` datasets. The keys in this dictionary are constructed as follows:
+
+   - For CMIP5 data, ``key=<institute>.<model>.<experiment>.<frequency>.<modeling_realm>``
+   - For CMIP6 data, ``key=<institution_id>.<source_id>.<experiment_id>.<table_id>.<grid_label>``
+
+.. ipython:: python
+
    ds = cat.to_xarray(decode_times=False)
    ds
