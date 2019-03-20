@@ -5,4 +5,4 @@ data_sources:
     name: GLADE
     loc_type: posix
     direct_access: True
-    urlpath: /glade/collections/cmip/CMIP6
+    urlpath: ./tests/sample_data/cmip/CMIP6
