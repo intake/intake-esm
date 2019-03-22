@@ -41,9 +41,7 @@ def test_build_collection_dict():
 
 def test_search():
     with config.set({'database-directory': './tests/test_collections'}):
-        c = intake.open_esm_metadatastore(
-            collection_name='cmip5_test_collection', collection_type='cmip5'
-        )
+        c = intake.open_esm_metadatastore(collection_name='cmip5_test_collection')
         cat = c.search(model=['CanESM2', 'CSIRO-Mk3-6-0'])
         assert isinstance(cat.query_results, pd.DataFrame)
         assert not cat.query_results.empty
@@ -58,9 +56,7 @@ def test_cat():
 
 def test_to_xarray_cmip_empty():
     with config.set({'database-directory': './tests/test_collections'}):
-        c = intake.open_esm_metadatastore(
-            collection_name='cmip5_test_collection', collection_type='cmip5'
-        )
+        c = intake.open_esm_metadatastore(collection_name='cmip5_test_collection')
         cat = c.search(
             model='CanESM2',
             experiment='rcp85',
@@ -82,9 +78,7 @@ def test_to_xarray_cmip_empty():
 )
 def test_to_xarray_cmip(chunks, expected_chunks):
     with config.set({'database-directory': './tests/test_collections'}):
-        c = intake.open_esm_metadatastore(
-            collection_name='cmip5_test_collection', collection_type='cmip5'
-        )
+        c = intake.open_esm_metadatastore(collection_name='cmip5_test_collection')
         cat = c.search(
             variable=['hfls'], frequency='mon', modeling_realm='atmos', model=['CNRM-CM5']
         )

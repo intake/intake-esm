@@ -41,9 +41,7 @@ def test_build_collection_dict():
 
 def test_search():
     with config.set({'database-directory': './tests/test_collections'}):
-        c = intake.open_esm_metadatastore(
-            collection_name='cmip6_test_collection', collection_type='cmip6'
-        )
+        c = intake.open_esm_metadatastore(collection_name='cmip6_test_collection')
         cat = c.search(source_id=['CNRM-ESM2-1', 'GISS-E2-1-G'])
         assert isinstance(cat.query_results, pd.DataFrame)
         assert not cat.query_results.empty
@@ -58,9 +56,7 @@ def test_search():
 )
 def test_to_xarray_cmip(chunks, expected_chunks):
     with config.set({'database-directory': './tests/test_collections'}):
-        c = intake.open_esm_metadatastore(
-            collection_name='cmip6_test_collection', collection_type='cmip6'
-        )
+        c = intake.open_esm_metadatastore(collection_name='cmip6_test_collection')
 
         # Test for data from multiple institutions
         cat = c.search(

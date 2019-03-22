@@ -9,7 +9,7 @@ from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
 from ._version import get_versions
-from .common import BaseSource, Collection, StorageResource, _open_collection, get_subset
+from .common import BaseSource, Collection, StorageResource
 
 __version__ = get_versions()['version']
 del get_versions

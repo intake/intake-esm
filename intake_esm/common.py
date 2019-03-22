@@ -43,7 +43,7 @@ class Collection(ABC):
 
         if self.database_base_dir:
             self.database_dir = f"{self.database_base_dir}/{collection_spec['collection_type']}"
-            self.collection_db_file = f"{self.database_dir}/{collection_spec['name']}.csv"
+            self.collection_db_file = f"{self.database_dir}/{collection_spec['name']}.{collection_spec['collection_type']}.csv"
             os.makedirs(self.database_dir, exist_ok=True)
 
     def walk(self, top, maxdepth):
@@ -139,22 +139,14 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
     collection_name : str
           Name of the collection to use.
 
-    collection_type : str
-          Type of the collection to load. Accepted values are:
-
-          - `cesm`
-          - `cmip5`
-          - `cmip6`
-
     query : dict
 
     kwargs :
         Further parameters are passed to to_xarray() method
     """
 
-    def __init__(self, collection_name, collection_type, query={}, **kwargs):
+    def __init__(self, collection_name, query={}, **kwargs):
         self.collection_name = collection_name
-        self.collection_type = collection_type
         self.query = query
         self.urlpath = ''
         self.query_results = self.get_results()
@@ -166,12 +158,7 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
 
     def get_results(self):
         """ Return collection entries matching query"""
-        query_results = get_subset(
-            self.collection_name,
-            self.collection_type,
-            self.query,
-            order_by=config.get('collections')[self.collection_type]['order-by-columns'],
-        )
+        query_results = get_subset(self.collection_name, self.query)
         return query_results
 
     def _validate_kwargs(self, kwargs):
@@ -199,9 +186,7 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
     ):
         kwargs = self._validate_kwargs(self.kwargs)
         all_dsets = {}
-        grouped = get_subset(self.collection_name, self.collection_type, self.query).groupby(
-            dataset_fields
-        )
+        grouped = get_subset(self.collection_name, self.query).groupby(dataset_fields)
         for dset_keys, dset_files in tqdm(grouped, desc='dataset'):
             dset_id = '.'.join(dset_keys)
             member_ids = []
@@ -367,26 +352,38 @@ class StorageResource(object):
 def _get_built_collections():
     """Loads built collections in a dictionary with key=collection_name, value=collection_db_file_path"""
     try:
-        cc = [
-            y
-            for x in os.walk(config.get('database-directory'))
-            for y in glob(os.path.join(x[0], '*.csv'))
-        ]
-        collections = {os.path.splitext(os.path.basename(x))[0]: x for x in cc}
+        db_dir = config.get('database-directory')
+        cc = [y for x in os.walk(db_dir) for y in glob(os.path.join(x[0], '*.csv'))]
+        collections = {}
+        for collection in cc:
+            name, meta = _decipher_collection_name(collection)
+            collections[name] = meta
     except Exception:
         collections = {}
 
     return collections
 
 
-def _open_collection(collection_name, collection_type):
+def _decipher_collection_name(collection_path):
+    c_ = os.path.basename(collection_path).split('.')
+    collection_meta = {}
+    collection_name = c_[0]
+    collection_meta['collection_type'] = c_[1]
+    collection_meta['path'] = collection_path
+    return collection_name, collection_meta
+
+
+def _open_collection(collection_name):
     """ Open an ESM collection"""
 
     collection_types = config.get('sources').keys()
     collections = _get_built_collections()
+    print(collections)
+    collection_type = collections[collection_name]['collection_type']
+    path = collections[collection_name]['path']
     if (collection_type in collection_types) and collections:
         try:
-            df = pd.read_csv(collections[collection_name], index_col=0)
+            df = pd.read_csv(path, index_col=0)
             return df, collection_name, collection_type
         except Exception as err:
             raise err
@@ -395,9 +392,9 @@ def _open_collection(collection_name, collection_type):
         raise ValueError("Couldn't open specified collection")
 
 
-def get_subset(collection_name, collection_type, query, order_by=None):
+def get_subset(collection_name, query, order_by=None):
     """ Get a subset of collection entries that match a query """
-    df, _, _ = _open_collection(collection_name, collection_type)
+    df, _, collection_type = _open_collection(collection_name)
 
     condition = np.ones(len(df), dtype=bool)
 
@@ -414,7 +411,9 @@ def get_subset(collection_name, collection_type, query, order_by=None):
 
     query_results = df.loc[condition]
 
-    if order_by and isinstance(order_by, list):
-        query_results = query_results.sort_values(by=order_by, ascending=True)
+    if order_by is None:
+        order_by = config.get('collections')[collection_type]['order-by-columns']
+
+    query_results = query_results.sort_values(by=order_by, ascending=True)
 
     return query_results

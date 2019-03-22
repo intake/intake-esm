@@ -8,7 +8,7 @@ from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
 from ._version import get_versions
-from .common import BaseSource, Collection, StorageResource, _open_collection, get_subset
+from .common import BaseSource, Collection, StorageResource, get_subset
 
 __version__ = get_versions()['version']
 del get_versions
@@ -286,7 +286,6 @@ class CESMSource(BaseSource):
                 query['variable'] = var_i
                 urlpath_ei_vi = get_subset(
                     self.collection_name,
-                    self.collection_type,
                     query,
                     order_by=config.get('collections')['cesm']['order-by-columns'],
                 )['file_fullpath'].tolist()

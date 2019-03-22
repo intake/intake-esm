@@ -27,12 +27,7 @@ class ESMMetadataStoreCatalog(Catalog):
 
     collection_name : str
                 name of the collection to use
-    collection_type : str,
-                Collection type. Accepted values include:
 
-                - `cesm`
-                - `cmip5`
-                - `cmip6`
     overwrite_existing : bool,
             Whether to overwrite existing built collection catalog
 
@@ -50,7 +45,6 @@ class ESMMetadataStoreCatalog(Catalog):
         self,
         collection_input_definition=None,
         collection_name=None,
-        collection_type=None,
         overwrite_existing=True,
         metadata={},
     ):
@@ -59,10 +53,10 @@ class ESMMetadataStoreCatalog(Catalog):
         self.collections = {}
         self.get_built_collections()
 
-        if (collection_name and collection_type) and collection_input_definition is None:
-            self.open_collection(collection_name, collection_type)
+        if collection_name and collection_input_definition is None:
+            self.open_collection(collection_name)
 
-        elif collection_input_definition and (collection_name is None or collection_type is None):
+        elif collection_input_definition and (collection_name is None):
             self.input_collection = self._validate_collection_definition(
                 collection_input_definition
             )
@@ -71,7 +65,7 @@ class ESMMetadataStoreCatalog(Catalog):
         else:
             raise ValueError(
                 "Cannot instantiate class with provided arguments. Please provide either 'collection_input_definition' \
-                  \n\t\tor 'collection_name' and 'collection_type' "
+                  \n\t\tor 'collection_name' "
             )
 
         self._entries = {}
@@ -101,18 +95,16 @@ class ESMMetadataStoreCatalog(Catalog):
             cc = cc(self.input_collection)
             cc.build()
             self.get_built_collections()
-        self.open_collection(name, self.input_collection['collection_type'])
+        self.open_collection(name)
 
     def get_built_collections(self):
         """ Loads built collections in a dictionary with ``key=collection_name``,
         ``value=collection_db_file_path`` """
         self.collections = _get_built_collections()
 
-    def open_collection(self, collection_name, collection_type):
+    def open_collection(self, collection_name):
         """ Open an ESM collection """
-        self.df, self.collection_name, self.collection_type = _open_collection(
-            collection_name, collection_type
-        )
+        self.df, self.collection_name, self.collection_type = _open_collection(collection_name)
 
     def search(self, **query):
         """ Search for entries in the collection catalog
@@ -125,11 +117,7 @@ class ESMMetadataStoreCatalog(Catalog):
             if key not in query:
                 query[key] = None
         name = self.collection_name + '_' + str(uuid.uuid4())
-        args = {
-            'collection_name': self.collection_name,
-            'collection_type': self.collection_type,
-            'query': query,
-        }
+        args = {'collection_name': self.collection_name, 'query': query}
         driver = config.get('sources')[self.collection_type]
         description = f'Catalog entry from {self.collection_name} collection'
         cat = LocalCatalogEntry(

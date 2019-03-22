@@ -19,13 +19,6 @@ def test_build_collection():
         )
         assert isinstance(col.df, pd.DataFrame)
 
-        with pytest.raises(ValueError):
-            col = intake.open_esm_metadatastore(
-                collection_input_definition=collection_input_definition,
-                collection_name='cesm_dple',
-                collection_type='cesm',
-            )
-
 
 def test_build_collection_cesm1_le():
     with config.set({'database-directory': './tests/test_collections'}):
@@ -35,26 +28,17 @@ def test_build_collection_cesm1_le():
         )
         assert isinstance(col.df, pd.DataFrame)
 
-        with pytest.raises(ValueError):
-            col = intake.open_esm_metadatastore(
-                collection_input_definition=collection_input_definition,
-                collection_name='cesm_dple',
-                collection_type='cesm',
-            )
-
 
 @pytest.mark.parametrize('collection', ['cesm_dple_test_collection'])
 def test_constructor(collection):
     with config.set({'database-directory': './tests/test_collections'}):
-        c = intake.open_esm_metadatastore(collection_name=collection, collection_type='cesm')
+        c = intake.open_esm_metadatastore(collection_name=collection)
         assert isinstance(c, ESMMetadataStoreCatalog)
 
 
 def test_search():
     with config.set({'database-directory': './tests/test_collections'}):
-        c = intake.open_esm_metadatastore(
-            collection_name='cesm_dple_test_collection', collection_type='cesm'
-        )
+        c = intake.open_esm_metadatastore(collection_name='cesm_dple_test_collection')
         cat = c.search(variable='O2', direct_access=True)
 
         assert isinstance(cat.query_results, pd.DataFrame)
@@ -77,7 +61,7 @@ def test_cat():
 )
 def test_to_xarray_cesm(chunks, expected_chunks):
     with config.set({'database-directory': './tests/test_collections'}):
-        c = intake.open_esm_metadatastore(collection_name='cesm1-le', collection_type='cesm')
+        c = intake.open_esm_metadatastore(collection_name='cesm1-le')
         cat = c.search(
             variable=['STF_O2', 'SHF'],
             ensemble=[1, 3, 9],
