@@ -181,10 +181,11 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
     def _open_dataset(self):
         raise NotImplementedError()
 
-    def _open_cmip_dataset(
+    def _open_dataset_groups(
         self, dataset_fields, member_column_name, variable_column_name, file_fullpath_column_name
     ):
         kwargs = self._validate_kwargs(self.kwargs)
+
         all_dsets = {}
         grouped = get_subset(self.collection_name, self.query).groupby(dataset_fields)
         for dset_keys, dset_files in tqdm(grouped, desc='dataset'):
@@ -378,7 +379,6 @@ def _open_collection(collection_name):
 
     collection_types = config.get('sources').keys()
     collections = _get_built_collections()
-    print(collections)
     collection_type = collections[collection_name]['collection_type']
     path = collections[collection_name]['path']
     if (collection_type in collection_types) and collections:

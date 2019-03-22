@@ -270,38 +270,12 @@ class CESMSource(BaseSource):
     version = __version__
 
     def _open_dataset(self):
-        kwargs = self._validate_kwargs(self.kwargs)
-        query = dict(self.query)
+        # fields which define a single dataset
+        dataset_fields = ['stream', 'component', 'experiment']
 
-        ensembles = self.query_results['ensemble'].unique()
-        variables = self.query_results['variable'].unique()
-
-        ds_ens_list = []
-        for ens_i in tqdm(ensembles, desc='ensembles'):
-            query['ensemble'] = ens_i
-
-            ds_var_list = []
-            for var_i in tqdm(variables, desc='variables'):
-
-                query['variable'] = var_i
-                urlpath_ei_vi = get_subset(
-                    self.collection_name,
-                    query,
-                    order_by=config.get('collections')['cesm']['order-by-columns'],
-                )['file_fullpath'].tolist()
-
-                dsets = [
-                    aggregate.open_dataset_delayed(
-                        url, data_vars=[var_i], decode_times=kwargs['decode_times']
-                    )
-                    for url in urlpath_ei_vi
-                ]
-                ds_var_i = aggregate.concat_time_levels(dsets, kwargs['time_coord_name'])
-                ds_var_list.append(ds_var_i)
-
-            ds_ens_i = aggregate.merge(dsets=ds_var_list)
-            ds_ens_list.append(ds_ens_i)
-
-        self._ds = aggregate.concat_ensembles(
-            ds_ens_list, member_ids=ensembles, join=kwargs['join'], chunks=kwargs['chunks']
+        self._open_dataset_groups(
+            dataset_fields=dataset_fields,
+            member_column_name='ensemble',
+            variable_column_name='variable',
+            file_fullpath_column_name='file_fullpath',
         )

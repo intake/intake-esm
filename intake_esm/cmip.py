@@ -212,7 +212,7 @@ class CMIP5Source(BaseSource):
 
     def _open_dataset(self):
         dataset_fields = ['institute', 'model', 'experiment', 'frequency', 'modeling_realm']
-        self._open_cmip_dataset(
+        self._open_dataset_groups(
             dataset_fields=dataset_fields,
             member_column_name='ensemble_member',
             variable_column_name='variable',
@@ -228,7 +228,7 @@ class CMIP6Source(BaseSource):
     def _open_dataset(self):
         # fields which define a single dataset
         dataset_fields = ['institution_id', 'source_id', 'experiment_id', 'table_id', 'grid_label']
-        self._open_cmip_dataset(
+        self._open_dataset_groups(
             dataset_fields=dataset_fields,
             member_column_name='member_id',
             variable_column_name='variable_id',
