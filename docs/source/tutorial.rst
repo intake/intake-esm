@@ -129,7 +129,7 @@ An example of such a dictionary is provided below for a CMIP5 collection catalog
                         'data_sources': {'root_dir': {'name': 'GLADE',
                         'loc_type': 'posix',
                         'direct_access': True,
-                        'urlpath': '../tests/sample_data/cmip/cmip5'}}}
+                        'urlpath': './sample_data/cmip/cmip5'}}}
 
 
 
