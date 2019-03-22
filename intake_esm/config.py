@@ -139,7 +139,7 @@ def collect_yaml(paths=paths):
     for path in file_paths:
         try:
             with open(path) as f:
-                data = yaml.load(f.read()) or {}
+                data = yaml.safe_load(f.read()) or {}
                 data = normalize_nested_keys(data)
                 data = expand_environment_variables(data)
                 configs.append(data)
@@ -488,6 +488,6 @@ fn = os.path.join(os.path.dirname(__file__), 'config.yaml')
 ensure_file(source=fn, comment=False)
 
 with open(fn) as f:
-    defaults = yaml.load(f)
+    defaults = yaml.safe_load(f)
 
 refresh()

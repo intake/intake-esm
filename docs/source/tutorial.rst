@@ -5,8 +5,12 @@ Tutorial
 ``intake-esm`` supports building user-defined collection catalogs for CMIP and CESM data holdings.
 
 
+
+Building a CMIP5 Collection Catalog
+-----------------------------------
+
 Collection Definition
----------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Aspects of the collection catalog are defined in ``intake-esm`` configuration file that is stored in ``~/.intake_esm/config.yaml``.
 This configuration file is a YAML file with the following contents:
@@ -81,7 +85,7 @@ This configuration file is a YAML file with the following contents:
                 daily: day_1
                 monthly: month_1
                 yearly: year_1
-        cmip:
+        cmip5:
             collection_columns:
             - ensemble
             - experiment
@@ -111,9 +115,6 @@ This configuration file is a YAML file with the following contents:
 ``collection_columns`` consists of a list of columns to include in a collection
 catalog database. This database is persisted on disk as an CSV file at the location specified by ``database_directory`` key.
 
-
-Building a CMIP5 Collection Catalog
------------------------------------
 
 Collection Catalog Definition
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -203,3 +204,9 @@ the data into an xarray dataset.
 
    ds = cat.to_xarray(decode_times=False)
    ds
+
+   ds.keys()
+   dset = ds['CNRM-CERFACS.CNRM-CM5.historical.mon.atmos']
+   dset
+
+.. include:: ./cesm.rst

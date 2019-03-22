@@ -274,6 +274,7 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 # texinfo_no_detailmenu = False
 ipython_execlines = [
+    '%matplotlib inline' 'import matplotlib.pyplot as plt',
     'import intake',
     'import intake_esm',
     'import pandas as pd',
