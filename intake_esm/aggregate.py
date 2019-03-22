@@ -148,7 +148,7 @@ def concat_ensembles(
     time-invariant variables from the first ensemble member.
     """
     if len(dsets) == 1:
-        return dsets[0]
+        return rechunk(dsets[0], ensemble_dim_name, time_coord_name_default, chunks)
 
     if member_ids is None:
         member_ids = np.arange(0, len(dsets))
@@ -182,6 +182,11 @@ def concat_ensembles(
     ds.attrs = attrs
 
     # rechunk
+    ds = rechunk(ds, ensemble_dim_name, time_coord_name_default, chunks)
+    return ds
+
+
+def rechunk(ds, ensemble_dim_name, time_coord_name_default, chunks):
     if chunks is None:
         time_coord_name = ensure_time_coord_name(ds, time_coord_name_default)
         chunks = {time_coord_name: 'auto'}
