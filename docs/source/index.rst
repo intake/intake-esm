@@ -20,7 +20,8 @@ please open an issue at the GitHub `main repository <http://github.com/NCAR/inta
 
    notebooks/overview.ipynb
    installation
-   tutorial
+   notebooks/cmip5.ipynb
+   notebooks/cesm.ipynb
    api
    contributing
    changelog
