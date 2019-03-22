@@ -211,7 +211,7 @@ def set_coords(ds, varname):
 
 def open_dataset(url, data_vars, **kwargs):
     """open dataset with chunks determined."""
-    ds = xr.open_dataset(url, **kwargs)
+    ds = xr.open_dataset(url, chunks ={}, **kwargs)
     ds.attrs['history'] = f"{datetime.now()} xarray.open_dataset('{url}')"
 
     return set_coords(ds, data_vars)

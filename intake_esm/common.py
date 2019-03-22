@@ -192,9 +192,9 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
             dset_id = '.'.join(dset_keys)
             member_ids = []
             member_dsets = []
-            for m_id, m_files in tqdm(dset_files.groupby(member_column_name)):
+            for m_id, m_files in tqdm(dset_files.groupby(member_column_name), desc='member'):
                 var_dsets = []
-                for v_id, v_files in tqdm(m_files.groupby(variable_column_name)):
+                for v_id, v_files in m_files.groupby(variable_column_name):
                     urlpath_ei_vi = v_files[file_fullpath_column_name].tolist()
                     dsets = [
                         aggregate.open_dataset_delayed(
