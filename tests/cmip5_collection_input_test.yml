@@ -1,0 +1,8 @@
+name: cmip5_test_collection
+collection_type: cmip5
+data_sources:
+  root_dir:
+    name: GLADE
+    loc_type: posix
+    direct_access: True
+    urlpath: ./tests/sample_data/cmip/cmip5

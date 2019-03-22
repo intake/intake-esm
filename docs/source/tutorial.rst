@@ -5,8 +5,12 @@ Tutorial
 ``intake-esm`` supports building user-defined collection catalogs for CMIP and CESM data holdings.
 
 
+
+Building a CMIP5 Collection Catalog
+-----------------------------------
+
 Collection Definition
----------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Aspects of the collection catalog are defined in ``intake-esm`` configuration file that is stored in ``~/.intake_esm/config.yaml``.
 This configuration file is a YAML file with the following contents:
@@ -81,7 +85,7 @@ This configuration file is a YAML file with the following contents:
                 daily: day_1
                 monthly: month_1
                 yearly: year_1
-        cmip:
+        cmip5:
             collection_columns:
             - ensemble
             - experiment
@@ -109,23 +113,28 @@ This configuration file is a YAML file with the following contents:
         cmip: intake_esm.cmip.CMIPSource
 
 ``collection_columns`` consists of a list of columns to include in a collection
-catalog database. This database is persisted on disk as an CSV file to the location specified in ``database_directory``.
+catalog database. This database is persisted on disk as an CSV file at the location specified by ``database_directory`` key.
 
 
-Building a CMIP5 Collection Catalog
------------------------------------
+Collection Catalog Definition
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Collections are built from a ``YAML`` input file containing a nested dictionary of entries.
-An example of such a file is provided below for a CMIP5 collection catalog:
+Collections are built from a ``YAML`` input file or a dictionary containing nested dictionaries of entries.
+An example of such a dictionary is provided below for a CMIP5 collection catalog:
 
 .. ipython:: python
 
-    !cat source/cmip_collection_input_test.yml
+    collection_definition = {'name': 'cmip5_test_collection',
+                        'collection_type': 'cmip5',
+                        'data_sources': {'root_dir': {'name': 'GLADE',
+                        'loc_type': 'posix',
+                        'direct_access': True,
+                        'urlpath': '../tests/sample_data/cmip/cmip5'}}}
 
 
 
-Build the Collection
-~~~~~~~~~~~~~~~~~~~~~~
+Building the Collection Catalog
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Let's begin by importing ``intake``.
 
@@ -146,20 +155,21 @@ function is created at import time.
    intake.registry
 
 To build a collection catalog, we instatiate an ``esm_metadatastore`` class in ``intake-esm``
-with a collection input YAML file.
+with a collection input YAML file or dictionary. For this example, we will use ``collection_definition``
+dictionary defined above:
 
 
 .. ipython:: python
 
-   collection_file = "source/cmip_collection_input_test.yml"
-   col = intake.open_esm_metadatastore(collection_input_file=collection_file, overwrite_existing=True)
+   col = intake.open_esm_metadatastore(collection_input_definition=collection_definition,
+                                       overwrite_existing=True)
    col.df.head()
    col.df["model"].unique()
    col.df["model"].nunique()  # Find the total number of unique climate models
    col.df.groupby('model').nunique()
 
-Search For Entries in the Built Catalog
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Searching for Entries in the Built Collection Catalog
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 One of the features supported in ``intake-esm`` is querying the collection catalog.
 This is achieved through the ``search()`` method. The ``search`` method allows the user to
@@ -168,7 +178,35 @@ with all the entries that match the query.
 
 .. ipython:: python
 
-   cat = col.search(variable=['hfls'], frequency='mon', realm='atmos')
-   cat.results
+   cat = col.search(variable=['hfls'], frequency='mon',
+                     modeling_realm='atmos', institute=['CCCma', 'CNRM-CERFACS'])
+   cat.query_results
+   cat.query_results.groupby(['institute', 'model', 'ensemble_member']).count()
+
+
+Loading Query Results into Xarray Datasets
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Once you are satisfied with the results of your query, you can use the ``to_xarray()`` method to load
+the data into an xarray dataset.
+
+.. note::
+
+   ``to_xarray()`` method returns two types of output depending on the nature of the query's results.
+   If the query returns datasets that can be merged/concatenated, ``to_xarray()`` will return a single ``xarray`` dataset.
+   However, if the datasets cannot be merged or concatenated, for example: outputs from different models, ``to_xarray()`` will
+   return a dictionary of ``xarray`` datasets. The keys in this dictionary are constructed as follows:
+
+   - For CMIP5 data, ``key=<institute>.<model>.<experiment>.<frequency>.<modeling_realm>``
+   - For CMIP6 data, ``key=<institution_id>.<source_id>.<experiment_id>.<table_id>.<grid_label>``
+
+.. ipython:: python
+
    ds = cat.to_xarray(decode_times=False)
    ds
+
+   ds.keys()
+   dset = ds['CNRM-CERFACS.CNRM-CM5.historical.mon.atmos']
+   dset
+
+.. include:: ./cesm.rst

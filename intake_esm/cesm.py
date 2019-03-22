@@ -8,7 +8,7 @@ from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
 from ._version import get_versions
-from .common import BaseSource, Collection, StorageResource, _open_collection, get_subset
+from .common import BaseSource, Collection, StorageResource, get_subset
 
 __version__ = get_versions()['version']
 del get_versions
@@ -29,7 +29,8 @@ class CESMCollection(Collection):
     See Also
     --------
     intake_esm.core.ESMMetadataStoreCatalog
-    intake_esm.cmip.CMIPCollection
+    intake_esm.cmip.CMIP5Collection
+    intake_esm.cmip.CMIP6Collection
     """
 
     def __init__(self, collection_spec):
@@ -263,111 +264,18 @@ class CESMCollection(Collection):
 
 
 class CESMSource(BaseSource):
-    """ Read CESM collection datasets into an xarray dataset
-
-    Parameters
-    ----------
-
-    collection_name : str
-          Name of the collection to use.
-
-    collection_type : str
-          Type of the collection to load. Accepted values are:
-
-          - `cesm`
-          - `cmip`
-
-    query : dict
-         A query to execute against the specified collection
-
-    chunks : int or dict, optional
-        Chunks is used to load the new dataset into dask
-        arrays. ``chunks={}`` loads the dataset with dask using a single
-        chunk for all arrays.
-
-    concat_dim : str, optional
-        Name of dimension along which to concatenate the files. Can
-        be new or pre-existing. Default is 'concat_dim'.
-
-    kwargs :
-        Further parameters are passed to xr.open_mfdataset
-    """
 
     name = 'cesm'
     partition_access = True
     version = __version__
 
-    def __init__(self, collection_name, collection_type, query={}, **kwargs):
-
-        super(CESMSource, self).__init__(collection_name, collection_type, query, **kwargs)
-        self.query_results = get_subset(
-            self.collection_name,
-            self.collection_type,
-            self.query,
-            order_by=['sequence_order', 'file_fullpath'],
-        )
-        if self.metadata is None:
-            self.metadata = {}
-        self.urlpath = ''
-
-    @property
-    def results(self):
-        """ Return collection entries matching query"""
-        if self.query_results is not None:
-            return self.query_results
-
-        else:
-            self.query_results = get_subset(
-                self.collection_name,
-                self.collection_type,
-                self.query,
-                order_by=['sequence_order', 'file_fullpath'],
-            )
-            return self.query_results
-
-    def to_xarray(self, **kwargs):
-        """Return dataset as an xarray dataset
-        Additional keyword arguments are passed through to methods in aggregate.py
-        """
-        _kwargs = self.kwargs.copy()
-        _kwargs.update(kwargs)
-        self.kwargs = _kwargs
-        return self.to_dask()
-
     def _open_dataset(self):
-        kwargs = self._validate_kwargs(self.kwargs)
-        query = dict(self.query)
+        # fields which define a single dataset
+        dataset_fields = ['stream', 'component', 'experiment']
 
-        ensembles = self.query_results['ensemble'].unique()
-        variables = self.query_results['variable'].unique()
-
-        ds_ens_list = []
-        for ens_i in tqdm(ensembles, desc='ensembles'):
-            query['ensemble'] = ens_i
-
-            ds_var_list = []
-            for var_i in tqdm(variables, desc='variables'):
-
-                query['variable'] = var_i
-                urlpath_ei_vi = get_subset(
-                    self.collection_name,
-                    self.collection_type,
-                    query,
-                    order_by=config.get('collections')['cesm']['order-by-columns'],
-                )['file_fullpath'].tolist()
-
-                dsets = [
-                    aggregate.open_dataset_delayed(
-                        url, data_vars=[var_i], decode_times=kwargs['decode_times']
-                    )
-                    for url in urlpath_ei_vi
-                ]
-                ds_var_i = aggregate.concat_time_levels(dsets, kwargs['time_coord_name'])
-                ds_var_list.append(ds_var_i)
-
-            ds_ens_i = aggregate.merge(dsets=ds_var_list)
-            ds_ens_list.append(ds_ens_i)
-
-        self._ds = aggregate.concat_ensembles(
-            ds_ens_list, member_ids=ensembles, join=kwargs['join'], chunks=kwargs['chunks']
+        self._open_dataset_groups(
+            dataset_fields=dataset_fields,
+            member_column_name='ensemble',
+            variable_column_name='variable',
+            file_fullpath_column_name='file_fullpath',
         )

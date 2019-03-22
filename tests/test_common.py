@@ -17,11 +17,3 @@ def test_storage_resource_init():
     SR = StorageResource(urlpath, type_, exclude_dirs, file_extension)
     assert isinstance(SR, StorageResource)
     assert isinstance(SR._list_files_input_file(), list)
-
-
-def test_open_collection_failure():
-    with pytest.raises(Exception):
-        _open_collection('cmip_results', 'cmpi6')
-
-    with pytest.raises(ValueError):
-        _open_collection('cmip_results', 'ccsm')

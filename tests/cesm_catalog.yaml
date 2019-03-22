@@ -5,7 +5,6 @@ sources:
   cesm_dple_test_collection_7afe8a3a-8d2f-40a8-9ede-899f48ce83b2:
     args:
       collection_name: cesm_dple_test_collection
-      collection_type: cesm
       query:
         case: null
         component: null

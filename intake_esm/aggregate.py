@@ -148,7 +148,9 @@ def concat_ensembles(
     time-invariant variables from the first ensemble member.
     """
     if len(dsets) == 1:
-        return dsets[0]
+        return rechunk(
+            dsets[0], ensemble_dim_name, time_coord_name_default, chunks, has_member_id=False
+        )
 
     if member_ids is None:
         member_ids = np.arange(0, len(dsets))
@@ -182,11 +184,19 @@ def concat_ensembles(
     ds.attrs = attrs
 
     # rechunk
+    ds = rechunk(ds, ensemble_dim_name, time_coord_name_default, chunks)
+    return ds
+
+
+def rechunk(ds, ensemble_dim_name, time_coord_name_default, chunks, has_member_id=True):
     if chunks is None:
         time_coord_name = ensure_time_coord_name(ds, time_coord_name_default)
         chunks = {time_coord_name: 'auto'}
-    if ensemble_dim_name in ds.dims:
+    if ensemble_dim_name in ds.dims and ensemble_dim_name not in chunks.keys():
         chunks.update({ensemble_dim_name: 1})
+    if not has_member_id:
+        if ensemble_dim_name in chunks.keys():
+            del chunks[ensemble_dim_name]
     chunk_size = config.get('default_chunk_size')
     with dask.config.set({'array.chunk-size': chunk_size}):
         ds = ds.chunk(chunks)

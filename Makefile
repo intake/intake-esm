@@ -24,33 +24,19 @@ clean-pyc:
 	find . -name '*~' -exec rm -f {} +
 
 lint:
-	flake8 intake_esm test
+	flake8 intake_esm
+	black --check --line-length=100 -S --exclude='intake_esm/_version.py|versioneer.py' intake_esm
+	isort --recursive -w 100 --check-only intake_esm
 
 test:
-	py.test
+	pytest -v
 
-test-all:
-	tox
 
 coverage:
-	coverage run --source intake_esm setup.py test
-	coverage report -m
-	coverage html
+	pytest --cov-report=html --cov=./ tests/ --verbose
 	open htmlcov/index.html
 
 docs:
-	rm -f docs/intake_esm.rst
-	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ intake_esm
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	open docs/_build/html/index.html
-
-release: clean
-	python setup.py sdist upload
-	python setup.py bdist_wheel upload
-
-sdist: clean
-	python setup.py sdist
-	python setup.py bdist_wheel upload
-	ls -l dist

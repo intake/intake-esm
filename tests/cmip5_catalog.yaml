@@ -1,0 +1,29 @@
+plugins:
+  source:
+  - module: intake_esm.cmip
+sources:
+  cmip5_test_collection_b4cf52c3-4879-44c6-955e-f341b1f9b2d9:
+    args:
+      collection_name: cmip5_test_collection
+      query:
+        activity: null
+        ensemble_member: null
+        experiment: null
+        file_basename: null
+        file_dirname: null
+        file_fullpath: null
+        frequency: null
+        institute: null
+        mip_table: null
+        model:
+        - CanESM2
+        - CSIRO-Mk3-6-0
+        modeling_realm: null
+        product: null
+        variable: null
+        version: null
+    description: Catalog entry from cmip5_test_collection collection
+    driver: cmip5
+    metadata:
+      cache: {}
+      catalog_dir: ''

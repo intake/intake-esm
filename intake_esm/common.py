@@ -1,21 +1,20 @@
 import fnmatch
-import logging
 import os
 import re
 import shutil
-from abc import ABC, abstractclassmethod
+from abc import ABC
 from glob import glob
 from subprocess import PIPE, Popen
 
+import dask.dataframe as dd
 import intake_xarray
 import numpy as np
 import pandas as pd
 import xarray as xr
+from dask import delayed
+from tqdm.autonotebook import tqdm
 
-from . import config
-
-logger = logging.getLogger(__name__)
-logger.setLevel(level=logging.WARNING)
+from . import aggregate, config
 
 
 class Collection(ABC):
@@ -26,6 +25,7 @@ class Collection(ABC):
             collection_spec['collection_type'], None
         )
         self.df = pd.DataFrame()
+        self.root_dir = ''
         if self.collection_definition is None:
             raise ValueError(
                 f"*** {collection_spec['collection_type']} *** is not a defined collection type in {config.PATH}"
@@ -43,12 +43,72 @@ class Collection(ABC):
 
         if self.database_base_dir:
             self.database_dir = f"{self.database_base_dir}/{collection_spec['collection_type']}"
-            self.collection_db_file = f"{self.database_dir}/{collection_spec['name']}.csv"
+            self.collection_db_file = f"{self.database_dir}/{collection_spec['name']}.{collection_spec['collection_type']}.csv"
             os.makedirs(self.database_dir, exist_ok=True)
 
-    @abstractclassmethod
+    def walk(self, top, maxdepth):
+        """ Travel directory tree with limited recursion depth
+
+        Note
+        ----
+        This functions is meant to work in CMIP collections only!
+        """
+
+        dirs, nondirs = [], []
+        for entry in os.scandir(top):
+            (dirs if entry.is_dir() else nondirs).append(entry.path)
+        yield top, dirs, nondirs
+        if maxdepth > 1:
+            for path in dirs:
+                for x in self.walk(path, maxdepth - 1):
+                    yield x
+
+    def get_directories(self, root_dir, depth, exclude_dirs=[]):
+        """
+        Note
+        ----
+        This function should be used in conjunction with ``walk()`` only!
+        """
+
+        print('Getting list of directories')
+        y = [x[0] for x in self.walk(root_dir, depth)]
+        diff = depth - 1
+        base = len(root_dir.split('/'))
+        valid_dirs = [
+            x
+            for x in tqdm(y, desc='directories')
+            if len(x.split('/')) - base == diff and x.split('/')[-1] not in set(exclude_dirs)
+        ]
+        print(f'Found {len(valid_dirs)} directories')
+        return valid_dirs
+
     def build(self):
-        pass
+        raise NotImplementedError('Subclass needs to implement this method')
+
+    @delayed
+    def _parse_directory(self, directory, columns, exclude_dirs=[]):
+        raise NotImplementedError()
+
+    def build_cmip(self, depth, exclude_dirs=[]):
+        self._validate()
+        if not os.path.exists(self.root_dir):
+            raise NotADirectoryError(f'{os.path.abspath(self.root_dir)} does not exist')
+        dirs = self.get_directories(root_dir=self.root_dir, depth=depth, exclude_dirs=exclude_dirs)
+        dfs = [self._parse_directory(directory, self.columns, exclude_dirs) for directory in dirs]
+        df = dd.from_delayed(dfs).compute()
+        vYYYYMMDD = r'v\d{4}\d{2}\d{2}'
+        v = re.compile(vYYYYMMDD)
+        df['version'] = df['file_dirname'].str.findall(v)
+        df['version'] = df['version'].apply(lambda x: x[0] if x else 'v0')
+        sorted_df = (
+            df.sort_values('version')
+            .drop_duplicates(subset='file_basename', keep='last')
+            .reset_index(drop=True)
+        )
+        self.df = sorted_df.copy()
+        print(self.df.info())
+        self.persist_db_file()
+        return self.df
 
     def _validate(self):
         for req_col in config.get('collections')[self.collection_spec['collection_type']][
@@ -61,26 +121,45 @@ class Collection(ABC):
 
     def persist_db_file(self):
         if not self.df.empty:
-            logger.warning(
-                f"Persisting {self.collection_spec['name']} at : {self.collection_db_file}"
+            print(
+                f"Persisting {self.collection_spec['name']} at : {os.path.abspath(self.collection_db_file)}"
             )
             self.df.to_csv(self.collection_db_file, index=True)
 
+        else:
+            print(f"{self.df} is an empty dataframe. It won't be persisted to disk.")
+
 
 class BaseSource(intake_xarray.base.DataSourceMixin):
-    def __init__(self, collection_name, collection_type, query={}, **kwargs):
-        self.collection_name = collection_name
-        self.collection_type = collection_type
-        self.query = query
-        self.query_results = None
-        self._ds = None
-        self.kwargs = {'decode_times': False, 'chunks': {'time': 1}}
-        super(BaseSource, self).__init__(**kwargs)
+    """ Base class used to load datasets from a defined collection into an xarray dataset
 
-    @property
-    def results(self):
-        """Return collection entries matching query"""
-        raise NotImplementedError()
+    Parameters
+    ----------
+
+    collection_name : str
+          Name of the collection to use.
+
+    query : dict
+
+    kwargs :
+        Further parameters are passed to to_xarray() method
+    """
+
+    def __init__(self, collection_name, query={}, **kwargs):
+        self.collection_name = collection_name
+        self.query = query
+        self.urlpath = ''
+        self.query_results = self.get_results()
+        self._ds = None
+        self.kwargs = kwargs
+        super(BaseSource, self).__init__(**kwargs)
+        if self.metadata is None:
+            self.metadata = {}
+
+    def get_results(self):
+        """ Return collection entries matching query"""
+        query_results = get_subset(self.collection_name, self.query)
+        return query_results
 
     def _validate_kwargs(self, kwargs):
 
@@ -99,13 +178,55 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
             _kwargs.update(join='outer')
         return _kwargs
 
-    @abstractclassmethod
     def _open_dataset(self):
-        pass
+        raise NotImplementedError()
+
+    def _open_dataset_groups(
+        self, dataset_fields, member_column_name, variable_column_name, file_fullpath_column_name
+    ):
+        kwargs = self._validate_kwargs(self.kwargs)
+
+        all_dsets = {}
+        grouped = get_subset(self.collection_name, self.query).groupby(dataset_fields)
+        for dset_keys, dset_files in tqdm(grouped, desc='dataset'):
+            dset_id = '.'.join(dset_keys)
+            member_ids = []
+            member_dsets = []
+            for m_id, m_files in tqdm(dset_files.groupby(member_column_name)):
+                var_dsets = []
+                for v_id, v_files in tqdm(m_files.groupby(variable_column_name)):
+                    urlpath_ei_vi = v_files[file_fullpath_column_name].tolist()
+                    dsets = [
+                        aggregate.open_dataset_delayed(
+                            url, data_vars=[v_id], decode_times=kwargs['decode_times']
+                        )
+                        for url in urlpath_ei_vi
+                    ]
+
+                    var_dset_i = aggregate.concat_time_levels(dsets, kwargs['time_coord_name'])
+                    var_dsets.append(var_dset_i)
+                member_ids.append(m_id)
+                member_dset_i = aggregate.merge(dsets=var_dsets)
+                member_dsets.append(member_dset_i)
+            _ds = aggregate.concat_ensembles(
+                member_dsets, member_ids=member_ids, join=kwargs['join'], chunks=kwargs['chunks']
+            )
+            all_dsets[dset_id] = _ds
+
+        keys = list(all_dsets.keys())
+        if len(keys) == 1:
+            self._ds = all_dsets[keys[0]]
+        else:
+            self._ds = all_dsets
 
     def to_xarray(self, **kwargs):
-        """Return dataset as an xarray instance"""
-        raise NotImplementedError()
+        """Return dataset as an xarray dataset
+        Additional keyword arguments are passed through to methods in aggregate.py
+        """
+        _kwargs = self.kwargs.copy()
+        _kwargs.update(kwargs)
+        self.kwargs = _kwargs
+        return self.to_dask()
 
     def _get_schema(self):
         """Make schema object, which embeds xarray object and some details"""
@@ -194,7 +315,7 @@ class StorageResource(object):
     def _list_files_hsi(self):
         """Get a list of files from HPSS"""
         if shutil.which('hsi') is None:
-            logger.warning(f'no hsi; cannot access [HSI]{self.urlpath}')
+            print(f'no hsi; cannot access [HSI]{self.urlpath}')
             return []
 
         p = Popen(
@@ -232,26 +353,37 @@ class StorageResource(object):
 def _get_built_collections():
     """Loads built collections in a dictionary with key=collection_name, value=collection_db_file_path"""
     try:
-        cc = [
-            y
-            for x in os.walk(config.get('database-directory'))
-            for y in glob(os.path.join(x[0], '*.csv'))
-        ]
-        collections = {os.path.splitext(os.path.basename(x))[0]: x for x in cc}
+        db_dir = config.get('database-directory')
+        cc = [y for x in os.walk(db_dir) for y in glob(os.path.join(x[0], '*.csv'))]
+        collections = {}
+        for collection in cc:
+            name, meta = _decipher_collection_name(collection)
+            collections[name] = meta
     except Exception:
         collections = {}
 
     return collections
 
 
-def _open_collection(collection_name, collection_type):
+def _decipher_collection_name(collection_path):
+    c_ = os.path.basename(collection_path).split('.')
+    collection_meta = {}
+    collection_name = c_[0]
+    collection_meta['collection_type'] = c_[1]
+    collection_meta['path'] = collection_path
+    return collection_name, collection_meta
+
+
+def _open_collection(collection_name):
     """ Open an ESM collection"""
 
-    collection_types = {'cesm', 'cmip'}
+    collection_types = config.get('sources').keys()
     collections = _get_built_collections()
+    collection_type = collections[collection_name]['collection_type']
+    path = collections[collection_name]['path']
     if (collection_type in collection_types) and collections:
         try:
-            df = pd.read_csv(collections[collection_name], index_col=0)
+            df = pd.read_csv(path, index_col=0)
             return df, collection_name, collection_type
         except Exception as err:
             raise err
@@ -260,9 +392,9 @@ def _open_collection(collection_name, collection_type):
         raise ValueError("Couldn't open specified collection")
 
 
-def get_subset(collection_name, collection_type, query, order_by=None):
+def get_subset(collection_name, query, order_by=None):
     """ Get a subset of collection entries that match a query """
-    df, _, _ = _open_collection(collection_name, collection_type)
+    df, _, collection_type = _open_collection(collection_name)
 
     condition = np.ones(len(df), dtype=bool)
 
@@ -279,7 +411,9 @@ def get_subset(collection_name, collection_type, query, order_by=None):
 
     query_results = df.loc[condition]
 
-    if order_by and isinstance(order_by, list):
-        query_results = query_results.sort_values(by=order_by, ascending=True)
+    if order_by is None:
+        order_by = config.get('collections')[collection_type]['order-by-columns']
+
+    query_results = query_results.sort_values(by=order_by, ascending=True)
 
     return query_results
