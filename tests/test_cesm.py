@@ -68,5 +68,6 @@ def test_to_xarray_cesm(chunks, expected_chunks):
             experiment=['20C', 'RCP85'],
             direct_access=True,
         )
-        ds = cat.to_xarray(chunks=chunks)
+        dset = cat.to_xarray(chunks=chunks)
+        ds = dset['pop.h.ocn.RCP85']
         assert ds['SHF'].data.chunksize == expected_chunks
