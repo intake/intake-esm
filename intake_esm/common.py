@@ -173,7 +173,7 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
         if 'ensemble_dim_name' not in _kwargs.keys():
             _kwargs.update(ensemble_dim_name='member_id')
         if 'chunks' not in _kwargs.keys():
-            _kwargs.update(chunks=None)
+            _kwargs.update(chunks={'time': 'auto'})
         if 'join' not in _kwargs.keys():
             _kwargs.update(join='outer')
         return _kwargs
@@ -192,13 +192,16 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
             dset_id = '.'.join(dset_keys)
             member_ids = []
             member_dsets = []
-            for m_id, m_files in tqdm(dset_files.groupby(member_column_name)):
+            for m_id, m_files in tqdm(dset_files.groupby(member_column_name), desc='member'):
                 var_dsets = []
-                for v_id, v_files in tqdm(m_files.groupby(variable_column_name)):
+                for v_id, v_files in m_files.groupby(variable_column_name):
                     urlpath_ei_vi = v_files[file_fullpath_column_name].tolist()
                     dsets = [
                         aggregate.open_dataset_delayed(
-                            url, data_vars=[v_id], decode_times=kwargs['decode_times']
+                            url,
+                            data_vars=[v_id],
+                            chunks=kwargs['chunks'],
+                            decode_times=kwargs['decode_times'],
                         )
                         for url in urlpath_ei_vi
                     ]
@@ -209,7 +212,7 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
                 member_dset_i = aggregate.merge(dsets=var_dsets)
                 member_dsets.append(member_dset_i)
             _ds = aggregate.concat_ensembles(
-                member_dsets, member_ids=member_ids, join=kwargs['join'], chunks=kwargs['chunks']
+                member_dsets, member_ids=member_ids, join=kwargs['join']
             )
             all_dsets[dset_id] = _ds
 

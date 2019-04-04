@@ -55,8 +55,8 @@ def test_cat():
 @pytest.mark.parametrize(
     'chunks, expected_chunks',
     [
-        ({'member_id': 1, 'time': 100, 'nlat': 2, 'nlon': 2}, (1, 100, 2, 2)),
-        ({'member_id': 1, 'time': 200, 'nlat': 1, 'nlon': 1}, (1, 200, 1, 1)),
+        ({'time': 100, 'nlat': 2, 'nlon': 2}, (1, 100, 2, 2)),
+        ({'time': 200, 'nlat': 1, 'nlon': 1}, (1, 200, 1, 1)),
     ],
 )
 def test_to_xarray_cesm(chunks, expected_chunks):
@@ -69,5 +69,5 @@ def test_to_xarray_cesm(chunks, expected_chunks):
             direct_access=True,
         )
         dset = cat.to_xarray(chunks=chunks)
-        ds = dset['pop.h.ocn.RCP85']
+        ds = dset
         assert ds['SHF'].data.chunksize == expected_chunks

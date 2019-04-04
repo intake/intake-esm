@@ -271,7 +271,7 @@ class CESMSource(BaseSource):
 
     def _open_dataset(self):
         # fields which define a single dataset
-        dataset_fields = ['stream', 'component', 'experiment']
+        dataset_fields = ['stream', 'component']
 
         self._open_dataset_groups(
             dataset_fields=dataset_fields,
