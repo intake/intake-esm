@@ -142,15 +142,15 @@ def concat_ensembles(
     join='inner',
     ensemble_dim_name='member_id',
     time_coord_name_default='time',
-    chunks=None,
 ):
     """Concatenate datasets across an ensemble dimension, taking coordinates and
     time-invariant variables from the first ensemble member.
     """
     if len(dsets) == 1:
-        return rechunk(
-            dsets[0], ensemble_dim_name, time_coord_name_default, chunks, has_member_id=False
-        )
+        return dsets[0]
+        # return rechunk(
+        #    dsets[0], ensemble_dim_name, time_coord_name_default, chunks, has_member_id=False
+        # )
 
     if member_ids is None:
         member_ids = np.arange(0, len(dsets))
@@ -184,7 +184,7 @@ def concat_ensembles(
     ds.attrs = attrs
 
     # rechunk
-    ds = rechunk(ds, ensemble_dim_name, time_coord_name_default, chunks)
+    # ds = rechunk(ds, ensemble_dim_name, time_coord_name_default, chunks)
     return ds
 
 
@@ -211,7 +211,7 @@ def set_coords(ds, varname):
 
 def open_dataset(url, data_vars, **kwargs):
     """open dataset with chunks determined."""
-    ds = xr.open_dataset(url, chunks ={}, **kwargs)
+    ds = xr.open_dataset(url, **kwargs)
     ds.attrs['history'] = f"{datetime.now()} xarray.open_dataset('{url}')"
 
     return set_coords(ds, data_vars)
