@@ -92,7 +92,7 @@ collections:
         daily: day_1
         monthly: month_1
         yearly: year_1
-  mpi:
+  mpige:
     collection_columns:
     - resource
     - resource_type
@@ -101,7 +101,6 @@ collections:
     - case
     - component
     - stream
-    - variable
     - date_range
     - ensemble
     - file_fullpath
@@ -189,3 +188,4 @@ sources:
   cesm: intake_esm.cesm.CESMSource
   cmip5: intake_esm.cmip.CMIP5Source
   cmip6: intake_esm.cmip.CMIP6Source
+  mpige: intake_esm.mpige.MPIGESource

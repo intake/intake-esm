@@ -210,7 +210,7 @@ class CESMCollection(Collection):
         """ Extract each part of case.stream.variable.datestr.nc file pattern. """
 
         # Get Date string
-        datestr = self._extract_date_str(filename)
+        datestr = CESMCollection._extract_date_str(filename)
 
         if datestr:
             for component, streams in component_streams.items():
@@ -253,7 +253,8 @@ class CESMCollection(Collection):
         else:
             return
 
-    def _extract_date_str(self, filename):
+    @staticmethod
+    def _extract_date_str(filename):
         """ Extract a date string from a file name"""
         try:
             b = filename.split('.')[-2]
