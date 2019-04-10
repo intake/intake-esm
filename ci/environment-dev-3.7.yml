@@ -9,6 +9,7 @@ dependencies:
   - dask
   - distributed
   - flake8
+  - git
   - intake
   - intake-xarray
   - ipykernel
@@ -18,7 +19,6 @@ dependencies:
   - netcdf4
   - numpy
   - numpydoc
-  - pandoc
   - pip
   - pre_commit
   - pytest
@@ -33,5 +33,3 @@ dependencies:
   - tornado==5.1.1 # Pin version until latest release is stable
   - tqdm
   - xarray
-  - pip:
-    - sphinx_copybutton
