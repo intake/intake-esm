@@ -8,6 +8,7 @@ data_sources:
         loc_type: input-file
         direct_access: False
         urlpath: ./tests/mpi_filelist.txt
+        exclude_dirs: ['*/restart/*', '*/log/*']
     component_attrs:
       mpiom:
         grid: POP_gx1v6
@@ -23,6 +24,7 @@ data_sources:
         loc_type: input-file
         direct_access: False
         urlpath: ./tests/mpi_filelist.txt
+        exclude_dirs: ['*/restart/*', '*/log/*']
     component_attrs:
       mpiom:
         grid: POP_gx1v6
@@ -45,6 +47,7 @@ data_sources:
         loc_type: input-file
         direct_access: False
         urlpath: ./tests/mpi_filelist.txt
+        exclude_dirs: ['*/restart/*', '*/log/*']
     component_attrs:
       mpiom:
         grid: POP_gx1v6

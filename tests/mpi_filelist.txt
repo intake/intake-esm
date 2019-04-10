@@ -1034,3 +1034,6 @@ rcp85/rcp850001/outdata/hamocc/rcp850001_hamocc_data_eu_mm_20070101_20071231.nc
 rcp85/rcp850001/outdata/hamocc/rcp850001_hamocc_data_sedi_ym_20750101_20751231.nc
 rcp85/rcp850001/outdata/hamocc/rcp850001_hamocc_data_sedi_ym_20860101_20861231.nc
 rcp85/rcp850001/outdata/hamocc/rcp850001_hamocc_monitoring_ym_20500101_20501231.nc
+rcp85/rcp850001/log/hamocc/rcp850001_hamocc_data_sedi_ym_20750101_20751231.nc
+rcp85/rcp850001/restart/hamocc/rcp850001_hamocc_data_sedi_ym_20860101_20861231.nc
+rcp85/rcp850001/restart/hamocc/rcp850001_hamocc_monitoring_ym_20500101_20501231.nc
