@@ -35,5 +35,5 @@ setup(
     zip_safe=False,
     keywords='intake-esm',
     use_scm_version=True,
-    setup_requires=['setuptools_scm', 'setuptools>=30.3.0'],
+    setup_requires=['setuptools_scm', 'setuptools>=30.3.0', 'setuptools_scm_git_archive'],
 )
