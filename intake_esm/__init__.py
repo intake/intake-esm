@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 """ Top-level module for intake_esm. """
+from pkg_resources import DistributionNotFound, get_distribution
+
 from . import config
-from ._version import get_versions
 from .core import ESMMetadataStoreCatalog
 
-__version__ = get_versions()['version']
-del get_versions
+try:
+    __version__ = get_distribution(__name__).version
+except DistributionNotFound:
+    # package is not installed
+    pass

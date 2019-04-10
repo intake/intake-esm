@@ -6,14 +6,10 @@ from intake.catalog import Catalog
 from intake.catalog.local import LocalCatalogEntry
 
 from . import config as config
-from ._version import get_versions
 from .cesm import CESMCollection
 from .cmip import CMIP5Collection, CMIP6Collection
 from .common import _get_built_collections, _open_collection
 from .mpige import MPIGECollection
-
-__version__ = get_versions()['version']
-del get_versions
 
 
 class ESMMetadataStoreCatalog(Catalog):
@@ -39,7 +35,6 @@ class ESMMetadataStoreCatalog(Catalog):
     """
 
     name = 'esm_metadatastore'
-    version = __version__
     collection_types = {
         'cesm': CESMCollection,
         'cmip5': CMIP5Collection,
