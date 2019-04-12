@@ -109,7 +109,6 @@ collections:
     - ctrl_branch_year
     - year_offset
     - sequence_order
-    - has_ocean_bgc
     - grid
     order_by_columns:
       - sequence_order
@@ -182,7 +181,7 @@ collections:
       - experiment_id
       - file_fullpath
 default_chunk_size: 128MiB
-data_cache_directory: ~/.intake_esm/data_cache
+data_cache_directory: $TMPDIR/.intake_esm/data_cache
 database_directory: ~/.intake_esm/collections
 sources:
   cesm: intake_esm.cesm.CESMSource

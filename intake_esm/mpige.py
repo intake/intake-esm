@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+""" Implementation for The Max Planck Institute Grand Ensemble (MPI-GE) data holdings """
 import logging
 import os
 import re
@@ -5,7 +7,6 @@ import re
 import numpy as np
 import pandas as pd
 import xarray as xr
-from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
 from .cesm import CESMCollection
@@ -15,7 +16,43 @@ logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.WARNING)
 
 
-class MPIGECollection(CESMCollection):
+class MPIGECollection(Collection):
+    """ Defines an MPIGE collection
+
+    Parameters
+    ----------
+    collection_spec : dict
+
+
+    See Also
+    --------
+    intake_esm.core.ESMMetadataStoreCatalog
+    intake_esm.cmip.CMIP5Collection
+    intake_esm.cmip.CMIP6Collection
+    intake_esm.cesm.CESMCollection
+    """
+
+    def __init__(self, collection_spec):
+        super(MPIGECollection, self).__init__(collection_spec)
+        self.component_streams = self.collection_definition.get(
+            config.normalize_key('component_streams'), None
+        )
+        self.include_cache_dir = self.collection_spec.get('include_cache_dir', False)
+        self.df = pd.DataFrame(columns=self.columns)
+
+    def build(self):
+        self._validate()
+        # Loop over data sources/experiments
+        for experiment, experiment_attrs in self.collection_spec['data_sources'].items():
+            logger.warning(f'Working on experiment: {experiment}')
+
+            component_attrs = experiment_attrs['component_attrs']
+            ensembles = experiment_attrs['case_members']
+            self.assemble_file_list(experiment, experiment_attrs, component_attrs, ensembles)
+        logger.warning(self.df.info())
+        self.persist_db_file()
+        return self.df
+
     def assemble_file_list(self, experiment, experiment_attrs, component_attrs, ensembles):
         df_files = {}
         for location in experiment_attrs['locations']:
@@ -39,28 +76,61 @@ class MPIGECollection(CESMCollection):
                     filelist=resource.filelist,
                 )
 
-        # # Loop over ensemble members
-        # for ensemble, ensemble_attrs in enumerate(ensembles):
-        #     input_attrs_base = {'experiment': experiment}
+        # Loop over ensemble members
+        for ensemble, ensemble_attrs in enumerate(ensembles):
+            input_attrs_base = {'experiment': experiment}
 
-        #     # Get attributes from ensemble_attrs
-        #      #case = ensemble_attrs['case']
+            # Get attributes from ensemble_attrs
+            case = ensemble_attrs['case']
 
-        #     if 'ensemble' not in ensemble_attrs:
-        #         input_attrs_base.update({'ensemble': ensemble})
+            if 'ensemble' not in ensemble_attrs:
+                input_attrs_base.update({'ensemble': ensemble})
 
-        #     if 'sequence_order' not in ensemble_attrs:
-        #         input_attrs_base.update({'sequence_order': 0})
+            if 'sequence_order' not in ensemble_attrs:
+                input_attrs_base.update({'sequence_order': 0})
 
-        #     if 'has_ocean_bgc' not in ensemble_attrs:
-        #         input_attrs_base.update({'has_ocean_bgc': False})
+            if 'ctrl_branch_year' not in ensemble_attrs:
+                input_attrs_base.update({'ctrl_branch_year': None})
 
-        #     if 'ctrl_branch_year' not in ensemble_attrs:
-        #         input_attrs_base.update({'ctrl_branch_year': np.datetime64('NaT')})
+            for res_key, df_f in df_files.items():
+                # Find entries relevant to *this* ensemble:
+                # "case" matches
+                condition = df_f['case'] == case
 
-        self.df = pd.concat(df_files.values())
+                # If there are any matching files, append to self.df
+                if any(condition):
+                    input_attrs = dict(input_attrs_base)
+
+                    input_attrs.update(
+                        {
+                            key: val
+                            for key, val in ensemble_attrs.items()
+                            if key in self.columns and key not in df_f.columns
+                        }
+                    )
+
+                    # Relevant files
+                    temp_df = pd.DataFrame(df_f.loc[condition])
+
+                    # Append data coming from input file (input_attrs)
+                    for col, val in input_attrs.items():
+                        temp_df.insert(loc=0, column=col, value=val)
+
+                    # Add data from "component_attrs" to appropriate column
+                    for component in temp_df.component.unique():
+                        if component not in component_attrs:
+                            continue
+
+                        for key, val in component_attrs[component].items():
+                            if key in self.columns:
+                                loc = temp_df['component'] == component
+                                temp_df.loc[loc, key] = val
+
+                    # Append
+                    self.df = pd.concat([temp_df, self.df], ignore_index=True, sort=False)
+
         # Reorder columns
-        # self.df = self.df[self.columns]
+        self.df = self.df[self.columns]
 
         # Remove duplicates
         self.df = self.df.drop_duplicates(
@@ -68,7 +138,7 @@ class MPIGECollection(CESMCollection):
         ).reset_index(drop=True)
 
     def _assemble_collection_df_files(self, resource_key, resource_type, direct_access, filelist):
-
+        """ Assemble file listing into a Pandas DataFrame."""
         entries = {
             key: []
             for key in [
@@ -110,6 +180,7 @@ class MPIGECollection(CESMCollection):
         return pd.DataFrame(entries)
 
     def _get_filename_parts(self, filename, component_streams):
+        """ Get file attributes from filename """
         datestr = MPIGECollection._extract_date_str(filename)
 
         if datestr != '00000000_00000000':
@@ -139,3 +210,12 @@ class MPIGECollection(CESMCollection):
         else:
             logger.warning(f'Could not extract date string from : {filename}')
             return '00000000_00000000'
+
+
+class MPIGESource(BaseSource):
+
+    name = 'mpige'
+    partition_access = True
+
+    def _open_dataset(self):
+        raise NotImplementedError('Not implemented yet!')
