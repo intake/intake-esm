@@ -197,7 +197,7 @@ class MPIGECollection(Collection):
 
         else:
             logger.warning(f'Could not identify MPI-GE fileparts for : {filename}')
-            return
+            return None
 
     @staticmethod
     def _extract_date_str(filename):

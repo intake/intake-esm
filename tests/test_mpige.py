@@ -26,3 +26,12 @@ def test_search():
 
         assert isinstance(cat.query_results, pd.DataFrame)
         assert not cat.query_results.empty
+
+
+def test_to_xarray():
+    with config.set({'database-directory': './tests/test_collections'}):
+        c = intake.open_esm_metadatastore(collection_name='mpige_test')
+        cat = c.search(component='mpiom', stream='monitoring_ym')
+
+        with pytest.raises(NotImplementedError):
+            cat.to_xarray()
