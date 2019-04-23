@@ -3,6 +3,7 @@ import os
 import intake
 import pandas as pd
 import pytest
+import xarray as xr
 
 from intake_esm import config
 from intake_esm.core import ESMMetadataStoreCatalog
@@ -32,6 +33,7 @@ def test_to_xarray():
     with config.set({'database-directory': './tests/test_collections'}):
         c = intake.open_esm_metadatastore(collection_name='mpige_test')
         cat = c.search(component='mpiom', stream='monitoring_ym')
-
-        with pytest.raises(NotImplementedError):
-            cat.to_xarray()
+        ds = cat.to_xarray()
+        assert isinstance(ds, dict)
+        ds = ds['hist.mpiom']
+        assert isinstance(ds, xr.Dataset)

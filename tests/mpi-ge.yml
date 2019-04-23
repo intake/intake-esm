@@ -5,9 +5,9 @@ data_sources:
   pictrl:
     locations:
       - name: SAMPLE-DATA
-        loc_type: input-file
-        direct_access: False
-        urlpath: ./tests/mpi_filelist.txt
+        loc_type: posix
+        direct_access: True
+        urlpath: ./tests/sample_data/mpi-ge/pictrl
         exclude_dirs: ['*/restart/*', '*/log/*']
     component_attrs:
       mpiom:
@@ -20,9 +20,9 @@ data_sources:
   hist:
     locations:
       - name: SAMPLE-DATA
-        loc_type: input-file
-        direct_access: False
-        urlpath: ./tests/mpi_filelist.txt
+        loc_type: posix
+        direct_access: True
+        urlpath: ./tests/sample_data/mpi-ge/hist
         exclude_dirs: ['*/restart/*', '*/log/*']
     component_attrs:
       mpiom:
@@ -40,9 +40,9 @@ data_sources:
   rcp85:
     locations:
       - name: SAMPLE-DATA
-        loc_type: input-file
-        direct_access: False
-        urlpath: ./tests/mpi_filelist.txt
+        loc_type: posix
+        direct_access: True
+        urlpath: ./tests/sample_data/mpi-ge/rcp85
         exclude_dirs: ['*/restart/*', '*/log/*']
     component_attrs:
       mpiom:

@@ -7,6 +7,7 @@ import re
 import numpy as np
 import pandas as pd
 import xarray as xr
+from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
 from .cesm import CESMCollection
@@ -218,4 +219,20 @@ class MPIGESource(BaseSource):
     partition_access = True
 
     def _open_dataset(self):
-        raise NotImplementedError('Not implemented yet!')
+        dataset_fields = ['experiment', 'component']
+        grouped = get_subset(self.collection_name, self.query).groupby(dataset_fields)
+        all_dsets = {}
+        for dset_keys, dset_files in tqdm(grouped, desc='dataset'):
+            dset_id = '.'.join(dset_keys)
+            member_ids = []
+            member_dsets = []
+            for m_id, m_files in tqdm(dset_files.groupby('ensemble'), desc='member'):
+                files = m_files['file_fullpath']
+                ds = xr.open_mfdataset(files)
+                member_ids.append(m_id)
+                member_dsets.append(ds)
+            _ds = xr.concat(member_dsets, 'member')
+            _ds['member'] = member_ids
+            all_dsets[dset_id] = _ds
+
+        self._ds = all_dsets
