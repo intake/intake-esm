@@ -2,7 +2,7 @@
 Changelog history
 =================
 
-Intake-esm v2019.3.30 (2019-03-30)
+Intake-esm v2019.4.26 (2019-04-26)
 ===================================
 
 
@@ -11,7 +11,13 @@ Features
 
 - Add implementations for ``CMIPCollection`` and ``CMIPSource`` (:pr:`38`) `Anderson Banihirwe`_
 - Add support for CMIP6 data (:pr:`46`) `Anderson Banihirwe`_
+- Add implementation for The Max Planck Institute Grand Ensemble (MPI-GE) data holdings (:pr:`52`) & (:issue:`51`) `Aaron Spring`_ and `Anderson Banihirwe`_
+- Return dictionary of datasets all the time for consistency (:pr:`56`) `Anderson Banihirwe`_
 
+Bug Fixes
+----------
+
+- Include multiple netcdf files in same subdirectory (:pr:`55`) & (:issue:`54`) `Naomi Henderson`_ and `Anderson Banihirwe`_
 
 
 Intake-esm v2019.2.28 (2019-02-28)
@@ -36,5 +42,8 @@ Trivial/Internal Changes
 - Update CircleCI workflow (:pr:`32`) `Anderson Banihirwe`_
 - Rename package from `intake-cesm` to `intake-esm` (:pr:`34`) `Anderson Banihirwe`_
 
+
+.. _`Aaron Spring`: https://github.com/aaronspring
 .. _`Anderson Banihirwe`: https://github.com/andersy005
 .. _`Matthew Long`: https://github.com/matt-long
+.. _`Naomi Henderson`: https://github.com/naomi-henderson
