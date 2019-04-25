@@ -26,7 +26,7 @@ Feature requests and feedback
 -----------------------------
 
 We'd also like to hear about your propositions and suggestions.  Feel free to
-`submit them as issues <https://github.com/NCAR/intake-esm`_ and:
+`submit them as issues <https://github.com/NCAR/intake-esm>`_ and:
 
 * Explain in detail how they should work.
 * Keep the scope as narrow as possible.  This will make it easier to implement.
