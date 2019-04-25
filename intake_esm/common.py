@@ -221,11 +221,7 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
             )
             all_dsets[dset_id] = _ds
 
-        keys = list(all_dsets.keys())
-        if len(keys) == 1:
-            self._ds = all_dsets[keys[0]]
-        else:
-            self._ds = all_dsets
+        self._ds = all_dsets
 
     def to_xarray(self, **kwargs):
         """Return dataset as an xarray dataset

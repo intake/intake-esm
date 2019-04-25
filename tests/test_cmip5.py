@@ -83,7 +83,8 @@ def test_to_xarray_cmip(chunks, expected_chunks):
             variable=['hfls'], frequency='mon', modeling_realm='atmos', model=['CNRM-CM5']
         )
 
-        ds = cat.to_xarray(decode_times=True, chunks=chunks)
+        dset = cat.to_xarray(decode_times=True, chunks=chunks)
+        ds = dset['CNRM-CERFACS.CNRM-CM5.historical.mon.atmos']
         assert ds['hfls'].data.chunksize == expected_chunks
 
         # Test for data from multiple institutions
