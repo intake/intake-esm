@@ -11,7 +11,7 @@ Features
 
 - Add implementations for ``CMIPCollection`` and ``CMIPSource`` (:pr:`38`) `Anderson Banihirwe`_
 - Add support for CMIP6 data (:pr:`46`) `Anderson Banihirwe`_
-- Implementation for The Max Planck Institute Grand Ensemble (MPI-GE) data holdings (:pr:`52`) & (:issue:`51`) `Aaron Spring`_ and `Anderson Banihirwe`_
+- Add implementation for The Max Planck Institute Grand Ensemble (MPI-GE) data holdings (:pr:`52`) & (:issue:`51`) `Aaron Spring`_ and `Anderson Banihirwe`_
 - Return dictionary of datasets all the time for consistency (:pr:`56`) `Anderson Banihirwe`_
 
 Bug Fixes
