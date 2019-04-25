@@ -1,18 +1,15 @@
+#!/usr/bin/env python
+""" Implementation for NCAR's Community Earth System Model (CESM) data holdings """
+
 import logging
 import os
 
 import numpy as np
 import pandas as pd
 import xarray as xr
-from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
-from ._version import get_versions
 from .common import BaseSource, Collection, StorageResource, get_subset
-
-__version__ = get_versions()['version']
-del get_versions
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.WARNING)
@@ -210,7 +207,7 @@ class CESMCollection(Collection):
         """ Extract each part of case.stream.variable.datestr.nc file pattern. """
 
         # Get Date string
-        datestr = self._extract_date_str(filename)
+        datestr = CESMCollection._extract_date_str(filename)
 
         if datestr:
             for component, streams in component_streams.items():
@@ -253,7 +250,8 @@ class CESMCollection(Collection):
         else:
             return
 
-    def _extract_date_str(self, filename):
+    @staticmethod
+    def _extract_date_str(filename):
         """ Extract a date string from a file name"""
         try:
             b = filename.split('.')[-2]
@@ -267,7 +265,6 @@ class CESMSource(BaseSource):
 
     name = 'cesm'
     partition_access = True
-    version = __version__
 
     def _open_dataset(self):
         # fields which define a single dataset

@@ -13,12 +13,10 @@ exclude = '''
   | build
   | dist
   | docs
-  | versioneer.py
-  | intake_esm/_version.py
 )/
 '''
 skip-string-normalization = true
 
 [build-system]
-requires = ["setuptools", "wheel", "versioneer"]
+requires = ["setuptools>=30.3.0", "wheel", "setuptools_scm", 'setuptools_scm_git_archive']
 build-backend = "setuptools.build_meta:__legacy__"

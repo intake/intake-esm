@@ -6,11 +6,13 @@ dependencies:
   - coverage
   - dask
   - distributed
+  - git
   - intake
   - intake-xarray
   - ipykernel
   - netcdf4
   - numpy
+  - pip
   - pre_commit
   - pytest
   - pytest-cov
@@ -20,4 +22,3 @@ dependencies:
   - pyyaml
   - tqdm
   - xarray
-  - pip

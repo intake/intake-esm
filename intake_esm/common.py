@@ -176,6 +176,11 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
             _kwargs.update(chunks={'time': 'auto'})
         if 'join' not in _kwargs.keys():
             _kwargs.update(join='outer')
+        if 'preprocess' not in _kwargs.keys():
+            _kwargs.update(preprocess=None)
+        if 'merge_exp' not in _kwargs.keys():
+            _kwargs.update(merge_exp=True)
+
         return _kwargs
 
     def _open_dataset(self):

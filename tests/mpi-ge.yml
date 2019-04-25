@@ -1,0 +1,59 @@
+name: mpige_test
+collection_type: mpige
+include_cache_dir: False
+data_sources:
+  pictrl:
+    locations:
+      - name: SAMPLE-DATA
+        loc_type: posix
+        direct_access: True
+        urlpath: ./tests/sample_data/mpi-ge/pictrl
+        exclude_dirs: ['*/restart/*', '*/log/*']
+    component_attrs:
+      mpiom:
+        grid: POP_gx1v6
+    case_members:
+      - case: pictrl0001
+        sequence_order: 0
+        ensemble: 1
+        year_offset: 1448
+  hist:
+    locations:
+      - name: SAMPLE-DATA
+        loc_type: posix
+        direct_access: True
+        urlpath: ./tests/sample_data/mpi-ge/hist
+        exclude_dirs: ['*/restart/*', '*/log/*']
+    component_attrs:
+      mpiom:
+        grid: POP_gx1v6
+    case_members:
+      - case: hist0001
+        sequence_order: 0
+        ensemble: 1
+      - case: hist0002
+        sequence_order: 0
+        ensemble: 2
+      - case: hist0003
+        sequence_order: 0
+        ensemble: 3
+  rcp85:
+    locations:
+      - name: SAMPLE-DATA
+        loc_type: posix
+        direct_access: True
+        urlpath: ./tests/sample_data/mpi-ge/rcp85
+        exclude_dirs: ['*/restart/*', '*/log/*']
+    component_attrs:
+      mpiom:
+        grid: POP_gx1v6
+    case_members:
+      - case: rcp850001
+        sequence_order: 1
+        ensemble: 1
+      - case: rcp850002
+        sequence_order: 1
+        ensemble: 2
+      - case: rcp850003
+        sequence_order: 1
+        ensemble: 3

@@ -11,10 +11,13 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import intake
-import intake_esm
-import sys
+import datetime
 import os
+import sys
+
+import intake
+
+import intake_esm
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -68,8 +71,9 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
+current_year = datetime.datetime.now().year
 project = u'Intake-esm'
-copyright = u'2019 onwards, University Corporation for Atmospheric Research'
+copyright = u'2018-{}, University Corporation for Atmospheric Research'.format(current_year)
 author = u'Earth System Informatics Team'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -77,7 +81,7 @@ author = u'Earth System Informatics Team'
 # built documents.
 #
 # The short X.Y version.
-version = intake_esm.__version__
+version = intake_esm.__version__.split('+')[0]
 # The full version, including alpha/beta/rc tags.
 release = intake_esm.__version__
 

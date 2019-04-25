@@ -133,13 +133,13 @@ jobs:
             source activate ${ENV_NAME}
 
             echo "[flake8]"
-            flake8
+            flake8 intake_esm
 
             echo "[black]"
-            black --check --line-length=100 -S --exclude='intake_esm/_version.py|versioneer.py' .
+            black --check --line-length=100 -S intake_esm
 
             echo "[isort]"
-            isort --recursive -w 100 --check-only .
+            isort --recursive -w 100 --check-only intake_esm
 
       # Cache some files for a speedup in subsequent builds
       - save_cache:

@@ -8,11 +8,7 @@ from dask import delayed
 from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
-from ._version import get_versions
 from .common import BaseSource, Collection, StorageResource
-
-__version__ = get_versions()['version']
-del get_versions
 
 
 class CMIP5Collection(Collection):
@@ -208,7 +204,6 @@ class CMIP6Collection(Collection):
 class CMIP5Source(BaseSource):
     name = 'cmip5'
     partition_access = True
-    version = __version__
 
     def _open_dataset(self):
         dataset_fields = ['institute', 'model', 'experiment', 'frequency', 'modeling_realm']
@@ -223,7 +218,6 @@ class CMIP5Source(BaseSource):
 class CMIP6Source(BaseSource):
     name = 'cmip6'
     partition_access = True
-    version = __version__
 
     def _open_dataset(self):
         # fields which define a single dataset

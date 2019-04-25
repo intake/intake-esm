@@ -1,0 +1,66 @@
+name: mpi-ge
+collection_type: cesm
+include_cache_dir: true
+data_sources:
+  pictrl:
+    locations:
+      - name: SAMPLE-DATA
+        loc_type: posix
+        direct_access: True
+        urlpath: /work/mh1007/MPI-GE/pictrl
+        exclude_dirs: ['*/restart/*', '*/log/*']
+    component_attrs:
+      ocn:
+        grid: POP_gx1v6
+    case_members:
+      - case: pictrl0001
+        sequence_order: 0
+        ensemble: 1
+        has_ocean_bgc: True
+        year_offset: 1448
+  hist:
+    locations:
+      - name: SAMPLE-DATA
+        loc_type: posix
+        direct_access: True
+        urlpath: /work/mh1007/MPI-GE/hist
+        exclude_dirs: ['*/restart/*', '*/log/*']
+    component_attrs:
+      ocn:
+        grid: POP_gx1v6
+    case_members:
+      - case: hist0001
+        sequence_order: 0
+        ensemble: 1
+        has_ocean_bgc: True
+      - case: hist0002
+        sequence_order: 0
+        ensemble: 2
+        has_ocean_bgc: True
+      - case: hist0003
+        sequence_order: 0
+        ensemble: 3
+        has_ocean_bgc: False
+  rcp85:
+    locations:
+      - name: SAMPLE-DATA
+        loc_type: posix
+        direct_access: True
+        urlpath: /work/mh1007/MPI-GE/rcp85
+        exclude_dirs: ['*/restart/*', '*/log/*']
+    component_attrs:
+      ocn:
+        grid: POP_gx1v6
+    case_members:
+      - case: rcp850001
+        sequence_order: 1
+        ensemble: 1
+        has_ocean_bgc: True
+      - case: rcp850003
+        sequence_order: 1
+        ensemble: 2
+        has_ocean_bgc: True
+      - case: rcp850003
+        sequence_order: 1
+        ensemble: 3
+        has_ocean_bgc: False
