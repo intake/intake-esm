@@ -3,12 +3,15 @@ Installation
 ============
 
 
-If you are using `Anaconda`_ or Miniconda, install Intake-esm with the following commands::
+Intake-esm can be installed from PyPI with pip:
 
-    conda install -c conda-forge intake-esm
-
-If you are using virtualenv/pip, run the following command::
+.. code-block:: bash
 
     pip install intake-esm
 
-.. _Anaconda: https://www.anaconda.com/download/
+
+It is also available from `conda-forge` for conda installations:
+
+.. code-block:: bash
+
+    conda install -c conda-forge intake-esm
