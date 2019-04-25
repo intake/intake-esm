@@ -86,18 +86,19 @@ class CMIP5Collection(Collection):
 
             fs = []
             for f in sfiles:
+                entry_ = entry.copy()
                 try:
                     f_split = f.split('_')
-                    entry['variable'] = f_split[0]
-                    entry['mip_table'] = f_split[1]
-                    entry['ensemble_member'] = f_split[-2]
-                    entry['temporal_subset'] = (
+                    entry_['variable'] = f_split[0]
+                    entry_['mip_table'] = f_split[1]
+                    entry_['ensemble_member'] = f_split[-2]
+                    entry_['temporal_subset'] = (
                         'fixed' if entry['frequency'] == 'fx' else f_split[-1].split('.')[0]
                     )
-                    entry['file_dirname'] = root
-                    entry['file_basename'] = f
-                    entry['file_fullpath'] = os.path.join(root, f)
-                    fs.append(entry)
+                    entry_['file_dirname'] = root
+                    entry_['file_basename'] = f
+                    entry_['file_fullpath'] = os.path.join(root, f)
+                    fs.append(entry_)
                 except Exception:
                     continue
 
@@ -182,14 +183,15 @@ class CMIP6Collection(Collection):
 
             fs = []
             for f in sfiles:
+                entry_ = entry.copy()
                 try:
                     temporal_subset = f.split('_')[-1].split('.')[0]
                     match = time_range_regex.match(temporal_subset)
-                    entry['time_range'] = match.group() if match else 'fixed'
-                    entry['file_dirname'] = root
-                    entry['file_basename'] = f
-                    entry['file_fullpath'] = os.path.join(root, f)
-                    fs.append(entry)
+                    entry_['time_range'] = match.group() if match else 'fixed'
+                    entry_['file_dirname'] = root
+                    entry_['file_basename'] = f
+                    entry_['file_fullpath'] = os.path.join(root, f)
+                    fs.append(entry_)
 
                 except Exception:
                     print(f'Could not parse metadata info for file: {f}')
