@@ -257,7 +257,7 @@ class MPIGESource(BaseSource):
                 _ds[kwargs['ensemble_dim_name']] = member_ids
                 comp_dsets.append(_ds)
             all_dsets[dset_id] = xr.merge(comp_dsets)
-        if kwargs['merge']:
+        if kwargs['merge_exp']:
             # when only streams are different
             try:
                 self._ds = xr.merge(list(all_dsets.values()))
@@ -265,14 +265,13 @@ class MPIGESource(BaseSource):
                 warn('Could not merge datasets. Returning non-merged datasets')
                 self._ds = all_dsets
 
-        elif kwargs['concat_exp']:
-            # when for example, experiments = ['rcp26','rcp45','rcp85']
-            self._ds = xr.concat(list(all_dsets.values()), 'experiment_id')
-            self._ds['experiment_id'] = list(all_dsets.keys())
-
-        elif kwargs['concat_time']:
-            # when for example, experiments = ['hist','rcpxx']
-            self._ds = xr.concat(list(all_dsets.values()), kwargs['time_coord_name'])
-
         else:
-            self._ds = all_dsets
+            # when for example, experiments = ['rcp26','rcp45','rcp85']
+            try:
+                self._ds = xr.concat(list(all_dsets.values()), 'experiment_id')
+                self._ds['experiment_id'] = list(all_dsets.keys())
+            except Exception:
+                warn(
+                    f'Could not concatenate datasets for {self.query["experiment"]}. Returning non-concatenated datasets'
+                )
+                self._ds = all_dsets

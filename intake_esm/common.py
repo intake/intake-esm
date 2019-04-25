@@ -178,12 +178,8 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
             _kwargs.update(join='outer')
         if 'preprocess' not in _kwargs.keys():
             _kwargs.update(preprocess=None)
-        if 'concat_exp' not in _kwargs.keys():
-            _kwargs.update(concat_exp=False)
-        if 'concat_time' not in _kwargs.keys():
-            _kwargs.update(concat_time=False)
-        if 'merge' not in _kwargs.keys():
-            _kwargs.update(merge=True)
+        if 'merge_exp' not in _kwargs.keys():
+            _kwargs.update(merge_exp=True)
 
         return _kwargs
 
