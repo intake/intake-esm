@@ -31,9 +31,17 @@ def test_search():
 
 def test_to_xarray():
     with config.set({'database-directory': './tests/test_collections'}):
-        c = intake.open_esm_metadatastore(collection_name='mpige_test')
-        cat = c.search(component='mpiom', stream='monitoring_ym')
+        col = intake.open_esm_metadatastore(collection_name='mpige_test')
+        cat = col.search(component='mpiom', stream='monitoring_ym')
+        with pytest.warns(UserWarning):
+            ds = cat.to_xarray()
+            assert isinstance(ds, dict)
+
+        cat = col.search(
+            component=['mpiom', 'hamocc'],
+            stream='monitoring_ym',
+            experiment=['hist', 'rcp85'],
+            ensemble=[2, 3],
+        )
         ds = cat.to_xarray()
-        assert isinstance(ds, dict)
-        ds = ds['hist.mpiom']
         assert isinstance(ds, xr.Dataset)

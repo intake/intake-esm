@@ -3,6 +3,8 @@
 import logging
 import os
 import re
+from collections import OrderedDict
+from warnings import warn
 
 import numpy as np
 import pandas as pd
@@ -219,20 +221,58 @@ class MPIGESource(BaseSource):
     partition_access = True
 
     def _open_dataset(self):
-        dataset_fields = ['experiment', 'component']
-        grouped = get_subset(self.collection_name, self.query).groupby(dataset_fields)
-        all_dsets = {}
-        for dset_keys, dset_files in tqdm(grouped, desc='dataset'):
-            dset_id = '.'.join(dset_keys)
-            member_ids = []
-            member_dsets = []
-            for m_id, m_files in tqdm(dset_files.groupby('ensemble'), desc='member'):
-                files = m_files['file_fullpath']
-                ds = xr.open_mfdataset(files)
-                member_ids.append(m_id)
-                member_dsets.append(ds)
-            _ds = xr.concat(member_dsets, 'member')
-            _ds['member'] = member_ids
-            all_dsets[dset_id] = _ds
+        # fields which define a single (unique) dataset
+        dataset_fields = ['experiment']
+        self._open_dataset_groups(
+            dataset_fields=dataset_fields,
+            member_column_name='ensemble',
+            file_fullpath_column_name='file_fullpath',
+        )
 
-        self._ds = all_dsets
+    def _open_dataset_groups(self, dataset_fields, member_column_name, file_fullpath_column_name):
+        kwargs = self._validate_kwargs(self.kwargs)
+        grouped = get_subset(self.collection_name, self.query).groupby(dataset_fields)
+        all_dsets = OrderedDict()
+        for dset_keys, dset_files in tqdm(grouped, desc='experiment'):
+            dset_id = dset_keys
+            comp_dsets = []
+            for comp_id, comp_files in dset_files.groupby('component'):
+                member_ids = []
+                member_dsets = []
+                for m_id, m_files in comp_files.groupby(member_column_name):
+                    files = m_files[file_fullpath_column_name]
+                    if kwargs['preprocess'] is not None:
+                        ds = xr.open_mfdataset(
+                            files,
+                            preprocess=kwargs['preprocess'],
+                            concat_dim=kwargs['time_coord_name'],
+                            chunks=kwargs['chunks'],
+                        )
+                    else:
+                        ds = xr.open_mfdataset(files, chunks=kwargs['chunks'])
+
+                    member_dsets.append(ds)
+                    member_ids.append(m_id)
+                _ds = xr.concat(member_dsets, kwargs['ensemble_dim_name'])
+                _ds[kwargs['ensemble_dim_name']] = member_ids
+                comp_dsets.append(_ds)
+            all_dsets[dset_id] = xr.merge(comp_dsets)
+        if kwargs['merge']:
+            # when only streams are different
+            try:
+                self._ds = xr.merge(list(all_dsets.values()))
+            except Exception:
+                warn('Could not merge datasets. Returning non-merged datasets')
+                self._ds = all_dsets
+
+        elif kwargs['concat_exp']:
+            # when for example, experiments = ['rcp26','rcp45','rcp85']
+            self._ds = xr.concat(list(all_dsets.values()), 'experiment_id')
+            self._ds['experiment_id'] = list(all_dsets.keys())
+
+        elif kwargs['concat_time']:
+            # when for example, experiments = ['hist','rcpxx']
+            self._ds = xr.concat(list(all_dsets.values()), kwargs['time_coord_name'])
+
+        else:
+            self._ds = all_dsets
