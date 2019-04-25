@@ -43,5 +43,5 @@ def test_to_xarray():
             experiment=['hist', 'rcp85'],
             ensemble=[2, 3],
         )
-        ds = cat.to_xarray()
-        assert isinstance(ds, xr.Dataset)
+        ds = cat.to_xarray(merge=False, concat_exp=True, concat_time=False)
+        assert 'experiment_id' in ds.coords
