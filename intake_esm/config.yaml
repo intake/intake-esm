@@ -180,6 +180,20 @@ collections:
       - member_id
       - experiment_id
       - file_fullpath
+  gmet:
+    collection_columns:
+      - freq
+      - member_id
+      - time_range
+      - resolution
+      - experiment
+    order_by_columns:
+      - member_id
+      - time_range
+      - file_fullpath
+    required_columns:
+      - member_id
+      - file_fullpath
 default_chunk_size: 128MiB
 data_cache_directory: $TMPDIR/.intake_esm/data_cache
 database_directory: ~/.intake_esm/collections
@@ -188,3 +202,4 @@ sources:
   cmip5: intake_esm.cmip.CMIP5Source
   cmip6: intake_esm.cmip.CMIP6Source
   mpige: intake_esm.mpige.MPIGESource
+  gmet: intake_esm.gmet.GMETSource

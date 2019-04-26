@@ -9,6 +9,7 @@ from . import config as config
 from .cesm import CESMCollection
 from .cmip import CMIP5Collection, CMIP6Collection
 from .common import _get_built_collections, _open_collection
+from .gmet import GMETCollection
 from .mpige import MPIGECollection
 
 
@@ -40,6 +41,7 @@ class ESMMetadataStoreCatalog(Catalog):
         'cmip5': CMIP5Collection,
         'cmip6': CMIP6Collection,
         'mpige': MPIGECollection,
+        'gmet': GMETCollection,
     }
 
     def __init__(

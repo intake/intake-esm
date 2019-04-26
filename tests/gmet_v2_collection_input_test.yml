@@ -1,0 +1,10 @@
+name: gmet_v2_test_collection
+collection_type: gmet
+data_sources:
+  v2_landmask:
+    locations:
+      - name: GMET_V2
+        loc_type: posix
+        direct_access: True
+        urlpath: /glade/p/ral/hap/anewman/conus_v1p2/eighth/v2_landmask
+        exclude_dirs: ['*/mean/*', '*/summary_files/*']
