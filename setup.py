@@ -18,6 +18,18 @@ if exists('README.rst'):
 else:
     long_description = ''
 
+CLASSIFIERS = [
+    'Development Status :: 4 - Beta',
+    'License :: OSI Approved :: Apache Software License',
+    'Operating System :: OS Independent',
+    'Intended Audience :: Science/Research',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
+    'Topic :: Scientific/Engineering',
+]
 
 setup(
     name='intake-esm',
@@ -26,6 +38,7 @@ setup(
     python_requires='>3.5',
     maintainer='Anderson Banihirwe',
     maintainer_email='abanihi@ucar.edu',
+    classifiers=CLASSIFIERS,
     url='https://github.com/NCAR/intake-esm',
     packages=find_packages(),
     package_dir={'intake-esm': 'intake-esm'},
