@@ -1,5 +1,5 @@
 =================
-Changelog history
+Changelog History
 =================
 
 Intake-esm v2019.4.26 (2019-04-26)

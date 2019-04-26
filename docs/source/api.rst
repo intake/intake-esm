@@ -1,4 +1,4 @@
-API reference
+API Reference
 =============
 
 .. automodule:: intake_esm.core

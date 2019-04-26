@@ -1,0 +1,5 @@
+intake
+xarray
+pyyaml
+tqdm
+intake-xarray
