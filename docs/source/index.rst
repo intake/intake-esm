@@ -23,6 +23,7 @@ please open an issue at the GitHub `main repository <http://github.com/NCAR/inta
    notebooks/cmip5.ipynb
    notebooks/cesm.ipynb
    notebooks/mpige.ipynb
+   notebooks/gmet.ipynb
    api
    contributing
    changelog
