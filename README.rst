@@ -23,6 +23,14 @@ Intake-esm
 
 
 Intake-esm provides a plugin for building and loading intake catalogs for earth system data sets holdings, such as CMIP and CESM Large Ensemble datasets.
+
+Intake-esm supports data holdings from the following projects:
+
+- CMIP: Coupled Model Intercomparison Project (phase 5 and phase 6)
+- CESM: Community Earth System Model Large Ensemble (LENS), and Decadal Prediction Large Ensemble (DPLE)
+- MPI-GE: The Max Planck Institute for Meteorology (MPI-M) Grand Ensemble (MPI-GE)
+- GMET: The Gridded Meteorological Ensemble Tool
+
 See documentation_ for more information.
 
 .. _documentation: https://intake-esm.readthedocs.io/en/latest/
