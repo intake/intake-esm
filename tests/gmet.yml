@@ -1,10 +1,10 @@
-name: gmet_test_collection
+name: gmet
 collection_type: gmet
 data_sources:
   v2_landmask:
     locations:
-      - name: GMET_V2-TEST-LIST
-        loc_type: input-file
-        direct_access: False
-        urlpath: ./tests/gmet_v2_filelist.txt
+      - name: GMET_V2
+        loc_type: posix
+        direct_access: True
+        urlpath: /glade/p/ral/hap/anewman/conus_v1p2/eighth/v2_landmask/
         exclude_dirs: ['*/mean/*', '*/summary_files/*']

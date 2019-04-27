@@ -1,0 +1,10 @@
+name: gmet_test
+collection_type: gmet
+data_sources:
+  v2_landmask:
+    locations:
+      - name: GMET_V2-TEST-LIST
+        loc_type: input-file
+        direct_access: False
+        urlpath: ./tests/gmet_v2_filelist.txt
+        exclude_dirs: ['*/mean/*', '*/summary_files/*']

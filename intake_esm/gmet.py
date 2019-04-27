@@ -63,6 +63,7 @@ class GMETCollection(Collection):
                     urlpath=location['urlpath'],
                     loc_type=location['loc_type'],
                     exclude_dirs=location['exclude_dirs'],
+                    file_extension='.nc4',
                 )
 
                 df_files[res_key] = self._assemble_collection_df_files(
@@ -71,6 +72,7 @@ class GMETCollection(Collection):
                     direct_access=location['direct_access'],
                     filelist=resource.filelist,
                 )
+
         for res_key, df_f in df_files.items():
             df_f.insert(loc=0, column='version', value=version)
             self.df = pd.concat([df_f, self.df], ignore_index=True, sort=False)
@@ -153,3 +155,36 @@ class GMETCollection(Collection):
         else:
             logger.warning(f'Could not extract date string from : {filename}')
             return '00000000_00000000'
+
+
+class GMETSource(BaseSource):
+
+    name = 'gmet'
+    partition_access = True
+
+    def _open_dataset(self):
+        kwargs = self._validate_kwargs(self.kwargs)
+
+        dataset_fields = ['member_id']
+        grouped = get_subset(self.collection_name, self.query).groupby(dataset_fields)
+        member_ids = []
+        member_dsets = []
+        for m_id, m_files in tqdm(grouped, desc='member'):
+            files = m_files['file_fullpath'].tolist()
+            dsets = [
+                aggregate.open_dataset_delayed(
+                    url,
+                    data_vars=None,
+                    chunks=kwargs['chunks'],
+                    decode_times=kwargs['decode_times'],
+                )
+                for url in files
+            ]
+
+            member_dset = aggregate.concat_time_levels(dsets, kwargs['time_coord_name'])
+            member_dsets.append(member_dset)
+            member_ids.append(m_id)
+
+        self._ds = aggregate.concat_ensembles(
+            member_dsets, member_ids=member_ids, join=kwargs['join']
+        )

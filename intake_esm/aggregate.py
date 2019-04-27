@@ -194,7 +194,10 @@ def open_dataset(url, data_vars, **kwargs):
     ds = xr.open_dataset(url, **kwargs)
     ds.attrs['history'] = f"{datetime.now()} xarray.open_dataset('{url}')"
 
-    return set_coords(ds, data_vars)
+    if data_vars:
+        return set_coords(ds, data_vars)
+    else:
+        return ds
 
 
 open_dataset_delayed = dask.delayed(open_dataset)
