@@ -13,7 +13,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 def test_build_collection():
     with config.set({'database-directory': './tests/test_collections'}):
-        collection_input_definition = os.path.join(here, 'gmet-list.yml')
+        collection_input_definition = os.path.join(here, 'gmet-test.yml')
         col = intake.open_esm_metadatastore(
             collection_input_definition=collection_input_definition, overwrite_existing=True
         )
@@ -32,20 +32,10 @@ def test_search():
         assert not cat.query_results.empty
 
 
-@pytest.mark.skip
 def test_to_xarray():
     with config.set({'database-directory': './tests/test_collections'}):
-        col = intake.open_esm_metadatastore(collection_name='mpige_test')
-        cat = col.search(component='mpiom', stream='monitoring_ym')
-        with pytest.warns(UserWarning):
-            ds = cat.to_xarray()
-            assert isinstance(ds, dict)
-
-        cat = col.search(
-            component=['mpiom', 'hamocc'],
-            stream='monitoring_ym',
-            experiment=['hist', 'rcp85'],
-            ensemble=[2, 3],
-        )
-        ds = cat.to_xarray(merge_exp=False)
-        assert 'experiment_id' in ds.coords
+        col = intake.open_esm_metadatastore(collection_name='gmet_test')
+        cat = col.search(direct_access=True)
+        ds = cat.to_xarray(chunks={'time': 1}, decode_times=True)
+        assert isinstance(ds, xr.Dataset)
+        assert 'member_id' in ds.coords
