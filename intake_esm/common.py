@@ -26,6 +26,14 @@ class Collection(ABC):
         )
         self.df = pd.DataFrame()
         self.root_dir = ''
+        try:
+            self.exclude_dirs = self.collection_spec['data_sources']['root_dir'].get(
+                'exclude_dirs', []
+            )
+
+        except Exception:
+            self.exclude_dirs = []
+
         if self.collection_definition is None:
             raise ValueError(
                 f"*** {collection_spec['collection_type']} *** is not a defined collection type in {config.PATH}"
@@ -63,7 +71,7 @@ class Collection(ABC):
                 for x in self.walk(path, maxdepth - 1):
                     yield x
 
-    def get_directories(self, root_dir, depth, exclude_dirs=[]):
+    def get_directories(self, root_dir, depth):
         """
         Note
         ----
@@ -77,7 +85,7 @@ class Collection(ABC):
         valid_dirs = [
             x
             for x in tqdm(y, desc='directories')
-            if len(x.split('/')) - base == diff and x.split('/')[-1] not in set(exclude_dirs)
+            if len(x.split('/')) - base == diff and x.split('/')[-1] not in set(self.exclude_dirs)
         ]
         print(f'Found {len(valid_dirs)} directories')
         return valid_dirs
@@ -86,15 +94,15 @@ class Collection(ABC):
         raise NotImplementedError('Subclass needs to implement this method')
 
     @delayed
-    def _parse_directory(self, directory, columns, exclude_dirs=[]):
+    def _parse_directory(self, directory, columns):
         raise NotImplementedError()
 
-    def build_cmip(self, depth, exclude_dirs=[]):
+    def build_cmip(self, depth):
         self._validate()
         if not os.path.exists(self.root_dir):
             raise NotADirectoryError(f'{os.path.abspath(self.root_dir)} does not exist')
-        dirs = self.get_directories(root_dir=self.root_dir, depth=depth, exclude_dirs=exclude_dirs)
-        dfs = [self._parse_directory(directory, self.columns, exclude_dirs) for directory in dirs]
+        dirs = self.get_directories(root_dir=self.root_dir, depth=depth)
+        dfs = [self._parse_directory(directory, self.columns) for directory in dirs]
         df = dd.from_delayed(dfs).compute()
         vYYYYMMDD = r'v\d{4}\d{2}\d{2}'
         v = re.compile(vYYYYMMDD)

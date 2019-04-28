@@ -48,7 +48,7 @@ class CMIP5Collection(Collection):
         With ``depth=7``, we retrieve all directories up to ``modeling_realm`` level
         Reference: CMIP5 DRS: https://cmip.llnl.gov/cmip5/docs/cmip5_data_reference_syntax_v1-00_clean.pdf
         """
-        self.build_cmip(depth=7, exclude_dirs=['files', 'latest'])
+        self.build_cmip(depth=7)
 
     def _get_entry(self, directory):
 
@@ -68,8 +68,8 @@ class CMIP5Collection(Collection):
             return {}
 
     @delayed
-    def _parse_directory(self, directory, columns, exclude_dirs=[]):
-        exclude = set(exclude_dirs)  # directories to exclude
+    def _parse_directory(self, directory, columns):
+        exclude = set(self.exclude_dirs)  # directories to exclude
 
         df = pd.DataFrame(columns=columns)
 
@@ -144,7 +144,7 @@ class CMIP6Collection(Collection):
         With ``depth=9``, we retrieve all directories up to ``grid_label`` level
         Reference: CMIP6 DRS: http://goo.gl/v1drZl
         """
-        self.build_cmip(depth=9, exclude_dirs=[])
+        self.build_cmip(depth=9)
 
     def _get_entry(self, directory):
         try:
@@ -165,8 +165,8 @@ class CMIP6Collection(Collection):
             return {}
 
     @delayed
-    def _parse_directory(self, directory, columns, exclude_dirs=[]):
-        exclude = set(exclude_dirs)
+    def _parse_directory(self, directory, columns):
+        exclude = set(self.exclude_dirs)
         time_range = r'\d{6}-\d{6}'
         time_range_regex = re.compile(time_range)
         df = pd.DataFrame(columns=columns)
