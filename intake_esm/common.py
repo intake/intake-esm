@@ -55,9 +55,6 @@ class Collection(ABC):
             self.collection_db_file = f"{self.database_dir}/{collection_spec['name']}.{collection_spec['collection_type']}.csv"
             os.makedirs(self.database_dir, exist_ok=True)
 
-    def _filter_func(self, path):
-        return not any(fnmatch.fnmatch(path, pat=exclude_dir) for exclude_dir in self.exclude_dirs)
-
     def walk(self, top, maxdepth):
         """ Travel directory tree with limited recursion depth
 
