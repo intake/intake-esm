@@ -5,6 +5,7 @@ import shutil
 from abc import ABC
 from glob import glob
 from subprocess import PIPE, Popen
+from warnings import warn
 
 import dask.dataframe as dd
 import intake_xarray
@@ -63,13 +64,18 @@ class Collection(ABC):
         """
 
         dirs, nondirs = [], []
-        for entry in os.scandir(top):
-            (dirs if entry.is_dir() else nondirs).append(entry.path)
-        yield top, dirs, nondirs
-        if maxdepth > 1:
-            for path in dirs:
-                for x in self.walk(path, maxdepth - 1):
-                    yield x
+        try:
+            for entry in os.scandir(top):
+                (dirs if entry.is_dir() else nondirs).append(entry.path)
+            yield top, dirs, nondirs
+            if maxdepth > 1:
+                for path in dirs:
+                    for x in self.walk(path, maxdepth - 1):
+                        yield x
+
+        except Exception:
+            warn(f'Could not access directory = {top}. Skipping directory')
+            yield None
 
     def get_directories(self, root_dir, depth):
         """
@@ -79,14 +85,10 @@ class Collection(ABC):
         """
 
         print('Getting list of directories')
-        y = [x[0] for x in self.walk(root_dir, depth)]
+        y = [x[0] for x in self.walk(root_dir, depth) if x is not None]
         diff = depth - 1
         base = len(root_dir.split('/'))
-        valid_dirs = [
-            x
-            for x in tqdm(y, desc='directories')
-            if len(x.split('/')) - base == diff and x.split('/')[-1] not in set(self.exclude_dirs)
-        ]
+        valid_dirs = [x for x in tqdm(y, desc='directories') if len(x.split('/')) - base == diff]
         print(f'Found {len(valid_dirs)} directories')
         return valid_dirs
 
@@ -108,6 +110,9 @@ class Collection(ABC):
         v = re.compile(vYYYYMMDD)
         df['version'] = df['file_dirname'].str.findall(v)
         df['version'] = df['version'].apply(lambda x: x[0] if x else 'v0')
+
+        excludes = r'|'.join([fnmatch.translate(x) for x in self.exclude_dirs])
+        df = df[~df['file_fullpath'].str.contains(excludes)]
         sorted_df = (
             df.sort_values('version')
             .drop_duplicates(subset='file_basename', keep='last')
