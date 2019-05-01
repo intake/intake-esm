@@ -30,6 +30,7 @@ def test_build_collection_dict():
                     'loc_type': 'posix',
                     'direct_access': True,
                     'urlpath': './tests/sample_data/cmip/cmip5',
+                    'exclude_dirs': ['*/files/*', 'latest'],
                 }
             },
         }
