@@ -73,7 +73,8 @@ class ERA5Collection(Collection):
         # Reorder columns
         self.df = self.df[self.columns]
 
-        # Remove duplicates
+        # Remove inconsistent rows and duplicates
+        self.df = self.df[~self.df['parameter_id'].isna()]
         self.df = self.df.drop_duplicates(
             subset=['resource', 'file_fullpath'], keep='last'
         ).reset_index(drop=True)
@@ -103,6 +104,7 @@ class ERA5Collection(Collection):
             entries['data_type'].append(fileparts['data_type'])
             entries['parameter_id'].append(fileparts['parameter_id'])
             entries['parameter_type'].append(fileparts['parameter_type'])
+            entries['parameter_short_name'].append(fileparts['parameter_short_name'])
             entries['grid'].append(fileparts['grid'])
             entries['file_basename'].append(basename)
             entries['file_dirname'].append(os.path.dirname(f) + '/')
