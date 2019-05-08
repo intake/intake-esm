@@ -202,19 +202,30 @@ collections:
       - file_fullpath
   era5:
     collection_columns:
+      - resource
+      - resource_type
+      - direct_access
       - local_table
-      - parameter
-      - short_name
+      - stream
+      - level_type
+      - data_type
+      - parameter_id
+      - parameter_type
+      - parameter_short_name
       - file_fullpath
       - file_basename
       - file_dirname
+      - time_range
       - grid
     required_columns:
-      - local_table
-      - parameter
+      - data_type
+      - level_type
+      - stream
       - file_fullpath
     order_by_columns:
-      - local_table
+      - level_type
+      - data_type
+      - file_fullpath
 default_chunk_size: 128MiB
 data_cache_directory: $TMPDIR/.intake_esm/data_cache
 database_directory: ~/.intake_esm/collections
@@ -224,3 +235,4 @@ sources:
   cmip6: intake_esm.cmip.CMIP6Source
   mpige: intake_esm.mpige.MPIGESource
   gmet: intake_esm.gmet.GMETSource
+  era5: intake_esm.era5.ERA5Source
