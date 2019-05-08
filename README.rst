@@ -1,6 +1,6 @@
-===============================
+===========
 Intake-esm
-===============================
+===========
 
 .. image:: https://img.shields.io/circleci/project/github/NCAR/intake-esm/master.svg?style=for-the-badge&logo=circleci
     :target: https://circleci.com/gh/NCAR/intake-esm/tree/master
@@ -29,7 +29,8 @@ Intake-esm supports data holdings from the following projects:
 - CMIP: Coupled Model Intercomparison Project (phase 5 and phase 6)
 - CESM: Community Earth System Model Large Ensemble (LENS), and Decadal Prediction Large Ensemble (DPLE)
 - MPI-GE: The Max Planck Institute for Meteorology (MPI-M) Grand Ensemble (MPI-GE)
-- GMET: The Gridded Meteorological Ensemble Tool
+- GMET: The Gridded Meteorological Ensemble Tool data
+- ERA5: ECWMF ERA5 Reanalysis dataset stored on NCAR's GLADE in ``/glade/collections/rda/data/ds630.0``
 
 See documentation_ for more information.
 
