@@ -23,7 +23,7 @@ def ensure_time_coord_name(ds, time_coord_name_default):
     )
 
 
-def dict_union(*dicts, merge_keys=['history'], drop_keys=[]):
+def dict_union(*dicts, merge_keys=['history', 'tracking_id'], drop_keys=[]):
     """Return the union of two or more dictionaries."""
     if len(dicts) > 2:
         return reduce(dict_union, dicts)
