@@ -200,6 +200,21 @@ collections:
     required_columns:
       - member_id
       - file_fullpath
+  era5:
+    collection_columns:
+      - local_table
+      - parameter
+      - short_name
+      - file_fullpath
+      - file_basename
+      - file_dirname
+      - grid
+    required_columns:
+      - local_table
+      - parameter
+      - file_fullpath
+    order_by_columns:
+      - local_table
 default_chunk_size: 128MiB
 data_cache_directory: $TMPDIR/.intake_esm/data_cache
 database_directory: ~/.intake_esm/collections
