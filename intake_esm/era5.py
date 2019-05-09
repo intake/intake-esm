@@ -1,9 +1,15 @@
 """ Implementation for The ECMWF ERA5 Reanalyses data holdings """
 import os
+import warnings
 
 import pandas as pd
+import xarray as xr
+from tqdm.autonotebook import tqdm
 
+from . import aggregate
 from .common import BaseSource, Collection, StorageResource, get_subset
+
+warnings.simplefilter('ignore')
 
 
 class ERA5Collection(Collection):
@@ -97,16 +103,6 @@ class ERA5Collection(Collection):
             entries['resource'].append(resource_key)
             entries['resource_type'].append(resource_type)
             entries['direct_access'].append(direct_access)
-            entries['start_date'].append(fileparts['start_date'])
-            entries['end_date'].append(fileparts['end_date'])
-            entries['start_year'].append(fileparts['start_year'])
-            entries['start_month'].append(fileparts['start_month'])
-            entries['end_year'].append(fileparts['end_year'])
-            entries['end_month'].append(fileparts['end_month'])
-            entries['start_day'].append(fileparts['start_day'])
-            entries['start_hour'].append(fileparts['start_hour'])
-            entries['end_day'].append(fileparts['end_day'])
-            entries['end_hour'].append(fileparts['end_hour'])
             entries['local_table'].append(fileparts['local_table'])
             entries['stream'].append(fileparts['stream'])
             entries['level_type'].append(fileparts['level_type'])
@@ -114,6 +110,11 @@ class ERA5Collection(Collection):
             entries['variable_id'].append(fileparts['variable_id'])
             entries['variable_type'].append(fileparts['variable_type'])
             entries['variable_short_name'].append(fileparts['variable_short_name'])
+            entries['forecast_initial_date'].append(fileparts['forecast_initial_date'])
+            entries['forecast_initial_hour'].append(fileparts['forecast_initial_hour'])
+            entries['reanalysis_month'].append(fileparts['reanalysis_month'])
+            entries['reanalysis_year'].append(fileparts['reanalysis_year'])
+            entries['reanalysis_day'].append(fileparts['reanalysis_day'])
             entries['grid'].append(fileparts['grid'])
             entries['file_basename'].append(basename)
             entries['file_dirname'].append(os.path.dirname(f) + '/')
@@ -126,40 +127,43 @@ class ERA5Collection(Collection):
         fs = filename.split('.')
 
         keys = [
-            'stream',
-            'product_type',
+            'forecast_initial_date',
+            'forecast_initial_hour',
+            'grid',
             'level_type',
-            'variable_type',
+            'local_table',
+            'product_type',
+            'reanalysis_day',
+            'reanalysis_month',
+            'reanalysis_year',
+            'stream',
             'variable_id',
             'variable_short_name',
-            'local_table',
-            'grid',
-            'start_date',
-            'end_date',
-            'start_year',
-            'end_year',
-            'start_month',
-            'end_month',
-            'start_day',
-            'start_hour',
-            'end_day',
-            'end_hour',
-            'grid',
+            'variable_type',
         ]
 
         fileparts = {key: None for key in keys}
 
         fileparts['stream'] = fs[1]
-        fileparts['product_type'] = fs[2]
+        if fs[2] == 'an':
+            fileparts['product_type'] = 'reanalysis'
+
+        elif fs[2] == 'fc':
+            fileparts['product_type'] = 'forecast'
+
+        else:
+            fileparts['product_type'] = fs[2]
+
         if fileparts['product_type'] == 'invariant':
             fileparts['level_type'] = None
+
         else:
             fileparts['level_type'] = fs[3]
 
-        if fileparts['product_type'] == 'an':
+        if fileparts['product_type'] == 'reanalysis':
             fileparts['variable_type'] = 'instan'
 
-        elif fileparts['product_type'] == 'fc':
+        elif fileparts['product_type'] == 'forecast':
             fileparts['variable_type'] = fs[4]
 
         else:
@@ -172,31 +176,25 @@ class ERA5Collection(Collection):
             fileparts['variable_short_name'] = ecmwf_params[2]
 
         fileparts['grid'] = fs[-3]
-        time_range = fs[-2].replace('_', '-')
-        time_ranges = time_range.split('-')
+        time_ranges = fs[-2].replace('_', '-').split('-')
         start_time = time_ranges[0]
-        end_time = time_ranges[1]
         if len(start_time) == 10:
-            start_year = start_time[0:4]
-            start_month = start_time[4:6]
-            start_day = start_time[6:8]
-            start_hour = start_time[8:]
-            fileparts['start_date'] = '-'.join([start_year, start_month, start_day])
-            fileparts['start_year'] = int(start_year)
-            fileparts['start_month'] = int(start_month)
-            fileparts['start_day'] = int(start_day)
-            fileparts['start_hour'] = int(start_hour)
+            start_year = str(start_time[0:4])
+            start_month = str(start_time[4:6])
+            start_day = str(start_time[6:8])
+            start_hour = str(start_time[8:]) + ':00'
+            start_date = '-'.join([start_year, start_month, start_day])
+            if fileparts['product_type'] == 'reanalysis':
+                fileparts['reanalysis_day'] = start_day
+                fileparts['reanalysis_month'] = start_month
+                fileparts['reanalysis_year'] = start_year
 
-        if len(end_time) == 10:
-            end_year = end_time[0:4]
-            end_month = end_time[4:6]
-            end_day = end_time[6:8]
-            end_hour = end_time[8:]
-            fileparts['end_date'] = '-'.join([end_year, end_month, end_day])
-            fileparts['end_year'] = int(end_year)
-            fileparts['end_month'] = int(end_month)
-            fileparts['end_day'] = int(end_day)
-            fileparts['end_hour'] = int(end_hour)
+            elif fileparts['product_type'] == 'forecast':
+                fileparts['forecast_initial_date'] = start_date
+                fileparts['forecast_initial_hour'] = start_hour
+
+            else:
+                pass
 
         return fileparts
 
@@ -204,3 +202,48 @@ class ERA5Collection(Collection):
 class ERA5Source(BaseSource):
     name = 'era5'
     partition_access = True
+
+    def _open_dataset(self):
+        """
+        Notes
+        -----
+        - data variables are uppercase in the netCDF files.
+        """
+        kwargs = self._validate_kwargs(self.kwargs)
+        dataset_fields = ['product_type']
+        variable_column_name = 'variable_short_name'
+        file_fullpath_column_name = 'file_fullpath'
+
+        invariant_files = get_subset(self.collection_name, {'product_type': 'invariant'})[
+            file_fullpath_column_name
+        ].tolist()
+        invariants_dset = (
+            xr.open_mfdataset(invariant_files, drop_variables=['time']).squeeze().load()
+        )
+
+        grouped = get_subset(self.collection_name, self.query).groupby(dataset_fields)
+        product_dsets = {}
+        for p_id, p_files in tqdm(grouped, desc='product'):
+            new_time_coord_name = 'forecast_initial_time' if p_id == 'forecast' else 'time'
+            chunks = kwargs['chunks']
+            chunks[new_time_coord_name] = chunks.pop(kwargs['time_coord_name'])
+            var_dsets = []
+            for v_id, v_files in p_files.groupby(variable_column_name):
+                urlpath_ei_vi = v_files[file_fullpath_column_name].tolist()
+                dsets = [
+                    aggregate.open_dataset_delayed(
+                        url,
+                        data_vars=[v_id.upper()],
+                        chunks=chunks,
+                        decode_times=kwargs['decode_times'],
+                    )
+                    for url in urlpath_ei_vi
+                ]
+                var_dset_i = aggregate.concat_time_levels(dsets, new_time_coord_name)
+                var_dsets.append(var_dset_i)
+
+            var_dsets.append(invariants_dset)
+            product_dsets[p_id] = aggregate.merge(dsets=var_dsets).set_coords(
+                invariants_dset.data_vars
+            )
+        self._ds = product_dsets

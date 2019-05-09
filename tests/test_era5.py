@@ -24,10 +24,7 @@ def test_search():
     with config.set({'database-directory': './tests/test_collections'}):
         col = intake.open_esm_metadatastore(collection_name='era5_test')
         cat = col.search(
-            variable_short_name=['mn2t', 'mx2t'],
-            start_year=[2015, 2005],
-            start_month=[5, 6],
-            start_hour=[0, 6, 12, 18],
+            variable_short_name=['mn2t', 'mx2t'], forecast_initial_date=['2002-02-01', '2002-02-16']
         )
 
         assert isinstance(cat.query_results, pd.DataFrame)

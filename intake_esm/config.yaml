@@ -202,38 +202,31 @@ collections:
       - file_fullpath
   era5:
     collection_columns:
-      - resource
-      - resource_type
       - direct_access
-      - local_table
-      - stream
-      - level_type
-      - product_type
-      - variable_id
-      - variable_type
-      - variable_short_name
-      - file_fullpath
       - file_basename
       - file_dirname
-      - start_date
-      - end_date
-      - start_year
-      - start_month
-      - end_year
-      - end_month
-      - start_day
-      - start_hour
-      - end_day
-      - end_hour
+      - file_fullpath
+      - forecast_initial_date
+      - forecast_initial_hour
       - grid
+      - level_type
+      - local_table
+      - product_type
+      - reanalysis_day
+      - reanalysis_month
+      - reanalysis_year
+      - resource
+      - resource_type
+      - stream
+      - variable_id
+      - variable_short_name
+      - variable_type
     required_columns:
       - product_type
       - level_type
       - stream
       - file_fullpath
     order_by_columns:
-      - start_year
-      - start_month
       - level_type
       - product_type
       - file_fullpath
