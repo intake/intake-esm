@@ -217,8 +217,10 @@ collections:
       - file_dirname
       - start_date
       - end_date
-      - year
-      - month
+      - start_year
+      - start_month
+      - end_year
+      - end_month
       - start_day
       - start_hour
       - end_day
@@ -230,8 +232,8 @@ collections:
       - stream
       - file_fullpath
     order_by_columns:
-      - year
-      - month
+      - start_year
+      - start_month
       - level_type
       - data_type
       - file_fullpath

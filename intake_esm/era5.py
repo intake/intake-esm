@@ -99,8 +99,10 @@ class ERA5Collection(Collection):
             entries['direct_access'].append(direct_access)
             entries['start_date'].append(fileparts['start_date'])
             entries['end_date'].append(fileparts['end_date'])
-            entries['year'].append(fileparts['year'])
-            entries['month'].append(fileparts['month'])
+            entries['start_year'].append(fileparts['start_year'])
+            entries['start_month'].append(fileparts['start_month'])
+            entries['end_year'].append(fileparts['end_year'])
+            entries['end_month'].append(fileparts['end_month'])
             entries['start_day'].append(fileparts['start_day'])
             entries['start_hour'].append(fileparts['start_hour'])
             entries['end_day'].append(fileparts['end_day'])
@@ -134,9 +136,10 @@ class ERA5Collection(Collection):
             'grid',
             'start_date',
             'end_date',
-            'year',
-            'month',
-            'start_day',
+            'start_year',
+            'end_year',
+            'start_month',
+            'end_month' 'start_day',
             'start_hour',
             'end_day',
             'end_hour',
@@ -173,20 +176,24 @@ class ERA5Collection(Collection):
         start_time = time_ranges[0]
         end_time = time_ranges[1]
         if len(start_time) == 10:
-            year = start_time[0:4]
-            month = start_time[4:6]
+            start_year = start_time[0:4]
+            start_month = start_time[4:6]
             start_day = start_time[6:8]
             start_hour = start_time[8:]
-            fileparts['start_date'] = '-'.join([year, month, start_day])
-            fileparts['year'] = int(year)
-            fileparts['month'] = int(month)
+            fileparts['start_date'] = '-'.join([start_year, start_month, start_day])
+            fileparts['start_year'] = int(start_year)
+            fileparts['start_month'] = int(start_month)
             fileparts['start_day'] = int(start_day)
             fileparts['start_hour'] = int(start_hour)
 
         if len(end_time) == 10:
+            end_year = end_time[0:4]
+            end_month = end_time[4:6]
             end_day = end_time[6:8]
             end_hour = end_time[8:]
-            fileparts['end_date'] = '-'.join([year, month, end_day])
+            fileparts['end_date'] = '-'.join([end_year, end_month, end_day])
+            fileparts['end_year'] = int(end_year)
+            fileparts['end_month'] = int(end_month)
             fileparts['end_day'] = int(end_day)
             fileparts['end_hour'] = int(end_hour)
 
