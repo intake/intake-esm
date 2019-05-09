@@ -97,7 +97,14 @@ class ERA5Collection(Collection):
             entries['resource'].append(resource_key)
             entries['resource_type'].append(resource_type)
             entries['direct_access'].append(direct_access)
-            entries['time_range'].append(fileparts['time_range'])
+            entries['start_date'].append(fileparts['start_date'])
+            entries['end_date'].append(fileparts['end_date'])
+            entries['year'].append(fileparts['year'])
+            entries['month'].append(fileparts['month'])
+            entries['start_day'].append(fileparts['start_day'])
+            entries['start_hour'].append(fileparts['start_hour'])
+            entries['end_day'].append(fileparts['end_day'])
+            entries['end_hour'].append(fileparts['end_hour'])
             entries['local_table'].append(fileparts['local_table'])
             entries['stream'].append(fileparts['stream'])
             entries['level_type'].append(fileparts['level_type'])
@@ -115,37 +122,75 @@ class ERA5Collection(Collection):
     def _get_filename_parts(self, filename):
         """ Get file attributes from filename """
         fs = filename.split('.')
-        keys = {}
-        keys['stream'] = fs[1]
-        keys['data_type'] = fs[2]
-        if keys['data_type'] == 'invariant':
-            keys['level_type'] = None
+
+        keys = [
+            'stream',
+            'data_type',
+            'level_type',
+            'parameter_type',
+            'parameter_id',
+            'parameter_short_name',
+            'local_table',
+            'grid',
+            'start_date',
+            'end_date',
+            'year',
+            'month',
+            'start_day',
+            'start_hour',
+            'end_day',
+            'end_hour',
+            'grid',
+        ]
+
+        fileparts = {key: None for key in keys}
+
+        fileparts['stream'] = fs[1]
+        fileparts['data_type'] = fs[2]
+        if fileparts['data_type'] == 'invariant':
+            fileparts['level_type'] = None
         else:
-            keys['level_type'] = fs[3]
+            fileparts['level_type'] = fs[3]
 
-        if keys['data_type'] == 'an':
-            keys['parameter_type'] = 'instan'
+        if fileparts['data_type'] == 'an':
+            fileparts['parameter_type'] = 'instan'
 
-        elif keys['data_type'] == 'fc':
-            keys['parameter_type'] = fs[4]
+        elif fileparts['data_type'] == 'fc':
+            fileparts['parameter_type'] = fs[4]
 
         else:
-            keys['parameter_type'] = None
+            fileparts['parameter_type'] = None
 
         ecmwf_params = fs[-4].split('_')
         if len(ecmwf_params) == 3:
-            keys['local_table'] = ecmwf_params[0]
-            keys['parameter_id'] = ecmwf_params[1]
-            keys['parameter_short_name'] = ecmwf_params[2]
+            fileparts['local_table'] = ecmwf_params[0]
+            fileparts['parameter_id'] = ecmwf_params[1]
+            fileparts['parameter_short_name'] = ecmwf_params[2]
 
-        else:
-            keys['local_table'] = None
-            keys['parameter_id'] = None
-            keys['parameter_short_name'] = None
+        fileparts['grid'] = fs[-3]
+        time_range = fs[-2].replace('_', '-')
+        time_ranges = time_range.split('-')
+        start_time = time_ranges[0]
+        end_time = time_ranges[1]
+        if len(start_time) == 10:
+            year = start_time[0:4]
+            month = start_time[4:6]
+            start_day = start_time[6:8]
+            start_hour = start_time[8:]
+            fileparts['start_date'] = '-'.join([year, month, start_day])
+            fileparts['year'] = int(year)
+            fileparts['month'] = int(month)
+            fileparts['start_day'] = int(start_day)
+            fileparts['start_hour'] = int(start_hour)
 
-        keys['grid'] = fs[-3]
-        keys['time_range'] = fs[-2].replace('_', '-')
-        return keys
+        if len(end_time) == 10:
+            end_day = end_time[6:8]
+            end_hour = end_time[8:]
+            fileparts['end_date'] = '-'.join([year, month, end_day])
+            fileparts['end_day'] = int(end_day)
+            fileparts['end_hour'] = int(end_hour)
+
+        return fileparts
 
 
 class ERA5Source(BaseSource):

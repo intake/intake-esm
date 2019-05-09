@@ -215,7 +215,14 @@ collections:
       - file_fullpath
       - file_basename
       - file_dirname
-      - time_range
+      - start_date
+      - end_date
+      - year
+      - month
+      - start_day
+      - start_hour
+      - end_day
+      - end_hour
       - grid
     required_columns:
       - data_type
@@ -223,6 +230,8 @@ collections:
       - stream
       - file_fullpath
     order_by_columns:
+      - year
+      - month
       - level_type
       - data_type
       - file_fullpath
