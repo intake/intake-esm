@@ -23,7 +23,7 @@ def test_build_collection():
 def test_search():
     with config.set({'database-directory': './tests/test_collections'}):
         col = intake.open_esm_metadatastore(collection_name='era5_test')
-        cat = col.search(grid=['regn320sc'], year=2015, month=5)
+        cat = col.search(grid=['regn320sc'], start_year=[2015, 2005], start_month=[5, 6])
 
         assert isinstance(cat.query_results, pd.DataFrame)
         assert not cat.query_results.empty
