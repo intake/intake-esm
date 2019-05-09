@@ -208,10 +208,10 @@ collections:
       - local_table
       - stream
       - level_type
-      - data_type
-      - parameter_id
-      - parameter_type
-      - parameter_short_name
+      - product_type
+      - variable_id
+      - variable_type
+      - variable_short_name
       - file_fullpath
       - file_basename
       - file_dirname
@@ -227,7 +227,7 @@ collections:
       - end_hour
       - grid
     required_columns:
-      - data_type
+      - product_type
       - level_type
       - stream
       - file_fullpath
@@ -235,7 +235,7 @@ collections:
       - start_year
       - start_month
       - level_type
-      - data_type
+      - product_type
       - file_fullpath
 default_chunk_size: 128MiB
 data_cache_directory: $TMPDIR/.intake_esm/data_cache

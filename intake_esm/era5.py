@@ -74,7 +74,7 @@ class ERA5Collection(Collection):
         self.df = self.df[self.columns]
 
         # Remove inconsistent rows and duplicates
-        self.df = self.df[~self.df['parameter_id'].isna()]
+        self.df = self.df[~self.df['variable_id'].isna()]
         self.df = self.df.drop_duplicates(
             subset=['resource', 'file_fullpath'], keep='last'
         ).reset_index(drop=True)
@@ -110,10 +110,10 @@ class ERA5Collection(Collection):
             entries['local_table'].append(fileparts['local_table'])
             entries['stream'].append(fileparts['stream'])
             entries['level_type'].append(fileparts['level_type'])
-            entries['data_type'].append(fileparts['data_type'])
-            entries['parameter_id'].append(fileparts['parameter_id'])
-            entries['parameter_type'].append(fileparts['parameter_type'])
-            entries['parameter_short_name'].append(fileparts['parameter_short_name'])
+            entries['product_type'].append(fileparts['product_type'])
+            entries['variable_id'].append(fileparts['variable_id'])
+            entries['variable_type'].append(fileparts['variable_type'])
+            entries['variable_short_name'].append(fileparts['variable_short_name'])
             entries['grid'].append(fileparts['grid'])
             entries['file_basename'].append(basename)
             entries['file_dirname'].append(os.path.dirname(f) + '/')
@@ -127,11 +127,11 @@ class ERA5Collection(Collection):
 
         keys = [
             'stream',
-            'data_type',
+            'product_type',
             'level_type',
-            'parameter_type',
-            'parameter_id',
-            'parameter_short_name',
+            'variable_type',
+            'variable_id',
+            'variable_short_name',
             'local_table',
             'grid',
             'start_date',
@@ -150,26 +150,26 @@ class ERA5Collection(Collection):
         fileparts = {key: None for key in keys}
 
         fileparts['stream'] = fs[1]
-        fileparts['data_type'] = fs[2]
-        if fileparts['data_type'] == 'invariant':
+        fileparts['product_type'] = fs[2]
+        if fileparts['product_type'] == 'invariant':
             fileparts['level_type'] = None
         else:
             fileparts['level_type'] = fs[3]
 
-        if fileparts['data_type'] == 'an':
-            fileparts['parameter_type'] = 'instan'
+        if fileparts['product_type'] == 'an':
+            fileparts['variable_type'] = 'instan'
 
-        elif fileparts['data_type'] == 'fc':
-            fileparts['parameter_type'] = fs[4]
+        elif fileparts['product_type'] == 'fc':
+            fileparts['variable_type'] = fs[4]
 
         else:
-            fileparts['parameter_type'] = None
+            fileparts['variable_type'] = None
 
         ecmwf_params = fs[-4].split('_')
         if len(ecmwf_params) == 3:
             fileparts['local_table'] = ecmwf_params[0]
-            fileparts['parameter_id'] = ecmwf_params[1]
-            fileparts['parameter_short_name'] = ecmwf_params[2]
+            fileparts['variable_id'] = ecmwf_params[1]
+            fileparts['variable_short_name'] = ecmwf_params[2]
 
         fileparts['grid'] = fs[-3]
         time_range = fs[-2].replace('_', '-')
