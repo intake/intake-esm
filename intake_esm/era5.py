@@ -207,8 +207,14 @@ class ERA5Source(BaseSource):
         """
         Notes
         -----
-        - data variables are uppercase in the netCDF files.
+        - netCDF variables names are uppercase in netCDF files.
+        - netCDF variables names that could conceivably begin with digit, say '10U',
+          the actual netCDF variable name will be VAR_10U.
+          In ECMWF reanalysis, there about a half dozen such names beginning with digits.
+          '10fg', '10v', '2d', '2t', '10u', '100u', '100v'
+
         """
+
         kwargs = self._validate_kwargs(self.kwargs)
         dataset_fields = ['product_type']
         variable_column_name = 'variable_short_name'
@@ -228,8 +234,12 @@ class ERA5Source(BaseSource):
             chunks = kwargs['chunks']
             chunks[new_time_coord_name] = chunks.pop(kwargs['time_coord_name'])
             var_dsets = []
-            for v_id, v_files in p_files.groupby(variable_column_name):
+            for v_id, v_files in tqdm(p_files.groupby(variable_column_name), desc='variable'):
                 urlpath_ei_vi = v_files[file_fullpath_column_name].tolist()
+
+                if v_id[0].isdigit():
+                    v_id = 'var_' + v_id
+
                 dsets = [
                     aggregate.open_dataset_delayed(
                         url,
