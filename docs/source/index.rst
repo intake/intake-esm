@@ -4,7 +4,7 @@ Intake-esm
 
 
 `Intake-esm` provides functionality to build and load `intake <https://intake.readthedocs.io/en/latest/>`_ catalogs
-for earth system data holdings produced by projects such as CMIP, CESM Large ensemble.
+for earth system data holdings produced by projects such as CMIP, CESM.
 
 
 Feedback
@@ -24,6 +24,7 @@ please open an issue at the GitHub `main repository <http://github.com/NCAR/inta
    notebooks/cesm.ipynb
    notebooks/mpige.ipynb
    notebooks/gmet.ipynb
+   notebooks/era5.ipynb
    api
    contributing
    changelog

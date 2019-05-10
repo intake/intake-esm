@@ -1,0 +1,9 @@
+name: era5_test
+collection_type: era5
+data_sources:
+  v2_landmask:
+    locations:
+      - name: ERA-TEST-LIST
+        loc_type: input-file
+        direct_access: False
+        urlpath: ./tests/era5_filelist.txt

@@ -180,13 +180,13 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
         if self.query_results.empty:
             raise ValueError(f'Query={self.query} returned empty results')
         if 'decode_times' not in _kwargs.keys():
-            _kwargs.update(decode_times=False)
+            _kwargs.update(decode_times=True)
         if 'time_coord_name' not in _kwargs.keys():
             _kwargs.update(time_coord_name='time')
         if 'ensemble_dim_name' not in _kwargs.keys():
             _kwargs.update(ensemble_dim_name='member_id')
         if 'chunks' not in _kwargs.keys():
-            _kwargs.update(chunks={'time': 'auto'})
+            _kwargs.update(chunks={_kwargs['time_coord_name']: 'auto'})
         if 'join' not in _kwargs.keys():
             _kwargs.update(join='outer')
         if 'preprocess' not in _kwargs.keys():
