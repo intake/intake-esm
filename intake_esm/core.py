@@ -81,7 +81,7 @@ class ESMMetadataStoreCatalog(Catalog):
             input_collection = definition.copy()
 
         elif os.path.exists(definition):
-            with open(definition) as f:
+            with open(os.path.abspath(definition)) as f:
                 input_collection = yaml.safe_load(f)
 
         name = input_collection.get('name', None)
