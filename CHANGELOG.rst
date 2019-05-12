@@ -11,8 +11,8 @@ Features
 
 - Add implementation for The Gridded Meteorological Ensemble Tool (GMET) data holdings (:pr:`61`) `Anderson Banihirwe`_
 - Allow users to specify exclude_dirs for CMIP collections (:pr:`63`) & (:issue:`62`) `Anderson Banihirwe`_
-- Keep CMIP6 ``tracking_id`` in merge_keys (:pr: `67`) `Anderson Banihirwe`_
-- Add implementation for ERA5 datasets (:pr: `68`) `Anderson Banihirwe`_
+- Keep CMIP6 ``tracking_id`` in merge_keys (:pr:`67`) `Anderson Banihirwe`_
+- Add implementation for ERA5 datasets (:pr:`68`) `Anderson Banihirwe`_
 
 
 Intake-esm v2019.4.26 (2019-04-26)
