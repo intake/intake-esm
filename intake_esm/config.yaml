@@ -230,6 +230,36 @@ collections:
       - level_type
       - product_type
       - file_fullpath
+  cafe:
+    collection_columns:
+      - direct_access
+      - file_basename
+      - file_dirname
+      - file_fullpath
+      - forecast_initial_date
+      - forecast_initial_hour
+      - grid
+      - level_type
+      - local_table
+      - product_type
+      - reanalysis_day
+      - reanalysis_month
+      - reanalysis_year
+      - resource
+      - resource_type
+      - stream
+      - variable_id
+      - variable_short_name
+      - variable_type
+    required_columns:
+      - product_type
+      - level_type
+      - stream
+      - file_fullpath
+    order_by_columns:
+      - level_type
+      - product_type
+      - file_fullpath
 default_chunk_size: 128MiB
 data_cache_directory: $TMPDIR/.intake_esm/data_cache
 database_directory: ~/.intake_esm/collections
@@ -240,3 +270,4 @@ sources:
   mpige: intake_esm.mpige.MPIGESource
   gmet: intake_esm.gmet.GMETSource
   era5: intake_esm.era5.ERA5Source
+  cafe: intake_esm.cafe.CAFESource

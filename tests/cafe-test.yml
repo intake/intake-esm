@@ -1,0 +1,9 @@
+name: cafe_test
+collection_type: cafe
+data_sources:
+  v2_landmask:
+    locations:
+      - name: CAFE-TEST-LIST
+        loc_type: input-file
+        direct_access: False
+        urlpath: ./tests/cafe_filelist.txt

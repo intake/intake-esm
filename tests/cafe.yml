@@ -1,0 +1,10 @@
+name: cafe
+collection_type: cafe
+data_sources:
+  RDA-GLADE:
+    locations:
+      - name: RDA-ERA5
+        loc_type: posix
+        direct_access: True
+        urlpath: /glade/collections/rda/data/ds630.0
+        file_extension: '.nc'
