@@ -110,7 +110,7 @@ class CAFECollection(Collection):
             entries['file_basename'].append(basename)
             entries['file_dirname'].append(os.path.dirname(f) + '/')
             entries['file_fullpath'].append(f)
-        
+
         return pd.DataFrame(entries)
 
     def _get_filename_parts(self, filename):
