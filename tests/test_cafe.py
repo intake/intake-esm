@@ -24,7 +24,9 @@ def test_search():
     with config.set({'database-directory': './tests/test_collections'}):
         col = intake.open_esm_metadatastore(collection_name='cafe_test')
         cat = col.search(
-            variable_short_name=['mn2t', 'mx2t'], forecast_initial_date=['2002-02-01', '2002-02-16']
+            frequency='day',
+            variable_short_name=['ucomp', 'wt'], 
+            start_date=['1988-03-01', ]
         )
 
         assert isinstance(cat.query_results, pd.DataFrame)

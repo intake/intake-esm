@@ -81,15 +81,12 @@ class CAFECollection(Collection):
         self.df = self.df[self.columns]
 
         # Remove inconsistent rows and duplicates
-        self.df = self.df[~self.df['variable_id'].isna()]  # CHANGE ME?
         self.df = self.df.drop_duplicates(
-            subset=['resource', 'file_fullpath'], keep='last'
+            subset=['product_type', 'file_fullpath'], keep='last'
         ).reset_index(drop=True)
 
     def _assemble_collection_df_files(self, resource_key, resource_type, direct_access, filelist):
         """ Assemble file listing into a Pandas DataFrame."""
-
-        ## NEEDS TO CHANGE
 
         entries = {key: [] for key in self.columns}
 
@@ -100,32 +97,19 @@ class CAFECollection(Collection):
         for f in filelist:
             try:
                 basename = os.path.basename(f)
-                #fileparts = self._get_filename_parts(basename)
-                # if we need to extract meta data from the path as well as the basename
-                fileparts = self._get_filename_parts(f)
+                fileparts = self._get_filename_parts(basename)
             except Exception:
                 continue
 
-            entries['resource'].append(resource_key)
-            entries['resource_type'].append(resource_type)
-            entries['direct_access'].append(direct_access)
-            # entries['local_table'].append(fileparts['local_table'])
-            # entries['stream'].append(fileparts['stream'])
-            # entries['level_type'].append(fileparts['level_type'])
-            # entries['product_type'].append(fileparts['product_type'])
-            #entries['variable_id'].append(fileparts['variable_id'])
-            #entries['variable_type'].append(fileparts['variable_type'])
-            #entries['variable_short_name'].append(fileparts['variable_short_name'])
-            #entries['forecast_initial_date'].append(fileparts['forecast_initial_date'])
-            #entries['forecast_initial_hour'].append(fileparts['forecast_initial_hour'])
-            #entries['reanalysis_month'].append(fileparts['reanalysis_month'])
-            #entries['reanalysis_year'].append(fileparts['reanalysis_year'])
-            #entries['reanalysis_day'].append(fileparts['reanalysis_day'])
-            #entries['grid'].append(fileparts['grid'])
-            #entries['file_basename'].append(basename)
-            #entries['file_dirname'].append(os.path.dirname(f) + '/')
-            #entries['file_fullpath'].append(f)
-#
+            entries['variable_short_name'].append(fileparts['variable_short_name'])
+            entries['realm'].append(fileparts['realm'])
+            entries['frequency'].append(fileparts['frequency'])
+            entries['product_type'].append(fileparts['product_type'])
+            entries['start_date'].append(fileparts['start_date'])
+            entries['end_date'].append(fileparts['end_date'])
+            entries['file_basename'].append(basename)
+            entries['file_dirname'].append(os.path.dirname(f) + '/')
+            entries['file_fullpath'].append(f)
         
         return pd.DataFrame(entries)
 
@@ -133,77 +117,26 @@ class CAFECollection(Collection):
         """ Get file attributes from filename """
         fs = filename.split('.')
 
-        ## WRITE CODE TO SPLIT OUT METADATA FROM PATH
-
         keys = [
-            'forecast_initial_date',
-            'forecast_initial_hour',
-            'grid',
-            'level_type',
-            'local_table',
-            'product_type',
-            'reanalysis_day',
-            'reanalysis_month',
-            'reanalysis_year',
-            'stream',
-            'variable_id',
             'variable_short_name',
-            'variable_type',
+            'realm',
+            'frequency',
+            'product_type',
+            'start_date',
+            'end_date',
         ]
 
         fileparts = {key: None for key in keys}
 
-        fileparts['stream'] = fs[1]
-        if fs[2] == 'an':
-            fileparts['product_type'] = 'reanalysis'
+        fileparts['variable_short_name'] = fs[0]
+        fileparts['realm'] = fs[1]
+        fileparts['frequency'] = fs[2]
+        fileparts['product_type'] = fs[3]
 
-        elif fs[2] == 'fc':
-            fileparts['product_type'] = 'forecast'
-
-        else:
-            fileparts['product_type'] = fs[2]
-
-        if fileparts['product_type'] == 'invariant':
-            fileparts['level_type'] = None
-
-        else:
-            fileparts['level_type'] = fs[3]
-
-        if fileparts['product_type'] == 'reanalysis':
-            fileparts['variable_type'] = 'instan'
-
-        elif fileparts['product_type'] == 'forecast':
-            fileparts['variable_type'] = fs[4]
-
-        else:
-            fileparts['variable_type'] = None
-
-        ecmwf_params = fs[-4].split('_')
-        if len(ecmwf_params) == 3:
-            fileparts['local_table'] = ecmwf_params[0]
-            fileparts['variable_id'] = ecmwf_params[1]
-            fileparts['variable_short_name'] = ecmwf_params[2]
-
-        fileparts['grid'] = fs[-3]
-        time_ranges = fs[-2].replace('_', '-').split('-')
-        start_time = time_ranges[0]
-        if len(start_time) == 10:
-            start_year = str(start_time[0:4])
-            start_month = str(start_time[4:6])
-            start_day = str(start_time[6:8])
-            start_hour = str(start_time[8:]) + ':00'
-            start_date = '-'.join([start_year, start_month, start_day])
-            if fileparts['product_type'] == 'reanalysis':
-                fileparts['reanalysis_day'] = start_day
-                fileparts['reanalysis_month'] = start_month
-                fileparts['reanalysis_year'] = start_year
-
-            elif fileparts['product_type'] == 'forecast':
-                fileparts['forecast_initial_date'] = start_date
-                fileparts['forecast_initial_hour'] = start_hour
-
-            else:
-                pass
+        # fs[4] is YYYYMMDD-YYYYMMDD
+        s, e = fs[4].split('-')
+        fileparts['start_date'] = f'{s[:4]}-{s[4:6]}-{s[6:8]}'
+        fileparts['end_date'] = f'{e[:4]}-{e[4:6]}-{e[6:8]}'
 
         return fileparts
 
