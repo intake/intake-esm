@@ -6,11 +6,11 @@ from intake.catalog import Catalog
 from intake.catalog.local import LocalCatalogEntry
 
 from . import config as config
+from .cafe import CAFECollection
 from .cesm import CESMCollection
 from .cmip import CMIP5Collection, CMIP6Collection
 from .common import _get_built_collections, _open_collection
 from .era5 import ERA5Collection
-from .cafe import CAFECollection
 from .gmet import GMETCollection
 from .mpige import MPIGECollection
 
