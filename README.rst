@@ -31,6 +31,7 @@ Intake-esm supports data holdings from the following projects:
 - MPI-GE: The Max Planck Institute for Meteorology (MPI-M) Grand Ensemble (MPI-GE)
 - GMET: The Gridded Meteorological Ensemble Tool data
 - ERA5: ECWMF ERA5 Reanalysis dataset stored on NCAR's GLADE in ``/glade/collections/rda/data/ds630.0``
+- CAFE: CSIRO Decadal Climate Forecasting
 
 See documentation_ for more information.
 
