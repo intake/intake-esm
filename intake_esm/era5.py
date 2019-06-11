@@ -15,9 +15,8 @@ from .source import BaseSource
 class ERA5Collection(Collection):
 
     __doc__ = docstrings.with_indents(
-        """ Builds an  ECWMF ERA5 Reanalysis collection
-        for data stored on NCAR's GLADE in
-        `/glade/collections/rda/data/ds630.0`
+        """ Builds an ECWMF ERA5 Reanalysis collection for data
+        stored on NCAR's GLADE in ``/glade/collections/rda/data/ds630.0``.
     %(Collection.parameters)s
     """
     )
