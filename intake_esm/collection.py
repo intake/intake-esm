@@ -93,7 +93,7 @@ class Collection(ABC):
                 )
 
                 df_files[res_key] = self._add_extra_attributes(
-                    df_files[res_key], extra_attrs=data_source_attrs['extra_attributes']
+                    df_files[res_key], extra_attrs=data_source_attrs.get('extra_attributes', {})
                 )
 
         self.df = self._finalize_build(df_files)
@@ -125,7 +125,7 @@ class Collection(ABC):
         return pd.DataFrame(entries)
 
     @abstractclassmethod
-    def _get_file_attrs(self, filepath, **kwargs):
+    def _get_file_attrs(self, filepath):
         """Extract attributes from file path
 
         """

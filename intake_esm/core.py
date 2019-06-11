@@ -7,6 +7,7 @@ from intake.catalog.local import LocalCatalogEntry
 
 from . import config as config
 from .collection import _get_built_collections, _open_collection
+from .era5 import ERA5Collection
 from .gmet import GMETCollection
 
 
@@ -39,7 +40,7 @@ class ESMMetadataStoreCatalog(Catalog):
         # 'cmip6': CMIP6Collection,
         # 'mpige': MPIGECollection,
         'gmet': GMETCollection,
-        # 'era5': ERA5Collection,
+        'era5': ERA5Collection,
     }
 
     def __init__(
