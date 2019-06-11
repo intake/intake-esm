@@ -134,6 +134,9 @@ collections:
       - yasso_mm
   cmip5:
     collection_columns:
+    - resource
+    - resource_type
+    - direct_access
     - activity
     - ensemble_member
     - experiment
@@ -159,6 +162,9 @@ collections:
       - file_fullpath
   cmip6:
     collection_columns:
+    - resource
+    - resource_type
+    - direct_access
     - activity_id
     - experiment_id
     - file_basename

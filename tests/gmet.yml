@@ -8,6 +8,9 @@ data_sources:
         direct_access: True
         urlpath: /glade/p/ral/hap/anewman/conus_v1p2/eighth/v1_landmask/
         exclude_dirs: ['*/mean/*', '*/summary_files/*']
+        file_extension: .nc4
+    extra_attributes:
+      version: v1
   v2_landmask:
     locations:
       - name: GMET_V2
@@ -15,3 +18,6 @@ data_sources:
         direct_access: True
         urlpath: /glade/p/ral/hap/anewman/conus_v1p2/eighth/v2_landmask/
         exclude_dirs: ['*/mean/*', '*/summary_files/*']
+        file_extension: .nc4
+    extra_attributes:
+      version: v2

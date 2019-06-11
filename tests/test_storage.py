@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from intake_esm.common import StorageResource, _open_collection
+from intake_esm.storage import StorageResource
 
 here = os.path.abspath(os.path.dirname(__file__))
 
