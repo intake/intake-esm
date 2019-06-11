@@ -21,25 +21,11 @@ class ERA5Collection(Collection):
     """
     )
 
-    def _get_file_attrs(self, filepath, **kwargs):
+    def _get_file_attrs(self, filepath):
         file_basename = os.path.basename(filepath)
         fs = file_basename.split('.')
 
-        keys = [
-            'forecast_initial_date',
-            'forecast_initial_hour',
-            'grid',
-            'level_type',
-            'local_table',
-            'product_type',
-            'reanalysis_day',
-            'reanalysis_month',
-            'reanalysis_year',
-            'stream',
-            'variable_id',
-            'variable_short_name',
-            'variable_type',
-        ]
+        keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
 
         fileparts = {key: None for key in keys}
         fileparts['file_basename'] = file_basename

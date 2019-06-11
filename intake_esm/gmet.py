@@ -26,25 +26,29 @@ class GMETCollection(Collection):
 
     def _get_file_attrs(self, filepath):
         file_basename = os.path.basename(filepath)
-        datestr = datestr = GMETCollection._extract_date_str(filepath)
+        datestr = GMETCollection._extract_date_str(filepath)
+
+        keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
+
+        fileparts = {key: None for key in keys}
+        fileparts['file_basename'] = file_basename
+        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
+        fileparts['file_fullpath'] = filepath
 
         if datestr != '00000000_00000000':
             s = file_basename.split(datestr)
             part_1 = s[0].rstrip('_').split('_')
             part_2 = s[1].lstrip('_').split('.')
-            return {
-                'frequency': part_1[-2],
-                'resolution': part_1[-1],
-                'member_id': part_2[0],
-                'time_range': datestr.replace('_', '-'),
-                'file_basename': file_basename,
-                'file_dirname': os.path.dirname(filepath) + '/',
-                'file_fullpath': filepath,
-            }
+
+            fileparts['frequency'] = part_1[-2]
+            fileparts['resolution'] = part_1[-1]
+            fileparts['member_id'] = part_2[0]
+            fileparts['time_range'] = datestr.replace('_', '-')
 
         else:
             print(f'Could not identify GMET fileparts for : {filepath}')
-            return None
+
+        return fileparts
 
     @staticmethod
     def _extract_date_str(filename):
