@@ -20,7 +20,7 @@ class GMETCollection(Collection):
     """
     )
 
-    def _add_extra_attributes(self, df, extra_attrs):
+    def _add_extra_attributes(self, data_source, df, extra_attrs):
         df['version'] = extra_attrs['version']
         return df
 

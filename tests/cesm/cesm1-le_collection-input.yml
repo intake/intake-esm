@@ -15,7 +15,7 @@ data_sources:
       case_members:
         - case: b.e11.B1850C5CN.f09_g16.005
           sequence_order: 0
-          ensemble: 0
+          ensemble: 5
           has_ocean_bgc: True
           year_offset: 1448
   20C:

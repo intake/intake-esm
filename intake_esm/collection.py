@@ -64,17 +64,25 @@ class Collection(ABC):
         """ Main method for looping through data sources and building
             a collection catalog.
         """
+        dfs = {}
         data_sources = self.collection_spec['data_sources'].items()
         for data_source, data_source_attrs in data_sources:
             print(f'Working on data source: {data_source}')
-            self.assemble_file_list(data_source, data_source_attrs, self.exclude_patterns)
+            df_i = self.assemble_file_list(data_source, data_source_attrs, self.exclude_patterns)
+            dfs.update(df_i)
+
+        self.df = self._finalize_build(dfs)
+        print(self.df.info())
+        self.persist_db_file()
 
     def assemble_file_list(self, data_source, data_source_attrs, exclude_patterns=[]):
         """ Assemble file listing for data sources into Pandas dataframes.
         """
         df_files = {}
         for location in data_source_attrs['locations']:
-            res_key = ':'.join([location['name'], location['loc_type'], location['urlpath']])
+            res_key = ':'.join(
+                [data_source, location['name'], location['loc_type'], location['urlpath']]
+            )
             if res_key not in df_files:
                 print(f'Getting file listing: {res_key}')
 
@@ -91,16 +99,20 @@ class Collection(ABC):
                     direct_access=location['direct_access'],
                     filelist=resource.filelist,
                 )
-
                 df_files[res_key] = self._add_extra_attributes(
-                    df_files[res_key], extra_attrs=data_source_attrs.get('extra_attributes', {})
+                    data_source,
+                    df_files[res_key],
+                    extra_attrs=data_source_attrs.get('extra_attributes', {}),
                 )
 
-        self.df = self._finalize_build(df_files)
-        print(self.df.info())
-        self.persist_db_file()
+        return df_files
 
-    def _add_extra_attributes(self, df_files_entry, extra_attrs={}):
+    def _add_extra_attributes(self, data_source, df_files_entry, extra_attrs):
+        """ Add extra attributes to individual data sources.
+
+        Subclasses should override this method with a custom implementation.
+
+        """
         return df_files_entry
 
     def _assemble_collection_df_files(self, resource_key, resource_type, direct_access, filelist):

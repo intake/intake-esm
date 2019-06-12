@@ -6,6 +6,7 @@ from intake.catalog import Catalog
 from intake.catalog.local import LocalCatalogEntry
 
 from . import config as config
+from .cesm import CESMCollection
 from .collection import _get_built_collections, _open_collection
 from .era5 import ERA5Collection
 from .gmet import GMETCollection
@@ -35,7 +36,7 @@ class ESMMetadataStoreCatalog(Catalog):
 
     name = 'esm_metadatastore'
     collection_types = {
-        # 'cesm': CESMCollection,
+        'cesm': CESMCollection,
         # 'cmip5': CMIP5Collection,
         # 'cmip6': CMIP6Collection,
         # 'mpige': MPIGECollection,
