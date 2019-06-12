@@ -7,8 +7,8 @@ from intake_esm.storage import StorageResource
 here = os.path.abspath(os.path.dirname(__file__))
 
 
-def test_storage_resource_init():
-    input_file = os.path.join(here, 'intake-cesm-test-filelist')
+def test_storage_input_file():
+    input_file = os.path.join(here, 'input-filelist-test.txt')
     urlpath = input_file
     type_ = 'input-file'
     exclude_dirs = ['*/avoid-this-dir/*']
@@ -16,4 +16,6 @@ def test_storage_resource_init():
 
     SR = StorageResource(urlpath, type_, exclude_dirs, file_extension)
     assert isinstance(SR, StorageResource)
-    assert isinstance(SR._list_files_input_file(), list)
+    files = SR._list_files_input_file()
+    assert isinstance(files, list)
+    assert len(files) == 5
