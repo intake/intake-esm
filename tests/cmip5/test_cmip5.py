@@ -22,17 +22,27 @@ def test_build_collection_file():
 def test_build_collection_dict():
     with config.set({'database-directory': './tests/test_collections'}):
         collection_definition = {
-            'name': 'cmip5_test_collection',
             'collection_type': 'cmip5',
             'data_sources': {
-                'root_dir': {
-                    'name': 'GLADE',
-                    'loc_type': 'posix',
-                    'direct_access': True,
-                    'urlpath': './tests/sample_data/cmip/cmip5',
-                    'exclude_dirs': ['*/files/*', 'latest'],
+                'BNU-ESM': {
+                    'extra_attributes': {
+                        'activity': 'CMIP5',
+                        'institute': 'BNU',
+                        'product': 'output1',
+                    },
+                    'locations': [
+                        {
+                            'direct_access': True,
+                            'exclude_dirs': ['*/files/*', 'latest'],
+                            'file_extension': '.nc',
+                            'loc_type': 'posix',
+                            'name': 'SAMPLE-DATA',
+                            'urlpath': './tests/sample_data/cmip/cmip5/output1/BNU/BNU-ESM',
+                        }
+                    ],
                 }
             },
+            'name': 'cmip5_test_dict_collection',
         }
         col = intake.open_esm_metadatastore(
             collection_input_definition=collection_definition, overwrite_existing=True
