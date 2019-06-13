@@ -20,14 +20,8 @@ class GMETCollection(Collection):
     """
     )
 
-    def _add_extra_attributes(self, data_source, df, extra_attrs):
-        df['version'] = extra_attrs['version']
-        return df
-
     def _get_file_attrs(self, filepath):
         file_basename = os.path.basename(filepath)
-        datestr = GMETCollection._extract_date_str(filepath)
-
         keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
 
         fileparts = {key: None for key in keys}
@@ -35,7 +29,10 @@ class GMETCollection(Collection):
         fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
         fileparts['file_fullpath'] = filepath
 
-        if datestr != '00000000_00000000':
+        date_str_regex = r'\d{8}\_\d{8}'
+        datestr = GMETCollection._extract_attr_with_regex(filepath, regex=date_str_regex)
+
+        if datestr:
             s = file_basename.split(datestr)
             part_1 = s[0].rstrip('_').split('_')
             part_2 = s[1].lstrip('_').split('.')
@@ -45,22 +42,7 @@ class GMETCollection(Collection):
             fileparts['member_id'] = part_2[0]
             fileparts['time_range'] = datestr.replace('_', '-')
 
-        else:
-            print(f'Could not identify GMET fileparts for : {filepath}')
-
         return fileparts
-
-    @staticmethod
-    def _extract_date_str(filename):
-        date_range = r'\d{8}\_\d{8}'
-        pattern = re.compile(date_range)
-        datestr = re.search(pattern, filename)
-        if datestr:
-            datestr = datestr.group()
-            return datestr
-        else:
-            print(f'Could not extract date string from : {filename}')
-            return '00000000_00000000'
 
 
 class GMETSource(BaseSource):
