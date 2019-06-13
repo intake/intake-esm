@@ -38,9 +38,10 @@ class CESMCollection(Collection):
         fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
         fileparts['file_fullpath'] = filepath
 
-        datestr = CESMCollection._extract_date_str(file_basename)
+        date_str_regex = r'\d{4}\-\d{4}|\d{6}\-\d{6}|\d{8}\-\d{8}'
+        datestr = CESMCollection._extract_attr_with_regex(file_basename, regex=date_str_regex)
 
-        if datestr != '00000000':
+        if datestr:
             fileparts['date_range'] = datestr
 
             for component, streams in self.component_streams.items():
@@ -132,31 +133,6 @@ class CESMCollection(Collection):
 
         res_df.replace(self.replacements, inplace=True)
         return res_df
-
-    @staticmethod
-    def _extract_date_str(filename):
-        """ Extract a date string from a file name.
-
-        Notes
-        -----
-
-        The following regex works for time-series files.
-        Support for history files will be added later.
-
-        daily data: yyyymmdd
-        monthly data: yyyymm
-        Yearly data: yyyy
-        """
-        regex = r'\d{4}\-\d{4}|\d{6}\-\d{6}|\d{8}\-\d{8}'
-        pattern = re.compile(regex)
-        datestr = re.search(pattern, filename)
-
-        if datestr:
-            datestr = datestr.group()
-            return datestr
-        else:
-            print(f'Could not extract date string from : {filename}')
-            return '00000000'
 
 
 class CESMSource(BaseSource):
