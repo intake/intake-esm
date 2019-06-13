@@ -11,6 +11,7 @@ from .cmip import CMIP5Collection, CMIP6Collection
 from .collection import _get_built_collections, _open_collection
 from .era5 import ERA5Collection
 from .gmet import GMETCollection
+from .mpige import MPIGECollection
 
 
 class ESMMetadataStoreCatalog(Catalog):
@@ -40,7 +41,7 @@ class ESMMetadataStoreCatalog(Catalog):
         'cesm': CESMCollection,
         'cmip5': CMIP5Collection,
         'cmip6': CMIP6Collection,
-        # 'mpige': MPIGECollection,
+        'mpige': MPIGECollection,
         'gmet': GMETCollection,
         'era5': ERA5Collection,
     }

@@ -38,7 +38,7 @@ class CESMCollection(Collection):
         fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
         fileparts['file_fullpath'] = filepath
 
-        date_str_regex = r'\d{4}\-\d{4}|\d{6}\-\d{6}|\d{8}\-\d{8}'
+        date_str_regex = r'\d{4}\-\d{4}|\d{6}\-\d{6}|\d{8}\-\d{8}|\d{10}\-\d{10}|\d{12}\-\d{12}'
         datestr = CESMCollection._extract_attr_with_regex(file_basename, regex=date_str_regex)
 
         if datestr:
@@ -96,9 +96,6 @@ class CESMCollection(Collection):
 
             if 'has_ocean_bgc' not in ensemble_attrs:
                 input_attrs_base.update({'has_ocean_bgc': False})
-
-            if 'ctrl_branch_year' not in ensemble_attrs:
-                input_attrs_base.update({'ctrl_branch_year': np.datetime64('NaT')})
 
             # Find entries relevant to *this* ensemble:
             # "case" matches
