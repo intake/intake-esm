@@ -1,4 +1,5 @@
 import os
+import re
 from abc import ABC, abstractclassmethod
 from glob import glob
 
@@ -107,13 +108,34 @@ class Collection(ABC):
 
         return df_files
 
-    def _add_extra_attributes(self, data_source, df_files_entry, extra_attrs):
+    def _add_extra_attributes(self, data_source, df, extra_attrs):
         """ Add extra attributes to individual data sources.
 
-        Subclasses should override this method with a custom implementation.
+        Subclasses can override this method with a custom implementation.
 
         """
-        return df_files_entry
+
+        if extra_attrs:
+            for key, value in extra_attrs.items():
+                df[key] = value
+        return df
+
+    @staticmethod
+    def _extract_attr_with_regex(input_str, regex, strip_chars=None):
+        pattern = re.compile(regex)
+        match = re.search(pattern, input_str)
+        if match:
+            match = match.group()
+            if strip_chars:
+                match = match.strip(strip_chars)
+
+            else:
+                match = match.strip()
+
+            return match
+
+        else:
+            return None
 
     def _assemble_collection_df_files(self, resource_key, resource_type, direct_access, filelist):
         entries = {key: [] for key in self.columns}

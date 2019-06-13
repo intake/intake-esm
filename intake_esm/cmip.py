@@ -64,28 +64,6 @@ class CMIP5Collection(Collection):
 
         return fileparts
 
-    def _add_extra_attributes(self, data_source, df, extra_attrs):
-        for key, value in extra_attrs.items():
-            df[key] = value
-        return df
-
-    @staticmethod
-    def _extract_attr_with_regex(input_str, regex, strip_chars=None):
-        pattern = re.compile(regex)
-        match = re.search(pattern, input_str)
-        if match:
-            match = match.group()
-            if strip_chars:
-                match = match.strip(strip_chars)
-
-            else:
-                match = match.strip()
-
-            return match
-
-        else:
-            return None
-
 
 class CMIP5Source(BaseSource):
     name = 'cmip5'
@@ -101,126 +79,64 @@ class CMIP5Source(BaseSource):
         )
 
 
-# class CMIP6Collection(Collection):
-#     """ Defines a CMIP6 collection
+class CMIP6Collection(Collection):
 
-#     Parameters
-#     ----------
-#     collection_spec : dict
+    __doc__ = docstrings.with_indents(
+        """ Builds a collection for CMIP6 data holdings.
+    %(Collection.parameters)s
+    """
+    )
 
-#     See Also
-#     --------
-#     intake_esm.core.ESMMetadataStoreCatalog
-#     intake_esm.cesm.CESMCollection
-#     intake_esm.cmip.CMIP5Collection
-#     """
+    def _get_file_attrs(self, filepath):
+        """ Extract attributes of a file using information from CMI6 DRS.
 
-#     def __init__(self, collection_spec):
-#         super(CMIP6Collection, self).__init__(collection_spec)
-#         self.root_dir = self.collection_spec['data_sources']['root_dir']['urlpath']
+        Notes
+        -----
+        References
+         1. CMIP6 DRS: http://goo.gl/v1drZl
+         2. Controlled Vocabularies (CVs) for use in CMIP6:
+            https://github.com/WCRP-CMIP/CMIP6_CVs
+        """
+        file_basename = os.path.basename(filepath)
+        keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
+        table_id_regex = r'3hr|6hrLev|6hrPlev|6hrPlevPt|AERday|AERhr|AERmon|AERmonZ|Amon|CF3hr|CFday|CFmon|CFsubhr|E1hr|E1hrClimMon|E3hr|E3hrPt|E6hrZ|Eday|EdayZ|Efx|Emon|EmonZ|Esubhr|Eyr|IfxAnt|IfxGre|ImonAnt|ImonGre|IyrAnt|IyrGre|LImon|Lmon|Oclim|Oday|Odec|Ofx|Omon|Oyr|SIday|SImon|day|fx'
+        time_range_regex = r'\d{4}\-\d{4}|\d{6}\-\d{6}|\d{8}\-\d{8}|\d{10}\-\d{10}|\d{12}\-\d{12}'
+        grid_label_regex = r'gm|gn|gna|gng|gnz|gr|gr1|gr1a|gr1g|gr1z|gr2|gr2a|gr2g|gr2z|gr3|gr3a|gr3g|gr3z|gr4|gr4a|gr4g|gr4z|gr5|gr5a|gr5g|gr5z|gr6|gr6a|gr6g|gr6z|gr7|gr7a|gr7g|gr7z|gr8|gr8a|gr8g|gr8z|gr9|gr9a|gr9g|gr9z|gra|grg|grz'
+        version_regex = r'v\d{4}\d{2}\d{2}'
 
-#     def build(self):
-#         """
-#         Builds CMIP6 collection and returns a pandas Dataframe
+        fileparts = {key: None for key in keys}
+        fileparts['file_basename'] = file_basename
+        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
+        fileparts['file_fullpath'] = filepath
 
-#         Notes
-#         -----
-#         Directory structure = <mip_era>/
-#                                 <activity_id>/
-#                                     <institution_id>/
-#                                         <source_id>/
-#                                             <experiment_id>/
-#                                                 <member_id>/
-#                                                     <table_id>/
-#                                                         <variable_id>/
-#                                                             <grid_label>/
-#                                                                 <version>
-#         With ``depth=9``, we retrieve all directories up to ``grid_label`` level
-#         Reference: CMIP6 DRS: http://goo.gl/v1drZl
-#         """
-#         self.build_cmip(depth=9)
+        f_split = file_basename.split('_')
+        fileparts['variable_id'] = f_split[0]
+        fileparts['source_id'] = f_split[2]
+        fileparts['experiment_id'] = f_split[3]
+        fileparts['member_id'] = f_split[4]
+        time_range = CMIP6Collection._extract_attr_with_regex(file_basename, regex=time_range_regex)
+        table_id = CMIP6Collection._extract_attr_with_regex(filepath, regex=table_id_regex)
+        grid_label = CMIP6Collection._extract_attr_with_regex(file_basename, regex=grid_label_regex)
+        version = CMIP6Collection._extract_attr_with_regex(filepath, regex=version_regex) or 'v0'
 
-#     def _get_entry(self, directory):
-#         try:
-#             entry = {}
-#             dir_split = directory.split('/')
-#             entry['mip_era'] = 'CMIP6'
-#             entry['activity_id'] = dir_split[-8]
-#             entry['institution_id'] = dir_split[-7]
-#             entry['source_id'] = dir_split[-6]
-#             entry['experiment_id'] = dir_split[-5]
-#             entry['member_id'] = dir_split[-4]
-#             entry['table_id'] = dir_split[-3]
-#             entry['variable_id'] = dir_split[-2]
-#             entry['grid_label'] = dir_split[-1]
-#             return entry
+        fileparts['table_id'] = table_id
+        fileparts['time_range'] = time_range
+        fileparts['grid_label'] = grid_label
+        fileparts['version'] = version
 
-#         except Exception:
-#             return {}
-
-#     @delayed
-#     def _parse_directory(self, directory, columns):
-#         exclude = set(self.exclude_dirs)
-#         time_range = r'\d{6}-\d{6}'
-#         time_range_regex = re.compile(time_range)
-#         df = pd.DataFrame(columns=columns)
-#         entry = self._get_entry(directory)
-#         if not entry:
-#             return df
-#         for root, dirs, files in os.walk(directory):
-#             dirs[:] = [d for d in dirs if d not in exclude]
-#             if not files:
-#                 continue
-#             sfiles = sorted([f for f in files if os.path.splitext(f)[1] == '.nc'])
-#             if not sfiles:
-#                 continue
-
-#             fs = []
-#             for f in sfiles:
-#                 entry_ = entry.copy()
-#                 try:
-#                     temporal_subset = f.split('_')[-1].split('.')[0]
-#                     match = time_range_regex.match(temporal_subset)
-#                     entry_['time_range'] = match.group() if match else 'fixed'
-#                     entry_['file_dirname'] = root
-#                     entry_['file_basename'] = f
-#                     entry_['file_fullpath'] = os.path.join(root, f)
-#                     fs.append(entry_)
-
-#                 except Exception:
-#                     print(f'Could not parse metadata info for file: {f}')
-#                     continue
-
-#             temp_df = pd.DataFrame(fs, columns=columns)
-#             df = pd.concat([temp_df, df], ignore_index=True, sort=False)
-
-#         return df
+        return fileparts
 
 
-# class CMIP5Source(BaseSource):
-#     name = 'cmip5'
-#     partition_access = True
+class CMIP6Source(BaseSource):
+    name = 'cmip6'
+    partition_access = True
 
-#     def _open_dataset(self):
-#         dataset_fields = ['institute', 'model', 'experiment', 'frequency', 'modeling_realm']
-#         self._open_dataset_groups(
-#             dataset_fields=dataset_fields,
-#             member_column_name='ensemble_member',
-#             variable_column_name='variable',
-#             file_fullpath_column_name='file_fullpath',
-#         )
-
-
-# class CMIP6Source(BaseSource):
-#     name = 'cmip6'
-#     partition_access = True
-
-#     def _open_dataset(self):
-#         # fields which define a single dataset
-#         dataset_fields = ['institution_id', 'source_id', 'experiment_id', 'table_id', 'grid_label']
-#         self._open_dataset_groups(
-#             dataset_fields=dataset_fields,
-#             member_column_name='member_id',
-#             variable_column_name='variable_id',
-#             file_fullpath_column_name='file_fullpath',
-#         )
+    def _open_dataset(self):
+        # fields which define a single dataset
+        dataset_fields = ['institution_id', 'source_id', 'experiment_id', 'table_id', 'grid_label']
+        self._open_dataset_groups(
+            dataset_fields=dataset_fields,
+            member_column_name='member_id',
+            variable_column_name='variable_id',
+            file_fullpath_column_name='file_fullpath',
+        )
