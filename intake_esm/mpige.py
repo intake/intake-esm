@@ -1,89 +1,66 @@
 #!/usr/bin/env python
 """ Implementation for The Max Planck Institute Grand Ensemble (MPI-GE) data holdings """
-import logging
 import os
 import re
 from collections import OrderedDict
 from warnings import warn
 
-import numpy as np
 import pandas as pd
 import xarray as xr
 from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
-from .cesm import CESMCollection
-from .common import BaseSource, Collection, StorageResource, get_subset
-
-logger = logging.getLogger(__name__)
-logger.setLevel(level=logging.WARNING)
+from .collection import Collection, docstrings, get_subset
+from .source import BaseSource
 
 
 class MPIGECollection(Collection):
-    """ Defines an MPIGE collection
 
-    Parameters
-    ----------
-    collection_spec : dict
-
-
-    See Also
-    --------
-    intake_esm.core.ESMMetadataStoreCatalog
-    intake_esm.cmip.CMIP5Collection
-    intake_esm.cmip.CMIP6Collection
-    intake_esm.cesm.CESMCollection
+    __doc__ = docstrings.with_indents(
+        """ Builds a collection for The Max Planck Institute Grand Ensemble (MPI-GE)
+        data holdings.
+    %(Collection.parameters)s
     """
+    )
 
     def __init__(self, collection_spec):
         super(MPIGECollection, self).__init__(collection_spec)
         self.component_streams = self.collection_definition.get(
             config.normalize_key('component_streams'), None
         )
-        self.include_cache_dir = self.collection_spec.get('include_cache_dir', False)
-        self.df = pd.DataFrame(columns=self.columns)
 
-    def build(self):
-        self._validate()
-        # Loop over data sources/experiments
-        for experiment, experiment_attrs in self.collection_spec['data_sources'].items():
-            logger.warning(f'Working on experiment: {experiment}')
+    def _get_file_attrs(self, filepath):
+        """ Extract each part of case.stream.variable.datestr.nc file pattern. """
+        file_basename = os.path.basename(filepath)
+        keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
+        fileparts = {key: None for key in keys}
+        fileparts['file_basename'] = file_basename
+        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
+        fileparts['file_fullpath'] = filepath
 
-            component_attrs = experiment_attrs['component_attrs']
-            ensembles = experiment_attrs['case_members']
-            self.assemble_file_list(experiment, experiment_attrs, component_attrs, ensembles)
-        logger.warning(self.df.info())
-        self.persist_db_file()
-        return self.df
+        date_str_regex = r'\d{4}\_\d{4}|\d{6}\_\d{6}|\d{8}\_\d{8}|\d{10}\_\d{10}|\d{12}\_\d{12}'
+        datestr = MPIGECollection._extract_attr_with_regex(file_basename, regex=date_str_regex)
 
-    def assemble_file_list(self, experiment, experiment_attrs, component_attrs, ensembles):
-        df_files = {}
-        for location in experiment_attrs['locations']:
-            res_key = ':'.join([location['name'], location['loc_type'], location['urlpath']])
-            if res_key not in df_files:
-                logger.warning(f'Getting file listing : {res_key}')
+        if datestr:
+            fileparts['date_range'] = datestr
+            s = file_basename.split(datestr)[0].rstrip('_').split('_')
+            case = s[0]
+            component = s[1]
+            stream = '_'.join(s[2:])
+            fileparts['case'] = case
+            fileparts['component'] = component
+            fileparts['stream'] = stream
+            fileparts['date_range'] = datestr.replace('_', '-')
 
-                if 'exclude_dirs' not in location:
-                    location['exclude_dirs'] = []
+        return fileparts
 
-                resource = StorageResource(
-                    urlpath=location['urlpath'],
-                    loc_type=location['loc_type'],
-                    exclude_dirs=location['exclude_dirs'],
-                )
+    def _add_extra_attributes(self, data_source, df, extra_attrs):
+        res_df = pd.DataFrame(columns=self.columns)
+        ensembles = extra_attrs['case_members']
+        component_attrs = extra_attrs['component_attrs']
 
-                df_files[res_key] = self._assemble_collection_df_files(
-                    resource_key=res_key,
-                    resource_type=location['loc_type'],
-                    direct_access=location['direct_access'],
-                    filelist=resource.filelist,
-                )
-
-        # Loop over ensemble members
         for ensemble, ensemble_attrs in enumerate(ensembles):
-            input_attrs_base = {'experiment': experiment}
-
-            # Get attributes from ensemble_attrs
+            input_attrs_base = {'experiment': data_source}
             case = ensemble_attrs['case']
 
             if 'ensemble' not in ensemble_attrs:
@@ -91,128 +68,38 @@ class MPIGECollection(Collection):
 
             if 'sequence_order' not in ensemble_attrs:
                 input_attrs_base.update({'sequence_order': 0})
+            # Find entries relevant to *this* ensemble:
+            # "case" matches
+            condition = df['case'] == case
 
-            if 'ctrl_branch_year' not in ensemble_attrs:
-                input_attrs_base.update({'ctrl_branch_year': None})
+            # If there are any matching files, append to self.df
+            if any(condition):
+                input_attrs = dict(input_attrs_base)
 
-            for res_key, df_f in df_files.items():
-                # Find entries relevant to *this* ensemble:
-                # "case" matches
-                condition = df_f['case'] == case
+                input_attrs.update(
+                    {key: val for key, val in ensemble_attrs.items() if key in self.columns}
+                )
 
-                # If there are any matching files, append to self.df
-                if any(condition):
-                    input_attrs = dict(input_attrs_base)
+                # Relevant files
+                temp_df = pd.DataFrame(df.loc[condition])
 
-                    input_attrs.update(
-                        {
-                            key: val
-                            for key, val in ensemble_attrs.items()
-                            if key in self.columns and key not in df_f.columns
-                        }
-                    )
+                # Append data coming from input file (input_attrs)
+                for col, val in input_attrs.items():
+                    temp_df[col] = val
 
-                    # Relevant files
-                    temp_df = pd.DataFrame(df_f.loc[condition])
+                # Add data from "component_attrs" to appropriate column
+                for component in temp_df['component'].unique():
+                    if component not in component_attrs:
+                        continue
 
-                    # Append data coming from input file (input_attrs)
-                    for col, val in input_attrs.items():
-                        temp_df.insert(loc=0, column=col, value=val)
+                    for key, val in component_attrs[component].items():
+                        if key in self.columns:
+                            loc = temp_df['component'] == component
+                            temp_df.loc[loc, key] = val
 
-                    # Add data from "component_attrs" to appropriate column
-                    for component in temp_df.component.unique():
-                        if component not in component_attrs:
-                            continue
+                res_df = pd.concat([temp_df, res_df], ignore_index=True, sort=False)
 
-                        for key, val in component_attrs[component].items():
-                            if key in self.columns:
-                                loc = temp_df['component'] == component
-                                temp_df.loc[loc, key] = val
-
-                    # Append
-                    self.df = pd.concat([temp_df, self.df], ignore_index=True, sort=False)
-
-        # Reorder columns
-        self.df = self.df[self.columns]
-
-        # Remove duplicates
-        self.df = self.df.drop_duplicates(
-            subset=['resource', 'file_fullpath'], keep='last'
-        ).reset_index(drop=True)
-
-    def _assemble_collection_df_files(self, resource_key, resource_type, direct_access, filelist):
-        """ Assemble file listing into a Pandas DataFrame."""
-        entries = {
-            key: []
-            for key in [
-                'resource',
-                'resource_type',
-                'direct_access',
-                'case',
-                'component',
-                'stream',
-                'date_range',
-                'file_basename',
-                'file_dirname',
-                'file_fullpath',
-            ]
-        }
-
-        # If there are no files, return empty dataframe
-        if not filelist:
-            return pd.DataFrame(entries)
-
-        logger.warning(f'Building file database : {resource_key}')
-        for f in filelist:
-            fileparts = self._get_filename_parts(os.path.basename(f), self.component_streams)
-
-            if fileparts is None or len(fileparts) == 0:
-                continue
-
-            entries['resource'].append(resource_key)
-            entries['resource_type'].append(resource_type)
-            entries['direct_access'].append(direct_access)
-            entries['case'].append(fileparts['case'])
-            entries['component'].append(fileparts['component'])
-            entries['stream'].append(fileparts['stream'])
-            entries['date_range'].append(fileparts['datestr'])
-            entries['file_basename'].append(os.path.basename(f))
-            entries['file_dirname'].append(os.path.dirname(f) + '/')
-            entries['file_fullpath'].append(f)
-
-        return pd.DataFrame(entries)
-
-    def _get_filename_parts(self, filename, component_streams):
-        """ Get file attributes from filename """
-        datestr = MPIGECollection._extract_date_str(filename)
-
-        if datestr != '00000000_00000000':
-            s = filename.split(datestr)[0].rstrip('_').split('_')
-            case = s[0]
-            component = s[1]
-            stream = '_'.join(s[2:])
-            return {
-                'case': case,
-                'stream': stream,
-                'component': component,
-                'datestr': datestr.replace('_', '-'),
-            }
-
-        else:
-            logger.warning(f'Could not identify MPI-GE fileparts for : {filename}')
-            return None
-
-    @staticmethod
-    def _extract_date_str(filename):
-        date_range = r'\d{8}\_\d{8}'
-        pattern = re.compile(date_range)
-        datestr = re.search(pattern, filename)
-        if datestr:
-            datestr = datestr.group()
-            return datestr
-        else:
-            logger.warning(f'Could not extract date string from : {filename}')
-            return '00000000_00000000'
+        return res_df
 
 
 class MPIGESource(BaseSource):
