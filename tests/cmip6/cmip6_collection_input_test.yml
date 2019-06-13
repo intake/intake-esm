@@ -6,7 +6,7 @@ data_sources:
      -  name: SAMPLE-DATA
         loc_type: posix
         direct_access: True
-        urlpath: /Users/abanihi/devel/ncar/intake-esm/tests/sample_data/cmip/CMIP6/CMIP/BCC/BCC-CSM2-MR
+        urlpath: ./intake-esm/tests/sample_data/cmip/CMIP6/CMIP/BCC/BCC-CSM2-MR
         exclude_dirs: ['*/files/*', 'latest']
         file_extension: .nc
 
@@ -20,7 +20,7 @@ data_sources:
      -  name: SAMPLE-DATA
         loc_type: posix
         direct_access: True
-        urlpath: /Users/abanihi/devel/ncar/intake-esm/tests/sample_data/cmip/CMIP6/CMIP/BCC/BCC-ESM1
+        urlpath: ./tests/sample_data/cmip/CMIP6/CMIP/BCC/BCC-ESM1
         exclude_dirs: ['*/files/*', 'latest']
         file_extension: .nc
 
