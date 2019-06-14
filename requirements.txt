@@ -3,3 +3,4 @@ xarray
 pyyaml
 tqdm
 intake-xarray
+docrep

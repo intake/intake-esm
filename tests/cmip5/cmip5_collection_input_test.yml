@@ -1,0 +1,90 @@
+name: cmip5_test_collection
+collection_type: cmip5
+data_sources:
+  BNU-ESM:
+    locations:
+     -  name: SAMPLE-DATA
+        loc_type: posix
+        direct_access: True
+        urlpath: ./tests/sample_data/cmip/cmip5/output1/BNU/BNU-ESM
+        exclude_dirs: ['*/files/*', 'latest']
+        file_extension: .nc
+
+    extra_attributes:
+      activity: CMIP5
+      product: output1
+      institute: BNU
+
+  CanCM4:
+    locations:
+     -  name: SAMPLE-DATA
+        loc_type: posix
+        direct_access: True
+        urlpath: ./tests/sample_data/cmip/cmip5/output1/CCCma/CanCM4
+        exclude_dirs: ['*/files/*', 'latest']
+        file_extension: .nc
+
+    extra_attributes:
+      activity: CMIP5
+      product: output1
+      institute: CCCma
+
+
+  CanESM2:
+    locations:
+     -  name: SAMPLE-DATA
+        loc_type: posix
+        direct_access: True
+        urlpath: ./tests/sample_data/cmip/cmip5/output1/CCCma/CanESM2
+        exclude_dirs: ['*/files/*', 'latest']
+        file_extension: .nc
+
+    extra_attributes:
+      activity: CMIP5
+      product: output1
+      institute: CCCma
+
+
+  CNRM-CM5:
+    locations:
+     -  name: SAMPLE-DATA
+        loc_type: posix
+        direct_access: True
+        urlpath: ./tests/sample_data/cmip/cmip5/output1/CNRM-CERFACS/CNRM-CM5
+        exclude_dirs: ['*/files/*', 'latest']
+        file_extension: .nc
+
+    extra_attributes:
+      activity: CMIP5
+      product: output1
+      institute: CNRM-CERFACS
+
+
+  CESM1-BGC:
+    locations:
+     -  name: SAMPLE-DATA
+        loc_type: posix
+        direct_access: True
+        urlpath: ./tests/sample_data/cmip/cmip5/output1/NSF-DOE-NCAR/CESM1-BGC
+        exclude_dirs: ['*/files/*', 'latest']
+        file_extension: .nc
+
+    extra_attributes:
+      activity: CMIP5
+      product: output1
+      institute: NSF-DOE-NCAR
+
+
+  CESM1-CAM5:
+    locations:
+     -  name: SAMPLE-DATA
+        loc_type: posix
+        direct_access: True
+        urlpath: ./tests/sample_data/cmip/cmip5/output1/NSF-DOE-NCAR/CESM1-CAM5
+        exclude_dirs: ['*/files/*', 'latest']
+        file_extension: .nc
+
+    extra_attributes:
+      activity: CMIP5
+      product: output1
+      institute: NSF-DOE-NCAR

@@ -19,26 +19,6 @@ def test_build_collection_file():
         assert isinstance(col.df, pd.DataFrame)
 
 
-def test_build_collection_dict():
-    with config.set({'database-directory': './tests/test_collections'}):
-        collection_definition = {
-            'name': 'cmip6_test_collection',
-            'collection_type': 'cmip6',
-            'data_sources': {
-                'root_dir': {
-                    'name': 'GLADE',
-                    'loc_type': 'posix',
-                    'direct_access': True,
-                    'urlpath': './tests/sample_data/cmip/CMIP6',
-                }
-            },
-        }
-        col = intake.open_esm_metadatastore(
-            collection_input_definition=collection_definition, overwrite_existing=True
-        )
-        assert isinstance(col.df, pd.DataFrame)
-
-
 def test_search():
     with config.set({'database-directory': './tests/test_collections'}):
         c = intake.open_esm_metadatastore(collection_name='cmip6_test_collection')
@@ -49,22 +29,16 @@ def test_search():
 
 @pytest.mark.parametrize(
     'chunks, expected_chunks',
-    [
-        ({'time': 1, 'lat': 2, 'lon': 2}, (1, 1, 2, 2)),
-        ({'time': 2, 'lat': 1, 'lon': 1}, (1, 2, 1, 1)),
-    ],
+    [({'time': 1, 'lat': 2, 'lon': 2}, (1, 2, 2)), ({'time': 2, 'lat': 1, 'lon': 1}, (2, 1, 1))],
 )
 def test_to_xarray_cmip(chunks, expected_chunks):
     with config.set({'database-directory': './tests/test_collections'}):
         c = intake.open_esm_metadatastore(collection_name='cmip6_test_collection')
 
         # Test for data from multiple institutions
-        cat = c.search(
-            source_id=['CNRM-ESM2-1', 'GISS-E2-1-G'],
-            experiment_id='historical',
-            variable_id=['gpp', 'tasmax'],
-        )
+        cat = c.search(source_id=['CNRM-ESM2-1', 'GISS-E2-1-G'], variable_id=['prra', 'tasmax'])
         ds = cat.to_xarray(decode_times=False, chunks=chunks)
+        print(ds)
         assert isinstance(ds, dict)
-        nasa_dset = ds['NASA-GISS.GISS-E2-1-G.historical.Lmon.gn']
-        assert nasa_dset['gpp'].data.chunksize == expected_chunks
+        nasa_dset = ds['NASA-GISS.GISS-E2-1-G.amip.Omon.gn']
+        assert nasa_dset['prra'].data.chunksize == expected_chunks

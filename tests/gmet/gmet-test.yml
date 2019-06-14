@@ -6,10 +6,14 @@ data_sources:
       - name: GMET_V2-TEST-LIST
         loc_type: input-file
         direct_access: False
-        urlpath: ./tests/gmet_v2_filelist.txt
-        exclude_dirs: ['*/mean/*', '*/summary_files/*']
+        urlpath: ./tests/gmet/gmet_v2_filelist.txt
+        exclude_patterns: ['*/mean/*', '*/summary_files/*']
+        file_extension: .nc4
       - name: GMET_V2-DISK
         loc_type: posix
         direct_access: True
         urlpath: ./tests/sample_data/gmet/v2_landmask
-        exclude_dirs: ['*/mean/*', '*/summary_files/*']
+        exclude_patterns: ['*/mean/*', '*/summary_files/*']
+        file_extension: .nc4
+    extra_attributes:
+      version: v2
