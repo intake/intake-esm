@@ -3,11 +3,9 @@ import re
 from abc import ABC, abstractclassmethod
 from glob import glob
 
-import dask
 import docrep
 import numpy as np
 import pandas as pd
-from dask import delayed
 from tqdm.autonotebook import tqdm
 
 from . import config
@@ -68,24 +66,16 @@ class Collection(ABC):
             a collection catalog.
         """
         dfs = {}
-        df_list = []
         data_sources = self.collection_spec['data_sources'].items()
-
         for data_source, data_source_attrs in data_sources:
-
+            print(f'Working on data source: {data_source}')
             df_i = self.assemble_file_list(data_source, data_source_attrs, self.exclude_patterns)
-            df_list.append(df_i)
-
-        df_list = dask.compute(*df_list)
-        dfs = df_list[0]
-        for item in df_list[1:]:
-            dfs.update(item)
+            dfs.update(df_i)
 
         self.df = self._finalize_build(dfs)
         print(self.df.info())
         self.persist_db_file()
 
-    @delayed
     def assemble_file_list(self, data_source, data_source_attrs, exclude_patterns=[]):
         """ Assemble file listing for data sources into Pandas dataframes.
         """
