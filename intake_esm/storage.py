@@ -1,7 +1,7 @@
 import fnmatch
 import os
 import shutil
-from subprocess import PIPE, Popen
+import subprocess
 from warnings import warn
 
 
@@ -77,21 +77,25 @@ class StorageResource(object):
     def _list_files_hsi(self):
         """Get a list of files from HPSS tapes"""
         if shutil.which('hsi') is None:
-            print(f'no hsi; cannot access [HSI]{self.urlpath}')
+            warn(f'no hsi; cannot access [HSI]{self.urlpath}')
             return []
 
-        p = Popen(
+        p = subprocess.Popen(
             [
                 'hsi',
                 'find {urlpath} -name "*{file_extension}"'.format(
                     urlpath=self.urlpath, file_extension=self.file_extension
                 ),
             ],
-            stdout=PIPE,
-            stderr=PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
 
         stdout, stderr = p.communicate()
+        if p.returncode != 0:
+            warn(f'hsi failed: {p.returncode} {stdout} {stderr}')
+            return []
+
         lines = stderr.decode('UTF-8').strip().split('\n')[1:]
 
         filelist = []
