@@ -1,0 +1,12 @@
+name: intake-esm-dev
+channels:
+  - conda-forge
+dependencies:
+  - intake
+  - intake-xarray
+  - nbsphinx
+  - numpydoc
+  - python=3.7
+  - pyyaml
+  - sphinx_rtd_theme
+  - sphinx>=1.6
