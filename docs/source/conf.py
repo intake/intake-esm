@@ -97,7 +97,7 @@ release = intake_esm.__version__
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build', 'notebooks/.ipynb_checkpoints', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', '**.ipynb_checkpoints', 'Thumbs.db', '.DS_Store']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 # default_role = None
@@ -147,6 +147,7 @@ html_theme = 'sphinx_rtd_theme'
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
 html_logo = 'images/nsf.png'
+html_theme_options = {'logo_only': False, 'style_nav_header_background': '#28938d'}
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
