@@ -16,8 +16,6 @@ dependencies:
   - isort
   - make
   - nbsphinx
-  - netcdf4
-  - numpy
   - numpydoc
   - pip
   - pre_commit
@@ -29,7 +27,6 @@ dependencies:
   - recommonmark
   - sphinx_rtd_theme
   - sphinx>=1.6
-  - tornado==5.1.1 # Pin version until latest release is stable
   - tqdm
   - xarray
   - docrep

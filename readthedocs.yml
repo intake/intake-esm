@@ -1,5 +1,5 @@
 conda:
-  file: docs/docs.yml
+  file: ci/environment-dev-3.7.yml
 python:
-  version: 2
+  version: 3
   setup_py_install: true

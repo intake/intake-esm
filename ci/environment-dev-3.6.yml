@@ -10,8 +10,6 @@ dependencies:
   - intake
   - intake-xarray
   - ipykernel
-  - netcdf4
-  - numpy
   - pip
   - pre_commit
   - pytest
