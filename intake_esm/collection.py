@@ -68,7 +68,6 @@ class Collection(ABC):
         dfs = {}
         data_sources = self.collection_spec['data_sources'].items()
         for data_source, data_source_attrs in data_sources:
-            print(f'Working on data source: {data_source}')
             df_i = self.assemble_file_list(data_source, data_source_attrs, self.exclude_patterns)
             dfs.update(df_i)
 
