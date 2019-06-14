@@ -1,5 +1,5 @@
 conda:
   file: docs/docs.yml
 python:
-  version: 3
+  version: 2
   setup_py_install: true
