@@ -9,6 +9,7 @@ from . import config as config
 from .cesm import CESMCollection
 from .cmip import CMIP5Collection, CMIP6Collection
 from .collection import _get_built_collections, _open_collection
+from .definition_utils import FILE_ALIAS_DICT, load_collection_definition
 from .era5 import ERA5Collection
 from .gmet import GMETCollection
 from .mpige import MPIGECollection
@@ -20,19 +21,30 @@ class ESMMetadataStoreCatalog(Catalog):
     Parameters
     ----------
 
-    collection_input_definition : Path, file_object or dict
-                Path to a YAML file containing collection definition or
-                a dictionary containing nested dictionaries of entries.
+    collection_input_definition : str, dict, filepath, default (None)
+
+                If None, prints out list of collection definitions supported
+                out of the box and raise `ValueError`.
+
+                If str, this should be a valid collection name among the ones
+                supported out of the box
+
+                If dict, or filepath, this should be a path to a YAML file
+                containing collection definition or a dictionary containing
+                nested dictionaries of entries.
 
     collection_name : str
-                name of the collection to use
+                Name of the collection to use. This name should refer to
+                a collection catalog that is already built and persisted on disk.
 
     overwrite_existing : bool,
-            Whether to overwrite existing built collection catalog
+            Whether to overwrite existing built collection catalog.
 
     metadata : dict
             Arbitrary information to carry along with the data collection source specs.
 
+    kwargs : dict, optional
+        Keyword arguments passed to ``intake_esm.definition_utils.load_collection_definition`` function
 
     """
 
@@ -52,37 +64,47 @@ class ESMMetadataStoreCatalog(Catalog):
         collection_name=None,
         overwrite_existing=True,
         metadata={},
+        **kwargs,
     ):
 
         self.metadata = metadata
         self.collections = {}
         self.get_built_collections()
 
+        if collection_input_definition is None:
+            load_collection_definition()
+
         if collection_name and collection_input_definition is None:
             self.open_collection(collection_name)
 
         elif collection_input_definition and (collection_name is None):
             self.input_collection = self._validate_collection_definition(
-                collection_input_definition
+                collection_input_definition, **kwargs
             )
             self.build_collection(overwrite_existing)
 
         else:
             raise ValueError(
-                "Cannot instantiate class with provided arguments. Please provide either 'collection_input_definition' \
-                  \n\t\tor 'collection_name' "
+                'Cannot instantiate class with provided arguments.'
+                "Please provide either 'collection_input_definition' or 'collection_name' "
             )
 
         self._entries = {}
 
-    def _validate_collection_definition(self, definition):
+    def _validate_collection_definition(self, definition, **kwargs):
 
-        if isinstance(definition, dict):
+        if isinstance(definition, str) and definition in FILE_ALIAS_DICT.keys():
+            input_collection = load_collection_definition(definition, **kwargs)
+
+        elif isinstance(definition, dict):
             input_collection = definition.copy()
 
-        elif os.path.exists(definition):
-            with open(os.path.abspath(definition)) as f:
-                input_collection = yaml.safe_load(f)
+        else:
+            try:
+                with open(os.path.abspath(definition)) as f:
+                    input_collection = yaml.safe_load(f)
+            except Exception as exc:
+                raise exc
 
         name = input_collection.get('name', None)
         collection_type = input_collection.get('collection_type', None)

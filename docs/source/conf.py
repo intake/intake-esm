@@ -278,9 +278,11 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 # texinfo_no_detailmenu = False
-ipython_execlines = [
-    'import intake',
-    'import intake_esm',
-    'import pandas as pd',
-    'pd.set_option("display.max_columns", 4)',
-]
+ipython_execlines = ['import intake', 'import intake_esm']
+
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3/', None),
+    'xarray': ('http://xarray.pydata.org/en/stable/', None),
+    'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
+}
