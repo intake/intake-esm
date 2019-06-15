@@ -9,7 +9,7 @@ from . import config as config
 from .cesm import CESMCollection
 from .cmip import CMIP5Collection, CMIP6Collection
 from .collection import _get_built_collections, _open_collection
-from .definition_utils import load_collection_definition
+from .definition_utils import FILE_ALIAS_DICT, load_collection_definition
 from .era5 import ERA5Collection
 from .gmet import GMETCollection
 from .mpige import MPIGECollection
@@ -93,15 +93,18 @@ class ESMMetadataStoreCatalog(Catalog):
 
     def _validate_collection_definition(self, definition, **kwargs):
 
-        if isinstance(definition, str):
+        if isinstance(definition, str) and definition in FILE_ALIAS_DICT.keys():
             input_collection = load_collection_definition(definition, **kwargs)
 
         elif isinstance(definition, dict):
             input_collection = definition.copy()
 
-        elif os.path.exists(definition):
-            with open(os.path.abspath(definition)) as f:
-                input_collection = yaml.safe_load(f)
+        else:
+            try:
+                with open(os.path.abspath(definition)) as f:
+                    input_collection = yaml.safe_load(f)
+            except Exception as exc:
+                raise exc
 
         name = input_collection.get('name', None)
         collection_type = input_collection.get('collection_type', None)
