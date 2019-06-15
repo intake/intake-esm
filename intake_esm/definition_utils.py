@@ -49,6 +49,11 @@ def _get_collection_definitions():
        given.
     """
 
+    print(
+        '*********************************************************************\n'
+        '* The following collection definitions are supported out-of-the-box *\n'
+        '*********************************************************************\n'
+    )
     for key in FILE_DESCRIPTIONS.keys():
         print(f"'{key}': {FILE_DESCRIPTIONS[key]}")
 
