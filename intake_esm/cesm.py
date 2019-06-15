@@ -59,10 +59,23 @@ class CESMCollection(Collection):
                         variable_datestr_nc = file_basename[s + idx + 1 :]
                         variable = variable_datestr_nc[: variable_datestr_nc.find('.')]
 
-                        fileparts['case'] = case
-                        fileparts['component'] = component
-                        fileparts['stream'] = stream
-                        fileparts['variable'] = variable
+                        # Assert expected pattern
+                        datestr_nc = variable_datestr_nc[
+                            variable_datestr_nc.find(f'.{variable}.') + len(variable) + 2 :
+                        ]
+
+                        # Ensure that filename conforms to expected pattern
+                        if datestr_nc != f'{datestr}.nc':
+                            print(
+                                f'Filename : {file_basename} does not conform to expected pattern'
+                            )
+
+                        else:
+                            fileparts['case'] = case
+                            fileparts['component'] = component
+                            fileparts['stream'] = stream
+                            fileparts['variable'] = variable
+                            break
 
         return fileparts
 
