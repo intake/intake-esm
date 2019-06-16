@@ -12,7 +12,7 @@ Features
 - Support building collections using inputs from intake-esm-datastore repository.
   (:pr:`79`) `Anderson Banihirwe`_
 
-- Ensure that requested files are available locally when before loading data into xarray datasets.
+- Ensure that requested files are available locally before loading data into xarray datasets.
   (:pr:`82`) `Anderson Banihirwe`_ and `Matthew Long`_
 
 - Split collection definitions out of config. (:pr:`83`) `Matthew Long`_
