@@ -69,7 +69,7 @@ def test_to_xarray_cesm_hsi(chunks, expected_chunks):
         {'database-directory': './tests/test_collections', 'data-cache-directory': data_cache_dir}
     ):
         collection_input_definition = os.path.join(
-            here, 'ensure-file-hsi-transfer-collection-input.yml'
+            here, '../ensure-file-hsi-transfer-collection-input.yml'
         )
         col = intake.open_esm_metadatastore(
             collection_input_definition=collection_input_definition, overwrite_existing=True
