@@ -63,7 +63,8 @@ def test_file_transfer_symlink():
 
         cat = col.search(variable=['STF_O2', 'SHF'])
 
-        local_urlpaths = _ensure_file_access(cat.query_results)
+        query_results = _ensure_file_access(cat.query_results)
+        local_urlpaths = query_results['file_fullpath'].tolist()
         assert isinstance(local_urlpaths, list)
         assert len(local_urlpaths) > 0
 
@@ -87,7 +88,8 @@ def test_file_transfer_hsi():
 
         cat = col.search(variable=['SST'])
 
-        local_urlpaths = _ensure_file_access(cat.query_results)
+        query_results = _ensure_file_access(cat.query_results)
+        local_urlpaths = query_results['file_fullpath'].tolist()
         assert isinstance(local_urlpaths, list)
         assert len(local_urlpaths) > 0
 

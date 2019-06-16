@@ -199,7 +199,7 @@ def _get_hsi_files(file_remote_local):
         _transfer_files(processes)
 
 
-def _ensure_file_access(query_results):
+def _ensure_file_access(query_results, file_fullpath_column_name='file_fullpath'):
     """Ensure that requested files are available locally.
 
     Paramters
@@ -224,11 +224,11 @@ def _ensure_file_access(query_results):
     local_urlpaths = []
     for idx, row in query_results.iterrows():
         if row.direct_access:
-            local_urlpaths.append(row.file_fullpath)
+            local_urlpaths.append(row[file_fullpath_column_name])
 
         else:
-            file_remote = row.file_fullpath
-            file_local = os.path.join(data_cache_directory, row.file_basename)
+            file_remote = row[file_fullpath_column_name]
+            file_local = os.path.join(data_cache_directory, os.path.basename(file_remote))
             local_urlpaths.append(file_local)
 
             if not os.path.exists(file_local):
@@ -242,4 +242,6 @@ def _ensure_file_access(query_results):
             print(f'transfering {len(file_remote_local[res_type])} files')
             resource_types[res_type](file_remote_local[res_type])
 
-    return local_urlpaths
+    query_results[file_fullpath_column_name] = local_urlpaths
+
+    return query_results
