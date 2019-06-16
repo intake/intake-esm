@@ -1,0 +1,55 @@
+collections:
+  cmip5:
+    collection_columns:
+    - resource
+    - resource_type
+    - direct_access
+    - activity
+    - ensemble_member
+    - experiment
+    - file_basename
+    - file_dirname
+    - file_fullpath
+    - frequency
+    - institute
+    - mip_table
+    - model
+    - modeling_realm
+    - product
+    - temporal_subset
+    - variable
+    - version
+    order_by_columns:
+      - file_fullpath
+    required_columns:
+      - modeling_realm
+      - frequency
+      - ensemble_member
+      - experiment
+      - file_fullpath
+  cmip6:
+    collection_columns:
+    - resource
+    - resource_type
+    - direct_access
+    - activity_id
+    - experiment_id
+    - file_basename
+    - file_dirname
+    - file_fullpath
+    - grid_label
+    - institution_id
+    - member_id
+    - mip_era
+    - source_id
+    - table_id
+    - time_range
+    - variable_id
+    - version
+    order_by_columns:
+      - member_id
+      - file_fullpath
+    required_columns:
+      - member_id
+      - experiment_id
+      - file_fullpath

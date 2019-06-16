@@ -1,0 +1,7 @@
+sources:
+  cesm: intake_esm.cesm.CESMSource
+  cmip5: intake_esm.cmip.CMIP5Source
+  cmip6: intake_esm.cmip.CMIP6Source
+  mpige: intake_esm.mpige.MPIGESource
+  gmet: intake_esm.gmet.GMETSource
+  era5: intake_esm.era5.ERA5Source

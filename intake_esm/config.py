@@ -13,7 +13,10 @@ import yaml
 
 no_default = '__no_default__'
 
-paths = [os.path.join(os.path.expanduser('~'), '.intake_esm')]
+paths = [
+    os.path.join(os.path.dirname(__file__), 'collection_defs'),
+    os.path.join(os.path.expanduser('~'), '.intake_esm'),
+]
 
 if 'INTAKE_ESM_CONFIG' in os.environ:
     PATH = os.environ['INTAKE_CONFIG']

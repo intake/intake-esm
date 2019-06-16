@@ -1,0 +1,41 @@
+collections:
+  mpige:
+    collection_columns:
+    - resource
+    - resource_type
+    - direct_access
+    - experiment
+    - case
+    - component
+    - stream
+    - date_range
+    - ensemble
+    - file_fullpath
+    - file_basename
+    - file_dirname
+    - ctrl_branch_year
+    - year_offset
+    - sequence_order
+    - grid
+    order_by_columns:
+      - sequence_order
+      - file_fullpath
+    required_columns:
+      - sequence_order
+      - file_fullpath
+    component_streams:
+      echam6: #grb output
+      - co2_mm
+      - BOT_mm
+      mpiom:
+      - data_2d_mm
+      - data_3d_ym
+      - monitoring_ym
+      hamocc:
+      - data_2d_mm
+      - data_3d_ym
+      - monitoring_ym
+      jsbach: #grb output
+      - surf
+      - land
+      - yasso_mm

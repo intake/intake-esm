@@ -6,10 +6,10 @@ from intake.catalog import Catalog
 from intake.catalog.local import LocalCatalogEntry
 
 from . import config as config
+from .bld_collection_utils import FILE_ALIAS_DICT, load_collection_input_file
 from .cesm import CESMCollection
 from .cmip import CMIP5Collection, CMIP6Collection
 from .collection import _get_built_collections, _open_collection
-from .definition_utils import FILE_ALIAS_DICT, load_collection_definition
 from .era5 import ERA5Collection
 from .gmet import GMETCollection
 from .mpige import MPIGECollection
@@ -44,7 +44,7 @@ class ESMMetadataStoreCatalog(Catalog):
             Arbitrary information to carry along with the data collection source specs.
 
     kwargs : dict, optional
-        Keyword arguments passed to ``intake_esm.definition_utils.load_collection_definition`` function
+        Keyword arguments passed to ``intake_esm.bld_collection_utils.load_collection_input_file`` function
 
     """
 
@@ -90,7 +90,7 @@ class ESMMetadataStoreCatalog(Catalog):
                     f'{list(self.collections.keys())}\n\n'
                 )
 
-            load_collection_definition()
+            load_collection_input_file()
             raise ValueError(
                 'Cannot instantiate class with provided arguments. Please provide either \n'
                 '\t1) collection_input_definition to build a collection or\n'
@@ -102,7 +102,7 @@ class ESMMetadataStoreCatalog(Catalog):
     def _validate_collection_definition(self, definition, **kwargs):
 
         if isinstance(definition, str) and definition in FILE_ALIAS_DICT.keys():
-            input_collection = load_collection_definition(definition, **kwargs)
+            input_collection = load_collection_input_file(definition, **kwargs)
 
         elif isinstance(definition, dict):
             input_collection = definition.copy()
