@@ -1,0 +1,51 @@
+collections:
+  gmet:
+    collection_columns:
+      - resource
+      - resource_type
+      - direct_access
+      - frequency
+      - member_id
+      - version
+      - time_range
+      - resolution
+      - file_fullpath
+      - file_basename
+      - file_dirname
+    order_by_columns:
+      - member_id
+      - time_range
+      - file_fullpath
+    required_columns:
+      - member_id
+      - file_fullpath
+  era5:
+    collection_columns:
+      - direct_access
+      - file_basename
+      - file_dirname
+      - file_fullpath
+      - forecast_initial_date
+      - forecast_initial_hour
+      - grid
+      - level_type
+      - local_table
+      - product_type
+      - reanalysis_day
+      - reanalysis_month
+      - reanalysis_year
+      - resource
+      - resource_type
+      - stream
+      - variable_id
+      - variable_short_name
+      - variable_type
+    required_columns:
+      - product_type
+      - level_type
+      - stream
+      - file_fullpath
+    order_by_columns:
+      - level_type
+      - product_type
+      - file_fullpath
