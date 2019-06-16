@@ -1,10 +1,14 @@
 import os
 import re
+import shutil
 import socket
 
+import intake
+import pandas as pd
 import pytest
 
-from intake_esm.storage import StorageResource
+from intake_esm import config
+from intake_esm.storage import StorageResource, _ensure_file_access
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -40,3 +44,22 @@ def test_storage_hsi():
     files = SR.filelist
     assert isinstance(files, list)
     assert len(files) != 0
+
+
+def test_file_transfer():
+    data_cache_dir = './tests/transferred-data'
+    with config.set(
+        {'database-directory': './tests/test_collections', 'data-cache-directory': data_cache_dir}
+    ):
+        collection_input_definition = os.path.join(here, 'copy-to-cache-collection-input.yml')
+        col = intake.open_esm_metadatastore(
+            collection_input_definition=collection_input_definition, overwrite_existing=True
+        )
+
+        cat = col.search(variable=['STF_O2', 'SHF'])
+
+        local_urlpaths = _ensure_file_access(cat.query_results)
+        assert isinstance(local_urlpaths, list)
+        assert len(local_urlpaths) > 0
+
+        shutil.rmtree(data_cache_dir)

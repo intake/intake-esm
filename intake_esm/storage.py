@@ -2,7 +2,14 @@ import fnmatch
 import os
 import shutil
 import subprocess
+from itertools import zip_longest
+from subprocess import PIPE, CalledProcessError, Popen
+from time import sleep
 from warnings import warn
+
+from tqdm.autonotebook import tqdm
+
+from . import config
 
 
 class StorageResource(object):
@@ -44,6 +51,9 @@ class StorageResource(object):
 
         elif self.type == 'input-file':
             filelist = self._list_files_input_file()
+
+        elif self.type == 'copy-to-cache':
+            filelist = self._list_files_posix()
 
         else:
             raise ValueError(f'unknown resource type: {self.type}')
@@ -110,3 +120,132 @@ class StorageResource(object):
         """return a list of files from a file containing a list of files"""
         with open(self.urlpath, 'r') as fid:
             return fid.read().splitlines()
+
+
+def _posix_symlink(file_remote_local):
+    """Create symlinks of posix files into data-cache-directory.
+
+    Parameters
+    ----------
+    file_remote_local : list of tuples
+        List of the form: [(file_remote, file_local), ...]
+
+    """
+    cmds = [['ln', '-s', file_remote, file_local] for file_remote, file_local in file_remote_local]
+    processes = [Popen(cmd, stderr=PIPE, stdout=PIPE) for cmd in cmds]
+
+    errored = []
+    completed = []
+    while processes:
+        for p in processes:
+            if p.poll() is not None:
+                if p.returncode != 0:
+                    errored.append(p)
+                else:
+                    completed.append(p)
+                processes.remove(p)
+
+        sleep(1)
+
+    for p in completed:
+        stdout, stderr = p.communicate()
+        print('-' * 80)
+        print('completed')
+        print(p.args)
+        print(stdout.decode('UTF-8'))
+        print(stderr.decode('UTF-8'))
+        print()
+
+    if errored:
+        for p in errored:
+            stdout, stderr = p.communicate()
+            print('-' * 80)
+            print('ERROR!')
+            print(p.args)
+            print(stdout.decode('UTF-8'))
+            print(stderr.decode('UTF-8'))
+            print()
+        raise CalledProcessError(errored[0].returncode, errored[0].args)
+
+
+def _get_hsi_files(file_remote_local):
+    """Transfer files from HPSS.
+
+    Parameters
+    ----------
+    file_remote_local : list of tuples
+        List of the form: [(file_remote, file_local), ...]
+
+    """
+
+    hsi_max_concurrent = 5
+    args = [iter(file_remote_local)] * hsi_max_concurrent
+
+    for groups in tqdm(list(zip_longest(*args, fillvalue=None))):
+        cmds = [
+            ['hsi', f'cget {file_rem_loc[1]} : {file_rem_loc[0]}']
+            for file_rem_loc in groups
+            if file_rem_loc is not None
+        ]
+
+        processes = [Popen(cmd, stderr=PIPE, stdout=PIPE) for cmd in cmds]
+
+        errored = []
+        while processes:
+            for p in processes:
+                if p.poll() is not None:
+                    if p.returncode != 0:
+                        errored.append(p)
+                    processes.remove(p)
+
+            sleep(1)
+
+        if errored:
+            for p in errored:
+                stdout, stderr = p.communicate()
+
+
+def _ensure_file_access(query_results):
+    """Ensure that requested files are available locally.
+
+    Paramters
+    ---------
+    query_results : `pandas.DataFrame`
+        Results of a query.
+
+    Returns
+    -------
+    local_urlpaths : list
+        List of urls to access files in `query_results`.
+    """
+
+    resource_types = {'hsi': _get_hsi_files, 'copy-to-cache': _posix_symlink}
+
+    data_cache_directory = config.get('data-cache-directory')
+
+    os.makedirs(data_cache_directory, exist_ok=True)
+
+    file_remote_local = {k: [] for k in resource_types.keys()}
+
+    local_urlpaths = []
+    for idx, row in query_results.iterrows():
+        if row.direct_access:
+            local_urlpaths.append(row.file_fullpath)
+
+        else:
+            file_remote = row.file_fullpath
+            file_local = os.path.join(data_cache_directory, row.file_basename)
+            local_urlpaths.append(file_local)
+
+            if not os.path.exists(file_local):
+                if row.resource_type not in resource_types:
+                    raise ValueError(f'unknown resource type: {row.resource_type}')
+
+                file_remote_local[row.resource_type].append((file_remote, file_local))
+
+    for res_type in resource_types:
+        if file_remote_local[res_type]:
+            print(f'transfering {len(file_remote_local[res_type])} files')
+            resource_types[res_type](file_remote_local[res_type])
+
+    return local_urlpaths
