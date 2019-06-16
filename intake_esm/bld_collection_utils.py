@@ -8,7 +8,7 @@ import yaml
 from . import config
 
 _default_cache_dir = config.get('database-directory')
-_default_cache_dir = f'{_default_cache_dir}/collection-definitions'
+_default_cache_dir = f'{_default_cache_dir}/bld-collection-input'
 
 
 aliases = ['CESM1-LE', 'GLADE-CMIP5', 'GLADE-CMIP6', 'GLADE-RDA-ERA5', 'GLADE-GMET', 'MPI-GE']
@@ -44,7 +44,7 @@ def _file_md5_checksum(fname):
     return hash_md5.hexdigest()
 
 
-def _get_collection_definitions():
+def _get_collection_input_files():
     """Prints out available collection definitions for the user to load if no args are
        given.
     """
@@ -58,7 +58,7 @@ def _get_collection_definitions():
         print(f"'{key}': {FILE_DESCRIPTIONS[key]}")
 
 
-def load_collection_definition(
+def load_collection_input_file(
     name=None,
     cache=True,
     cache_dir=_default_cache_dir,
@@ -97,7 +97,7 @@ def load_collection_definition(
     """
 
     if name is None:
-        return _get_collection_definitions()
+        return _get_collection_input_files()
 
     name, ext = os.path.splitext(name)
     if not ext.endswith('.yml'):
