@@ -7,6 +7,7 @@ from subprocess import PIPE, CalledProcessError, Popen
 from time import sleep
 from warnings import warn
 
+import pandas as pd
 from tqdm.autonotebook import tqdm
 
 from . import config
@@ -199,7 +200,32 @@ def _get_hsi_files(file_remote_local):
         _transfer_files(processes)
 
 
-def _ensure_file_access(query_results, file_fullpath_column_name='file_fullpath'):
+def _filter_query_results(query_results, file_basename_column_name):
+    """Filter for entries where file_basename is the same and remove all
+       but the first ``direct_access = True`` row."""
+
+    groups = query_results.groupby(file_basename_column_name)
+
+    gps = []
+    for _, group in groups:
+
+        g = group[group['direct_access']]
+        # File does not exist on resource with high priority
+        if g.empty:
+            gps.append(group)
+
+        else:
+            gps.append(g)
+
+    query_results = pd.concat(gps)
+    return query_results
+
+
+def _ensure_file_access(
+    query_results,
+    file_fullpath_column_name='file_fullpath',
+    file_basename_column_name='file_basename',
+):
     """Ensure that requested files are available locally.
 
     Paramters
@@ -220,6 +246,8 @@ def _ensure_file_access(query_results, file_fullpath_column_name='file_fullpath'
     os.makedirs(data_cache_directory, exist_ok=True)
 
     file_remote_local = {k: [] for k in resource_types.keys()}
+
+    query_results = _filter_query_results(query_results, file_basename_column_name)
 
     local_urlpaths = []
     for idx, row in query_results.iterrows():

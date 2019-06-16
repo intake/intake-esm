@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 
 from intake_esm import config
-from intake_esm.storage import StorageResource, _ensure_file_access
+from intake_esm.storage import StorageResource, _ensure_file_access, _filter_query_results
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -94,3 +94,19 @@ def test_file_transfer_hsi():
         assert len(local_urlpaths) > 0
 
         shutil.rmtree(data_cache_dir)
+
+
+def test_filter_query_results():
+    resource_type = ['posix', 'hsi', 'hsi']
+    files = [
+        'g.e11_LENS.GECOIAF.T62_g16.009.pop.h.ECOSYS_XKW.024901-031612.nc',
+        'g.e11_LENS.GECOIAF.T62_g16.009.pop.h.ECOSYS_XKW.024901-031612.nc',
+        'g.e11_LENS.GECOIAF.T62_g16.009.pop.h.SST.024901-031612.nc',
+    ]
+    direct_access = [True, False, False]
+    df = pd.DataFrame(
+        {'resource_type': resource_type, 'file_basename': files, 'direct_access': direct_access}
+    )
+
+    query_results = _filter_query_results(df, file_basename_column_name='file_basename')
+    assert len(query_results) == 2
