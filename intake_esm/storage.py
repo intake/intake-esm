@@ -145,8 +145,6 @@ def _posix_symlink(file_remote_local):
                     completed.append(p)
                 processes.remove(p)
 
-        sleep(1)
-
     for p in completed:
         stdout, stderr = p.communicate()
         print('-' * 80)
@@ -182,6 +180,7 @@ def _get_hsi_files(file_remote_local):
     args = [iter(file_remote_local)] * hsi_max_concurrent
 
     for groups in tqdm(list(zip_longest(*args, fillvalue=None))):
+
         cmds = [
             ['hsi', f'cget {file_rem_loc[1]} : {file_rem_loc[0]}']
             for file_rem_loc in groups
@@ -191,18 +190,36 @@ def _get_hsi_files(file_remote_local):
         processes = [Popen(cmd, stderr=PIPE, stdout=PIPE) for cmd in cmds]
 
         errored = []
+        completed = []
         while processes:
             for p in processes:
                 if p.poll() is not None:
                     if p.returncode != 0:
                         errored.append(p)
+                    else:
+                        completed.append(p)
                     processes.remove(p)
-
             sleep(1)
+
+        for p in completed:
+            stdout, stderr = p.communicate()
+            print('-' * 80)
+            print('completed')
+            print(p.args)
+            print(stdout.decode('UTF-8'))
+            print(stderr.decode('UTF-8'))
+            print()
 
         if errored:
             for p in errored:
                 stdout, stderr = p.communicate()
+                print('-' * 80)
+                print('ERROR!')
+                print(p.args)
+                print(stdout.decode('UTF-8'))
+                print(stderr.decode('UTF-8'))
+                print()
+            raise CalledProcessError(errored[0].returncode, errored[0].args)
 
 
 def _ensure_file_access(query_results):

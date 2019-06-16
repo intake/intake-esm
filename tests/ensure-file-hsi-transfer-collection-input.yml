@@ -1,7 +1,7 @@
 name: cesm1-le-hsi-transfer
 collection_type: cesm
 data_sources:
-  CTRL:
+  TEST:
     locations:
       - name: SAMPLE-DATA
         loc_type: hsi
@@ -13,8 +13,7 @@ data_sources:
         ocn:
           grid: POP_gx1v6
       case_members:
-        - case: b.e11.B1850C5CN.f09_g16.005
+        - case: b.e11.B20TRC5CNBDRD.f09_g16.001
           sequence_order: 0
-          ensemble: 5
+          ensemble: 1
           has_ocean_bgc: True
-          year_offset: 1448

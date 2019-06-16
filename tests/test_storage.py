@@ -15,7 +15,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 regex = re.compile(r'cheyenne|casper')
 hostname = socket.gethostname()
 match = regex.search(hostname)
-
+TMPDIR = os.environ['TMPDIR']
 
 def test_storage_input_file():
     input_file = os.path.join(here, 'input-filelist-test.txt')
@@ -47,7 +47,7 @@ def test_storage_hsi():
 
 
 def test_file_transfer_symlink():
-    data_cache_dir = './tests/transferred-data'
+    data_cache_dir = f'{TMPDIR}/intake-esm-tests/transferred-data'
     with config.set(
         {'database-directory': './tests/test_collections', 'data-cache-directory': data_cache_dir}
     ):
@@ -69,7 +69,7 @@ def test_file_transfer_symlink():
     not match, reason='does not run outside of Cheyenne login nodes or Casper nodes'
 )
 def test_file_transfer_hsi():
-    data_cache_dir = './tests/transferred-data'
+    data_cache_dir = f'{TMPDIR}/intake-esm-tests/transferred-data'
     with config.set(
         {'database-directory': './tests/test_collections', 'data-cache-directory': data_cache_dir}
     ):
@@ -80,7 +80,7 @@ def test_file_transfer_hsi():
             collection_input_definition=collection_input_definition, overwrite_existing=True
         )
 
-        cat = col.search(variable=['STF_O2', 'SHF'])
+        cat = col.search(variable=['SST'])
 
         local_urlpaths = _ensure_file_access(cat.query_results)
         assert isinstance(local_urlpaths, list)
