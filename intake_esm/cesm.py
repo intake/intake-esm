@@ -75,6 +75,7 @@ class CESMCollection(Collection):
                             fileparts['component'] = component
                             fileparts['stream'] = stream
                             fileparts['variable'] = variable
+                            break
 
         return fileparts
 
