@@ -51,7 +51,7 @@ def _get_collection_input_files():
 
     print(
         '*********************************************************************\n'
-        '* The following collection definitions are supported out-of-the-box *\n'
+        '* The following collection inputs are supported out-of-the-box *\n'
         '*********************************************************************\n'
     )
     for key in FILE_DESCRIPTIONS.keys():
