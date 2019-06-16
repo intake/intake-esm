@@ -35,7 +35,7 @@ def test_storage_input_file():
     not match, reason='does not run outside of Cheyenne login nodes or Casper nodes'
 )
 def test_storage_hsi():
-    urlpath = '/CCSM/csm/CESM-CAM5-BGC-LE'
+    urlpath = '/CCSM/csm/CESM-CAM5-BGC-LE/ocn/proc/tseries/daily'
     loc_type = 'hsi'
     exclude_dirs = []
     file_extension = '.nc'
