@@ -15,7 +15,12 @@ here = os.path.abspath(os.path.dirname(__file__))
 regex = re.compile(r'cheyenne|casper')
 hostname = socket.gethostname()
 match = regex.search(hostname)
-TMPDIR = os.environ['TMPDIR']
+
+try:
+    TMPDIR = os.environ['TMPDIR']
+except:
+    TMPDIR = './tests/tmpdir'
+
 
 def test_storage_input_file():
     input_file = os.path.join(here, 'input-filelist-test.txt')
