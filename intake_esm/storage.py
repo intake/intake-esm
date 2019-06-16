@@ -48,7 +48,7 @@ class StorageResource(object):
         else:
             raise ValueError(f'unknown resource type: {self.type}')
 
-        return filter(self._filter_func, filelist)
+        return list(filter(self._filter_func, filelist))
 
     def _filter_func(self, path):
         return not any(
@@ -91,22 +91,18 @@ class StorageResource(object):
             stderr=subprocess.PIPE,
         )
 
-        stdout, stderr = p.communicate()
-        if p.returncode != 0:
-            warn(f'hsi failed: {p.returncode} {stdout} {stderr}')
-            return []
-
-        lines = stderr.decode('UTF-8').strip().split('\n')[1:]
-
         filelist = []
-        i = 0
-        while i < len(lines):
-            if '***' in lines[i]:
-                i += 2
-                continue
+        skip = True
+        while p.poll() is None:
+            line = p.stderr.readline().decode('UTF-8').strip()
+            if skip:
+                skip = False
+            elif '***' in line:
+                skip = True
+            elif not line:
+                break
             else:
-                filelist.append(lines[i])
-                i += 1
+                filelist.append(line)
 
         return filelist
 
