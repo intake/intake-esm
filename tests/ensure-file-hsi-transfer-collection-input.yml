@@ -1,0 +1,19 @@
+name: cesm1-le-hsi-transfer
+collection_type: cesm
+data_sources:
+  TEST:
+    locations:
+      - name: SAMPLE-DATA
+        loc_type: hsi
+        direct_access: False
+        urlpath: /CCSM/csm/CESM-CAM5-BGC-LE/ocn/proc/tseries/daily/SST
+        file_extension: .nc
+    extra_attributes:
+      component_attrs:
+        ocn:
+          grid: POP_gx1v6
+      case_members:
+        - case: b.e11.B20TRC5CNBDRD.f09_g16.001
+          sequence_order: 0
+          ensemble: 1
+          has_ocean_bgc: True

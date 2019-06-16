@@ -1,0 +1,20 @@
+name: cesm1-le-copy-to-cache
+collection_type: cesm
+data_sources:
+  CTRL:
+    locations:
+      - name: SAMPLE-DATA
+        loc_type: copy-to-cache
+        direct_access: False
+        urlpath: ./tests/sample_data/cesm-le
+        file_extension: .nc
+    extra_attributes:
+      component_attrs:
+        ocn:
+          grid: POP_gx1v6
+      case_members:
+        - case: b.e11.B1850C5CN.f09_g16.005
+          sequence_order: 0
+          ensemble: 5
+          has_ocean_bgc: True
+          year_offset: 1448

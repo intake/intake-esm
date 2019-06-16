@@ -71,9 +71,6 @@ class ESMMetadataStoreCatalog(Catalog):
         self.collections = {}
         self.get_built_collections()
 
-        if collection_input_definition is None:
-            load_collection_input_file()
-
         if collection_name and collection_input_definition is None:
             self.open_collection(collection_name)
 
@@ -84,9 +81,20 @@ class ESMMetadataStoreCatalog(Catalog):
             self.build_collection(overwrite_existing)
 
         else:
+
+            if self.collections:
+                print(
+                    '\n******************************************************\n'
+                    '* Collections with following names are built already *\n'
+                    '******************************************************\n\n'
+                    f'{list(self.collections.keys())}\n\n'
+                )
+
+            load_collection_input_file()
             raise ValueError(
-                'Cannot instantiate class with provided arguments.'
-                "Please provide either 'collection_input_definition' or 'collection_name' "
+                'Cannot instantiate class with provided arguments. Please provide either \n'
+                '\t1) collection_input_definition to build a collection or\n'
+                '\t2) collection_name to open an existing/built collection.'
             )
 
         self._entries = {}

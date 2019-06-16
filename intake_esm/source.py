@@ -4,6 +4,7 @@ from tqdm.autonotebook import tqdm
 
 from . import aggregate
 from .collection import get_subset
+from .storage import _ensure_file_access
 
 
 class BaseSource(intake_xarray.base.DataSourceMixin):
@@ -68,7 +69,9 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
         kwargs = self._validate_kwargs(self.kwargs)
 
         all_dsets = {}
-        grouped = get_subset(self.collection_name, self.query).groupby(dataset_fields)
+        query_results = get_subset(self.collection_name, self.query)
+        query_results = _ensure_file_access(query_results, file_fullpath_column_name)
+        grouped = query_results.groupby(dataset_fields)
         for dset_keys, dset_files in tqdm(grouped, desc='dataset'):
             dset_id = '.'.join(dset_keys)
             member_ids = []
