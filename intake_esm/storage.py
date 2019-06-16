@@ -122,17 +122,9 @@ class StorageResource(object):
             return fid.read().splitlines()
 
 
-def _posix_symlink(file_remote_local):
-    """Create symlinks of posix files into data-cache-directory.
+def _transfer_files(processes):
 
-    Parameters
-    ----------
-    file_remote_local : list of tuples
-        List of the form: [(file_remote, file_local), ...]
-
-    """
-    cmds = [['ln', '-s', file_remote, file_local] for file_remote, file_local in file_remote_local]
-    processes = [Popen(cmd, stderr=PIPE, stdout=PIPE) for cmd in cmds]
+    """Executes a list of child programs in new processes"""
 
     errored = []
     completed = []
@@ -166,6 +158,21 @@ def _posix_symlink(file_remote_local):
         raise CalledProcessError(errored[0].returncode, errored[0].args)
 
 
+def _posix_symlink(file_remote_local):
+    """Create symlinks of posix files into data-cache-directory.
+
+    Parameters
+    ----------
+    file_remote_local : list of tuples
+        List of the form: [(file_remote, file_local), ...]
+
+    """
+    cmds = [['ln', '-s', file_remote, file_local] for file_remote, file_local in file_remote_local]
+    processes = [Popen(cmd, stderr=PIPE, stdout=PIPE) for cmd in cmds]
+
+    _transfer_files(processes)
+
+
 def _get_hsi_files(file_remote_local):
     """Transfer files from HPSS.
 
@@ -189,37 +196,7 @@ def _get_hsi_files(file_remote_local):
 
         processes = [Popen(cmd, stderr=PIPE, stdout=PIPE) for cmd in cmds]
 
-        errored = []
-        completed = []
-        while processes:
-            for p in processes:
-                if p.poll() is not None:
-                    if p.returncode != 0:
-                        errored.append(p)
-                    else:
-                        completed.append(p)
-                    processes.remove(p)
-            sleep(1)
-
-        for p in completed:
-            stdout, stderr = p.communicate()
-            print('-' * 80)
-            print('completed')
-            print(p.args)
-            print(stdout.decode('UTF-8'))
-            print(stderr.decode('UTF-8'))
-            print()
-
-        if errored:
-            for p in errored:
-                stdout, stderr = p.communicate()
-                print('-' * 80)
-                print('ERROR!')
-                print(p.args)
-                print(stdout.decode('UTF-8'))
-                print(stderr.decode('UTF-8'))
-                print()
-            raise CalledProcessError(errored[0].returncode, errored[0].args)
+        _transfer_files(processes)
 
 
 def _ensure_file_access(query_results):
