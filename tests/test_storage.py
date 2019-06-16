@@ -22,9 +22,9 @@ def test_storage_input_file():
 
     SR = StorageResource(urlpath, type_, exclude_dirs, file_extension)
     assert isinstance(SR, StorageResource)
-    files = SR._list_files_input_file()
+    files = SR.filelist
     assert isinstance(files, list)
-    assert len(files) == 5
+    assert len(files) == 4
 
 
 @pytest.mark.skipif(
@@ -37,6 +37,6 @@ def test_storage_hsi():
     file_extension = '.nc'
     SR = StorageResource(urlpath, loc_type, exclude_dirs, file_extension)
 
-    files = SR._list_files_hsi()
+    files = SR.filelist
     assert isinstance(files, list)
     assert len(files) != 0
