@@ -46,12 +46,36 @@ def test_storage_hsi():
     assert len(files) != 0
 
 
-def test_file_transfer():
+def test_file_transfer_symlink():
     data_cache_dir = './tests/transferred-data'
     with config.set(
         {'database-directory': './tests/test_collections', 'data-cache-directory': data_cache_dir}
     ):
         collection_input_definition = os.path.join(here, 'copy-to-cache-collection-input.yml')
+        col = intake.open_esm_metadatastore(
+            collection_input_definition=collection_input_definition, overwrite_existing=True
+        )
+
+        cat = col.search(variable=['STF_O2', 'SHF'])
+
+        local_urlpaths = _ensure_file_access(cat.query_results)
+        assert isinstance(local_urlpaths, list)
+        assert len(local_urlpaths) > 0
+
+        shutil.rmtree(data_cache_dir)
+
+
+@pytest.mark.skipif(
+    not match, reason='does not run outside of Cheyenne login nodes or Casper nodes'
+)
+def test_file_transfer_hsi():
+    data_cache_dir = './tests/transferred-data'
+    with config.set(
+        {'database-directory': './tests/test_collections', 'data-cache-directory': data_cache_dir}
+    ):
+        collection_input_definition = os.path.join(
+            here, 'ensure-file-hsi-transfer-collection-input.yml'
+        )
         col = intake.open_esm_metadatastore(
             collection_input_definition=collection_input_definition, overwrite_existing=True
         )
