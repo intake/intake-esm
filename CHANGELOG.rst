@@ -2,6 +2,37 @@
 Changelog History
 =================
 
+Intake-esm v2019.6.xx (2019-06-xx)
+==================================
+
+
+Features
+--------
+
+- Support building collections using inputs from intake-esm-datastore repository.
+  (:pr:`79`) `Anderson Banihirwe`_
+
+- Ensure that requested files are available locally when before loading data into xarray datasets.
+  (:pr:`82`) `Anderson Banihirwe`_ and `Matthew Long`_
+
+- Split collection definitions out of config. (:pr:`83`) `Matthew Long`_
+
+
+Bug Fixes
+----------
+
+- Fix bug in ``_list_files_hsi()`` to return list instead of filter object.
+  (:pr:`81`) `Matthew Long`_ and `Anderson Banihirwe`_
+
+- ``cesm._get_file_attrs`` fixed to break loop when longest `stream` is matched. (:pr:`80`) `Matthew Long`_
+
+
+Internal Changes
+----------------
+
+- Refactor existing functionality to make intake-esm robust and extensible. (:pr:`77`) `Anderson Banihirwe`_
+
+
 Intake-esm v2019.5.11 (2019-05-11)
 ===================================
 
