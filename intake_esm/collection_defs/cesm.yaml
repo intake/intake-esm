@@ -10,7 +10,7 @@ collections:
     - stream
     - variable
     - date_range
-    - ensemble
+    - member_id
     - file_fullpath
     - file_basename
     - file_dirname
