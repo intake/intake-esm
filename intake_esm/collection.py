@@ -269,7 +269,7 @@ def _open_collection(collection_name):
     path = collections[collection_name]['path']
     if (collection_type in collection_types) and collections:
         try:
-            df = pd.read_csv(path, index_col=0)
+            df = pd.read_csv(path, index_col=0, dtype={'direct_access': bool})
             return df, collection_name, collection_type
         except Exception as err:
             raise err

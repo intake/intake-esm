@@ -64,13 +64,20 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
         raise NotImplementedError()
 
     def _open_dataset_groups(
-        self, dataset_fields, member_column_name, variable_column_name, file_fullpath_column_name
+        self,
+        dataset_fields,
+        member_column_name,
+        variable_column_name,
+        file_fullpath_column_name='file_fullpath',
+        file_basename_column_name='file_basename',
     ):
         kwargs = self._validate_kwargs(self.kwargs)
 
         all_dsets = {}
         query_results = get_subset(self.collection_name, self.query)
-        query_results = _ensure_file_access(query_results, file_fullpath_column_name)
+        query_results = _ensure_file_access(
+            query_results, file_fullpath_column_name, file_basename_column_name
+        )
         grouped = query_results.groupby(dataset_fields)
         for dset_keys, dset_files in tqdm(grouped, desc='dataset'):
             dset_id = '.'.join(dset_keys)
