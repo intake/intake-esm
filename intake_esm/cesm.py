@@ -82,23 +82,23 @@ class CESMCollection(Collection):
     def _add_extra_attributes(self, data_source, df, extra_attrs):
 
         res_df = pd.DataFrame(columns=self.columns)
-        ensembles = extra_attrs['case_members']
+        case_members = extra_attrs['case_members']
         component_attrs = extra_attrs['component_attrs']
 
-        for ensemble, ensemble_attrs in enumerate(ensembles):
+        for member_id, member_attrs in enumerate(case_members):
             input_attrs_base = {'experiment': data_source}
-            case = ensemble_attrs['case']
+            case = member_attrs['case']
 
-            if 'ensemble' not in ensemble_attrs:
-                input_attrs_base.update({'ensemble': ensemble})
+            if 'member_id' not in member_attrs:
+                input_attrs_base.update({'member_id': member_id})
 
-            if 'sequence_order' not in ensemble_attrs:
+            if 'sequence_order' not in member_attrs:
                 input_attrs_base.update({'sequence_order': 0})
 
-            if 'has_ocean_bgc' not in ensemble_attrs:
+            if 'has_ocean_bgc' not in member_attrs:
                 input_attrs_base.update({'has_ocean_bgc': False})
 
-            # Find entries relevant to *this* ensemble:
+            # Find entries relevant to *this* member_id:
             # "case" matches
             condition = df['case'] == case
 
@@ -107,7 +107,7 @@ class CESMCollection(Collection):
                 input_attrs = dict(input_attrs_base)
 
                 input_attrs.update(
-                    {key: val for key, val in ensemble_attrs.items() if key in self.columns}
+                    {key: val for key, val in member_attrs.items() if key in self.columns}
                 )
 
                 # Relevant files
@@ -144,7 +144,7 @@ class CESMSource(BaseSource):
 
         self._open_dataset_groups(
             dataset_fields=dataset_fields,
-            member_column_name='ensemble',
+            member_column_name='member_id',
             variable_column_name='variable',
             file_fullpath_column_name='file_fullpath',
         )
