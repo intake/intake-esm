@@ -44,7 +44,7 @@ def test_to_xarray_cesm(chunks, expected_chunks):
         c = intake.open_esm_metadatastore(collection_name='cesm1-le')
         cat = c.search(
             variable=['STF_O2', 'SHF'],
-            ensemble=[1, 3, 9],
+            member_id=[1, 3, 9],
             experiment=['20C', 'RCP85'],
             direct_access=True,
         )

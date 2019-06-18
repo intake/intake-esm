@@ -11,7 +11,7 @@ sources:
         ctrl_branch_year: null
         date_range: null
         direct_access: true
-        ensemble: null
+        member_id: null
         experiment: null
         files: null
         files_basename: null
