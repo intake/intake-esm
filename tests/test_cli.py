@@ -20,3 +20,11 @@ def test_basic():
     p.communicate()
 
     assert p.returncode == 0
+
+
+def test_empty_input():
+    p = subprocess.Popen(['intake-esm-builder'], stdin=subprocess.DEVNULL)
+
+    p.communicate()
+
+    assert p.returncode != 0

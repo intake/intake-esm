@@ -2,9 +2,10 @@
 import os
 
 import click
-import intake
 
-from intake_esm import ESMMetadataStoreCatalog, config
+from . import config
+from .bld_collection_utils import load_collection_input_file
+from .core import ESMMetadataStoreCatalog
 
 # http://click.palletsprojects.com/en/5.x/python3/
 # Enforce en_US.utf-8 as the encoding of choice
@@ -16,6 +17,12 @@ _default_database_dir = config.get('database-directory')
 
 
 def _builder(collection_input_definition, overwrite_existing, database_dir):
+    if not collection_input_definition:
+        load_collection_input_file()
+        raise ValueError(
+            f'\n\n*** Please specify collection input name from the list above '
+            'or collection input YAML file. ***'
+        )
     with config.set({'database-dir': database_dir}):
         ESMMetadataStoreCatalog(collection_input_definition, overwrite_existing=overwrite_existing)
 
@@ -24,9 +31,10 @@ def _builder(collection_input_definition, overwrite_existing, database_dir):
 @click.option(
     '--collection-input-definition',
     '-cdef',
+    default=None,
     help='Path to a collection input YAML file '
     'or a name of supported collection input'
-    '(see: https://github.com/NCAR/intake-esm-datastore)',
+    '(see: https://github.com/NCAR/intake-esm-datastore) for list of supported collection inputs.',
 )
 @click.option(
     '--overwrite-existing',
@@ -40,7 +48,7 @@ def _builder(collection_input_definition, overwrite_existing, database_dir):
     '-db',
     type=str,
     default=_default_database_dir,
-    help='Directory in which to perist the built collection database',
+    help='Directory in which to persist the built collection database',
     show_default=True,
 )
 def main(collection_input_definition, overwrite_existing, database_dir):
