@@ -15,6 +15,7 @@ def _builder(collection_input_definition, overwrite_existing, database_dir):
 @click.command()
 @click.option(
     '--collection-input-definition',
+    '-cdef',
     help='Path to a collection input YAML file '
     'or a name of supported collection input'
     '(see: https://github.com/NCAR/intake-esm-datastore)',
@@ -28,6 +29,7 @@ def _builder(collection_input_definition, overwrite_existing, database_dir):
 )
 @click.option(
     '--database-dir',
+    '-db',
     type=str,
     default=_default_database_dir,
     help='Directory in which to perist the built collection database',
