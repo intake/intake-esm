@@ -1,7 +1,7 @@
 import hashlib
 import os
 import urllib
-from urllib.request import urlretrieve
+from urllib.request import urlopen, urlretrieve
 
 import yaml
 
@@ -64,7 +64,7 @@ def load_collection_input_file(
     cache_dir=_default_cache_dir,
     github_url='https://github.com/NCAR/intake-esm-datastore',
     branch='master',
-    extension='collection-definitions',
+    extension='collection-input',
 ):
     """Load collection definition from an online repository.
 
@@ -112,33 +112,34 @@ def load_collection_input_file(
     md5name = name + '.md5'
     md5file = os.sep.join((longdir, md5name))
 
+    if extension is not None:
+        url = '/'.join((github_url, 'raw', branch, extension, fullname))
+        url_md5 = '/'.join((github_url, 'raw', branch, extension, md5name))
+
+    else:
+        url = '/'.join((github_url, 'raw', branch, fullname))
+        url_md5 = '/'.join((github_url, 'raw', branch, md5name))
+
     if not os.path.exists(localfile):
         os.makedirs(longdir, exist_ok=True)
+        urlretrieve(url, localfile)
+        urlretrieve(url_md5, md5file)
 
-        if extension is not None:
-            url = '/'.join((github_url, 'raw', branch, extension, fullname))
-            urlretrieve(url, localfile)
-            url = '/'.join((github_url, 'raw', branch, extension, md5name))
-            urlretrieve(url, md5file)
+    with open(md5file, 'r') as f:
+        localmd5 = f.read()
 
-        else:
-            url = '/'.join((github_url, 'raw', branch, fullname))
-            urlretrieve(url, localfile)
-            url = '/'.join((github_url, 'raw', branch, md5name))
-            urlretrieve(url, md5file)
+    with urlopen(url_md5) as f:
+        remotemd5 = f.read().decode('utf-8')
 
-        localmd5 = _file_md5_checksum(localfile)
-        with open(md5file, 'r') as f:
-            remotemd5 = f.read()
-
-        if localmd5 != remotemd5:
-            os.remove(localfile)
-            msg = """
-            Try downloading the file again. There was a confliction between
-            your local .md5 file compared to the one in the remote repository,
-            so the local copy has been removed to resolve the issue.
-            """
-            raise IOError(msg)
+    if localmd5 != remotemd5:
+        os.remove(localfile)
+        os.remove(md5file)
+        msg = """
+        Try downloading the file again. There was a confliction between
+        your local .md5 file compared to the one in the remote repository,
+        so the local copy has been removed to resolve the issue.
+        """
+        raise IOError(msg)
 
     with open(localfile) as f:
         d = yaml.safe_load(f)
