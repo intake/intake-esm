@@ -4,3 +4,4 @@ pyyaml
 tqdm
 intake-xarray
 docrep
+click
