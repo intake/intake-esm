@@ -1,8 +1,16 @@
 #! /usr/bin/env python
+import os
+
 import click
 import intake
 
 from intake_esm import ESMMetadataStoreCatalog, config
+
+# http://click.palletsprojects.com/en/5.x/python3/
+# Enforce en_US.utf-8 as the encoding of choice
+
+os.environ['LC_ALL'] = 'C.UTF-8'
+os.environ['LANG'] = 'C.UTF-8'
 
 _default_database_dir = config.get('database-directory')
 
