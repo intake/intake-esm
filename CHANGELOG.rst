@@ -28,6 +28,7 @@ Bug Fixes
 
 - ``cesm._get_file_attrs`` fixed to break loop when longest `stream` is matched. (:pr:`80`) `Matthew Long`_
 
+- Restore ``non_dim_coords`` to data variables all the time. (:pr:`90`) `Anderson Banihirwe`_
 
 Internal Changes
 ----------------

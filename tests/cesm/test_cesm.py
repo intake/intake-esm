@@ -42,15 +42,46 @@ def test_build_collection_cesm1_le():
 def test_to_xarray_cesm(chunks, expected_chunks):
     with config.set({'database-directory': './tests/test_collections'}):
         c = intake.open_esm_metadatastore(collection_name='cesm1-le')
-        cat = c.search(
-            variable=['STF_O2', 'SHF'],
-            member_id=[1, 3, 9],
-            experiment=['20C', 'RCP85'],
-            direct_access=True,
-        )
+        query = {
+            'variable': ['STF_O2', 'SHF'],
+            'member_id': [1, 3, 9],
+            'experiment': ['20C', 'RCP85'],
+            'direct_access': True,
+        }
+        cat = c.search(**query)
         dset = cat.to_xarray(chunks=chunks)
-        ds = dset['pop.h.ocn']
+        _, ds = dset.popitem()
         assert ds['SHF'].data.chunksize == expected_chunks
+
+
+@pytest.mark.parametrize(
+    'query',
+    [
+        (
+            {
+                'variable': ['STF_O2', 'SHF'],
+                'member_id': [1, 3, 9],
+                'experiment': ['20C', 'RCP85'],
+                'direct_access': True,
+            }
+        ),
+        (
+            {
+                'variable': ['STF_O2', 'SHF'],
+                'member_id': [1],
+                'experiment': ['20C', 'RCP85'],
+                'direct_access': True,
+            }
+        ),
+    ],
+)
+def test_to_xarray_restore_non_coords(query):
+    with config.set({'database-directory': './tests/test_collections'}):
+        c = intake.open_esm_metadatastore(collection_name='cesm1-le')
+        cat = c.search(**query)
+        dset = cat.to_xarray(decode_times=False)
+        _, ds = dset.popitem()
+        assert 'TAREA' in ds.data_vars
 
 
 @pytest.mark.skipif(
