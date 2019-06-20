@@ -6,11 +6,9 @@ from os.path import exists
 
 from setuptools import find_packages, setup
 
-if exists('requirements.txt'):
-    with open('requirements.txt') as f:
-        install_requires = f.read().strip().split('\n')
-else:
-    install_requires = ['intake', 'xarray', 'pyyaml', 'tqdm', 'intake-xarray']
+with open('requirements.txt') as f:
+    install_requires = f.read().strip().split('\n')
+
 
 if exists('README.rst'):
     with open('README.rst') as f:
@@ -45,6 +43,10 @@ setup(
     install_requires=install_requires,
     license='Apache 2.0',
     zip_safe=False,
+    entry_points="""
+    [console_scripts]
+    intake-esm-builder=intake_esm.cli:main
+    """,
     keywords='intake-esm',
     use_scm_version={'version_scheme': 'post-release', 'local_scheme': 'dirty-tag'},
     setup_requires=['setuptools_scm', 'setuptools>=30.3.0'],

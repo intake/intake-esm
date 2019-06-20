@@ -30,3 +30,4 @@ dependencies:
   - tqdm
   - xarray
   - docrep
+  - click

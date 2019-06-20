@@ -2,22 +2,18 @@ name: intake-esm-dev
 channels:
   - conda-forge
 dependencies:
-  - codecov
-  - coverage
   - dask
-  - distributed
-  - git
   - intake
   - intake-xarray
-  - ipykernel
-  - pip
-  - pre_commit
-  - pytest
-  - pytest-cov
-  - pytest-icdiff
-  - python=3.6
+  - nbsphinx
+  - numpydoc
+  - python=3.7
   - pyyaml
+  - sphinx_rtd_theme
   - tqdm
   - xarray
   - docrep
   - click
+  - git
+  - make
+  - jupyterlab

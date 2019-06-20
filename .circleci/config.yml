@@ -164,11 +164,14 @@ jobs:
 
       # Restore cached files to speed things up
       - restore_cache:
-          key: deps-{{ .Branch }}-3.7-{{ checksum "ci/environment-dev-3.7.yml" }}
+          key: deps-{{ .Branch }}-{{ checksum "docs/environment.yml" }}
 
       - run: # install and activate conda environment
           name: Install conda environment
-          command: ./ci/install-circle.sh
+          command: |
+            conda env update -f docs/environment.yml
+            source activate ${ENV_NAME}
+            python setup.py install
 
       - run:
           name: Check documentation build
@@ -181,7 +184,7 @@ jobs:
 
       # Cache some files for a speedup in subsequent builds
       - save_cache:
-          key: deps-{{ .Branch }}-3.7-{{ checksum "ci/environment-dev-3.7.yml" }}
+          key: deps-{{ .Branch }}-{{ checksum "docs/environment.yml" }}
           paths:
             - "/opt/conda/envs/${ENV_NAME}/"
             - "/opt/conda/pkgs"
