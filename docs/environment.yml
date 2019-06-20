@@ -14,3 +14,4 @@ dependencies:
   - xarray
   - docrep
   - click
+  - jupyterlab
