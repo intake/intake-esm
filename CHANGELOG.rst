@@ -17,6 +17,8 @@ Features
 
 - Split collection definitions out of config. (:pr:`83`) `Matthew Long`_
 
+- Add ``intake-esm-builder``, a CLI tool for building collection from the command line. (:pr:`89`) `Anderson Banihirwe`_
+
 
 Bug Fixes
 ----------
@@ -31,6 +33,7 @@ Internal Changes
 ----------------
 
 - Refactor existing functionality to make intake-esm robust and extensible. (:pr:`77`) `Anderson Banihirwe`_
+
 
 
 Intake-esm v2019.5.11 (2019-05-11)
