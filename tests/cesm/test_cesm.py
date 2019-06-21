@@ -32,6 +32,27 @@ def test_build_collection_cesm1_le():
         assert isinstance(col.df, pd.DataFrame)
 
 
+def test_search_regex():
+    with config.set({'database-directory': './tests/test_collections'}):
+        col = intake.open_esm_metadatastore(collection_name='cesm1-le')
+        cases = sorted(
+            col.search(case='b.e11.B20TRC5CNBDRD.f09_g16.10*').query_results.case.unique()
+        )
+        expected = sorted(
+            [
+                'b.e11.B20TRC5CNBDRD.f09_g16.101',
+                'b.e11.B20TRC5CNBDRD.f09_g16.102',
+                'b.e11.B20TRC5CNBDRD.f09_g16.103',
+                'b.e11.B20TRC5CNBDRD.f09_g16.104',
+                'b.e11.B20TRC5CNBDRD.f09_g16.105',
+            ]
+        )
+        assert cases == expected
+
+        date_ranges = set(col.search(date_range=['192001-']).query_results.date_range.unique())
+        assert date_ranges == set(['192001-200512'])
+
+
 @pytest.mark.parametrize(
     'chunks, expected_chunks',
     [

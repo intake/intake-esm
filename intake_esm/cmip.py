@@ -6,7 +6,7 @@ import xarray as xr
 from tqdm.autonotebook import tqdm
 
 from intake_esm import aggregate, config
-from intake_esm.collection import Collection, docstrings, get_subset
+from intake_esm.collection import Collection, docstrings
 from intake_esm.source import BaseSource
 
 
