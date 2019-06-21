@@ -278,6 +278,36 @@ def _open_collection(collection_name):
         raise ValueError("Couldn't open specified collection")
 
 
+def _test_str_pattern(ser, pat, case=False, regex=True):
+    """Test if pattern or regex is contained within a string of a Series or Index.
+
+    Parameters
+    ----------
+
+    ser: pandas.Series
+
+    pat: str
+        Character sequence or regular expression.
+
+    case: bool, default True
+         If True, case sensitive.
+
+    regex: bool, default True
+
+        If True, assumes the pat is a regular expression.
+        If False, treats the pat as a literal string.
+
+    Returns
+    -------
+
+    Index of boolean values
+       Index of boolean values indicating whether the given pattern
+       is contained within the string of each element of the Series or Index.
+    """
+
+    return ser.str.contains(pat, case=case, regex=regex)
+
+
 def get_subset(collection_name, query, order_by=None):
     """ Get a subset of collection entries that match a query """
     df, _, collection_type = _open_collection(collection_name)
@@ -285,16 +315,21 @@ def get_subset(collection_name, query, order_by=None):
     condition = np.ones(len(df), dtype=bool)
 
     for key, val in query.items():
-
+        is_obj = df[key].dtype == np.object
         if isinstance(val, list):
             condition_i = np.zeros(len(df), dtype=bool)
             for val_i in val:
-                condition_i = condition_i | (df[key] == val_i)
+                if is_obj:
+                    condition_i = condition_i | (_test_str_pattern(df[key], val_i))
+                else:
+                    condition_i = condition_i | (df[key] == val_i)
             condition = condition & condition_i
 
         elif val is not None:
-            condition = condition & (df[key] == val)
-
+            if is_obj:
+                condition = condition & (_test_str_pattern(df[key], val))
+            else:
+                condition = condition & (df[key] == val)
     query_results = df.loc[condition]
 
     if order_by is None:

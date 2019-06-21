@@ -19,6 +19,7 @@ Features
 
 - Add ``intake-esm-builder``, a CLI tool for building collection from the command line. (:pr:`89`) `Anderson Banihirwe`_
 
+- Extend ``search()`` method to filter rows in collection by regex. (:pr:`93`) `Anderson Banihirwe`_
 
 Bug Fixes
 ----------
