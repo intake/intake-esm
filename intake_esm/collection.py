@@ -315,21 +315,14 @@ def get_subset(collection_name, query, order_by=None):
     condition = np.ones(len(df), dtype=bool)
 
     for key, val in query.items():
-        is_obj = df[key].dtype == np.object
         if isinstance(val, list):
             condition_i = np.zeros(len(df), dtype=bool)
             for val_i in val:
-                if is_obj:
-                    condition_i = condition_i | (_test_str_pattern(df[key], val_i))
-                else:
-                    condition_i = condition_i | (df[key] == val_i)
+                condition_i = condition_i | (df[key] == val_i)
             condition = condition & condition_i
 
         elif val is not None:
-            if is_obj:
-                condition = condition & (_test_str_pattern(df[key], val))
-            else:
-                condition = condition & (df[key] == val)
+            condition = condition & (df[key] == val)
     query_results = df.loc[condition]
 
     if order_by is None:

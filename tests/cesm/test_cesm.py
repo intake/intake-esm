@@ -32,6 +32,7 @@ def test_build_collection_cesm1_le():
         assert isinstance(col.df, pd.DataFrame)
 
 
+@pytest.mark.xfail(reason='Feature not yet implemented')
 def test_search_regex():
     with config.set({'database-directory': './tests/test_collections'}):
         col = intake.open_esm_metadatastore(collection_name='cesm1-le')
