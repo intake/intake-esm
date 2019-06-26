@@ -112,7 +112,7 @@ def concat_time_levels(dsets, time_coord_name_default):
     """
     dsets = dask.compute(*dsets)
     if len(dsets) == 1:
-        return _restore_non_dim_coords(dsets[0])
+        return dsets[0]
 
     attrs = dict_union(*[ds.attrs for ds in dsets])
 
@@ -132,8 +132,6 @@ def concat_time_levels(dsets, time_coord_name_default):
     objs_to_concat = [first] + rest
 
     ds = xr.concat(objs_to_concat, dim=time_coord_name, coords='minimal')
-
-    ds = _restore_non_dim_coords(ds)
 
     new_history = f"\n{datetime.now()} xarray.concat(<ALL_TIMESTEPS>, dim='{time_coord_name}', coords='minimal')"
     if 'history' in attrs:
@@ -156,7 +154,7 @@ def concat_ensembles(
     time-invariant variables from the first ensemble member.
     """
     if len(dsets) == 1:
-        return dsets[0]
+        return _restore_non_dim_coords(dsets[0])
 
     if member_ids is None:
         member_ids = np.arange(0, len(dsets))
