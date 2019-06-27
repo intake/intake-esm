@@ -56,6 +56,9 @@ class StorageResource(object):
         elif self.type == 'copy-to-cache':
             filelist = self._list_files_posix()
 
+        elif self.type == 'aws-s3':
+            filelist = self._list_s3_objects()
+
         else:
             raise ValueError(f'unknown resource type: {self.type}')
 
@@ -65,6 +68,25 @@ class StorageResource(object):
         return not any(
             fnmatch.fnmatch(path, pat=exclude_pattern) for exclude_pattern in self.exclude_patterns
         )
+
+    def _list_s3_objects(self):
+        """ Get a list of s3 objects.
+
+        Notes
+        -----
+        The following implementation is just a prototype for
+        testing purposes and will have to be replaced with a
+        permanent implementation that uses
+        s3fs: https://github.com/dask/s3fs for S3 Filesystem.
+        """
+        try:
+            root = self.urlpath
+            raw_objects = os.listdir(root)
+            objects = [obj for obj in raw_objects if obj.endswith(self.file_extension)]
+            return objects
+
+        except Exception as e:
+            warn(f'{e.__str__()}\nCould not parse content in {self.urlpath}.')
 
     def _list_files_posix(self):
         """Get a list of files"""

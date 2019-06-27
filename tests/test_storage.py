@@ -51,6 +51,20 @@ def test_storage_hsi():
     assert len(files) != 0
 
 
+@pytest.mark.skipif(
+    not match,
+    reason='does not run outside of Cheyenne login nodes or Casper nodes for the time being',
+)
+def test_storage_aws_s3():
+    urlpath = '/glade/scratch/abanihi/lens-aws'
+    loc_type = 'aws-s3'
+    file_extension = '.zarr'
+    exclude_dirs = []
+    SR = StorageResource(urlpath, loc_type, exclude_dirs, file_extension)
+    stores = SR.filelist
+    assert len(stores) != 0
+
+
 def test_file_transfer_symlink():
     data_cache_dir = f'{TMPDIR}/intake-esm-tests/transferred-data'
     with config.set(
