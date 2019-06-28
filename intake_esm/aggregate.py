@@ -6,6 +6,8 @@ from functools import reduce
 import dask
 import numpy as np
 import xarray as xr
+from dask.bytes.core import get_fs, infer_options, update_storage_options
+from intake_xarray.xzarr import get_mapper
 
 from . import config
 
@@ -92,7 +94,7 @@ def _restore_non_dim_coords(ds):
     return ds
 
 
-def concat_time_levels(dsets, time_coord_name_default):
+def concat_time_levels(dsets, time_coord_name_default, restore_non_dim_coords=False):
     """
     Concatenate datasets across "time" levels, taking time invariant variables
     from the first dataset.
@@ -101,16 +103,19 @@ def concat_time_levels(dsets, time_coord_name_default):
     ----------
     dsets : list
         A list of datasets to concatenate.
-
-    time_coord_name_default : string
+    time_coord_name_default : str
         Default name of the time coordinate
+    restore_non_coord_dim : bool, default (False)
+        Whether or not to restore non coord dims
 
     Returns
     -------
     dset : xarray.Dataset,
         The concatenated dataset.
     """
-    dsets = dask.compute(*dsets)
+    if not isinstance(dsets[0], xr.Dataset):
+        dsets = dask.compute(*dsets)
+
     if len(dsets) == 1:
         return dsets[0]
 
@@ -140,7 +145,10 @@ def concat_time_levels(dsets, time_coord_name_default):
         attrs['history'] = new_history
     ds.attrs = attrs
 
-    return ds
+    if restore_non_dim_coords:
+        return _restore_non_dim_coords(ds)
+    else:
+        return ds
 
 
 def concat_ensembles(
@@ -198,6 +206,22 @@ def open_dataset(url, data_vars, **kwargs):
     """open dataset with chunks determined."""
     ds = xr.open_dataset(url, **kwargs)
     ds.attrs['history'] = f"{datetime.now()} xarray.open_dataset('{url}')"
+
+    if data_vars:
+        return set_coords(ds, data_vars)
+    else:
+        return ds
+
+
+def open_store(url, data_vars, **kwargs):
+    """open zarr store."""
+    urlpath, protocol, options = infer_options(url)
+    fs, _ = get_fs(protocol, options)
+    if protocol != 'file':
+        mapper = get_mapper(protocol, fs, urlpath)
+        ds = xr.open_zarr(mapper, **kwargs)
+    else:
+        ds = xr.open_zarr(urlpath, **kwargs)
 
     if data_vars:
         return set_coords(ds, data_vars)

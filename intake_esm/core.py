@@ -8,6 +8,7 @@ from intake.catalog.local import LocalCatalogEntry
 from . import config as config
 from .bld_collection_utils import FILE_ALIAS_DICT, load_collection_input_file
 from .cesm import CESMCollection
+from .cesm_aws import CESMAWSCollection
 from .cmip import CMIP5Collection, CMIP6Collection
 from .collection import _get_built_collections, _open_collection
 from .era5 import ERA5Collection
@@ -51,6 +52,7 @@ class ESMMetadataStoreCatalog(Catalog):
     name = 'esm_metadatastore'
     collection_types = {
         'cesm': CESMCollection,
+        'cesm-aws': CESMAWSCollection,
         'cmip5': CMIP5Collection,
         'cmip6': CMIP6Collection,
         'mpige': MPIGECollection,

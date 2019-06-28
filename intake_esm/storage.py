@@ -82,7 +82,9 @@ class StorageResource(object):
         try:
             root = self.urlpath
             raw_objects = os.listdir(root)
-            objects = [obj for obj in raw_objects if obj.endswith(self.file_extension)]
+            objects = [
+                os.path.join(root, obj) for obj in raw_objects if obj.endswith(self.file_extension)
+            ]
             return objects
 
         except Exception as e:

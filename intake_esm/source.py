@@ -1,5 +1,6 @@
 import intake_xarray
 import xarray as xr
+from intake_xarray.xzarr import get_fs, get_mapper
 from tqdm.autonotebook import tqdm
 
 from . import aggregate
@@ -22,12 +23,13 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
         Further parameters are passed to to_xarray() method
     """
 
-    def __init__(self, collection_name, query={}, **kwargs):
+    def __init__(self, collection_name, query={}, storage_options=None, **kwargs):
         self.collection_name = collection_name
         self.query = query
         self.urlpath = ''
         self.query_results = self.get_results()
         self._ds = None
+        self.storage_options = storage_options
         self.kwargs = kwargs
         super(BaseSource, self).__init__(**kwargs)
         if self.metadata is None:
@@ -43,19 +45,22 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
         _kwargs = kwargs.copy()
         if self.query_results.empty:
             raise ValueError(f'Query={self.query} returned empty results')
-        if 'decode_times' not in _kwargs.keys():
+
+        if 'decode_times' not in _kwargs:
             _kwargs.update(decode_times=True)
-        if 'time_coord_name' not in _kwargs.keys():
+        if 'compat' not in _kwargs:
+            _kwargs.update(compat='no_conflicts')
+        if 'time_coord_name' not in _kwargs:
             _kwargs.update(time_coord_name='time')
-        if 'ensemble_dim_name' not in _kwargs.keys():
+        if 'ensemble_dim_name' not in _kwargs:
             _kwargs.update(ensemble_dim_name='member_id')
-        if 'chunks' not in _kwargs.keys():
+        if 'chunks' not in _kwargs:
             _kwargs.update(chunks={_kwargs['time_coord_name']: 'auto'})
-        if 'join' not in _kwargs.keys():
+        if 'join' not in _kwargs:
             _kwargs.update(join='outer')
-        if 'preprocess' not in _kwargs.keys():
+        if 'preprocess' not in _kwargs:
             _kwargs.update(preprocess=None)
-        if 'merge_exp' not in _kwargs.keys():
+        if 'merge_exp' not in _kwargs:
             _kwargs.update(merge_exp=True)
 
         return _kwargs
