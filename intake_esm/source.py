@@ -1,6 +1,5 @@
 import intake_xarray
 import xarray as xr
-from intake_xarray.xzarr import get_fs, get_mapper
 from tqdm.autonotebook import tqdm
 
 from . import aggregate

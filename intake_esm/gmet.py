@@ -51,7 +51,7 @@ class GMETSource(BaseSource):
 
     def _open_dataset(self):
         kwargs = self._validate_kwargs(self.kwargs)
-
+        data_vars = ['pcp', 't_mean', 't_range']
         dataset_fields = ['member_id']
         grouped = get_subset(self.collection_name, self.query).groupby(dataset_fields)
         member_ids = []
@@ -61,7 +61,7 @@ class GMETSource(BaseSource):
             dsets = [
                 aggregate.open_dataset_delayed(
                     url,
-                    data_vars=None,
+                    data_vars=data_vars,
                     chunks=kwargs['chunks'],
                     decode_times=kwargs['decode_times'],
                 )

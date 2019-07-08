@@ -1,0 +1,10 @@
+name: AWS-CESM1-LE
+collection_type: cesm-aws
+data_sources:
+  AWS-public-dataset:
+    locations:
+      - name: S3-MAIN-BUCKET
+        loc_type: aws-s3
+        direct_access: True
+        urlpath: /glade/scratch/abanihi/lens-aws
+        file_extension: .zarr
