@@ -1,7 +1,8 @@
+click
+dask
+docrep
 intake
-xarray
+intake-xarray
 pyyaml
 tqdm
-intake-xarray
-docrep
-click
+xarray

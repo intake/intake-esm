@@ -2,7 +2,7 @@
 Changelog History
 =================
 
-Intake-esm v2019.6.xx (2019-06-xx)
+Intake-esm v2019.7.xx (2019-07-xx)
 ==================================
 
 
@@ -19,7 +19,6 @@ Features
 
 - Add ``intake-esm-builder``, a CLI tool for building collection from the command line. (:pr:`89`) `Anderson Banihirwe`_
 
-- Extend ``search()`` method to filter rows in collection by regex. (:pr:`93`) `Anderson Banihirwe`_
 
 Bug Fixes
 ----------
