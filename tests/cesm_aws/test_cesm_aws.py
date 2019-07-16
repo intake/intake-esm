@@ -8,7 +8,7 @@ import yaml
 
 from intake_esm import config
 
-cdef = yaml.load(
+cdef = yaml.safe_load(
     """
 name: AWS-CESM1-LE
 collection_type: cesm-aws
@@ -37,7 +37,7 @@ def test_build_collection_cesm1_aws_le():
         col = intake.open_esm_metadatastore(
             collection_input_definition=cdef,
             overwrite_existing=True,
-            storage_options={'anon': False, 'profile_name': 'default'},
+            storage_options={'anon': False},
         )
         assert isinstance(col.df, pd.DataFrame)
 

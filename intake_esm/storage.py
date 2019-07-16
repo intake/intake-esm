@@ -84,7 +84,7 @@ class StorageResource(object):
                 objects = [obj for obj in objects if obj.endswith(self.file_extension)]
                 return objects
             except Exception as exc:
-                raise exc('Could not parse content in {self.urlpath}')
+                raise exc
         else:
             raise ValueError(
                 'Please authenticate with s3fs, and make sure to call\n'

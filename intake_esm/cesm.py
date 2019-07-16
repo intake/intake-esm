@@ -22,8 +22,8 @@ class CESMCollection(Collection):
     """
     )
 
-    def __init__(self, collection_spec):
-        super(CESMCollection, self).__init__(collection_spec)
+    def __init__(self, collection_spec, fs):
+        super(CESMCollection, self).__init__(collection_spec, fs)
         self.component_streams = self.collection_definition.get(
             config.normalize_key('component_streams'), None
         )
