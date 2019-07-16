@@ -9,15 +9,6 @@ Core
 .. autosummary:: ESMMetadataStoreCatalog
 
 
-Collection Definitions
-~~~~~~~~~~~~~~~~~~~~~~
-
-.. currentmodule:: intake_esm.definition_utils
-
-.. autosummary:: load_collection_definition
-
-
-
 
 .. currentmodule:: intake_esm.core
 
