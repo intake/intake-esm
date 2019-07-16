@@ -19,6 +19,7 @@ Features
 
 - Add ``intake-esm-builder``, a CLI tool for building collection from the command line. (:pr:`89`) `Anderson Banihirwe`_
 
+- Add support for CESM-LENS data holdings residing in AWS S3. (:pr:`98`) `Anderson Banihirwe`_
 
 Bug Fixes
 ----------
