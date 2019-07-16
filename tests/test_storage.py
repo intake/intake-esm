@@ -6,6 +6,7 @@ import socket
 import intake
 import pandas as pd
 import pytest
+import s3fs
 
 from intake_esm import config
 from intake_esm.storage import StorageResource, _ensure_file_access, _filter_query_results
@@ -51,18 +52,28 @@ def test_storage_hsi():
     assert len(files) != 0
 
 
-@pytest.mark.skipif(
-    not match,
-    reason='does not run outside of Cheyenne login nodes or Casper nodes for the time being',
-)
 def test_storage_aws_s3():
-    urlpath = '/glade/scratch/abanihi/lens-aws'
-    loc_type = 'aws-s3'
-    file_extension = '.zarr'
-    exclude_dirs = []
-    SR = StorageResource(urlpath, loc_type, exclude_dirs, file_extension)
+    fs = s3fs.S3FileSystem(anon=False, profile_name='default')
+    SR = StorageResource(
+        urlpath='s3://ncar-cesm-lens/lnd/monthly/',
+        loc_type='aws-s3',
+        exclude_patterns=[],
+        file_extension='.zarr',
+        fs=fs,
+    )
     stores = SR.filelist
     assert len(stores) != 0
+
+
+def test_storage_aws_s3_failure():
+    with pytest.raises(ValueError):
+        _ = StorageResource(
+            urlpath='s3://ncar-cesm-lens/lnd/monthly/',
+            loc_type='aws-s3',
+            exclude_patterns=[],
+            file_extension='.zarr',
+            fs=None,
+        )
 
 
 def test_file_transfer_symlink():

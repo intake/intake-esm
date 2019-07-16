@@ -21,18 +21,17 @@ class CESMAWSCollection(Collection):
 
     def _get_file_attrs(self, storepath):
         """ Extract each part of cesmLE-experiment-component-frequency-variable.zarr store pattern. """
-        store_basename = os.path.basename(storepath)
         keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
         storeparts = {key: None for key in keys}
-        storeparts['store_basename'] = store_basename
-        storeparts['store_bucketname'] = os.path.dirname(storepath) + '/'
-        storeparts['store_fullpath'] = storepath
+        store_meta = storepath.split('/')
+        storeparts['store_bucketname'] = 's3://' + store_meta[0]
+        storeparts['store_fullpath'] = 's3://' + storepath
+        storeparts['component'] = store_meta[1]
+        storeparts['frequency'] = store_meta[2]
 
-        store_meta = store_basename.split('-')
-        storeparts['experiment'] = store_meta[1]
-        storeparts['component'] = store_meta[2]
-        storeparts['frequency'] = store_meta[3]
-        storeparts['variable'] = store_meta[-1].split('.')[0]
+        x = store_meta[-1].split('-')
+        storeparts['experiment'] = x[1]
+        storeparts['variable'] = x[-1].split('.')[0]
 
         return storeparts
 

@@ -16,7 +16,7 @@ from . import config
 class StorageResource(object):
     """ Defines a storage resource object"""
 
-    def __init__(self, urlpath, loc_type, exclude_patterns, file_extension='.nc'):
+    def __init__(self, urlpath, loc_type, exclude_patterns, file_extension='.nc', fs=None):
         """
 
         Parameters
@@ -33,6 +33,7 @@ class StorageResource(object):
 
         """
 
+        self.fs = fs
         self.urlpath = urlpath
         self.type = loc_type
         self.file_extension = file_extension
@@ -74,21 +75,21 @@ class StorageResource(object):
 
         Notes
         -----
-        The following implementation is just a prototype for
-        testing purposes and will have to be replaced with a
-        permanent implementation that uses
+        The following implementation uses
         s3fs: https://github.com/dask/s3fs for S3 Filesystem.
         """
-        try:
-            root = self.urlpath
-            raw_objects = os.listdir(root)
-            objects = [
-                os.path.join(root, obj) for obj in raw_objects if obj.endswith(self.file_extension)
-            ]
-            return objects
-
-        except Exception as e:
-            warn(f'{e.__str__()}\nCould not parse content in {self.urlpath}.')
+        if self.fs:
+            try:
+                objects = self.fs.ls(self.urlpath)[1:]
+                objects = [obj for obj in objects if obj.endswith(self.file_extension)]
+                return objects
+            except Exception as exc:
+                raise exc('Could not parse content in {self.urlpath}')
+        else:
+            raise ValueError(
+                'Please authenticate with s3fs, and make sure to call\n'
+                'StorageResource() with `fs` set to your authentication object.'
+            )
 
     def _list_files_posix(self):
         """Get a list of files"""

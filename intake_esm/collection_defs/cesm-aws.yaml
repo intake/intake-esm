@@ -9,7 +9,6 @@ collections:
     - component
     - variable
     - store_fullpath
-    - store_basename
     - store_bucketname
     order_by_columns:
       - variable

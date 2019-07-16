@@ -4,17 +4,40 @@ import intake
 import pandas as pd
 import pytest
 import xarray as xr
+import yaml
 
 from intake_esm import config
 
-here = os.path.abspath(os.path.dirname(__file__))
+cdef = yaml.load(
+    """
+name: AWS-CESM1-LE
+collection_type: cesm-aws
+data_sources:
+  land:
+    locations:
+      - name: land-monthly
+        loc_type: aws-s3
+        direct_access: True
+        urlpath: s3://ncar-cesm-lens/lnd/monthly
+        file_extension: .zarr
+
+  ocean:
+    locations:
+      - name: ocean-monthly
+        loc_type: aws-s3
+        direct_access: True
+        urlpath: s3://ncar-cesm-lens/ocn/monthly
+        file_extension: .zarr
+"""
+)
 
 
 def test_build_collection_cesm1_aws_le():
     with config.set({'database-directory': './tests/test_collections'}):
-        collection_input_definition = os.path.join(here, 'cesm1-le_aws_collection-input.yml')
         col = intake.open_esm_metadatastore(
-            collection_input_definition=collection_input_definition, overwrite_existing=True
+            collection_input_definition=cdef,
+            overwrite_existing=True,
+            storage_options={'anon': False, 'profile_name': 'default'},
         )
         assert isinstance(col.df, pd.DataFrame)
 
