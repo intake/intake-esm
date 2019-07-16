@@ -117,7 +117,10 @@ def concat_time_levels(dsets, time_coord_name_default, restore_non_dim_coords=Fa
         dsets = dask.compute(*dsets)
 
     if len(dsets) == 1:
-        return dsets[0]
+        if restore_non_dim_coords:
+            return _restore_non_dim_coords(dsets[0])
+        else:
+            return dsets[0]
 
     attrs = dict_union(*[ds.attrs for ds in dsets])
 
