@@ -11,6 +11,15 @@ import s3fs
 from intake_esm import config
 from intake_esm.storage import StorageResource, _ensure_file_access, _filter_query_results
 
+CIRCLE_CI_CHECK = os.environ.get('CIRCLECI', False)
+if CIRCLE_CI_CHECK:
+    profile_name = None
+
+else:
+    profile_name = 'intake-esm-tester'
+
+storage_options = {'anon': False, 'profile_name': profile_name}
+
 here = os.path.abspath(os.path.dirname(__file__))
 
 regex = re.compile(r'cheyenne|casper')
@@ -53,7 +62,7 @@ def test_storage_hsi():
 
 
 def test_storage_aws_s3():
-    fs = s3fs.S3FileSystem(anon=False, profile_name='default')
+    fs = s3fs.S3FileSystem(**storage_options)
     SR = StorageResource(
         urlpath='s3://ncar-cesm-lens/lnd/monthly/',
         loc_type='aws-s3',

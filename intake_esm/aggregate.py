@@ -213,9 +213,10 @@ def open_dataset(url, data_vars, **kwargs):
         return ds
 
 
-def open_store(url, data_vars, **kwargs):
+def open_store(url, data_vars, storage_options={}, **kwargs):
     """open zarr store."""
     urlpath, protocol, options = infer_options(url)
+    update_storage_options(options, storage_options)
     fs, _ = get_fs(protocol, options)
     if protocol != 'file':
         mapper = get_mapper(protocol, fs, urlpath)

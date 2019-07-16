@@ -105,7 +105,12 @@ class CESMAWSSource(BaseSource):
                 ):
                     urlpath_ei_vi = v_stores['store_fullpath'].tolist()
                     v_dsets = [
-                        aggregate.open_store(url, data_vars=[v_id], **zarr_kwargs)
+                        aggregate.open_store(
+                            url,
+                            data_vars=[v_id],
+                            storage_options=self.storage_options,
+                            **zarr_kwargs,
+                        )
                         for url in urlpath_ei_vi
                     ]
                     exp_dsets.extend(v_dsets)

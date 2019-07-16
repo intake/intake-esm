@@ -18,11 +18,13 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
 
     query : dict
 
+    storage_optinos : dict
+
     kwargs :
         Further parameters are passed to to_xarray() method
     """
 
-    def __init__(self, collection_name, query={}, storage_options=None, **kwargs):
+    def __init__(self, collection_name, query={}, storage_options={}, **kwargs):
         self.collection_name = collection_name
         self.query = query
         self.urlpath = ''

@@ -43,7 +43,7 @@ class ESMMetadataStoreCatalog(Catalog):
             Whether to overwrite existing built collection catalog.
 
     storage_options : dict
-            Parameters to pass to requests when issuing hppt commands to remote
+            Parameters to pass to requests when issuing http commands to remote
             backend file-systems such as s3.
 
     kwargs : dict, optional
@@ -168,7 +168,11 @@ class ESMMetadataStoreCatalog(Catalog):
             if key not in query:
                 query[key] = None
         name = self.collection_name + '_' + str(uuid.uuid4())
-        args = {'collection_name': self.collection_name, 'query': query}
+        args = {
+            'collection_name': self.collection_name,
+            'query': query,
+            'storage_options': self.storage_options,
+        }
         driver = config.get('sources')[self.collection_type]
         description = f'Catalog entry from {self.collection_name} collection'
         cat = LocalCatalogEntry(
