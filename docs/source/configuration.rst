@@ -31,7 +31,7 @@ the ``config`` dictionary or the ``get`` function:
    import intake_esm
    intake_esm.config.config
    intake_esm.config.get('collections.cmip5')
-   intake_esm.config.get('sources)
+   intake_esm.config.get('sources')
 
 
 You may wish to inspect the ``intake_esm.config.config`` dictionary to get a sense
