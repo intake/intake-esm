@@ -16,7 +16,7 @@ from . import config
 class StorageResource(object):
     """ Defines a storage resource object"""
 
-    def __init__(self, urlpath, loc_type, exclude_patterns, file_extension='.nc'):
+    def __init__(self, urlpath, loc_type, exclude_patterns, file_extension='.nc', fs=None):
         """
 
         Parameters
@@ -33,6 +33,7 @@ class StorageResource(object):
 
         """
 
+        self.fs = fs
         self.urlpath = urlpath
         self.type = loc_type
         self.file_extension = file_extension
@@ -56,6 +57,9 @@ class StorageResource(object):
         elif self.type == 'copy-to-cache':
             filelist = self._list_files_posix()
 
+        elif self.type == 'aws-s3':
+            filelist = self._list_s3_objects()
+
         else:
             raise ValueError(f'unknown resource type: {self.type}')
 
@@ -65,6 +69,27 @@ class StorageResource(object):
         return not any(
             fnmatch.fnmatch(path, pat=exclude_pattern) for exclude_pattern in self.exclude_patterns
         )
+
+    def _list_s3_objects(self):
+        """ Get a list of s3 objects.
+
+        Notes
+        -----
+        The following implementation uses
+        s3fs: https://github.com/dask/s3fs for S3 Filesystem.
+        """
+        if self.fs:
+            try:
+                objects = self.fs.ls(self.urlpath)[1:]
+                objects = [obj for obj in objects if obj.endswith(self.file_extension)]
+                return objects
+            except Exception as exc:
+                raise exc
+        else:
+            raise ValueError(
+                'Please authenticate with s3fs, and make sure to call\n'
+                'StorageResource() with `fs` set to your authentication object.'
+            )
 
     def _list_files_posix(self):
         """Get a list of files"""

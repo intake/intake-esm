@@ -6,9 +6,19 @@ import socket
 import intake
 import pandas as pd
 import pytest
+import s3fs
 
 from intake_esm import config
 from intake_esm.storage import StorageResource, _ensure_file_access, _filter_query_results
+
+CIRCLE_CI_CHECK = os.environ.get('CIRCLECI', False)
+if CIRCLE_CI_CHECK:
+    profile_name = None
+
+else:
+    profile_name = 'intake-esm-tester'
+
+storage_options = {'anon': False, 'profile_name': profile_name}
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -49,6 +59,30 @@ def test_storage_hsi():
     files = SR.filelist
     assert isinstance(files, list)
     assert len(files) != 0
+
+
+def test_storage_aws_s3():
+    fs = s3fs.S3FileSystem(**storage_options)
+    SR = StorageResource(
+        urlpath='s3://ncar-cesm-lens/lnd/monthly/',
+        loc_type='aws-s3',
+        exclude_patterns=[],
+        file_extension='.zarr',
+        fs=fs,
+    )
+    stores = SR.filelist
+    assert len(stores) != 0
+
+
+def test_storage_aws_s3_failure():
+    with pytest.raises(ValueError):
+        _ = StorageResource(
+            urlpath='s3://ncar-cesm-lens/lnd/monthly/',
+            loc_type='aws-s3',
+            exclude_patterns=[],
+            file_extension='.zarr',
+            fs=None,
+        )
 
 
 def test_file_transfer_symlink():

@@ -6,3 +6,4 @@ intake-xarray
 pyyaml
 tqdm
 xarray
+s3fs
