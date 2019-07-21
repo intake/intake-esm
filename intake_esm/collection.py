@@ -154,7 +154,7 @@ class Collection(ABC):
         if 'urlpath' in sig.parameters:
             pass_urlpath = True
         else:
-            pass_urlpath = True
+            pass_urlpath = False
 
         for f in tqdm(filelist, desc='file listing'):
             if pass_urlpath:
