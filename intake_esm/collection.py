@@ -101,7 +101,7 @@ class Collection(ABC):
                     resource_type=location['loc_type'],
                     direct_access=location['direct_access'],
                     filelist=resource.filelist,
-                    urlpath=location['urlpath']
+                    urlpath=location['urlpath'],
                 )
                 df_files[res_key] = self._add_extra_attributes(
                     data_source,
@@ -140,23 +140,28 @@ class Collection(ABC):
         else:
             return None
 
-    def _assemble_collection_df_files(self, resource_key, resource_type, direct_access, filelist, urlpath=None):
+    def _assemble_collection_df_files(
+        self, resource_key, resource_type, direct_access, filelist, urlpath=None
+    ):
         entries = {key: [] for key in self.columns}
         if not filelist:
             return pd.DataFrame(entries)
 
         # Check parameters of _get_file_attrs for presence of urlpath for backwards compatibility
         from inspect import signature
+
         sig = signature(self._get_file_attrs)
         if 'urlpath' in sig.parameters:
-            pass_urlpath=True
+            pass_urlpath = True
+        else:
+            pass_urlpath = True
 
         for f in tqdm(filelist, desc='file listing'):
             if pass_urlpath:
-                file_attrs = self._get_file_attrs(f,urlpath)
+                file_attrs = self._get_file_attrs(f, urlpath)
             else:
                 file_attrs = self._get_file_attrs(f)
-                
+
             if not file_attrs:
                 continue
 
