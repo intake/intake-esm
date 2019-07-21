@@ -13,6 +13,7 @@ from .collection import _get_built_collections, _open_collection
 from .era5 import ERA5Collection
 from .gmet import GMETCollection
 from .mpige import MPIGECollection
+from .bluelink import ACCESSCollection
 
 
 class ESMMetadataStoreCatalog(Catalog):
@@ -56,6 +57,7 @@ class ESMMetadataStoreCatalog(Catalog):
         'mpige': MPIGECollection,
         'gmet': GMETCollection,
         'era5': ERA5Collection,
+        'access': ACCESSCollection
     }
 
     def __init__(

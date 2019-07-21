@@ -1,0 +1,25 @@
+collections:  
+  access:
+    collection_columns:
+      - product_type
+      - model_version
+      - grid
+      - year
+      - month
+      - forecast_date
+      - forecast_hour
+      - level
+      - resource
+      - resource_type
+      - file_basename
+      - file_dirname
+      - file_fullpath
+      - direct_access
+    required_columns:
+      - product_type
+      - model_version
+      - file_fullpath
+    order_by_columns:
+      - model_version
+      - forecast_date
+      - forecast_hour
