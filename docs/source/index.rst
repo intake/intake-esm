@@ -26,6 +26,8 @@ please open an issue at the GitHub `main repository <http://github.com/NCAR/inta
    notebooks/gmet.ipynb
    notebooks/era5.ipynb
    api
+   cli
+   configuration
    contributing
    changelog
 

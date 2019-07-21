@@ -1,6 +1,7 @@
 import os
 import uuid
 
+import s3fs
 import yaml
 from intake.catalog import Catalog
 from intake.catalog.local import LocalCatalogEntry
@@ -8,6 +9,7 @@ from intake.catalog.local import LocalCatalogEntry
 from . import config as config
 from .bld_collection_utils import FILE_ALIAS_DICT, load_collection_input_file
 from .cesm import CESMCollection
+from .cesm_aws import CESMAWSCollection
 from .cmip import CMIP5Collection, CMIP6Collection
 from .collection import _get_built_collections, _open_collection
 from .era5 import ERA5Collection
@@ -41,8 +43,9 @@ class ESMMetadataStoreCatalog(Catalog):
     overwrite_existing : bool,
             Whether to overwrite existing built collection catalog.
 
-    metadata : dict
-            Arbitrary information to carry along with the data collection source specs.
+    storage_options : dict
+            Parameters to pass to requests when issuing http commands to remote
+            backend file-systems such as s3.
 
     kwargs : dict, optional
         Keyword arguments passed to ``intake_esm.bld_collection_utils.load_collection_input_file`` function
@@ -52,6 +55,7 @@ class ESMMetadataStoreCatalog(Catalog):
     name = 'esm_metadatastore'
     collection_types = {
         'cesm': CESMCollection,
+        'cesm-aws': CESMAWSCollection,
         'cmip5': CMIP5Collection,
         'cmip6': CMIP6Collection,
         'mpige': MPIGECollection,
@@ -65,13 +69,16 @@ class ESMMetadataStoreCatalog(Catalog):
         collection_input_definition=None,
         collection_name=None,
         overwrite_existing=True,
-        metadata={},
+        storage_options=None,
         **kwargs,
     ):
 
-        self.metadata = metadata
+        super().__init__(**kwargs)
+        self.storage_options = storage_options or {}
+        self.collection_type = None
+        self.fs = None
         self.collections = {}
-        self.get_built_collections()
+        self._get_built_collections()
 
         if collection_name and collection_input_definition is None:
             self.open_collection(collection_name)
@@ -80,7 +87,7 @@ class ESMMetadataStoreCatalog(Catalog):
             self.input_collection = self._validate_collection_definition(
                 collection_input_definition, **kwargs
             )
-            self.build_collection(overwrite_existing)
+            self._build_collection(overwrite_existing)
 
         else:
 
@@ -117,27 +124,36 @@ class ESMMetadataStoreCatalog(Catalog):
                 raise exc
 
         name = input_collection.get('name', None)
-        collection_type = input_collection.get('collection_type', None)
-        if name is None or collection_type is None:
+        self.collection_type = input_collection.get('collection_type', None)
+        if self.collection_type == 'cesm-aws':
+            self._get_s3_connection_info()
+        if name is None or self.collection_type is None:
             raise ValueError(f'name and/or collection_type keys are missing from {definition}')
         else:
             return input_collection
 
-    def build_collection(self, overwrite_existing):
+    def _build_collection(self, overwrite_existing):
         """ Build a collection defined in a YAML input file or a dictionary of nested dictionaries"""
         name = self.input_collection['name']
         if name not in self.collections or overwrite_existing:
-            ctype = self.input_collection['collection_type']
-            cc = ESMMetadataStoreCatalog.collection_types[ctype]
-            cc = cc(self.input_collection)
+            cc = ESMMetadataStoreCatalog.collection_types[self.collection_type]
+            cc = cc(self.input_collection, fs=self.fs)
             cc.build()
-            self.get_built_collections()
+            self._get_built_collections()
         self.open_collection(name)
 
-    def get_built_collections(self):
+    def _get_built_collections(self):
         """ Loads built collections in a dictionary with ``key=collection_name``,
         ``value=collection_db_file_path`` """
         self.collections = _get_built_collections()
+
+    def _get_s3_connection_info(self):
+        try:
+            if 'requester_pays' not in self.storage_options:
+                self.storage_options['requester_pays'] = True
+            self.fs = s3fs.S3FileSystem(**self.storage_options)
+        except Exception as exc:
+            raise exc
 
     def open_collection(self, collection_name):
         """ Open an ESM collection """
@@ -154,7 +170,11 @@ class ESMMetadataStoreCatalog(Catalog):
             if key not in query:
                 query[key] = None
         name = self.collection_name + '_' + str(uuid.uuid4())
-        args = {'collection_name': self.collection_name, 'query': query}
+        args = {
+            'collection_name': self.collection_name,
+            'query': query,
+            'storage_options': self.storage_options,
+        }
         driver = config.get('sources')[self.collection_type]
         description = f'Catalog entry from {self.collection_name} collection'
         cat = LocalCatalogEntry(
@@ -165,7 +185,7 @@ class ESMMetadataStoreCatalog(Catalog):
             args=args,
             cache={},
             parameters={},
-            metadata=self.metadata.copy(),
+            metadata=self.metadata or {},
             catalog_dir='',
             getenv=False,
             getshell=False,

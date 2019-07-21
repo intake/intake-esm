@@ -1,5 +1,6 @@
 sources:
   cesm: intake_esm.cesm.CESMSource
+  cesm-aws: intake_esm.cesm_aws.CESMAWSSource
   cmip5: intake_esm.cmip.CMIP5Source
   cmip6: intake_esm.cmip.CMIP6Source
   mpige: intake_esm.mpige.MPIGESource

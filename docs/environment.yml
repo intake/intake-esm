@@ -17,3 +17,4 @@ dependencies:
   - git
   - make
   - jupyterlab
+  - s3fs

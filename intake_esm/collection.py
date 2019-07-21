@@ -38,7 +38,8 @@ class Collection(ABC):
 
     """
 
-    def __init__(self, collection_spec):
+    def __init__(self, collection_spec, fs=None):
+        self.fs = fs
         self.collection_spec = collection_spec
         self.collection_definition = config.get('collections').get(
             collection_spec['collection_type'], None
@@ -88,10 +89,11 @@ class Collection(ABC):
                 print(f'Getting file listing: {res_key}')
 
                 resource = StorageResource(
-                    urlpath=os.path.abspath(location['urlpath']),
+                    urlpath=location['urlpath'],
                     loc_type=location['loc_type'],
                     exclude_patterns=exclude_patterns,
                     file_extension=location.get('file_extension', '.nc'),
+                    fs=self.fs,
                 )
 
                 df_files[res_key] = self._assemble_collection_df_files(
