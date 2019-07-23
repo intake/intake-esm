@@ -6,7 +6,7 @@ from intake_esm import aggregate
 
 @pytest.fixture
 def dsets():
-    ds = xr.tutorial.open_dataset('rasm', decode_times=False, chunks={'time': 12})
+    ds = xr.tutorial.open_dataset('air_temperature', decode_times=False, chunks={'time': 12})
     ds1 = ds.copy(True)
     ds2 = ds.copy(True)
     ds1.attrs['tracking_id'] = 'abc'
@@ -29,30 +29,40 @@ def test_dict_union(dsets):
 
 def test_merge(dsets):
     d = dsets[0]
-    d['TS'] = d['Tair']
+    d['Tair'] = d['air']
     dsets[0] = d
     ds = aggregate.merge(dsets)
     assert isinstance(ds, xr.Dataset)
-    assert 'TS' in ds.data_vars
+    assert 'Tair' in ds.data_vars
     xr.testing.assert_identical(ds.time, dsets[0].time)
 
 
 def test_concat_time_levels(dsets):
-    dsets[0]['time'].data = (dsets[0].time + (3 * 365.0)).data
+    dsets[0]['time'].data = (dsets[0].time + (2 * 2920.0)).data
     ds = aggregate.concat_time_levels(dsets, 'time')
-    assert ds.time.shape == (72,)
+    assert ds.time.shape == (5840,)
 
 
 def test_concat_ensembles(dsets):
     ds = aggregate.concat_ensembles(dsets)
     assert 'member_id' in ds.coords
-    assert ds.Tair.shape == (2, 36, 205, 275)
+    assert ds.air.shape == (2, 2920, 25, 53)
 
 
 def test_concat_ensembles_round_diff(dsets):
-    dsets[1]['xc'].data = (dsets[1].xc + 0.0000001).data
+    dsets[1]['lat'].data = (dsets[1].lat + 0.0000001).data
     ds = aggregate.concat_ensembles(dsets)
-    ds = ds.set_coords(['xc', 'yc'])
     assert 'member_id' in ds.coords
-    assert ds.Tair.shape == (2, 36, 205, 275)
-    xr.testing.assert_identical(ds.xc, dsets[0].xc)
+    assert ds.air.shape == (2, 2920, 25, 53)
+    xr.testing.assert_identical(ds.lat, dsets[0].lat)
+
+
+def test_drop_additional_coord_dims(dsets):
+    dsets[1]['random_coord'] = dsets[1].lat * 0.001
+    dsets[1] = dsets[1].set_coords('random_coord')
+    dsets[1]['random_var'] = xr.DataArray(range(len(dsets[1].lat)), dims=['random_coord'])
+
+    ds = aggregate.concat_ensembles(dsets)
+    assert 'random_var' not in set(ds.variables)
+    assert 'random_coord' not in set(ds.variables)
+    assert ds.air.shape == (2, 2920, 25, 53)
