@@ -25,6 +25,36 @@ def ensure_time_coord_name(ds, time_coord_name_default):
     )
 
 
+def _override_coords(dsets, time_coord_name):
+    dim_coords_except_time = set(dsets[0].coords).intersection(set(dsets[0].dims)) - set(
+        [time_coord_name]
+    )
+    dim_sizes_first = {name: da.shape for name, da in dsets[0].coords.items()}
+    datasets = [dsets[0]]
+    for ds in dsets[1:]:
+        if not all(ds[name].shape == dim_sizes_first[name] for name in dim_coords_except_time):
+            raise RuntimeError('dataset coord mismatch')
+        datasets.append(ds.drop(dim_coords_except_time))
+
+    return datasets
+
+
+def _drop_additional_dims(dsets):
+    all_dims = [set(dset.dims) for dset in dsets]
+    common_dims = all_dims[0].intersection(*all_dims[1:])
+    ds = []
+    for dset in dsets:
+        dset_dims = set(dset.dims)
+        keep_dims = dset_dims.intersection(common_dims)
+        drop_dims = list(dset_dims - keep_dims)
+        if drop_dims:
+            ds.append(dset.drop_dims(drop_dims))
+        else:
+            ds.append(dset)
+
+    return ds
+
+
 def dict_union(*dicts, merge_keys=['history', 'tracking_id'], drop_keys=[]):
     """Return the union of two or more dictionaries."""
     if len(dicts) > 2:
@@ -123,10 +153,12 @@ def concat_time_levels(dsets, time_coord_name_default, restore_non_dim_coords=Fa
             return dsets[0]
 
     attrs = dict_union(*[ds.attrs for ds in dsets])
+    time_coord_name = ensure_time_coord_name(dsets[0], time_coord_name_default)
 
+    # Equivalent to xr.align(*dsets, tolerance=xtol, exclude='time')
+    dsets = _override_coords(dsets, time_coord_name)
     # get static vars from first dataset
     first = dsets[0]
-    time_coord_name = ensure_time_coord_name(first, time_coord_name_default)
 
     def drop_unnecessary_coords(ds):
         """Drop coordinates that do not correspond with dimensions."""
@@ -170,12 +202,19 @@ def concat_ensembles(
     if member_ids is None:
         member_ids = np.arange(0, len(dsets))
 
+    time_coord_name = ensure_time_coord_name(dsets[0], time_coord_name_default)
+    dsets = _drop_additional_dims(dsets)
     attrs = dict_union(*[ds.attrs for ds in dsets])
 
     # align first to deal with the fact that some ensemble members have different lengths
     # inner join keeps only overlapping segments of each ensemble
     # outer join gives us the longest possible record
-    dsets_aligned = xr.align(*dsets, join=join)
+    dim_coords_except_time = set(dsets[0].coords).intersection(set(dsets[0].dims)) - set(
+        [time_coord_name]
+    )
+    dsets_aligned = xr.align(*dsets, join=join, exclude=dim_coords_except_time)
+    # Equivalent to xr.align(*dsets_aligned, tolerance=xtol, exclude='time')
+    dsets_aligned = _override_coords(dsets_aligned, time_coord_name)
 
     # use coords and static_vars from first dataset
     first = dsets_aligned[0]
@@ -201,6 +240,8 @@ def concat_ensembles(
 
 def set_coords(ds, varname):
     """Set all variables except varname to be coords."""
+    if isinstance(varname, str):
+        varname = [varname]
     coord_vars = set(ds.data_vars) - set(varname)
     return ds.set_coords(coord_vars)
 
