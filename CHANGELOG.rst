@@ -33,6 +33,10 @@ Bug Fixes
 
 - Restore ``non_dim_coords`` to data variables all the time. (:pr:`90`) `Anderson Banihirwe`_
 
+- Fix bug in ``intake_esm.cesm.py`` that caused ``intake-esm`` to exclude hourly (1hr, 6hr, etc..) CESM-LE data.
+  (:pr:`110`) `Anderson Banihirwe`_
+
+
 Internal Changes
 ----------------
 
