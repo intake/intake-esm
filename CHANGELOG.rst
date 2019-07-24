@@ -21,6 +21,8 @@ Features
 
 - Add support for CESM-LENS data holdings residing in AWS S3. (:pr:`98`) `Anderson Banihirwe`_
 
+- Sort collection upon creation according to order-by-columns, pass urlpath through stack for use in parsing collection filenames (:pr:`100`) `Paul Branson`_
+
 Bug Fixes
 ----------
 
@@ -97,3 +99,4 @@ Trivial/Internal Changes
 .. _`Anderson Banihirwe`: https://github.com/andersy005
 .. _`Matthew Long`: https://github.com/matt-long
 .. _`Naomi Henderson`: https://github.com/naomi-henderson
+.. _`Paul Branson`: https://github.com/pbranson
