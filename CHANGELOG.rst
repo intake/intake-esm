@@ -42,7 +42,8 @@ Internal Changes
 
 - Refactor existing functionality to make intake-esm robust and extensible. (:pr:`77`) `Anderson Banihirwe`_
 
-
+- Add ``aggregate._override_coords`` function to override dim coordinates except time
+  in case there's floating point precision difference. (:pr:`108`) `Anderson Banihirwe`_
 
 Intake-esm v2019.5.11 (2019-05-11)
 ===================================
