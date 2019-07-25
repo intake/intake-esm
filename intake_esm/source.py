@@ -57,6 +57,8 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
             _kwargs.update(ensemble_dim_name='member_id')
         if 'chunks' not in _kwargs:
             _kwargs.update(chunks={_kwargs['time_coord_name']: 'auto'})
+        if 'override_coords' not in _kwargs:
+            _kwargs.update(override_coords=False)
         if 'join' not in _kwargs:
             _kwargs.update(join='outer')
         if 'preprocess' not in _kwargs:
@@ -103,13 +105,20 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
                         for url in urlpath_ei_vi
                     ]
 
-                    var_dset_i = aggregate.concat_time_levels(dsets, kwargs['time_coord_name'])
+                    var_dset_i = aggregate.concat_time_levels(
+                        dsets,
+                        time_coord_name_default=kwargs['time_coord_name'],
+                        override_coords=kwargs['override_coords'],
+                    )
                     var_dsets.append(var_dset_i)
                 member_ids.append(m_id)
                 member_dset_i = aggregate.merge(dsets=var_dsets)
                 member_dsets.append(member_dset_i)
             _ds = aggregate.concat_ensembles(
-                member_dsets, member_ids=member_ids, join=kwargs['join']
+                member_dsets,
+                member_ids=member_ids,
+                join=kwargs['join'],
+                override_coords=kwargs['override_coords'],
             )
             all_dsets[dset_id] = _ds
 

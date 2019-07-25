@@ -53,7 +53,7 @@ def test_concat_ensembles_round_diff(dsets):
     dsets[1]['lat'].data = dsets[1].lat.data + 0.00001
     with pytest.raises(AssertionError):
         xr.testing.assert_equal(dsets[0].lat, dsets[1].lat)
-    ds = aggregate.concat_ensembles(dsets)
+    ds = aggregate.concat_ensembles(dsets, override_coords=True)
     assert 'member_id' in ds.coords
     assert ds.air.shape == (2, 2920, 25, 53)
     xr.testing.assert_identical(ds.lat, dsets[0].lat)
@@ -75,4 +75,4 @@ def test_drop_additional_coord_dims(dsets):
 def test_override_coords_mismatch(dsets):
     dsets[1] = dsets[1].isel(lat=slice(0, 12))
     with pytest.raises(AssertionError):
-        aggregate.concat_ensembles(dsets)
+        aggregate.concat_ensembles(dsets, override_coords=True)

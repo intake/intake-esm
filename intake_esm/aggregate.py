@@ -128,7 +128,9 @@ def _restore_non_dim_coords(ds):
     return ds
 
 
-def concat_time_levels(dsets, time_coord_name_default, restore_non_dim_coords=False):
+def concat_time_levels(
+    dsets, time_coord_name_default, restore_non_dim_coords=False, override_coords=False
+):
     """
     Concatenate datasets across "time" levels, taking time invariant variables
     from the first dataset.
@@ -141,6 +143,9 @@ def concat_time_levels(dsets, time_coord_name_default, restore_non_dim_coords=Fa
         Default name of the time coordinate
     restore_non_coord_dim : bool, default (False)
         Whether or not to restore non coord dims
+    override_coords: bool, default (False)
+        Whether or not to drop all coordinates associated with dimensions
+        (except time) from all but the first entry in dsets.
 
     Returns
     -------
@@ -160,7 +165,8 @@ def concat_time_levels(dsets, time_coord_name_default, restore_non_dim_coords=Fa
     time_coord_name = ensure_time_coord_name(dsets[0], time_coord_name_default)
 
     # https://github.com/NCAR/intake-esm/issues/104#issuecomment-513404844
-    dsets = _override_coords(dsets, time_coord_name)
+    if override_coords:
+        dsets = _override_coords(dsets, time_coord_name)
     # get static vars from first dataset
     first = dsets[0]
 
@@ -196,9 +202,37 @@ def concat_ensembles(
     join='inner',
     ensemble_dim_name='member_id',
     time_coord_name_default='time',
+    override_coords=False,
 ):
     """Concatenate datasets across an ensemble dimension, taking coordinates and
     time-invariant variables from the first ensemble member.
+
+    Parameters
+    ----------
+    dsets : list
+        A list of datasets to concatenate.
+
+    member_ids : list, default (None)
+         A list of ids for the ensemble members
+
+    join : str
+        Accepted values: ``inner``, ``outer``
+
+    ensemble_dim_name : str, default(``member_id``)
+       Ensemble dimension name to use.
+
+    time_coord_name_default : str
+        Default name of the time coordinate
+
+    override_coords: bool, default (False)
+        Whether or not to drop all coordinates associated with dimensions
+        (except time) from all but the first entry in dsets.
+
+    Returns
+    -------
+    dset : xarray.Dataset,
+        The concatenated dataset.
+
     """
     if len(dsets) == 1:
         return _restore_non_dim_coords(dsets[0])
@@ -219,7 +253,8 @@ def concat_ensembles(
 
     # https://github.com/NCAR/intake-esm/issues/104#issuecomment-513404844
     dsets_aligned = xr.align(*dsets, join=join, exclude=dim_coords_except_time)
-    dsets_aligned = _override_coords(dsets_aligned, time_coord_name)
+    if override_coords:
+        dsets_aligned = _override_coords(dsets_aligned, time_coord_name)
 
     # use coords and static_vars from first dataset
     first = dsets_aligned[0]
