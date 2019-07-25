@@ -38,7 +38,7 @@ def test_merge(dsets):
 
 
 def test_concat_time_levels(dsets):
-    dsets[0]['time'].data = (dsets[0].time + (2 * 2920.0)).data
+    dsets[0]['time'].data = dsets[0].time.data + (2 * 2920.0)
     ds = aggregate.concat_time_levels(dsets, 'time')
     assert ds.time.shape == (5840,)
 
@@ -50,11 +50,15 @@ def test_concat_ensembles(dsets):
 
 
 def test_concat_ensembles_round_diff(dsets):
-    dsets[1]['lat'].data = (dsets[1].lat + 0.0000001).data
+    dsets[1]['lat'].data = dsets[1].lat.data + 0.00001
+    with pytest.raises(AssertionError):
+        xr.testing.assert_equal(dsets[0].lat, dsets[1].lat)
     ds = aggregate.concat_ensembles(dsets)
     assert 'member_id' in ds.coords
     assert ds.air.shape == (2, 2920, 25, 53)
     xr.testing.assert_identical(ds.lat, dsets[0].lat)
+    with pytest.raises(AssertionError):
+        xr.testing.assert_equal(ds.lat, dsets[1].lat)
 
 
 def test_drop_additional_coord_dims(dsets):
@@ -66,3 +70,9 @@ def test_drop_additional_coord_dims(dsets):
     assert 'random_var' not in set(ds.variables)
     assert 'random_coord' not in set(ds.variables)
     assert ds.air.shape == (2, 2920, 25, 53)
+
+
+def test_override_coords_mismatch(dsets):
+    dsets[1] = dsets[1].isel(lat=slice(0, 12))
+    with pytest.raises(AssertionError):
+        aggregate.concat_ensembles(dsets)

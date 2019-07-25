@@ -26,6 +26,10 @@ def ensure_time_coord_name(ds, time_coord_name_default):
 
 
 def _override_coords(dsets, time_coord_name):
+    """
+    Override coordinates except time by using coordinates from the first
+    dataset in the list.
+    """
     dim_coords_except_time = set(dsets[0].coords).intersection(set(dsets[0].dims)) - set(
         [time_coord_name]
     )
@@ -33,7 +37,7 @@ def _override_coords(dsets, time_coord_name):
     datasets = [dsets[0]]
     for ds in dsets[1:]:
         if not all(ds[name].shape == dim_sizes_first[name] for name in dim_coords_except_time):
-            raise RuntimeError('dataset coord mismatch')
+            raise AssertionError(f'Dataset coordinates mismatch: {dsets[0].dims} != {ds.dims}')
         datasets.append(ds.drop(dim_coords_except_time))
 
     return datasets
