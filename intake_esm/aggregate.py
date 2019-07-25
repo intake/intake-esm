@@ -27,8 +27,8 @@ def ensure_time_coord_name(ds, time_coord_name_default):
 
 def _override_coords(dsets, time_coord_name):
     """
-    Override coordinates except time by using coordinates from the first
-    dataset in the list.
+    Return a list of datasets where all coordinates associated with dimensions
+    (except time) have been dropped from all but the first entry.
     """
     dim_coords_except_time = set(dsets[0].coords).intersection(set(dsets[0].dims)) - set(
         [time_coord_name]
@@ -159,7 +159,7 @@ def concat_time_levels(dsets, time_coord_name_default, restore_non_dim_coords=Fa
     attrs = dict_union(*[ds.attrs for ds in dsets])
     time_coord_name = ensure_time_coord_name(dsets[0], time_coord_name_default)
 
-    # Equivalent to xr.align(*dsets, tolerance=xtol, exclude='time')
+    # https://github.com/NCAR/intake-esm/issues/104#issuecomment-513404844
     dsets = _override_coords(dsets, time_coord_name)
     # get static vars from first dataset
     first = dsets[0]
@@ -216,8 +216,9 @@ def concat_ensembles(
     dim_coords_except_time = set(dsets[0].coords).intersection(set(dsets[0].dims)) - set(
         [time_coord_name]
     )
+
+    # https://github.com/NCAR/intake-esm/issues/104#issuecomment-513404844
     dsets_aligned = xr.align(*dsets, join=join, exclude=dim_coords_except_time)
-    # Equivalent to xr.align(*dsets_aligned, tolerance=xtol, exclude='time')
     dsets_aligned = _override_coords(dsets_aligned, time_coord_name)
 
     # use coords and static_vars from first dataset
