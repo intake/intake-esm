@@ -126,9 +126,9 @@ class Collection(ABC):
     @staticmethod
     def _extract_attr_with_regex(input_str, regex, strip_chars=None):
         pattern = re.compile(regex)
-        match = re.search(pattern, input_str)
+        match = re.findall(pattern, input_str)
         if match:
-            match = match.group()
+            match = max(match, key=len)
             if strip_chars:
                 match = match.strip(strip_chars)
 
