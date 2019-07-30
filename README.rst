@@ -22,7 +22,7 @@ Intake-esm
     :alt: Conda Version
 
 
-Intake-esm provides a plugin for building and loading intake catalogs for earth system data sets holdings, such as CMIP and CESM Large Ensemble datasets.
+Intake-esm provides a plugin for building and loading intake catalogs for earth system data holdings, such as CMIP and CESM Large Ensemble datasets, etc...
 
 Intake-esm supports data holdings from the following projects:
 

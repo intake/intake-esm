@@ -19,7 +19,7 @@ paths = [
 ]
 
 if 'INTAKE_ESM_CONFIG' in os.environ:
-    PATH = os.environ['INTAKE_CONFIG']
+    PATH = os.environ['INTAKE_ESM_CONFIG']
     paths.append(PATH)
 
 elif os.path.exists(os.path.join(os.getcwd(), '.intake_esm')):

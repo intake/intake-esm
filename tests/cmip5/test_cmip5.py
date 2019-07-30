@@ -4,48 +4,112 @@ import intake
 import pandas as pd
 import pytest
 import xarray as xr
+import yaml
 
 from intake_esm import config
 
 here = os.path.abspath(os.path.dirname(__file__))
 
+cdef = yaml.safe_load(
+    """name: cmip5_test_collection
+collection_type: cmip5
+data_sources:
+  BNU-ESM:
+    locations:
+     -  name: SAMPLE-DATA
+        loc_type: posix
+        direct_access: True
+        urlpath: ./tests/sample_data/cmip/cmip5/output1/BNU/BNU-ESM
+        exclude_dirs: ['*/files/*', 'latest']
+        file_extension: .nc
+
+    extra_attributes:
+      activity: CMIP5
+      product: output1
+      institute: BNU
+
+  CanCM4:
+    locations:
+     -  name: SAMPLE-DATA
+        loc_type: posix
+        direct_access: True
+        urlpath: ./tests/sample_data/cmip/cmip5/output1/CCCma/CanCM4
+        exclude_dirs: ['*/files/*', 'latest']
+        file_extension: .nc
+
+    extra_attributes:
+      activity: CMIP5
+      product: output1
+      institute: CCCma
+
+
+  CanESM2:
+    locations:
+     -  name: SAMPLE-DATA
+        loc_type: posix
+        direct_access: True
+        urlpath: ./tests/sample_data/cmip/cmip5/output1/CCCma/CanESM2
+        exclude_dirs: ['*/files/*', 'latest']
+        file_extension: .nc
+
+    extra_attributes:
+      activity: CMIP5
+      product: output1
+      institute: CCCma
+
+
+  CNRM-CM5:
+    locations:
+     -  name: SAMPLE-DATA
+        loc_type: posix
+        direct_access: True
+        urlpath: ./tests/sample_data/cmip/cmip5/output1/CNRM-CERFACS/CNRM-CM5
+        exclude_dirs: ['*/files/*', 'latest']
+        file_extension: .nc
+
+    extra_attributes:
+      activity: CMIP5
+      product: output1
+      institute: CNRM-CERFACS
+
+
+  CESM1-BGC:
+    locations:
+     -  name: SAMPLE-DATA
+        loc_type: posix
+        direct_access: True
+        urlpath: ./tests/sample_data/cmip/cmip5/output1/NSF-DOE-NCAR/CESM1-BGC
+        exclude_dirs: ['*/files/*', 'latest']
+        file_extension: .nc
+
+    extra_attributes:
+      activity: CMIP5
+      product: output1
+      institute: NSF-DOE-NCAR
+
+
+  CESM1-CAM5:
+    locations:
+     -  name: SAMPLE-DATA
+        loc_type: posix
+        direct_access: True
+        urlpath: ./tests/sample_data/cmip/cmip5/output1/NSF-DOE-NCAR/CESM1-CAM5
+        exclude_dirs: ['*/files/*', 'latest']
+        file_extension: .nc
+
+    extra_attributes:
+      activity: CMIP5
+      product: output1
+      institute: NSF-DOE-NCAR
+"""
+)
+
 
 def test_build_collection_file():
     with config.set({'database-directory': './tests/test_collections'}):
-        collection_input_definition = os.path.join(here, 'cmip5_collection_input_test.yml')
-        col = intake.open_esm_metadatastore(
-            collection_input_definition=collection_input_definition, overwrite_existing=True
-        )
-        assert isinstance(col.df, pd.DataFrame)
 
-
-def test_build_collection_dict():
-    with config.set({'database-directory': './tests/test_collections'}):
-        collection_definition = {
-            'collection_type': 'cmip5',
-            'data_sources': {
-                'BNU-ESM': {
-                    'extra_attributes': {
-                        'activity': 'CMIP5',
-                        'institute': 'BNU',
-                        'product': 'output1',
-                    },
-                    'locations': [
-                        {
-                            'direct_access': True,
-                            'exclude_dirs': ['*/files/*', 'latest'],
-                            'file_extension': '.nc',
-                            'loc_type': 'posix',
-                            'name': 'SAMPLE-DATA',
-                            'urlpath': './tests/sample_data/cmip/cmip5/output1/BNU/BNU-ESM',
-                        }
-                    ],
-                }
-            },
-            'name': 'cmip5_test_dict_collection',
-        }
         col = intake.open_esm_metadatastore(
-            collection_input_definition=collection_definition, overwrite_existing=True
+            collection_input_definition=cdef, overwrite_existing=True
         )
         assert isinstance(col.df, pd.DataFrame)
 

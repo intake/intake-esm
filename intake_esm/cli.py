@@ -16,7 +16,13 @@ os.environ['LANG'] = 'C.UTF-8'
 _default_database_dir = config.get('database-directory')
 
 
-def _builder(collection_input_definition, overwrite_existing, database_dir):
+def _builder(collection_input_definition, overwrite_existing, database_dir, anon, profile_name):
+
+    if anon is not None:
+        storage_options = dict(anon=anon, profile_name=profile_name)
+    else:
+        storage_options = {}
+
     if not collection_input_definition:
         load_collection_input_file()
         raise ValueError(
@@ -24,7 +30,11 @@ def _builder(collection_input_definition, overwrite_existing, database_dir):
             'or collection input YAML file. ***'
         )
     with config.set({'database-dir': database_dir}):
-        ESMMetadataStoreCatalog(collection_input_definition, overwrite_existing=overwrite_existing)
+        ESMMetadataStoreCatalog(
+            collection_input_definition,
+            overwrite_existing=overwrite_existing,
+            storage_options=storage_options,
+        )
 
 
 @click.command()
@@ -51,8 +61,24 @@ def _builder(collection_input_definition, overwrite_existing, database_dir):
     help='Directory in which to persist the built collection database',
     show_default=True,
 )
-def main(collection_input_definition, overwrite_existing, database_dir):
-    _builder(collection_input_definition, overwrite_existing, database_dir)
+@click.option(
+    '--anon/--no-anon',
+    'anon',
+    default=None,
+    show_default=True,
+    required=False,
+    help='Access the AWS-S3 filesystem anonymously or not',
+)
+@click.option(
+    '--profile-name',
+    type=str,
+    default=None,
+    help='Named profile to use when authenticating',
+    show_default=True,
+    required=False,
+)
+def main(collection_input_definition, overwrite_existing, database_dir, anon, profile_name):
+    _builder(collection_input_definition, overwrite_existing, database_dir, anon, profile_name)
 
 
 if __name__ == '__main__':

@@ -2,7 +2,7 @@
 Changelog History
 =================
 
-Intake-esm v2019.6.xx (2019-06-xx)
+Intake-esm v2019.7.xx (2019-07-xx)
 ==================================
 
 
@@ -19,7 +19,9 @@ Features
 
 - Add ``intake-esm-builder``, a CLI tool for building collection from the command line. (:pr:`89`) `Anderson Banihirwe`_
 
-- Extend ``search()`` method to filter rows in collection by regex. (:pr:`93`) `Anderson Banihirwe`_
+- Add support for CESM-LENS data holdings residing in AWS S3. (:pr:`98`) `Anderson Banihirwe`_
+
+- Sort collection upon creation according to order-by-columns, pass urlpath through stack for use in parsing collection filenames (:pr:`100`) `Paul Branson`_
 
 Bug Fixes
 ----------
@@ -31,12 +33,20 @@ Bug Fixes
 
 - Restore ``non_dim_coords`` to data variables all the time. (:pr:`90`) `Anderson Banihirwe`_
 
+- Fix bug in ``intake_esm/cesm.py`` that caused ``intake-esm`` to exclude hourly (1hr, 6hr, etc..) CESM-LE data.
+  (:pr:`110`) `Anderson Banihirwe`_
+
+- Fix bugs in ``intake_esm/cmip.py`` that caused improper regular expression matching for ``table_id`` and ``grid_label``.
+  (:pr:`113`) & (:issue:`111`) `Naomi Henderson`_ and `Anderson Banihirwe`_
+
+
 Internal Changes
 ----------------
 
 - Refactor existing functionality to make intake-esm robust and extensible. (:pr:`77`) `Anderson Banihirwe`_
 
-
+- Add ``aggregate._override_coords`` function to override dim coordinates except time
+  in case there's floating point precision difference. (:pr:`108`) `Anderson Banihirwe`_
 
 Intake-esm v2019.5.11 (2019-05-11)
 ===================================
@@ -96,3 +106,4 @@ Trivial/Internal Changes
 .. _`Anderson Banihirwe`: https://github.com/andersy005
 .. _`Matthew Long`: https://github.com/matt-long
 .. _`Naomi Henderson`: https://github.com/naomi-henderson
+.. _`Paul Branson`: https://github.com/pbranson

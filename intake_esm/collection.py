@@ -6,6 +6,7 @@ from glob import glob
 import docrep
 import numpy as np
 import pandas as pd
+from intake.source.utils import reverse_format
 from tqdm.autonotebook import tqdm
 
 from . import config
@@ -38,7 +39,8 @@ class Collection(ABC):
 
     """
 
-    def __init__(self, collection_spec):
+    def __init__(self, collection_spec, fs=None):
+        self.fs = fs
         self.collection_spec = collection_spec
         self.collection_definition = config.get('collections').get(
             collection_spec['collection_type'], None
@@ -53,6 +55,7 @@ class Collection(ABC):
         self.df = pd.DataFrame(columns=self.columns)
         self.exclude_patterns = self._get_exclude_patterns()
         self.database_base_dir = config.get('database-directory', None)
+        self.order_by_columns = self.collection_definition.get('order-by-columns')
 
         self._validate()
 
@@ -87,10 +90,11 @@ class Collection(ABC):
                 print(f'Getting file listing: {res_key}')
 
                 resource = StorageResource(
-                    urlpath=os.path.abspath(location['urlpath']),
+                    urlpath=location['urlpath'],
                     loc_type=location['loc_type'],
                     exclude_patterns=exclude_patterns,
                     file_extension=location.get('file_extension', '.nc'),
+                    fs=self.fs,
                 )
 
                 df_files[res_key] = self._assemble_collection_df_files(
@@ -98,6 +102,7 @@ class Collection(ABC):
                     resource_type=location['loc_type'],
                     direct_access=location['direct_access'],
                     filelist=resource.filelist,
+                    urlpath=location['urlpath'],
                 )
                 df_files[res_key] = self._add_extra_attributes(
                     data_source,
@@ -122,9 +127,9 @@ class Collection(ABC):
     @staticmethod
     def _extract_attr_with_regex(input_str, regex, strip_chars=None):
         pattern = re.compile(regex)
-        match = re.search(pattern, input_str)
+        match = re.findall(pattern, input_str)
         if match:
-            match = match.group()
+            match = max(match, key=len)
             if strip_chars:
                 match = match.strip(strip_chars)
 
@@ -136,13 +141,46 @@ class Collection(ABC):
         else:
             return None
 
-    def _assemble_collection_df_files(self, resource_key, resource_type, direct_access, filelist):
+    @staticmethod
+    def _reverse_filename_format(file_basename, filename_template=None, gridspec_template=None):
+        """
+        Uses intake's ``reverse_format`` utility to reverse the string method format.
+
+        Given format_string and resolved_string, find arguments
+        that would give format_string.format(arguments) == resolved_string
+        """
+        try:
+            return reverse_format(filename_template, file_basename)
+        except ValueError:
+            try:
+                return reverse_format(gridspec_template, file_basename)
+            except:
+                print(
+                    f'Failed to parse file: {file_basename} using patterns: {filename_template} and {gridspec_template}'
+                )
+                return {}
+
+    def _assemble_collection_df_files(
+        self, resource_key, resource_type, direct_access, filelist, urlpath=None
+    ):
         entries = {key: [] for key in self.columns}
         if not filelist:
             return pd.DataFrame(entries)
 
+        # Check parameters of _get_file_attrs for presence of urlpath for backwards compatibility
+        from inspect import signature
+
+        sig = signature(self._get_file_attrs)
+        if 'urlpath' in sig.parameters:
+            pass_urlpath = True
+        else:
+            pass_urlpath = False
+
         for f in tqdm(filelist, desc='file listing'):
-            file_attrs = self._get_file_attrs(f)
+            if pass_urlpath:
+                file_attrs = self._get_file_attrs(f, urlpath)
+            else:
+                file_attrs = self._get_file_attrs(f)
 
             if not file_attrs:
                 continue
@@ -194,6 +232,7 @@ class Collection(ABC):
         df = df.drop_duplicates(subset=['resource', 'file_fullpath'], keep='last').reset_index(
             drop=True
         )
+        df = df.sort_values(self.order_by_columns)
         return df
 
     def _get_exclude_patterns(self):

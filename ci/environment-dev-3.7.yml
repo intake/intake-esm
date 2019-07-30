@@ -31,3 +31,4 @@ dependencies:
   - xarray
   - docrep
   - click
+  - s3fs
