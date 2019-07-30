@@ -71,6 +71,16 @@ class CESMCollection(Collection):
                             )
 
                         else:
+                            if component == 'ice':
+                                if variable.endswith('_nh') or variable.endswith('_sh'):
+                                    v = variable.split('_')
+                                    if stream != 'cice.h1':
+                                        variable = v[0]
+                                    else:
+                                        variable = '_'.join(v[0:2])
+
+                                    component = f'ice_{v[-1]}'
+
                             fileparts['case'] = case
                             fileparts['component'] = component
                             fileparts['stream'] = stream
