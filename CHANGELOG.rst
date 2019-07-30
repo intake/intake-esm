@@ -33,8 +33,11 @@ Bug Fixes
 
 - Restore ``non_dim_coords`` to data variables all the time. (:pr:`90`) `Anderson Banihirwe`_
 
-- Fix bug in ``intake_esm.cesm.py`` that caused ``intake-esm`` to exclude hourly (1hr, 6hr, etc..) CESM-LE data.
+- Fix bug in ``intake_esm/cesm.py`` that caused ``intake-esm`` to exclude hourly (1hr, 6hr, etc..) CESM-LE data.
   (:pr:`110`) `Anderson Banihirwe`_
+
+- Fix bugs in ``intake_esm/cmip.py`` that caused improper regular expression matching for ``table_id`` and ``grid_label``.
+  (:pr:`113`) & (:issue:`111`) `Naomi Henderson`_ and `Anderson Banihirwe`_
 
 
 Internal Changes
