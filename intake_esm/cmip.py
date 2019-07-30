@@ -3,7 +3,6 @@ import re
 
 import pandas as pd
 import xarray as xr
-from intake.source.utils import reverse_format
 from tqdm.autonotebook import tqdm
 
 from intake_esm import aggregate, config
@@ -19,46 +18,43 @@ class CMIP5Collection(Collection):
     """
     )
 
-    def _get_file_attrs(self, filepath):
+    def _get_file_attrs(self, filepath, urlpath):
         """ Extract attributes of a file using information from CMIP5 DRS.
 
         Notes
         -----
-        Reference: CMIP5 DRS: https://cmip.llnl.gov/cmip5/docs/cmip5_data_reference_syntax_v1-00_clean.pdf
+        Reference:
+
+        - CMIP5 DRS: https://pcmdi.llnl.gov/mips/cmip5/docs/cmip5_data_reference_syntax.pdf?id=27
 
         """
-        file_basename = os.path.basename(filepath)
         keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
+        fileparts = {key: None for key in keys}
 
         freq_regex = r'/3hr/|/6hr/|/day/|/fx/|/mon/|/monClim/|/subhr/|/yr/'
-        temporal_subset_regex = (
-            r'\d{4}\-\d{4}|\d{6}\-\d{6}|\d{8}\-\d{8}|\d{10}\-\d{10}|\d{12}\-\d{12}'
-        )
         realm_regex = r'aerosol|atmos|land|landIce|ocean|ocnBgchem|seaIce'
-        version_regex = r'v\d{4}\d{2}\d{2}'
+        version_regex = r'v\d{4}\d{2}\d{2}|v\d{1}'
 
-        fileparts = {key: None for key in keys}
+        file_basename = os.path.basename(filepath)
         fileparts['file_basename'] = file_basename
         fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
         fileparts['file_fullpath'] = filepath
 
-        f_split = file_basename.split('_')
-        fileparts['variable'] = f_split[0]
-        fileparts['mip_table'] = f_split[1]
-        fileparts['model'] = f_split[2]
-        fileparts['experiment'] = f_split[3]
-        fileparts['ensemble_member'] = f_split[-2]
+        filename_template = (
+            '{variable}_{mip_table}_{model}_{experiment}_{ensemble_member}_{temporal_subset}.nc'
+        )
+        gridspec_template = '{variable}_{mip_table}_{model}_{experiment}_{ensemble_member}.nc'
+        f = CMIP5Collection._reverse_filename_format(
+            file_basename, filename_template=filename_template, gridspec_template=gridspec_template
+        )
+        fileparts.update(f)
 
         frequency = CMIP5Collection._extract_attr_with_regex(
             filepath, regex=freq_regex, strip_chars='/'
         )
-        temporal_subset = CMIP5Collection._extract_attr_with_regex(
-            filepath, regex=temporal_subset_regex
-        )
         realm = CMIP5Collection._extract_attr_with_regex(filepath, regex=realm_regex)
         version = CMIP5Collection._extract_attr_with_regex(filepath, regex=version_regex) or 'v0'
         fileparts['frequency'] = frequency
-        fileparts['temporal_subset'] = temporal_subset
         fileparts['modeling_realm'] = realm
         fileparts['version'] = version
 
@@ -106,27 +102,13 @@ class CMIP6Collection(Collection):
         fileparts['file_fullpath'] = filepath
 
         filename_template = '{variable_id}_{table_id}_{source_id}_{experiment_id}_{member_id}_{grid_label}_{time_range}.nc'
-        filename_template_invariant = (
+        gridspec_template = (
             '{variable_id}_{table_id}_{source_id}_{experiment_id}_{member_id}_{grid_label}.nc'
         )
 
-        def reverse_string(
-            file_basename,
-            filename_template=filename_template,
-            filename_template_invariant=filename_template_invariant,
-        ):
-            try:
-                return reverse_format(filename_template, file_basename)
-            except ValueError:
-                try:
-                    return reverse_format(filename_template_invariant, file_basename)
-                except:
-                    print(
-                        f'Failed to parse file: {file_basename} using patterns: {filename_template} and {filename_template_invariant}'
-                    )
-                    return {}
-
-        f = reverse_string(file_basename)
+        f = CMIP6Collection._reverse_filename_format(
+            file_basename, filename_template=filename_template, gridspec_template=gridspec_template
+        )
         fileparts.update(f)
         version_regex = r'v\d{4}\d{2}\d{2}|v\d{1}'
         version = CMIP6Collection._extract_attr_with_regex(filepath, regex=version_regex) or 'v0'

@@ -6,6 +6,7 @@ from glob import glob
 import docrep
 import numpy as np
 import pandas as pd
+from intake.source.utils import reverse_format
 from tqdm.autonotebook import tqdm
 
 from . import config
@@ -139,6 +140,25 @@ class Collection(ABC):
 
         else:
             return None
+
+    @staticmethod
+    def _reverse_filename_format(file_basename, filename_template=None, gridspec_template=None):
+        """
+        Uses intake's ``reverse_format`` utility to reverse the string method format.
+
+        Given format_string and resolved_string, find arguments
+        that would give format_string.format(arguments) == resolved_string
+        """
+        try:
+            return reverse_format(filename_template, file_basename)
+        except ValueError:
+            try:
+                return reverse_format(gridspec_template, file_basename)
+            except:
+                print(
+                    f'Failed to parse file: {file_basename} using patterns: {filename_template} and {gridspec_template}'
+                )
+                return {}
 
     def _assemble_collection_df_files(
         self, resource_key, resource_type, direct_access, filelist, urlpath=None
