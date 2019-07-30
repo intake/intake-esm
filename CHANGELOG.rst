@@ -2,7 +2,7 @@
 Changelog History
 =================
 
-Intake-esm v2019.7.xx (2019-07-xx)
+Intake-esm v2019.8.xx (2019-08-xx)
 ==================================
 
 
@@ -47,6 +47,15 @@ Internal Changes
 
 - Add ``aggregate._override_coords`` function to override dim coordinates except time
   in case there's floating point precision difference. (:pr:`108`) `Anderson Banihirwe`_
+
+- Fix CESM-LE ice component peculiarities that caused intake-esm to load data improperly.
+  The fix separates variables for `ice` component into two separate components:
+
+  - ``ice_sh``: for southern hemisphere
+  - ``ice_nh``: for northern hemisphere
+
+  (:pr:`114`) `Anderson Banihirwe`_
+
 
 Intake-esm v2019.5.11 (2019-05-11)
 ===================================
