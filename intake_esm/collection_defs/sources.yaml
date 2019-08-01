@@ -6,3 +6,4 @@ sources:
   mpige: intake_esm.mpige.MPIGESource
   gmet: intake_esm.gmet.GMETSource
   era5: intake_esm.era5.ERA5Source
+  cordex: intake_esm.cordex.CORDEXSource

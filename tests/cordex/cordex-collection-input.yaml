@@ -1,0 +1,9 @@
+name: NA-CORDEX
+collection_type: cordex
+data_sources:
+  CORDEX-Data:
+    locations:
+      - name: GLADE
+        loc_type: posix
+        direct_access: True
+        urlpath: /glade/collections/cdg/data/cordex/data/
