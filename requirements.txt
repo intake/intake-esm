@@ -6,4 +6,5 @@ intake-xarray
 pyyaml
 tqdm
 xarray
+fsspec
 s3fs

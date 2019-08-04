@@ -22,3 +22,4 @@ dependencies:
   - docrep
   - click
   - s3fs
+  - fsspec
