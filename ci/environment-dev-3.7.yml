@@ -5,8 +5,6 @@ dependencies:
   - autopep8
   - black
   - codecov
-  - coverage
-  - dask>=2.2
   - flake8
   - git
   - intake
