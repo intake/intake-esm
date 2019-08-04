@@ -6,8 +6,7 @@ dependencies:
   - black
   - codecov
   - coverage
-  - dask
-  - distributed
+  - dask>=2.2
   - flake8
   - git
   - intake
@@ -30,6 +29,5 @@ dependencies:
   - tqdm
   - xarray
   - docrep
-  - click
   - s3fs
   - fsspec

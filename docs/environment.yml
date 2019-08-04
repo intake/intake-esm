@@ -2,7 +2,7 @@ name: intake-esm-dev
 channels:
   - conda-forge
 dependencies:
-  - dask
+  - dask>=2.2
   - intake
   - intake-xarray
   - nbsphinx
@@ -16,5 +16,6 @@ dependencies:
   - click
   - git
   - make
-  - jupyterlab
+  - ipython
   - s3fs
+  - fsspec

@@ -4,8 +4,7 @@ channels:
 dependencies:
   - codecov
   - coverage
-  - dask
-  - distributed
+  - dask>=2.2
   - git
   - intake
   - intake-xarray
@@ -20,6 +19,5 @@ dependencies:
   - tqdm
   - xarray
   - docrep
-  - click
   - s3fs
   - fsspec

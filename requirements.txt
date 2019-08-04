@@ -1,7 +1,5 @@
-click
-dask
+dask>=2.2
 docrep
-intake
 intake-xarray
 pyyaml
 tqdm
