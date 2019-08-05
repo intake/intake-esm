@@ -11,6 +11,7 @@ from .collection import Collection, docstrings, get_subset
 from .source import BaseSource
 from .storage import _ensure_file_access
 
+
 class CORDEXCollection(Collection):
 
     __doc__ = docstrings.with_indents(
@@ -22,8 +23,6 @@ class CORDEXCollection(Collection):
 
     def _get_file_attrs(self, filepath):
         file_basename = os.path.basename(filepath)
-        fs = file_basename.split('.')
-
         keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
 
         fileparts = {key: None for key in keys}
@@ -31,10 +30,10 @@ class CORDEXCollection(Collection):
         fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
         fileparts['file_fullpath'] = filepath
         filename_template = '{variable}.{experiment}.{global_climate_model}.{regional_climate_model}.{frequency}.{grid}.{bias_corrected_or_raw}.nc'
-        
+
         f = CORDEXCollection._reverse_filename_format(file_basename, filename_template)
         fileparts.update(f)
-            
+
         return fileparts
 
 
@@ -44,17 +43,23 @@ class CORDEXSource(BaseSource):
 
     def _open_dataset(self):
         # fields which define a single dataset
-        dataset_fields = ['global_climate_model', 'regional_climate_model', 'frequency', 'grid', 'bias_corrected_or_raw']
+        dataset_fields = [
+            'global_climate_model',
+            'regional_climate_model',
+            'frequency',
+            'grid',
+            'bias_corrected_or_raw',
+        ]
 
         kwargs = self._validate_kwargs(self.kwargs)
 
         all_dsets = {}
         query_results = get_subset(self.collection_name, self.query)
-        
+
         file_fullpath_column_name = 'file_fullpath'
         file_basename_column_name = 'file_basename'
         variable_column_name = 'variable'
-        
+
         query_results = _ensure_file_access(
             query_results, file_fullpath_column_name, file_basename_column_name
         )
@@ -85,4 +90,3 @@ class CORDEXSource(BaseSource):
             all_dsets[dset_id] = _dset_i
 
         self._ds = all_dsets
-
