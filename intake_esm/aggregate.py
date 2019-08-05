@@ -6,8 +6,7 @@ from functools import reduce
 import dask
 import numpy as np
 import xarray as xr
-from dask.bytes.core import get_fs, infer_options, update_storage_options
-from intake_xarray.xzarr import get_mapper
+from fsspec import get_mapper
 
 from . import config
 
@@ -299,14 +298,8 @@ def open_dataset(url, data_vars, **kwargs):
 
 def open_store(url, data_vars, storage_options={}, **kwargs):
     """open zarr store."""
-    urlpath, protocol, options = infer_options(url)
-    update_storage_options(options, storage_options)
-    fs, _ = get_fs(protocol, options)
-    if protocol != 'file':
-        mapper = get_mapper(protocol, fs, urlpath)
-        ds = xr.open_zarr(mapper, **kwargs)
-    else:
-        ds = xr.open_zarr(urlpath, **kwargs)
+    mapper = get_mapper(url, **storage_options)
+    ds = xr.open_zarr(mapper, **kwargs)
 
     if data_vars:
         return set_coords(ds, data_vars)
