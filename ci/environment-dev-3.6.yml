@@ -4,8 +4,7 @@ channels:
 dependencies:
   - codecov
   - git
-  - intake
-  - intake-xarray
+  - intake-xarray>=0.3.1
   - ipykernel
   - pip
   - pre_commit
@@ -15,7 +14,6 @@ dependencies:
   - python=3.6
   - pyyaml
   - tqdm
-  - xarray
   - docrep
   - s3fs
   - fsspec
