@@ -1,9 +1,6 @@
-click
-dask
 docrep
-intake
-intake-xarray
+intake-xarray>=0.3.1
 pyyaml
 tqdm
-xarray
+fsspec
 s3fs
