@@ -3,8 +3,7 @@ import xarray as xr
 from tqdm.autonotebook import tqdm
 
 from . import aggregate
-from .bld_collection_utils import get_subset
-from .storage import _ensure_file_access
+from .bld_collection_utils import _ensure_file_access, get_subset
 
 
 class BaseSource(intake_xarray.base.DataSourceMixin):

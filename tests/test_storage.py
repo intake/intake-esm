@@ -9,7 +9,8 @@ import pytest
 import s3fs
 
 from intake_esm import config
-from intake_esm.storage import StorageResource, _ensure_file_access, _filter_query_results
+from intake_esm.bld_collection_utils import _ensure_file_access, _filter_query_results
+from intake_esm.storage import StorageResource
 
 CIRCLE_CI_CHECK = os.environ.get('CIRCLECI', False)
 if CIRCLE_CI_CHECK:

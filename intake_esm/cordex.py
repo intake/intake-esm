@@ -7,10 +7,9 @@ import xarray as xr
 from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
-from .bld_collection_utils import _reverse_filename_format, get_subset
+from .bld_collection_utils import _ensure_file_access, _reverse_filename_format, get_subset
 from .collection import Collection, docstrings
 from .source import BaseSource
-from .storage import _ensure_file_access
 
 
 class CORDEXCollection(Collection):
