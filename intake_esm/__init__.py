@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """ Top-level module for intake_esm. """
+import intake  # Import this first to avoid circular imports during discovery.
 from pkg_resources import DistributionNotFound, get_distribution
 
 from . import config
