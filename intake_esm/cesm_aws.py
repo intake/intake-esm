@@ -75,10 +75,7 @@ class CESMAWSSource(BaseSource):
         _kwargs = {}
         _kwargs['group'] = kwargs.get('group', None)
         _kwargs['synchronizer'] = kwargs.get('synchronizer', None)
-        if 'auto' in kwargs['chunks'].values():
-            _kwargs['chunks'] = 'auto'
-        else:
-            _kwargs['chunks'] = kwargs.get('chunks')
+        _kwargs['chunks'] = kwargs.get('chunks', 'auto')
         _kwargs['decode_cf'] = kwargs.get('decode_cf', True)
         _kwargs['decode_times'] = kwargs.get('decode_times', True)
         _kwargs['decode_coords'] = kwargs.get('decode_coords', True)
@@ -92,8 +89,7 @@ class CESMAWSSource(BaseSource):
     def _open_dataset(self):
         # fields which define a single dataset
         dataset_fields = ['component', 'frequency']
-        kwargs = self._validate_kwargs(self.kwargs)
-        zarr_kwargs = CESMAWSSource._validate_zarr_kwargs(kwargs)
+        zarr_kwargs = CESMAWSSource._validate_zarr_kwargs(self.kwargs)
 
         query_results = get_subset(self.collection_name, self.query)
         grouped = query_results.groupby(dataset_fields)
@@ -120,7 +116,7 @@ class CESMAWSSource(BaseSource):
                 dsets.append(exp_dset)
 
             dset = aggregate.concat_time_levels(
-                dsets, kwargs['time_coord_name'], restore_non_dim_coords=True
+                dsets, time_coord_name_default='time', restore_non_dim_coords=True
             )
             all_dsets[dset_id] = dset
         self._ds = all_dsets
