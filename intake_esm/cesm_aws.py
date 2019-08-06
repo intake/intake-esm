@@ -73,23 +73,27 @@ class CESMAWSSource(BaseSource):
     @staticmethod
     def _validate_zarr_kwargs(kwargs):
         _kwargs = {}
+        _kwargs['time_coord_name'] = kwargs.get('time_coord_name', 'time')
         _kwargs['group'] = kwargs.get('group', None)
         _kwargs['synchronizer'] = kwargs.get('synchronizer', None)
-        _kwargs['auto_chunk'] = kwargs.get('auto_chunk', True)
+        _kwargs['chunks'] = kwargs.get('chunks', 'auto')
         _kwargs['decode_cf'] = kwargs.get('decode_cf', True)
         _kwargs['decode_times'] = kwargs.get('decode_times', True)
         _kwargs['decode_coords'] = kwargs.get('decode_coords', True)
         _kwargs['mask_and_scale'] = kwargs.get('mask_and_scale', True)
         _kwargs['concat_characters'] = kwargs.get('concat_characters', True)
         _kwargs['drop_variables'] = kwargs.get('drop_variables', None)
+        _kwargs['overwrite_encoded_chunks'] = kwargs.get('overwrite_encoded_chunks', False)
         _kwargs['consolidated'] = kwargs.get('consolidated', True)
         return _kwargs
 
     def _open_dataset(self):
         # fields which define a single dataset
         dataset_fields = ['component', 'frequency']
-        kwargs = self._validate_kwargs(self.kwargs)
-        zarr_kwargs = CESMAWSSource._validate_zarr_kwargs(kwargs)
+        zarr_kwargs = CESMAWSSource._validate_zarr_kwargs(self.kwargs)
+
+        kwargs = {}
+        kwargs['time_coord_name'] = zarr_kwargs.pop('time_coord_name')
 
         query_results = get_subset(self.collection_name, self.query)
         grouped = query_results.groupby(dataset_fields)
@@ -116,7 +120,9 @@ class CESMAWSSource(BaseSource):
                 dsets.append(exp_dset)
 
             dset = aggregate.concat_time_levels(
-                dsets, kwargs['time_coord_name'], restore_non_dim_coords=True
+                dsets,
+                time_coord_name_default=kwargs['time_coord_name'],
+                restore_non_dim_coords=True,
             )
             all_dsets[dset_id] = dset
         self._ds = all_dsets
