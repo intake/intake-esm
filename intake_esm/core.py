@@ -12,6 +12,7 @@ from .cesm import CESMCollection
 from .cesm_aws import CESMAWSCollection
 from .cmip import CMIP5Collection, CMIP6Collection
 from .collection import _get_built_collections, _open_collection
+from .cordex import CORDEXCollection
 from .era5 import ERA5Collection
 from .gmet import GMETCollection
 from .mpige import MPIGECollection
@@ -60,6 +61,7 @@ class ESMMetadataStoreCatalog(Catalog):
         'mpige': MPIGECollection,
         'gmet': GMETCollection,
         'era5': ERA5Collection,
+        'cordex': CORDEXCollection,
     }
 
     def __init__(

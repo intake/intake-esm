@@ -25,6 +25,7 @@ please open an issue at the GitHub `main repository <http://github.com/NCAR/inta
    notebooks/mpige.ipynb
    notebooks/gmet.ipynb
    notebooks/era5.ipynb
+   notebooks/addingdatasets.ipynb
    api
    cli
    configuration
