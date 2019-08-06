@@ -283,10 +283,15 @@ class Collection(ABC):
                 f"Persisting {self.collection_spec['name']} at : {os.path.abspath(self.collection_db_file)}"
             )
 
-            # if os.path.exists(self.collection_db_file):
-            #     os.remove(self.collection_db_file)
-
-            self._ds.to_netcdf(self.collection_db_file, mode='w', engine='netcdf4')
+            if os.path.exists(self.collection_db_file):
+                os.remove(self.collection_db_file)
+            # specify encoding to avoid: ValueError: unsupported dtype for netCDF4 variable: bool
+            self._ds.to_netcdf(
+                self.collection_db_file,
+                mode='w',
+                engine='netcdf4',
+                encoding={'direct_access': {'dtype': 'bool'}},
+            )
 
         else:
             print(f"{self.df} is an empty dataframe. It won't be persisted to disk.")
@@ -312,7 +317,7 @@ def _open_collection(collection_name):
     collections = _get_built_collections()
 
     ds = xr.open_dataset(collections[collection_name], engine='netcdf4')
-    ds['direct_access'] = ds['direct_access'].astype(bool)
+    # ds['direct_access'] = ds['direct_access'].astype(bool)
     collection_type = ds.attrs['collection_type']
     collection_name = ds.attrs['name']
     return ds.to_dataframe(), collection_name, collection_type

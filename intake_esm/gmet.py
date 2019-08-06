@@ -37,7 +37,7 @@ class GMETCollection(Collection):
 
             fileparts['frequency'] = part_1[-2]
             fileparts['resolution'] = part_1[-1]
-            fileparts['member_id'] = part_2[0]
+            fileparts['member_id'] = int(part_2[0])
             fileparts['time_range'] = datestr.replace('_', '-')
 
         return fileparts

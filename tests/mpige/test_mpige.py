@@ -6,7 +6,6 @@ import pytest
 import xarray as xr
 
 from intake_esm import config
-from intake_esm.core import ESMMetadataStoreCatalog
 
 here = os.path.abspath(os.path.dirname(__file__))
 
