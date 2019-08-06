@@ -35,7 +35,6 @@ class CESMCollection(Collection):
         keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
         fileparts = {key: None for key in keys}
         fileparts['file_basename'] = file_basename
-        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
         fileparts['file_fullpath'] = filepath
 
         date_str_regex = r'\d{4}\-\d{4}|\d{6}\-\d{6}|\d{8}\-\d{8}|\d{10}Z\-\d{10}Z|\d{12}Z\-\d{12}Z'

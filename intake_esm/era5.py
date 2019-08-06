@@ -28,7 +28,6 @@ class ERA5Collection(Collection):
 
         fileparts = {key: None for key in keys}
         fileparts['file_basename'] = file_basename
-        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
         fileparts['file_fullpath'] = filepath
 
         fileparts['stream'] = fs[1]

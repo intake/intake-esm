@@ -37,7 +37,6 @@ class CMIP5Collection(Collection):
 
         file_basename = os.path.basename(filepath)
         fileparts['file_basename'] = file_basename
-        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
         fileparts['file_fullpath'] = filepath
 
         filename_template = (
