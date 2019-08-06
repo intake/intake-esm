@@ -32,7 +32,7 @@ setup(
     name='intake-esm',
     description='An intake plugin for building and loading earth system data sets such as CMIP, CESM Large Ensemble',
     long_description=long_description,
-    python_requires='>3.5',
+    python_requires='>=3.6',
     maintainer='Anderson Banihirwe',
     maintainer_email='abanihi@ucar.edu',
     classifiers=CLASSIFIERS,
