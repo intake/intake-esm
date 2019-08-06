@@ -75,7 +75,7 @@ class CESMAWSSource(BaseSource):
         _kwargs = {}
         _kwargs['group'] = kwargs.get('group', None)
         _kwargs['synchronizer'] = kwargs.get('synchronizer', None)
-        _kwargs['auto_chunk'] = kwargs.get('auto_chunk', True)
+        _kwargs['chunks'] = kwargs.get('chunks', 'auto')
         _kwargs['decode_cf'] = kwargs.get('decode_cf', True)
         _kwargs['decode_times'] = kwargs.get('decode_times', True)
         _kwargs['decode_coords'] = kwargs.get('decode_coords', True)
