@@ -179,14 +179,14 @@ def _open_collection(collection_name):
     ds = xr.open_dataset(collections[collection_name], engine='netcdf4')
     collection_type = ds.attrs['collection_type']
     collection_name = ds.attrs['name']
-    return ds.to_dataframe(), collection_name, collection_type
+    return ds.to_dataframe(), collection_name, collection_type, ds
 
 
 def get_subset(collection_name, query, order_by=None):
     """ Get a subset of collection entries that match a query """
     import numpy as np
 
-    df, _, collection_type = _open_collection(collection_name)
+    df, _, collection_type, _ = _open_collection(collection_name)
 
     condition = np.ones(len(df), dtype=bool)
 

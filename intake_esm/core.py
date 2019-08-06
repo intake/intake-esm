@@ -81,6 +81,8 @@ class ESMMetadataStoreCatalog(Catalog):
         self.storage_options = storage_options or {}
         self.collection_type = None
         self.fs = None
+        self.df = None
+        self._ds = None
         self.collections = {}
         self._get_built_collections()
 
@@ -161,7 +163,9 @@ class ESMMetadataStoreCatalog(Catalog):
 
     def open_collection(self, collection_name):
         """ Open an ESM collection """
-        self.df, self.collection_name, self.collection_type = _open_collection(collection_name)
+        self.df, self.collection_name, self.collection_type, self._ds = _open_collection(
+            collection_name
+        )
 
     def search(self, **query):
         """ Search for entries in the collection catalog
