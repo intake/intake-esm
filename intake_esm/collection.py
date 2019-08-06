@@ -1,11 +1,14 @@
+import datetime
 import os
 import re
 from abc import ABC, abstractclassmethod
 from glob import glob
+from pathlib import Path
 
 import docrep
-import numpy as np
 import pandas as pd
+import pkg_resources
+import xarray as xr
 from intake.source.utils import reverse_format
 from tqdm.autonotebook import tqdm
 
@@ -53,15 +56,15 @@ class Collection(ABC):
                 f"Unable to locate collection columns for {collection_spec['collection_type']} collection type in {config.PATH}"
             )
         self.df = pd.DataFrame(columns=self.columns)
+        self._ds = xr.Dataset()
         self.exclude_patterns = self._get_exclude_patterns()
-        self.database_base_dir = config.get('database-directory', None)
+        self.database_dir = config.get('database-directory', None)
         self.order_by_columns = self.collection_definition.get('order-by-columns')
 
         self._validate()
 
-        if self.database_base_dir:
-            self.database_dir = f"{self.database_base_dir}/{collection_spec['collection_type']}"
-            self.collection_db_file = f"{self.database_dir}/{collection_spec['name']}.{collection_spec['collection_type']}.csv"
+        if self.database_dir:
+            self.collection_db_file = f"{self.database_dir}/{collection_spec['name']}.nc"
             os.makedirs(self.database_dir, exist_ok=True)
 
     def build(self):
@@ -75,7 +78,16 @@ class Collection(ABC):
             dfs.update(df_i)
 
         self.df = self._finalize_build(dfs)
-        print(self.df.info())
+        self._ds = self.df.reset_index(drop=True).to_xarray()
+        attrs = make_attrs(
+            attrs={
+                'collection_spec': self.collection_spec,
+                'name': self.collection_spec['name'],
+                'collection_type': self.collection_spec['collection_type'],
+            }
+        )
+        self._ds.attrs = attrs
+        print(self._ds)
         self.persist_db_file()
 
     def assemble_file_list(self, data_source, data_source_attrs, exclude_patterns=[]):
@@ -233,6 +245,7 @@ class Collection(ABC):
             drop=True
         )
         df = df.sort_values(self.order_by_columns)
+
         return df
 
     def _get_exclude_patterns(self):
@@ -269,7 +282,11 @@ class Collection(ABC):
             print(
                 f"Persisting {self.collection_spec['name']} at : {os.path.abspath(self.collection_db_file)}"
             )
-            self.df.to_csv(self.collection_db_file, index=True)
+
+            # if os.path.exists(self.collection_db_file):
+            #     os.remove(self.collection_db_file)
+
+            self._ds.to_netcdf(self.collection_db_file, mode='w', engine='netcdf4')
 
         else:
             print(f"{self.df} is an empty dataframe. It won't be persisted to disk.")
@@ -278,77 +295,33 @@ class Collection(ABC):
 def _get_built_collections():
     """Loads built collections in a dictionary with key=collection_name, value=collection_db_file_path"""
     try:
-        db_dir = config.get('database-directory')
-        cc = [y for x in os.walk(db_dir) for y in glob(os.path.join(x[0], '*.csv'))]
+        db_dir = Path(config.get('database-directory'))
+        cc = db_dir.glob('*.nc')
         collections = {}
-        for collection in cc:
-            name, meta = _decipher_collection_name(collection)
-            collections[name] = meta
+        for f in cc:
+            name = f.stem
+            fullpath = f.absolute()
+            collections[name] = fullpath
         return collections
     except Exception as e:
         raise e
 
 
-def _decipher_collection_name(collection_path):
-    c_ = os.path.basename(collection_path).split('.')
-    collection_meta = {}
-    collection_name = c_[0]
-    collection_meta['collection_type'] = c_[1]
-    collection_meta['path'] = collection_path
-    return collection_name, collection_meta
-
-
 def _open_collection(collection_name):
     """ Open an ESM collection"""
-
-    collection_types = config.get('sources').keys()
     collections = _get_built_collections()
 
-    collection_type = collections[collection_name]['collection_type']
-    path = collections[collection_name]['path']
-    if (collection_type in collection_types) and collections:
-        try:
-            df = pd.read_csv(path, index_col=0, dtype={'direct_access': bool})
-            return df, collection_name, collection_type
-        except Exception as err:
-            raise err
-
-    else:
-        raise ValueError("Couldn't open specified collection")
-
-
-def _test_str_pattern(ser, pat, case=False, regex=True):
-    """Test if pattern or regex is contained within a string of a Series or Index.
-
-    Parameters
-    ----------
-
-    ser: pandas.Series
-
-    pat: str
-        Character sequence or regular expression.
-
-    case: bool, default True
-         If True, case sensitive.
-
-    regex: bool, default True
-
-        If True, assumes the pat is a regular expression.
-        If False, treats the pat as a literal string.
-
-    Returns
-    -------
-
-    Index of boolean values
-       Index of boolean values indicating whether the given pattern
-       is contained within the string of each element of the Series or Index.
-    """
-
-    return ser.str.contains(pat, case=case, regex=regex)
+    ds = xr.open_dataset(collections[collection_name], engine='netcdf4')
+    ds['direct_access'] = ds['direct_access'].astype(bool)
+    collection_type = ds.attrs['collection_type']
+    collection_name = ds.attrs['name']
+    return ds.to_dataframe(), collection_name, collection_type
 
 
 def get_subset(collection_name, query, order_by=None):
     """ Get a subset of collection entries that match a query """
+    import numpy as np
+
     df, _, collection_type = _open_collection(collection_name)
 
     condition = np.ones(len(df), dtype=bool)
@@ -370,3 +343,41 @@ def get_subset(collection_name, query, order_by=None):
     query_results = query_results.sort_values(by=order_by, ascending=True)
 
     return query_results
+
+
+def make_attrs(attrs=None):
+    """Make standard attributes to attach to xarray datasets (collections).
+    Parameters
+    ----------
+    attrs : dict (optional)
+        Additional attributes to add or overwrite
+    Returns
+    -------
+    dict
+        attrs
+    """
+
+    import intake_xarray
+    import intake
+    import json
+
+    default_attrs = {
+        'created_at': datetime.datetime.utcnow().isoformat(),
+        'intake_esm_version': pkg_resources.get_distribution('intake_esm').version,
+    }
+
+    upstream_deps = [intake, intake_xarray]
+    for dep in upstream_deps:
+        dep_name = dep.__name__
+        try:
+            version = pkg_resources.get_distribution(dep_name).version
+            default_attrs[f'{dep_name}_version'] = version
+        except pkg_resources.DistributionNotFound:
+            if hasattr(dep, '__version__'):
+                version = dep.__version__
+                default_attrs[f'{dep_name}_version'] = version
+    if attrs is not None:
+        if 'collection_spec' in attrs:
+            attrs['collection_spec'] = json.dumps(attrs['collection_spec'])
+        default_attrs.update(attrs)
+    return default_attrs
