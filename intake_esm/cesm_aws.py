@@ -73,6 +73,7 @@ class CESMAWSSource(BaseSource):
     @staticmethod
     def _validate_zarr_kwargs(kwargs):
         _kwargs = {}
+        _kwargs['time_coord_name'] = kwargs.get('time_coord_name', 'time')
         _kwargs['group'] = kwargs.get('group', None)
         _kwargs['synchronizer'] = kwargs.get('synchronizer', None)
         _kwargs['chunks'] = kwargs.get('chunks', 'auto')
@@ -90,6 +91,9 @@ class CESMAWSSource(BaseSource):
         # fields which define a single dataset
         dataset_fields = ['component', 'frequency']
         zarr_kwargs = CESMAWSSource._validate_zarr_kwargs(self.kwargs)
+
+        kwargs = {}
+        kwargs['time_coord_name'] = zarr_kwargs.pop('time_coord_name')
 
         query_results = get_subset(self.collection_name, self.query)
         grouped = query_results.groupby(dataset_fields)
@@ -116,7 +120,9 @@ class CESMAWSSource(BaseSource):
                 dsets.append(exp_dset)
 
             dset = aggregate.concat_time_levels(
-                dsets, time_coord_name_default='time', restore_non_dim_coords=True
+                dsets,
+                time_coord_name_default=kwargs['time_coord_name'],
+                restore_non_dim_coords=True,
             )
             all_dsets[dset_id] = dset
         self._ds = all_dsets
