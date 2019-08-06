@@ -7,7 +7,8 @@ import xarray as xr
 from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
-from .collection import Collection, docstrings, get_subset
+from .bld_collection_utils import _reverse_filename_format, get_subset
+from .collection import Collection, docstrings
 from .source import BaseSource
 from .storage import _ensure_file_access
 
@@ -30,7 +31,7 @@ class CORDEXCollection(Collection):
         fileparts['file_fullpath'] = filepath
         filename_template = '{variable}.{experiment}.{global_climate_model}.{regional_climate_model}.{frequency}.{grid}.{bias_corrected_or_raw}.nc'
 
-        f = CORDEXCollection._reverse_filename_format(file_basename, filename_template)
+        f = _reverse_filename_format(file_basename, filename_template)
         fileparts.update(f)
 
         return fileparts

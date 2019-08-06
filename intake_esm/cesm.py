@@ -9,6 +9,7 @@ import xarray as xr
 from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
+from .bld_collection_utils import _extract_attr_with_regex
 from .collection import Collection, docstrings
 from .source import BaseSource
 
@@ -38,7 +39,7 @@ class CESMCollection(Collection):
         fileparts['file_fullpath'] = filepath
 
         date_str_regex = r'\d{4}\-\d{4}|\d{6}\-\d{6}|\d{8}\-\d{8}|\d{10}Z\-\d{10}Z|\d{12}Z\-\d{12}Z'
-        datestr = CESMCollection._extract_attr_with_regex(file_basename, regex=date_str_regex)
+        datestr = _extract_attr_with_regex(file_basename, regex=date_str_regex)
 
         if datestr:
             fileparts['date_range'] = datestr

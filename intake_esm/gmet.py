@@ -7,7 +7,8 @@ import xarray as xr
 from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
-from .collection import Collection, docstrings, get_subset
+from .bld_collection_utils import _extract_attr_with_regex, get_subset
+from .collection import Collection, docstrings
 from .source import BaseSource
 
 
@@ -28,7 +29,7 @@ class GMETCollection(Collection):
         fileparts['file_fullpath'] = filepath
 
         date_str_regex = r'\d{8}\_\d{8}'
-        datestr = GMETCollection._extract_attr_with_regex(filepath, regex=date_str_regex)
+        datestr = _extract_attr_with_regex(filepath, regex=date_str_regex)
 
         if datestr:
             s = file_basename.split(datestr)

@@ -10,7 +10,8 @@ import xarray as xr
 from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
-from .collection import Collection, docstrings, get_subset
+from .bld_collection_utils import _extract_attr_with_regex, get_subset
+from .collection import Collection, docstrings
 from .source import BaseSource
 
 
@@ -38,7 +39,7 @@ class MPIGECollection(Collection):
         fileparts['file_fullpath'] = filepath
 
         date_str_regex = r'\d{4}\_\d{4}|\d{6}\_\d{6}|\d{8}\_\d{8}|\d{10}\_\d{10}|\d{12}\_\d{12}'
-        datestr = MPIGECollection._extract_attr_with_regex(file_basename, regex=date_str_regex)
+        datestr = _extract_attr_with_regex(file_basename, regex=date_str_regex)
 
         if datestr:
             fileparts['date_range'] = datestr

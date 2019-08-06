@@ -7,7 +7,8 @@ import xarray as xr
 from tqdm.autonotebook import tqdm
 
 from . import aggregate
-from .collection import Collection, docstrings, get_subset
+from .bld_collection_utils import get_subset
+from .collection import Collection, docstrings
 from .source import BaseSource
 
 

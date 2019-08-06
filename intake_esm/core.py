@@ -7,11 +7,15 @@ from intake.catalog import Catalog
 from intake.catalog.local import LocalCatalogEntry
 
 from . import config as config
-from .bld_collection_utils import FILE_ALIAS_DICT, load_collection_input_file
+from .bld_collection_utils import (
+    FILE_ALIAS_DICT,
+    _get_built_collections,
+    _open_collection,
+    load_collection_input_file,
+)
 from .cesm import CESMCollection
 from .cesm_aws import CESMAWSCollection
 from .cmip import CMIP5Collection, CMIP6Collection
-from .collection import _get_built_collections, _open_collection
 from .cordex import CORDEXCollection
 from .era5 import ERA5Collection
 from .gmet import GMETCollection
