@@ -16,4 +16,3 @@ data_sources:
         - case: b.e11.B20TRC5CNBDRD.f09_g16.001
           sequence_order: 0
           ensemble: 1
-          has_ocean_bgc: True

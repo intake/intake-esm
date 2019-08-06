@@ -16,7 +16,6 @@ collections:
     - ctrl_branch_year
     - year_offset
     - sequence_order
-    - has_ocean_bgc
     - grid
     order_by_columns:
       - sequence_order

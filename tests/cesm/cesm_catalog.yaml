@@ -15,9 +15,7 @@ sources:
         experiment: null
         files: null
         files_basename: null
-        files_dirname: null
         grid: null
-        has_ocean_bgc: null
         resource: null
         resource_type: null
         sequence_order: null

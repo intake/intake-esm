@@ -104,9 +104,6 @@ class CESMCollection(Collection):
             if 'sequence_order' not in member_attrs:
                 input_attrs_base.update({'sequence_order': 0})
 
-            if 'has_ocean_bgc' not in member_attrs:
-                input_attrs_base.update({'has_ocean_bgc': False})
-
             # Find entries relevant to *this* member_id:
             # "case" matches
             condition = df['case'] == case
