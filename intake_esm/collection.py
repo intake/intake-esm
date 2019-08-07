@@ -237,7 +237,7 @@ class Collection(ABC):
     def _persist_db_file(self):
         """ Persist built collection database to disk.
         """
-        if len(self._ds) > 0:
+        if len(self._ds.index) > 0:
             print(
                 f"Persisting {self.collection_spec['name']} at : {os.path.abspath(self.collection_db_file)}"
             )
