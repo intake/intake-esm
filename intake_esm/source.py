@@ -43,7 +43,7 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
     def _validate_kwargs(self, kwargs):
 
         _kwargs = kwargs.copy()
-        if self.query_results.empty:
+        if len(self.query_results.index) == 0:
             raise ValueError(f'Query={self.query} returned empty results')
 
         if 'decode_times' not in _kwargs:

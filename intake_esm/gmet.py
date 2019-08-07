@@ -53,7 +53,9 @@ class GMETSource(BaseSource):
         kwargs = self._validate_kwargs(self.kwargs)
         data_vars = ['pcp', 't_mean', 't_range']
         dataset_fields = ['member_id']
-        grouped = get_subset(self.collection_name, self.query).groupby(dataset_fields)
+        grouped = (
+            get_subset(self.collection_name, self.query).to_dataframe().groupby(dataset_fields)
+        )
         member_ids = []
         member_dsets = []
         for m_id, m_files in tqdm(grouped, desc='member'):

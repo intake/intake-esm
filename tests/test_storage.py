@@ -143,5 +143,5 @@ def test_filter_query_results():
         {'resource_type': resource_type, 'file_basename': files, 'direct_access': direct_access}
     )
 
-    query_results = _filter_query_results(df, file_basename_column_name='file_basename')
-    assert len(query_results) == 2
+    query_results = _filter_query_results(df.to_xarray(), file_basename_column_name='file_basename')
+    assert len(query_results.index) == 2

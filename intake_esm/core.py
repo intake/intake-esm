@@ -81,7 +81,6 @@ class ESMMetadataStoreCatalog(Catalog):
         self.storage_options = storage_options or {}
         self.collection_type = None
         self.fs = None
-        self.df = None
         self._ds = None
         self.collections = {}
         self._get_built_collections()
@@ -163,14 +162,14 @@ class ESMMetadataStoreCatalog(Catalog):
 
     def open_collection(self, collection_name):
         """ Open an ESM collection """
-        self.df, self.collection_name, self.collection_type, self._ds = _open_collection(
-            collection_name
-        )
+        self._ds = _open_collection(collection_name)
+        self.collection_name = self._ds.attrs['name']
+        self.collection_type = self._ds.attrs['collection_type']
 
     def search(self, **query):
         """ Search for entries in the collection catalog
         """
-        collection_columns = self.df.columns.tolist()
+        collection_columns = list(self._ds.data_vars)
         for key in query.keys():
             if key not in collection_columns:
                 raise ValueError(f'{key} is not in {self.collection_name}')

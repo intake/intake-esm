@@ -177,35 +177,32 @@ def _open_collection(collection_name):
     collections = _get_built_collections()
 
     ds = xr.open_dataset(collections[collection_name], engine='netcdf4')
-    collection_type = ds.attrs['collection_type']
-    collection_name = ds.attrs['name']
-    return ds.to_dataframe(), collection_name, collection_type, ds
+    ds['direct_access'] = ds['direct_access'].astype(bool)
+    return ds
 
 
 def get_subset(collection_name, query, order_by=None):
     """ Get a subset of collection entries that match a query """
     import numpy as np
 
-    df, _, collection_type, _ = _open_collection(collection_name)
-
-    condition = np.ones(len(df), dtype=bool)
-
+    ds = _open_collection(collection_name)
+    collection_type = ds.attrs['collection_type']
+    condition = np.ones(len(ds.index), dtype=bool)
     for key, val in query.items():
         if isinstance(val, list):
-            condition_i = np.zeros(len(df), dtype=bool)
+            condition_i = np.zeros(len(ds.index), dtype=bool)
             for val_i in val:
-                condition_i = condition_i | (df[key] == val_i)
+                condition_i = condition_i | (ds[key] == val_i)
             condition = condition & condition_i
 
         elif val is not None:
-            condition = condition & (df[key] == val)
-    query_results = df.loc[condition]
+            condition = condition & (ds[key] == val)
+    query_results = ds.where(condition, drop=True)
 
     if order_by is None:
         order_by = config.get('collections')[collection_type]['order-by-columns']
 
-    query_results = query_results.sort_values(by=order_by, ascending=True)
-
+    query_results = query_results.sortby(order_by, ascending=True)
     return query_results
 
 
@@ -293,15 +290,15 @@ def _filter_query_results(query_results, file_basename_column_name):
     gps = []
     for _, group in groups:
 
-        g = group[group['direct_access']]
+        g = group.where(group['direct_access'], drop=True)
         # File does not exist on resource with high priority
-        if g.empty:
+        if len(g.index) == 0:
             gps.append(group)
 
         else:
             gps.append(g)
 
-    query_results = pd.concat(gps)
+    query_results = xr.concat(gps, dim='index')
     return query_results
 
 
@@ -314,7 +311,7 @@ def _ensure_file_access(
 
     Paramters
     ---------
-    query_results : `pandas.DataFrame`
+    query_results : `xarray.Dataset`
         Results of a query.
 
     Returns
@@ -330,9 +327,8 @@ def _ensure_file_access(
     os.makedirs(data_cache_directory, exist_ok=True)
 
     file_remote_local = {k: [] for k in resource_types.keys()}
-
     query_results = _filter_query_results(query_results, file_basename_column_name)
-
+    query_results = query_results.to_dataframe()
     local_urlpaths = []
     for idx, row in query_results.iterrows():
         if row.direct_access:
