@@ -119,10 +119,10 @@ class MPIGESource(BaseSource):
     def _open_dataset_groups(self, dataset_fields, member_column_name, file_fullpath_column_name):
         kwargs = self._validate_kwargs(self.kwargs)
 
-        query_results = get_subset(self.collection_name, self.query).to_dataframe()
-        grouped = query_results.groupby(dataset_fields)
+        ds = get_subset(self.collection_name, self.query)
+        df = ds.to_dataframe().groupby(dataset_fields)
         all_dsets = OrderedDict()
-        for dset_keys, dset_files in tqdm(grouped, desc='experiment'):
+        for dset_keys, dset_files in tqdm(df, desc='experiment'):
             dset_id = dset_keys
             comp_dsets = []
             for comp_id, comp_files in dset_files.groupby('component'):

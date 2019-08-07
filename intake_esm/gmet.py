@@ -53,12 +53,11 @@ class GMETSource(BaseSource):
         kwargs = self._validate_kwargs(self.kwargs)
         data_vars = ['pcp', 't_mean', 't_range']
         dataset_fields = ['member_id']
-        grouped = (
-            get_subset(self.collection_name, self.query).to_dataframe().groupby(dataset_fields)
-        )
+        ds = get_subset(self.collection_name, self.query)
+        df = ds.to_dataframe().groupby(dataset_fields)
         member_ids = []
         member_dsets = []
-        for m_id, m_files in tqdm(grouped, desc='member'):
+        for m_id, m_files in tqdm(df, desc='member'):
             files = m_files['file_fullpath'].tolist()
             dsets = [
                 aggregate.open_dataset_delayed(

@@ -47,7 +47,7 @@ def test_build_collection_cesm1_aws_le():
             overwrite_existing=True,
             storage_options=storage_options,
         )
-        assert isinstance(col._ds, xr.Dataset)
+        assert isinstance(col.ds, xr.Dataset)
 
 
 def test_search():
@@ -56,7 +56,7 @@ def test_search():
             collection_name='AWS-CESM1-LE', storage_options=storage_options
         )
         cat = col.search(variable=['RAIN', 'FSNO'])
-        assert len(cat.query_results.index) > 0
+        assert len(cat.ds.index) > 0
 
 
 def test_to_xarray():

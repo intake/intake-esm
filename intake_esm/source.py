@@ -27,7 +27,7 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
         self.collection_name = collection_name
         self.query = query
         self.urlpath = ''
-        self.query_results = self.get_results()
+        self.ds = self.get_results()
         self._ds = None
         self.storage_options = storage_options
         self.kwargs = kwargs
@@ -37,13 +37,13 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
 
     def get_results(self):
         """ Return collection entries matching query"""
-        query_results = get_subset(self.collection_name, self.query)
-        return query_results
+        ds = get_subset(self.collection_name, self.query)
+        return ds
 
     def _validate_kwargs(self, kwargs):
 
         _kwargs = kwargs.copy()
-        if len(self.query_results.index) == 0:
+        if len(self.ds.index) == 0:
             raise ValueError(f'Query={self.query} returned empty results')
 
         if 'decode_times' not in _kwargs:
@@ -81,11 +81,9 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
         kwargs = self._validate_kwargs(self.kwargs)
 
         all_dsets = {}
-        query_results = get_subset(self.collection_name, self.query)
-        query_results = _ensure_file_access(
-            query_results, file_fullpath_column_name, file_basename_column_name
-        )
-        grouped = query_results.groupby(dataset_fields)
+        ds = get_subset(self.collection_name, self.query)
+        df = _ensure_file_access(ds, file_fullpath_column_name, file_basename_column_name)
+        grouped = df.groupby(dataset_fields)
         for dset_keys, dset_files in tqdm(grouped, desc='dataset'):
             dset_id = '.'.join(dset_keys)
             member_ids = []
@@ -140,17 +138,7 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
 
         if self._ds is None:
             self._open_dataset()
-
-            if isinstance(self._ds, xr.Dataset):
-                metadata = {
-                    'dims': dict(self._ds.dims),
-                    'data_vars': {k: list(self._ds[k].coords) for k in self._ds.data_vars.keys()},
-                    'coords': tuple(self._ds.coords.keys()),
-                }
-                metadata.update(self._ds.attrs)
-
-            else:
-                metadata = {}
+            metadata = {}
 
             self._schema = Schema(
                 datashape=None, dtype=None, shape=None, npartitions=None, extra_metadata=metadata

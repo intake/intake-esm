@@ -53,16 +53,14 @@ class CORDEXSource(BaseSource):
         kwargs = self._validate_kwargs(self.kwargs)
 
         all_dsets = {}
-        query_results = get_subset(self.collection_name, self.query)
+        ds = get_subset(self.collection_name, self.query)
 
         file_fullpath_column_name = 'file_fullpath'
         file_basename_column_name = 'file_basename'
         variable_column_name = 'variable'
 
-        query_results = _ensure_file_access(
-            query_results, file_fullpath_column_name, file_basename_column_name
-        )
-        grouped = query_results.groupby(dataset_fields)
+        df = _ensure_file_access(ds, file_fullpath_column_name, file_basename_column_name)
+        grouped = df.groupby(dataset_fields)
         for dset_keys, dset_files in tqdm(grouped, desc='dataset'):
             dset_id = '.'.join(dset_keys)
             var_dsets = []

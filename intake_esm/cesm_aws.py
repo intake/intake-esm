@@ -96,8 +96,8 @@ class CESMAWSSource(BaseSource):
         kwargs = {}
         kwargs['time_coord_name'] = zarr_kwargs.pop('time_coord_name')
 
-        query_results = get_subset(self.collection_name, self.query).to_dataframe()
-        grouped = query_results.groupby(dataset_fields)
+        df = get_subset(self.collection_name, self.query).to_dataframe()
+        grouped = df.groupby(dataset_fields)
         all_dsets = {}
         for dset_keys, dset_stores in tqdm(grouped, desc='dataset(s)'):
             dset_id = '.'.join(dset_keys)

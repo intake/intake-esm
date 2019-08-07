@@ -281,11 +281,11 @@ def _reverse_filename_format(file_basename, filename_template=None, gridspec_tem
             return {}
 
 
-def _filter_query_results(query_results, file_basename_column_name):
+def _filter_query_results(ds, file_basename_column_name):
     """Filter for entries where file_basename is the same and remove all
        but the first ``direct_access = True`` row."""
 
-    groups = query_results.groupby(file_basename_column_name)
+    groups = ds.groupby(file_basename_column_name)
 
     gps = []
     for _, group in groups:
@@ -298,26 +298,24 @@ def _filter_query_results(query_results, file_basename_column_name):
         else:
             gps.append(g)
 
-    query_results = xr.concat(gps, dim='index')
-    return query_results
+    ds = xr.concat(gps, dim='index')
+    return ds
 
 
 def _ensure_file_access(
-    query_results,
-    file_fullpath_column_name='file_fullpath',
-    file_basename_column_name='file_basename',
+    ds, file_fullpath_column_name='file_fullpath', file_basename_column_name='file_basename'
 ):
     """Ensure that requested files are available locally.
 
     Paramters
     ---------
-    query_results : `xarray.Dataset`
+    ds : `xarray.Dataset`
         Results of a query.
 
     Returns
     -------
-    local_urlpaths : list
-        List of urls to access files in `query_results`.
+    df : `pandas.DataFrame`
+        Results of a query in form of a DataFrame with a modified List of urls to use when loading files.
     """
 
     resource_types = {'hsi': _get_hsi_files, 'copy-to-cache': _posix_symlink}
@@ -327,10 +325,10 @@ def _ensure_file_access(
     os.makedirs(data_cache_directory, exist_ok=True)
 
     file_remote_local = {k: [] for k in resource_types.keys()}
-    query_results = _filter_query_results(query_results, file_basename_column_name)
-    query_results = query_results.to_dataframe()
+    ds = _filter_query_results(ds, file_basename_column_name)
+    df = ds.to_dataframe()
     local_urlpaths = []
-    for idx, row in query_results.iterrows():
+    for idx, row in df.iterrows():
         if row.direct_access:
             local_urlpaths.append(row[file_fullpath_column_name])
 
@@ -350,6 +348,6 @@ def _ensure_file_access(
             print(f'transfering {len(file_remote_local[res_type])} files')
             resource_types[res_type](file_remote_local[res_type])
 
-    query_results[file_fullpath_column_name] = local_urlpaths
+    df[file_fullpath_column_name] = local_urlpaths
 
-    return query_results
+    return df

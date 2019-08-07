@@ -82,7 +82,7 @@ class ESMMetadataStoreCatalog(Catalog):
         self.storage_options = storage_options or {}
         self.collection_type = None
         self.fs = None
-        self._ds = None
+        self.ds = None
         self.collections = _get_built_collections()
         if collection_name and collection_input_definition is None:
             self.open_collection(collection_name)
@@ -156,14 +156,14 @@ class ESMMetadataStoreCatalog(Catalog):
 
     def open_collection(self, collection_name):
         """ Open an ESM collection """
-        self._ds = _open_collection(collection_name)
-        self.collection_name = self._ds.attrs['name']
-        self.collection_type = self._ds.attrs['collection_type']
+        self.ds = _open_collection(collection_name)
+        self.collection_name = self.ds.attrs['name']
+        self.collection_type = self.ds.attrs['collection_type']
 
     def search(self, **query):
         """ Search for entries in the collection catalog
         """
-        collection_columns = list(self._ds.data_vars)
+        collection_columns = list(self.ds.data_vars)
         for key in query.keys():
             if key not in collection_columns:
                 raise ValueError(f'{key} is not in {self.collection_name}')
@@ -179,7 +179,7 @@ class ESMMetadataStoreCatalog(Catalog):
         driver = config.get('sources')[self.collection_type]
         description = f'Catalog entry generated from {self.collection_name} collection'
         keys = ['created_at', 'intake_esm_version', 'intake_version', 'intake_xarray_version']
-        metadata = {k: self._ds.attrs[k] for k in keys}
+        metadata = {k: self.ds.attrs[k] for k in keys}
         metadata['catalog_entry_generated_at'] = datetime.datetime.utcnow().isoformat()
 
         cat = LocalCatalogEntry(

@@ -114,9 +114,10 @@ class ERA5Source(BaseSource):
             xr.open_mfdataset(invariant_files, drop_variables=['time']).squeeze().load()
         )
 
-        grouped = get_subset(self.collection_name, self.query).groupby(dataset_fields)
+        ds = get_subset(self.collection_name, self.query)
+        df = ds.groupby(dataset_fields)
         product_dsets = {}
-        for p_id, p_files in tqdm(grouped, desc='product'):
+        for p_id, p_files in tqdm(df, desc='product'):
             new_time_coord_name = 'forecast_initial_time' if p_id == 'forecast' else 'time'
             chunks = kwargs['chunks']
             chunks[new_time_coord_name] = chunks.pop(kwargs['time_coord_name'])

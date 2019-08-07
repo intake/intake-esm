@@ -28,7 +28,7 @@ def test_build_collection_cesm1_le():
         col = intake.open_esm_metadatastore(
             collection_input_definition=collection_input_definition, overwrite_existing=True
         )
-        assert isinstance(col._ds, xr.Dataset)
+        assert isinstance(col.ds, xr.Dataset)
 
 
 @pytest.mark.xfail(reason='Feature not yet implemented')
