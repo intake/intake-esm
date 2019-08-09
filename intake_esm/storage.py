@@ -211,7 +211,9 @@ def _get_hsi_files(file_remote_local):
     hsi_max_concurrent = 5
     args = [iter(file_remote_local)] * hsi_max_concurrent
 
-    for groups in tqdm(list(zip_longest(*args, fillvalue=None))):
+    for groups in tqdm(
+        list(zip_longest(*args, fillvalue=None), disable=not config.get('progress-bar'))
+    ):
 
         cmds = [
             ['hsi', f'cget {file_rem_loc[1]} : {file_rem_loc[0]}']

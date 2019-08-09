@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """ Implementation for The Max Planck Institute Grand Ensemble (MPI-GE) data holdings """
 import os
-import re
 from collections import OrderedDict
 from warnings import warn
 
@@ -122,7 +121,9 @@ class MPIGESource(BaseSource):
         ds = get_subset(self.collection_name, self.query)
         df = ds.to_dataframe().groupby(dataset_fields)
         all_dsets = OrderedDict()
-        for dset_keys, dset_files in tqdm(df, desc='experiment'):
+        for dset_keys, dset_files in tqdm(
+            df, desc='experiment', disable=not config.get('progress-bar')
+        ):
             dset_id = dset_keys
             comp_dsets = []
             for comp_id, comp_files in dset_files.groupby('component'):

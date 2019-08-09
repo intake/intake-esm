@@ -2,7 +2,7 @@ import intake_xarray
 import xarray as xr
 from tqdm.autonotebook import tqdm
 
-from . import aggregate
+from . import aggregate, config
 from .bld_collection_utils import _ensure_file_access, get_subset
 
 
@@ -84,11 +84,17 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
         ds = get_subset(self.collection_name, self.query)
         df = _ensure_file_access(ds, file_fullpath_column_name, file_basename_column_name)
         grouped = df.groupby(dataset_fields)
-        for dset_keys, dset_files in tqdm(grouped, desc='dataset'):
+        for dset_keys, dset_files in tqdm(
+            grouped, desc='dataset', disable=not config.get('progress-bar')
+        ):
             dset_id = '.'.join(dset_keys)
             member_ids = []
             member_dsets = []
-            for m_id, m_files in tqdm(dset_files.groupby(member_column_name), desc='member'):
+            for m_id, m_files in tqdm(
+                dset_files.groupby(member_column_name),
+                desc='member',
+                disable=not config.get('progress-bar'),
+            ):
                 var_dsets = []
                 for v_id, v_files in m_files.groupby(variable_column_name):
                     urlpath_ei_vi = v_files[file_fullpath_column_name].tolist()

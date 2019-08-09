@@ -3,9 +3,9 @@ import os
 import uuid
 
 import s3fs
-import yaml
 from intake.catalog import Catalog
 from intake.catalog.local import LocalCatalogEntry
+from intake.utils import yaml_load
 
 from . import config as config
 from .bld_collection_utils import (
@@ -24,7 +24,7 @@ from .mpige import MPIGECollection
 
 
 class ESMMetadataStoreCatalog(Catalog):
-    """ESM collection Metadata store. This class acts as an entry point for `intake_esm`.
+    """ESM collection Metadata store. This class acts as an entry point for ``intake_esm``.
 
     Parameters
     ----------
@@ -123,7 +123,7 @@ class ESMMetadataStoreCatalog(Catalog):
         else:
             try:
                 with open(os.path.abspath(definition)) as f:
-                    input_collection = yaml.safe_load(f)
+                    input_collection = yaml_load(f)
             except Exception as exc:
                 raise exc
 

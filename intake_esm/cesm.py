@@ -1,12 +1,8 @@
 #!/usr/bin/env python
 """ Implementation for NCAR's Community Earth System Model (CESM) data holdings """
 import os
-import re
 
-import numpy as np
 import pandas as pd
-import xarray as xr
-from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
 from .bld_collection_utils import _extract_attr_with_regex

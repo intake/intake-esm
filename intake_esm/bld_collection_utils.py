@@ -8,8 +8,8 @@ from urllib.request import urlopen, urlretrieve
 
 import pandas as pd
 import xarray as xr
-import yaml
 from intake.source.utils import reverse_format
+from intake.utils import yaml_load
 
 from . import config
 from .storage import _get_hsi_files, _posix_symlink
@@ -149,7 +149,7 @@ def load_collection_input_file(
         raise IOError(msg)
 
     with open(localfile) as f:
-        d = yaml.safe_load(f)
+        d = yaml_load(f)
 
     if not cache:
         os.remove(localfile)
