@@ -1,7 +1,9 @@
 import datetime
+import functools
 import os
 import uuid
 
+import numpy as np
 import s3fs
 import yaml
 from intake.catalog import Catalog
@@ -111,6 +113,38 @@ class ESMMetadataStoreCatalog(Catalog):
             )
 
         self._entries = {}
+
+    def describe(self, variables=()):
+        """ Generate summary for variables in the .ds attribute"""
+        return self._info_cache(variables=variables)
+
+    @functools.lru_cache(maxsize=None)
+    def _info_cache(self, variables=()):
+        if variables:
+            if isinstance(variables, str):
+                d_vars = (variables,)
+            else:
+                d_vars = tuple(variables)
+        else:
+            d_vars = tuple(self.ds.variables)
+
+        info = {}
+        for idx, variable in enumerate(d_vars):
+            a = np.unique(self.ds[variable].data)
+            info[variable] = sorted(a)
+        return info
+
+    def __repr__(self):
+        """Making string representation of object."""
+        v = set(self.ds.data_vars) - set(
+            ['resource', 'resource_type', 'file_fullpath', 'file_basename', 'direct_access']
+        )
+        info = self._info_cache(variables=tuple(v))
+        output = []
+        for key, values in info.items():
+            output.append(f'{len(values)} {key}(s): \n\n\t\t{values[:5]} ...\n')
+        output = '\n\t> '.join(output)
+        return f'{self.collection_name.upper()} collection catalogue with:\n\t> {output}'
 
     def _validate_collection_definition(self, definition, **kwargs):
 
