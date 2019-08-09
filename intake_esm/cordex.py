@@ -48,6 +48,7 @@ class CORDEXSource(BaseSource):
             'frequency',
             'grid',
             'bias_corrected_or_raw',
+            'experiment',
         ]
 
         kwargs = self._validate_kwargs(self.kwargs)
