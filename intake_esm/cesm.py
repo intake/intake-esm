@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 """ Implementation for NCAR's Community Earth System Model (CESM) data holdings """
 import os
-import re
 
-import numpy as np
 import pandas as pd
-import xarray as xr
-from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
+from .bld_collection_utils import _extract_attr_with_regex
 from .collection import Collection, docstrings
 from .source import BaseSource
 
@@ -35,11 +32,10 @@ class CESMCollection(Collection):
         keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
         fileparts = {key: None for key in keys}
         fileparts['file_basename'] = file_basename
-        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
         fileparts['file_fullpath'] = filepath
 
         date_str_regex = r'\d{4}\-\d{4}|\d{6}\-\d{6}|\d{8}\-\d{8}|\d{10}Z\-\d{10}Z|\d{12}Z\-\d{12}Z'
-        datestr = CESMCollection._extract_attr_with_regex(file_basename, regex=date_str_regex)
+        datestr = _extract_attr_with_regex(file_basename, regex=date_str_regex)
 
         if datestr:
             fileparts['date_range'] = datestr
@@ -105,9 +101,6 @@ class CESMCollection(Collection):
             if 'sequence_order' not in member_attrs:
                 input_attrs_base.update({'sequence_order': 0})
 
-            if 'has_ocean_bgc' not in member_attrs:
-                input_attrs_base.update({'has_ocean_bgc': False})
-
             # Find entries relevant to *this* member_id:
             # "case" matches
             condition = df['case'] == case
@@ -150,7 +143,7 @@ class CESMSource(BaseSource):
 
     def _open_dataset(self):
         # fields which define a single dataset
-        dataset_fields = ['stream', 'component']
+        dataset_fields = ['component', 'experiment', 'stream']
 
         self._open_dataset_groups(
             dataset_fields=dataset_fields,

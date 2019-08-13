@@ -1,13 +1,9 @@
 import os
-import re
 
-import pandas as pd
-import xarray as xr
-from tqdm.autonotebook import tqdm
-
-from intake_esm import aggregate, config
-from intake_esm.collection import Collection, docstrings
-from intake_esm.source import BaseSource
+from . import aggregate
+from .bld_collection_utils import _extract_attr_with_regex, _reverse_filename_format
+from .collection import Collection, docstrings
+from .source import BaseSource
 
 
 class CMIP5Collection(Collection):
@@ -37,23 +33,20 @@ class CMIP5Collection(Collection):
 
         file_basename = os.path.basename(filepath)
         fileparts['file_basename'] = file_basename
-        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
         fileparts['file_fullpath'] = filepath
 
         filename_template = (
             '{variable}_{mip_table}_{model}_{experiment}_{ensemble_member}_{temporal_subset}.nc'
         )
         gridspec_template = '{variable}_{mip_table}_{model}_{experiment}_{ensemble_member}.nc'
-        f = CMIP5Collection._reverse_filename_format(
+        f = _reverse_filename_format(
             file_basename, filename_template=filename_template, gridspec_template=gridspec_template
         )
         fileparts.update(f)
 
-        frequency = CMIP5Collection._extract_attr_with_regex(
-            filepath, regex=freq_regex, strip_chars='/'
-        )
-        realm = CMIP5Collection._extract_attr_with_regex(filepath, regex=realm_regex)
-        version = CMIP5Collection._extract_attr_with_regex(filepath, regex=version_regex) or 'v0'
+        frequency = _extract_attr_with_regex(filepath, regex=freq_regex, strip_chars='/')
+        realm = _extract_attr_with_regex(filepath, regex=realm_regex)
+        version = _extract_attr_with_regex(filepath, regex=version_regex) or 'v0'
         fileparts['frequency'] = frequency
         fileparts['modeling_realm'] = realm
         fileparts['version'] = version
@@ -98,7 +91,6 @@ class CMIP6Collection(Collection):
 
         file_basename = os.path.basename(filepath)
         fileparts['file_basename'] = file_basename
-        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
         fileparts['file_fullpath'] = filepath
 
         filename_template = '{variable_id}_{table_id}_{source_id}_{experiment_id}_{member_id}_{grid_label}_{time_range}.nc'
@@ -106,12 +98,12 @@ class CMIP6Collection(Collection):
             '{variable_id}_{table_id}_{source_id}_{experiment_id}_{member_id}_{grid_label}.nc'
         )
 
-        f = CMIP6Collection._reverse_filename_format(
+        f = _reverse_filename_format(
             file_basename, filename_template=filename_template, gridspec_template=gridspec_template
         )
         fileparts.update(f)
         version_regex = r'v\d{4}\d{2}\d{2}|v\d{1}'
-        version = CMIP6Collection._extract_attr_with_regex(filepath, regex=version_regex) or 'v0'
+        version = _extract_attr_with_regex(filepath, regex=version_regex) or 'v0'
         fileparts['version'] = version
 
         return fileparts

@@ -1,15 +1,12 @@
 """ Implementation for The ECMWF ERA5 Reanalyses data holdings """
 import os
-import re
 
-import pandas as pd
-import xarray as xr
 from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
-from .collection import Collection, docstrings, get_subset
+from .bld_collection_utils import _ensure_file_access, _reverse_filename_format, get_subset
+from .collection import Collection, docstrings
 from .source import BaseSource
-from .storage import _ensure_file_access
 
 
 class CORDEXCollection(Collection):
@@ -27,11 +24,10 @@ class CORDEXCollection(Collection):
 
         fileparts = {key: None for key in keys}
         fileparts['file_basename'] = file_basename
-        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
         fileparts['file_fullpath'] = filepath
         filename_template = '{variable}.{experiment}.{global_climate_model}.{regional_climate_model}.{frequency}.{grid}.{bias_corrected_or_raw}.nc'
 
-        f = CORDEXCollection._reverse_filename_format(file_basename, filename_template)
+        f = _reverse_filename_format(file_basename, filename_template)
         fileparts.update(f)
 
         return fileparts
@@ -55,17 +51,17 @@ class CORDEXSource(BaseSource):
         kwargs = self._validate_kwargs(self.kwargs)
 
         all_dsets = {}
-        query_results = get_subset(self.collection_name, self.query)
+        ds = get_subset(self.collection_name, self.query)
 
         file_fullpath_column_name = 'file_fullpath'
         file_basename_column_name = 'file_basename'
         variable_column_name = 'variable'
 
-        query_results = _ensure_file_access(
-            query_results, file_fullpath_column_name, file_basename_column_name
-        )
-        grouped = query_results.groupby(dataset_fields)
-        for dset_keys, dset_files in tqdm(grouped, desc='dataset'):
+        df = _ensure_file_access(ds, file_fullpath_column_name, file_basename_column_name)
+        grouped = df.groupby(dataset_fields)
+        for dset_keys, dset_files in tqdm(
+            grouped, desc='dataset', disable=not config.get('progress-bar')
+        ):
             dset_id = '.'.join(dset_keys)
             var_dsets = []
             for v_id, v_files in dset_files.groupby(variable_column_name):

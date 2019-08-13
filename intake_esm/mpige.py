@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """ Implementation for The Max Planck Institute Grand Ensemble (MPI-GE) data holdings """
 import os
-import re
 from collections import OrderedDict
 from warnings import warn
 
@@ -10,7 +9,8 @@ import xarray as xr
 from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
-from .collection import Collection, docstrings, get_subset
+from .bld_collection_utils import _extract_attr_with_regex, get_subset
+from .collection import Collection, docstrings
 from .source import BaseSource
 
 
@@ -35,11 +35,10 @@ class MPIGECollection(Collection):
         keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
         fileparts = {key: None for key in keys}
         fileparts['file_basename'] = file_basename
-        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
         fileparts['file_fullpath'] = filepath
 
         date_str_regex = r'\d{4}\_\d{4}|\d{6}\_\d{6}|\d{8}\_\d{8}|\d{10}\_\d{10}|\d{12}\_\d{12}'
-        datestr = MPIGECollection._extract_attr_with_regex(file_basename, regex=date_str_regex)
+        datestr = _extract_attr_with_regex(file_basename, regex=date_str_regex)
 
         if datestr:
             fileparts['date_range'] = datestr
@@ -118,9 +117,13 @@ class MPIGESource(BaseSource):
 
     def _open_dataset_groups(self, dataset_fields, member_column_name, file_fullpath_column_name):
         kwargs = self._validate_kwargs(self.kwargs)
-        grouped = get_subset(self.collection_name, self.query).groupby(dataset_fields)
+
+        ds = get_subset(self.collection_name, self.query)
+        df = ds.to_dataframe().groupby(dataset_fields)
         all_dsets = OrderedDict()
-        for dset_keys, dset_files in tqdm(grouped, desc='experiment'):
+        for dset_keys, dset_files in tqdm(
+            df, desc='experiment', disable=not config.get('progress-bar')
+        ):
             dset_id = dset_keys
             comp_dsets = []
             for comp_id, comp_files in dset_files.groupby('component'):

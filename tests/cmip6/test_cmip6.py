@@ -67,19 +67,6 @@ data_sources:
       activity_id: CMIP
       institution_id: CNRM-CERFACS
 
-  # GISS-E2-1-G:
-  #   locations:
-  #    -  name: SAMPLE-DATA
-  #       loc_type: posix
-  #       direct_access: True
-  #       urlpath: ./tests/sample_data/cmip/CMIP6/CMIP/NASA-GISS/GISS-E2-1-G
-  #       exclude_dirs: ['*/files/*', 'latest', *_historical]
-  #       file_extension: .nc
-
-  #   extra_attributes:
-  #     mip_era: CMIP6
-  #     activity_id: CMIP
-  #     institution_id: NASA-GISS
 """
 )
 
@@ -90,15 +77,15 @@ def test_build_collection_file():
             collection_input_definition=cdef, overwrite_existing=True
         )
         col = intake.open_esm_metadatastore(collection_name='cmip6_test_collection')
-        assert isinstance(col.df, pd.DataFrame)
+        assert isinstance(col.ds, xr.Dataset)
 
 
 def test_search():
     with config.set({'database-directory': './tests/test_collections'}):
         c = intake.open_esm_metadatastore(collection_name='cmip6_test_collection')
         cat = c.search(source_id=['BCC-ESM1', 'CNRM-CM6-1', 'CNRM-ESM2-1'])
-        assert isinstance(cat.query_results, pd.DataFrame)
-        assert not cat.query_results.empty
+        assert isinstance(cat.ds, xr.Dataset)
+        assert len(cat.ds.index) > 0
 
 
 @pytest.mark.parametrize(

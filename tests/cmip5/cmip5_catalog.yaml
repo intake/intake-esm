@@ -10,7 +10,6 @@ sources:
         ensemble_member: null
         experiment: null
         file_basename: null
-        file_dirname: null
         file_fullpath: null
         frequency: null
         institute: null

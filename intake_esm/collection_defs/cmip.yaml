@@ -8,7 +8,6 @@ collections:
     - ensemble_member
     - experiment
     - file_basename
-    - file_dirname
     - file_fullpath
     - frequency
     - institute
@@ -35,7 +34,6 @@ collections:
     - activity_id
     - experiment_id
     - file_basename
-    - file_dirname
     - file_fullpath
     - grid_label
     - institution_id

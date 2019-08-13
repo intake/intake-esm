@@ -9,7 +9,8 @@ import pytest
 import s3fs
 
 from intake_esm import config
-from intake_esm.storage import StorageResource, _ensure_file_access, _filter_query_results
+from intake_esm.bld_collection_utils import _ensure_file_access, _filter_query_results
+from intake_esm.storage import StorageResource
 
 CIRCLE_CI_CHECK = os.environ.get('CIRCLECI', False)
 if CIRCLE_CI_CHECK:
@@ -97,7 +98,7 @@ def test_file_transfer_symlink():
 
         cat = col.search(variable=['STF_O2', 'SHF'])
 
-        query_results = _ensure_file_access(cat.query_results)
+        query_results = _ensure_file_access(cat.ds)
         local_urlpaths = query_results['file_fullpath'].tolist()
         assert isinstance(local_urlpaths, list)
         assert len(local_urlpaths) > 0
@@ -122,7 +123,7 @@ def test_file_transfer_hsi():
 
         cat = col.search(variable=['SST'])
 
-        query_results = _ensure_file_access(cat.query_results)
+        query_results = _ensure_file_access(cat.ds)
         local_urlpaths = query_results['file_fullpath'].tolist()
         assert isinstance(local_urlpaths, list)
         assert len(local_urlpaths) > 0
@@ -142,5 +143,5 @@ def test_filter_query_results():
         {'resource_type': resource_type, 'file_basename': files, 'direct_access': direct_access}
     )
 
-    query_results = _filter_query_results(df, file_basename_column_name='file_basename')
-    assert len(query_results) == 2
+    query_results = _filter_query_results(df.to_xarray(), file_basename_column_name='file_basename')
+    assert len(query_results.index) == 2

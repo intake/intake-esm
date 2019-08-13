@@ -9,7 +9,6 @@ import pytest
 import xarray as xr
 
 from intake_esm import config
-from intake_esm.core import ESMMetadataStoreCatalog
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -29,7 +28,7 @@ def test_build_collection_cesm1_le():
         col = intake.open_esm_metadatastore(
             collection_input_definition=collection_input_definition, overwrite_existing=True
         )
-        assert isinstance(col.df, pd.DataFrame)
+        assert isinstance(col.ds, xr.Dataset)
 
 
 @pytest.mark.xfail(reason='Feature not yet implemented')

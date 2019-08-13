@@ -1,13 +1,12 @@
 """ Implementation for The ECMWF ERA5 Reanalyses data holdings """
 import os
-import re
 
-import pandas as pd
 import xarray as xr
 from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
-from .collection import Collection, docstrings, get_subset
+from .bld_collection_utils import get_subset
+from .collection import Collection, docstrings
 from .source import BaseSource
 
 
@@ -28,7 +27,6 @@ class ERA5Collection(Collection):
 
         fileparts = {key: None for key in keys}
         fileparts['file_basename'] = file_basename
-        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
         fileparts['file_fullpath'] = filepath
 
         fileparts['stream'] = fs[1]
@@ -114,14 +112,19 @@ class ERA5Source(BaseSource):
             xr.open_mfdataset(invariant_files, drop_variables=['time']).squeeze().load()
         )
 
-        grouped = get_subset(self.collection_name, self.query).groupby(dataset_fields)
+        ds = get_subset(self.collection_name, self.query)
+        df = ds.groupby(dataset_fields)
         product_dsets = {}
-        for p_id, p_files in tqdm(grouped, desc='product'):
+        for p_id, p_files in tqdm(df, desc='product', disable=not config.get('progress-bar')):
             new_time_coord_name = 'forecast_initial_time' if p_id == 'forecast' else 'time'
             chunks = kwargs['chunks']
             chunks[new_time_coord_name] = chunks.pop(kwargs['time_coord_name'])
             var_dsets = []
-            for v_id, v_files in tqdm(p_files.groupby(variable_column_name), desc='variable'):
+            for v_id, v_files in tqdm(
+                p_files.groupby(variable_column_name),
+                desc='variable',
+                disable=not config.get('progress-bar'),
+            ):
                 urlpath_ei_vi = v_files[file_fullpath_column_name].tolist()
 
                 if v_id[0].isdigit():

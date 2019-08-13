@@ -1,17 +1,22 @@
+import datetime
 import os
 import uuid
 
 import s3fs
-import yaml
 from intake.catalog import Catalog
 from intake.catalog.local import LocalCatalogEntry
+from intake.utils import yaml_load
 
 from . import config as config
-from .bld_collection_utils import FILE_ALIAS_DICT, load_collection_input_file
+from .bld_collection_utils import (
+    FILE_ALIAS_DICT,
+    _get_built_collections,
+    _open_collection,
+    load_collection_input_file,
+)
 from .cesm import CESMCollection
 from .cesm_aws import CESMAWSCollection
 from .cmip import CMIP5Collection, CMIP6Collection
-from .collection import _get_built_collections, _open_collection
 from .cordex import CORDEXCollection
 from .era5 import ERA5Collection
 from .gmet import GMETCollection
@@ -19,7 +24,7 @@ from .mpige import MPIGECollection
 
 
 class ESMMetadataStoreCatalog(Catalog):
-    """ESM collection Metadata store. This class acts as an entry point for `intake_esm`.
+    """ESM collection Metadata store. This class acts as an entry point for ``intake_esm``.
 
     Parameters
     ----------
@@ -77,9 +82,8 @@ class ESMMetadataStoreCatalog(Catalog):
         self.storage_options = storage_options or {}
         self.collection_type = None
         self.fs = None
-        self.collections = {}
-        self._get_built_collections()
-
+        self.ds = None
+        self.collections = _get_built_collections()
         if collection_name and collection_input_definition is None:
             self.open_collection(collection_name)
 
@@ -119,7 +123,7 @@ class ESMMetadataStoreCatalog(Catalog):
         else:
             try:
                 with open(os.path.abspath(definition)) as f:
-                    input_collection = yaml.safe_load(f)
+                    input_collection = yaml_load(f)
             except Exception as exc:
                 raise exc
 
@@ -139,13 +143,8 @@ class ESMMetadataStoreCatalog(Catalog):
             cc = ESMMetadataStoreCatalog.collection_types[self.collection_type]
             cc = cc(self.input_collection, fs=self.fs)
             cc.build()
-            self._get_built_collections()
+            self.collections = _get_built_collections()
         self.open_collection(name)
-
-    def _get_built_collections(self):
-        """ Loads built collections in a dictionary with ``key=collection_name``,
-        ``value=collection_db_file_path`` """
-        self.collections = _get_built_collections()
 
     def _get_s3_connection_info(self):
         try:
@@ -157,12 +156,14 @@ class ESMMetadataStoreCatalog(Catalog):
 
     def open_collection(self, collection_name):
         """ Open an ESM collection """
-        self.df, self.collection_name, self.collection_type = _open_collection(collection_name)
+        self.ds = _open_collection(collection_name)
+        self.collection_name = self.ds.attrs['name']
+        self.collection_type = self.ds.attrs['collection_type']
 
     def search(self, **query):
         """ Search for entries in the collection catalog
         """
-        collection_columns = self.df.columns.tolist()
+        collection_columns = list(self.ds.data_vars)
         for key in query.keys():
             if key not in collection_columns:
                 raise ValueError(f'{key} is not in {self.collection_name}')
@@ -176,7 +177,11 @@ class ESMMetadataStoreCatalog(Catalog):
             'storage_options': self.storage_options,
         }
         driver = config.get('sources')[self.collection_type]
-        description = f'Catalog entry from {self.collection_name} collection'
+        description = f'Catalog entry generated from {self.collection_name} collection'
+        keys = ['created_at', 'intake_esm_version', 'intake_version', 'intake_xarray_version']
+        metadata = {k: self.ds.attrs[k] for k in keys}
+        metadata['catalog_entry_generated_at'] = datetime.datetime.utcnow().isoformat()
+
         cat = LocalCatalogEntry(
             name=name,
             description=description,
@@ -185,7 +190,7 @@ class ESMMetadataStoreCatalog(Catalog):
             args=args,
             cache={},
             parameters={},
-            metadata=self.metadata or {},
+            metadata=metadata,
             catalog_dir='',
             getenv=False,
             getshell=False,

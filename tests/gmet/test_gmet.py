@@ -6,7 +6,6 @@ import pytest
 import xarray as xr
 
 from intake_esm import config
-from intake_esm.core import ESMMetadataStoreCatalog
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -17,19 +16,16 @@ def test_build_collection():
         col = intake.open_esm_metadatastore(
             collection_input_definition=collection_input_definition, overwrite_existing=True
         )
-        assert isinstance(col.df, pd.DataFrame)
+        assert isinstance(col.ds, xr.Dataset)
 
 
 def test_search():
     with config.set({'database-directory': './tests/test_collections'}):
         col = intake.open_esm_metadatastore(collection_name='gmet_test')
-        cat = col.search(
-            member_id=[1, 2],
-            time_range=['19800101-19801231', '19810101-19811231', '19820101-19821231'],
-        )
+        cat = col.search(member_id=[1, 2])
 
-        assert isinstance(cat.query_results, pd.DataFrame)
-        assert not cat.query_results.empty
+        assert isinstance(cat.ds, xr.Dataset)
+        assert len(cat.ds.index) > 0
 
 
 def test_to_xarray():

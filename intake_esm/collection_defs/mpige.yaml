@@ -12,7 +12,6 @@ collections:
     - ensemble
     - file_fullpath
     - file_basename
-    - file_dirname
     - ctrl_branch_year
     - year_offset
     - sequence_order
