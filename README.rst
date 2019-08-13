@@ -22,7 +22,41 @@ Intake-esm
     :alt: Conda Version
 
 
-Intake-esm provides a plugin for building and loading intake catalogs for earth system data holdings, such as CMIP and CESM Large Ensemble datasets, etc...
+
+`Intake-esm` provides an `intake`_ plugin for creating ``file-based Intake catalogs``
+for climate data from project efforts such as the `Coupled Model Intercomparison Project (CMIP)`_ 
+and the `Community Earth System Model (CESM) Large Ensemble Project`_.  
+These projects produce a huge of amount climate data persisted on tape, disk storage components 
+across multiple (in the order of ~ 300,000) netCDF files. Finding, investigating, loading these files into data array containers 
+such as `xarray` can be a daunting task due to the large number of files a user may be interested in. 
+``Intake-esm`` addresses this issue in three steps:
+
+- `Datasets Collection Curation`_ in form of YAML files. These YAML files provide information about data locations, access pattern,  directory structure, etc. ``intake-esm`` uses these YAML files in conjunction with file name templates 
+  to construct a local database. Each row in this database consists of a set of metadata such as ``experiment``, 
+  ``modeling realm``, ``frequency`` corresponding to data contained in one netCDF file.
+
+   .. code-block:: python
+
+   >>> col = intake.open_esm_metadatastore(collection_input_definition="GLADE-CMIP5")
+
+
+- Search and Discovery: once the database is built, ``intake-esm`` can be used for searching and discovering
+  of climate datasets by eliminating the need for the user to know specific locations (file path) of 
+  their data set of interest:
+
+   .. code-block:: python
+
+   >>> cat = col.search(variable=['hfls'], frequency='mon',
+       ...          modeling_realm='atmos',
+       ...          institute=['CCCma', 'CNRM-CERFACS'])
+
+- Access: when the user is satisfied with the results of their query, they can ask ``intake-esm`` 
+  to load the actual netCDF files into xarray datasets:
+
+   .. code-block:: python
+
+   >>> dsets = cat.to_xarray(decode_times=True, chunks={'time': 50})
+
 
 Intake-esm supports data holdings from the following projects:
 
@@ -40,6 +74,11 @@ Intake-esm supports data holdings from the following projects:
 .. _GMET: https://ncar.github.io/hydrology/models/GMET
 .. _MPI-GE: https://www.mpimet.mpg.de/en/grand-ensemble/
 .. _NA-CORDEX: https://na-cordex.org/
+.. _intake: https://github.com/intake/intake
+.. _Datasets Collection Curation: https://github.com/NCAR/intake-esm-datastore
+.. _Coupled Model Intercomparison Project (CMIP): https://www.wcrp-climate.org/wgcm-cmip
+.. _Community Earth System Model (CESM) Large Ensemble Project: http://www.cesm.ucar.edu/projects/community-projects/LENS/
+
 
 
 See documentation_ for more information.
