@@ -143,7 +143,7 @@ class ESMMetadataStoreCatalog(Catalog):
         )
         info = self._info_cache(variables=tuple(v))
         output = []
-        thresh = 8
+        thresh = 5
         for key, values in info.items():
             if len(values) > thresh:
                 dummy = '...'
