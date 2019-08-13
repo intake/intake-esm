@@ -56,8 +56,23 @@ Features
 
 - Add string representation of `ESMMetadataStoreCatalog`` object (:pr:`122`) `Anderson Banihirwe`_
 
-.. _NA-CORDEX: https://na-cordex.org/
 
+- Automatically build missing collections by calling ``esm_metadatastore(collection_name="GLADE-CMIP5")``
+  if the specified collection is part of the curated collections in `intake-esm-datastore`_.
+  (:pr:`124`) `Anderson Banihirwe`_
+
+ .. code-block:: python
+
+    >>> import intake
+    >>> col = intake.open_esm_metadatastore(collection_name="GLADE-CMIP5")
+    >>> # if "GLADE-CMIP5" collection isn't built already, the above is equivalent to:
+    >>> col = intake.open_esm_metadatastore(collection_input_definition="GLADE-CMIP5")
+
+
+
+
+.. _NA-CORDEX: https://na-cordex.org/
+.. _intake-esm-datastore: https://github.com/NCAR/intake-esm-datastore
 
 Bug Fixes
 ----------
