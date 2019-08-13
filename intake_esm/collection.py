@@ -147,7 +147,7 @@ class Collection(ABC):
         else:
             pass_urlpath = False
 
-        for f in tqdm(filelist, desc='file listing'):
+        for f in tqdm(filelist, desc='file listing', disable=not config.get('progress-bar')):
             if pass_urlpath:
                 file_attrs = self._get_file_attrs(f, urlpath)
             else:
@@ -186,7 +186,7 @@ class Collection(ABC):
 
         Returns
         --------
-        ds : pandas.DataFrame
+        df : pandas.DataFrame
             Cleaned dataframe containing all entries
 
         Notes

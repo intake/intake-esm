@@ -1,9 +1,6 @@
 """ Implementation for The ECMWF ERA5 Reanalyses data holdings """
 import os
-import re
 
-import pandas as pd
-import xarray as xr
 from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
@@ -62,7 +59,9 @@ class CORDEXSource(BaseSource):
 
         df = _ensure_file_access(ds, file_fullpath_column_name, file_basename_column_name)
         grouped = df.groupby(dataset_fields)
-        for dset_keys, dset_files in tqdm(grouped, desc='dataset'):
+        for dset_keys, dset_files in tqdm(
+            grouped, desc='dataset', disable=not config.get('progress-bar')
+        ):
             dset_id = '.'.join(dset_keys)
             var_dsets = []
             for v_id, v_files in dset_files.groupby(variable_column_name):

@@ -1,15 +1,9 @@
 import os
-import re
 
-import pandas as pd
-import xarray as xr
-from tqdm.autonotebook import tqdm
-
-from intake_esm import aggregate, config
-from intake_esm.collection import Collection, docstrings
-from intake_esm.source import BaseSource
-
+from . import aggregate
 from .bld_collection_utils import _extract_attr_with_regex, _reverse_filename_format
+from .collection import Collection, docstrings
+from .source import BaseSource
 
 
 class CMIP5Collection(Collection):

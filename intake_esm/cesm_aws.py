@@ -6,7 +6,7 @@ import pandas as pd
 import xarray as xr
 from tqdm.autonotebook import tqdm
 
-from . import aggregate
+from . import aggregate, config
 from .bld_collection_utils import get_subset
 from .collection import Collection, docstrings
 from .source import BaseSource
@@ -99,13 +99,19 @@ class CESMAWSSource(BaseSource):
         df = get_subset(self.collection_name, self.query).to_dataframe()
         grouped = df.groupby(dataset_fields)
         all_dsets = {}
-        for dset_keys, dset_stores in tqdm(grouped, desc='dataset(s)'):
+        for dset_keys, dset_stores in tqdm(
+            grouped, desc='dataset(s)', disable=not config.get('progress-bar')
+        ):
             dset_id = '.'.join(dset_keys)
             grouped_exp = dset_stores.groupby('experiment')
             dsets = []
             for exp_id, exp_stores in grouped_exp:
                 exp_dsets = []
-                for v_id, v_stores in tqdm(exp_stores.groupby('variable'), desc='variable(s)'):
+                for v_id, v_stores in tqdm(
+                    exp_stores.groupby('variable'),
+                    desc='variable(s)',
+                    disable=not config.get('progress-bar'),
+                ):
                     urlpath_ei_vi = v_stores['store_fullpath'].tolist()
                     v_dsets = [
                         aggregate.open_store(

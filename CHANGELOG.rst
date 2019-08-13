@@ -2,6 +2,67 @@
 Changelog History
 =================
 
+Intake-esm v2019.8.xx (2019-08-xx)
+==================================
+
+
+Features
+--------
+
+- Replace `.csv` with `netCDF` as serialization format when saving the built collection to disk.
+  With `netCDF`, we can record very useful information into the global attributes of the netCDF dataset.
+  (:pr:`119`) `Anderson Banihirwe`_
+
+  - For these attributes to be useful, the `.df` Pandas dataframe attribute was replaced with `.ds` xarray
+    dataset attribute:
+
+    .. code-block:: python
+
+    >>> import intake
+    >>> col = intake.open_esm_metadatastore(collection_input_definition="GLADE-CMIP5")
+    >>> col.ds
+    <xarray.Dataset>
+    Dimensions:          (index: 615296)
+    Coordinates:
+    * index            (index) int64 0 1 2 3 4 ... 615292 615293 615294 615295
+    Data variables:
+        resource         (index) object ...
+        resource_type    (index) object ...
+        direct_access    (index) bool True True True True ... True True True True
+        activity         (index) object ...
+        ensemble_member  (index) object ...
+        experiment       (index) object ...
+        file_basename    (index) object ...
+        file_fullpath    (index) object ...
+        frequency        (index) object ...
+        institute        (index) object ...
+        mip_table        (index) object ...
+        model            (index) object ...
+        modeling_realm   (index) object ...
+        product          (index) object ...
+        temporal_subset  (index) object ...
+        variable         (index) object ...
+        version          (index) object ...
+    Attributes:
+        created_at:             2019-08-07T18:05:09.371259
+        intake_esm_version:     2019.5.11.post153
+        intake_version:         0.5.2
+        intake_xarray_version:  0.3.1
+        collection_spec:        {"name": "GLADE-CMIP5", "collection_type": "cmip5...
+        name:                   GLADE-CMIP5
+        collection_type:        cmip5
+
+
+
+Bug Fixes
+----------
+
+
+Internal Changes
+----------------
+
+
+
 Intake-esm v2019.8.5 (2019-08-05)
 ==================================
 

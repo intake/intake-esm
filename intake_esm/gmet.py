@@ -1,9 +1,6 @@
 """ Implementation for The Gridded Meteorological Ensemble Tool (GMET) data holdings """
 import os
-import re
 
-import pandas as pd
-import xarray as xr
 from tqdm.autonotebook import tqdm
 
 from . import aggregate, config
@@ -57,7 +54,7 @@ class GMETSource(BaseSource):
         df = ds.to_dataframe().groupby(dataset_fields)
         member_ids = []
         member_dsets = []
-        for m_id, m_files in tqdm(df, desc='member'):
+        for m_id, m_files in tqdm(df, desc='member', disable=not config.get('progress-bar')):
             files = m_files['file_fullpath'].tolist()
             dsets = [
                 aggregate.open_dataset_delayed(
