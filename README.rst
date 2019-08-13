@@ -36,7 +36,8 @@ such as `xarray` can be a daunting task due to the large number of files a user 
   ``modeling realm``, ``frequency`` corresponding to data contained in one netCDF file.
 
    .. code-block:: python
-
+   
+   >>> import intake
    >>> col = intake.open_esm_metadatastore(collection_input_definition="GLADE-CMIP5")
 
 
