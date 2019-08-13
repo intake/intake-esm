@@ -9,6 +9,8 @@ Intake-esm v2019.8.xx (2019-08-xx)
 Features
 --------
 
+- Add support for `NA-CORDEX`_ data holdings. (:pr:`115`) `Julia Kent`_
+
 - Replace `.csv` with `netCDF` as serialization format when saving the built collection to disk.
   With `netCDF`, we can record very useful information into the global attributes of the netCDF dataset.
   (:pr:`119`) `Anderson Banihirwe`_
@@ -52,6 +54,71 @@ Features
         name:                   GLADE-CMIP5
         collection_type:        cmip5
 
+- Add string representation of `ESMMetadataStoreCatalog`` object (:pr:`122`) `Anderson Banihirwe`_
+
+  .. code-block:: python
+
+  >>> import intake
+  >>> col = intake.open_esm_metadatastore(collection_name="GLADE-CMIP5")
+  >>> print(col)
+  GLADE-CMIP5 collection catalogue with 615296 entries:
+        > 6 frequency(s):
+
+                ['3hr' '6hr' 'day' 'fx' 'mon' 'yr']
+
+        > 15 mip_table(s):
+
+                ['3hr' '6hrLev' '6hrPlev' 'Amon' 'LImon' 'Lmon' 'OImon' 'Omon'] ...
+
+        > 24 institute(s):
+
+                ['BCC' 'BNU' 'CCCma' 'CMCC' 'CNRM-CERFACS' 'CSIRO-BOM' 'CSIRO-QCCCE' 'FIO'] ...
+
+        > 51 experiment(s):
+
+                ['1pctCO2' 'abrupt4xCO2' 'amip' 'amip4K' 'amip4xCO2' 'amipFuture' 'aqua4K'
+ 'aqua4xCO2'] ...
+
+        > 218 ensemble_member(s):
+
+                ['r0i0p0' 'r10i1p1' 'r10i1p6' 'r10i2p1' 'r11i1p1' 'r12i1p1' 'r13i1p1'
+ 'r14i1p1'] ...
+
+        > 1 activity(s):
+
+                ['CMIP5']
+
+        > 9030 temporal_subset(s):
+
+                ['' '0001-0005' '0001-0140' '000101-000512' '000101-000912'
+ '000101-001012' '000101-001712' '000101-002012'] ...
+
+        > 53 model(s):
+
+                ['ACCESS1-0' 'ACCESS1-3' 'BNU-ESM' 'CCSM4' 'CESM1-BGC' 'CESM1-CAM5'
+ 'CESM1-FASTCHEM' 'CESM1-WACCM'] ...
+
+        > 6 modeling_realm(s):
+
+                ['aerosol' 'atmos' 'land' 'ocean' 'ocnBgchem' 'seaIce']
+
+        > 3 product(s):
+
+                ['output' 'output1' 'output2']
+
+        > 490 version(s):
+
+                ['v0' 'v1' 'v2' 'v20101208' 'v20110127' 'v20110315' 'v20110323'
+ 'v20110329'] ...
+
+        > 453 variable(s):
+
+                ['abs550aer' 'ageice' 'agessc' 'albisccp' 'arag' 'areacella' 'areacello'
+'bacc'] ...
+
+
+
+.. _NA-CORDEX: https://na-cordex.org/
 
 
 Bug Fixes
@@ -174,6 +241,7 @@ Trivial/Internal Changes
 
 .. _`Aaron Spring`: https://github.com/aaronspring
 .. _`Anderson Banihirwe`: https://github.com/andersy005
+.. _`Julia Kent`: https://github.com/jukent
 .. _`Matthew Long`: https://github.com/matt-long
 .. _`Naomi Henderson`: https://github.com/naomi-henderson
 .. _`Paul Branson`: https://github.com/pbranson

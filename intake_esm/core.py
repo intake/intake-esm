@@ -115,8 +115,10 @@ class ESMMetadataStoreCatalog(Catalog):
         self._entries = {}
 
     def describe(self, variables=()):
-        """ Generate summary for variables in the .ds attribute"""
-        return self._info_cache(variables=variables)
+        """
+        TODO: Generate summary for variables in the .ds attribute
+        """
+        raise NotImplementedError('Not implemented yet!')
 
     @functools.lru_cache(maxsize=None)
     def _info_cache(self, variables=()):
@@ -131,7 +133,7 @@ class ESMMetadataStoreCatalog(Catalog):
         info = {}
         for idx, variable in enumerate(d_vars):
             a = np.unique(self.ds[variable].data)
-            info[variable] = sorted(a)
+            info[variable] = a
         return info
 
     def __repr__(self):
@@ -141,10 +143,16 @@ class ESMMetadataStoreCatalog(Catalog):
         )
         info = self._info_cache(variables=tuple(v))
         output = []
+        thresh = 8
         for key, values in info.items():
-            output.append(f'{len(values)} {key}(s): \n\n\t\t{values[:5]} ...\n')
+            if len(values) > thresh:
+                dummy = '...'
+            else:
+                dummy = ''
+            output.append(f'{len(values)} {key}(s): \n\n\t\t{values[:thresh]} {dummy}\n')
         output = '\n\t> '.join(output)
-        return f'{self.collection_name.upper()} collection catalogue with:\n\t> {output}'
+        items = len(self.ds.index)
+        return f'{self.collection_name.upper()} collection catalogue with {items} entries:\n\t> {output}'
 
     def _validate_collection_definition(self, definition, **kwargs):
 
