@@ -6,6 +6,7 @@ import urllib
 from pathlib import Path
 from urllib.request import urlopen, urlretrieve
 
+import numpy as np
 import pandas as pd
 import xarray as xr
 from intake.source.utils import reverse_format
@@ -16,7 +17,6 @@ from .storage import _get_hsi_files, _posix_symlink
 
 _default_cache_dir = config.get('database-directory')
 _default_cache_dir = f'{_default_cache_dir}/bld-collection-input'
-
 
 aliases = ['CESM1-LE', 'GLADE-CMIP5', 'GLADE-CMIP6', 'GLADE-RDA-ERA5', 'GLADE-GMET', 'MPI-GE']
 
@@ -183,7 +183,6 @@ def _open_collection(collection_name):
 
 def get_subset(collection_name, query, order_by=None):
     """ Get a subset of collection entries that match a query """
-    import numpy as np
 
     ds = _open_collection(collection_name)
     collection_type = ds.attrs['collection_type']

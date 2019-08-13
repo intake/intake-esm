@@ -9,6 +9,8 @@ Intake-esm v2019.8.xx (2019-08-xx)
 Features
 --------
 
+- Add support for `NA-CORDEX`_ data holdings. (:pr:`115`) `Julia Kent`_
+
 - Replace `.csv` with `netCDF` as serialization format when saving the built collection to disk.
   With `netCDF`, we can record very useful information into the global attributes of the netCDF dataset.
   (:pr:`119`) `Anderson Banihirwe`_
@@ -52,6 +54,9 @@ Features
         name:                   GLADE-CMIP5
         collection_type:        cmip5
 
+- Add string representation of `ESMMetadataStoreCatalog`` object (:pr:`122`) `Anderson Banihirwe`_
+
+.. _NA-CORDEX: https://na-cordex.org/
 
 
 Bug Fixes
@@ -174,6 +179,7 @@ Trivial/Internal Changes
 
 .. _`Aaron Spring`: https://github.com/aaronspring
 .. _`Anderson Banihirwe`: https://github.com/andersy005
+.. _`Julia Kent`: https://github.com/jukent
 .. _`Matthew Long`: https://github.com/matt-long
 .. _`Naomi Henderson`: https://github.com/naomi-henderson
 .. _`Paul Branson`: https://github.com/pbranson

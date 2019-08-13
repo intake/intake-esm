@@ -26,11 +26,21 @@ Intake-esm provides a plugin for building and loading intake catalogs for earth 
 
 Intake-esm supports data holdings from the following projects:
 
-- CMIP: Coupled Model Intercomparison Project (phase 5 and phase 6)
-- CESM: Community Earth System Model Large Ensemble (LENS), and Decadal Prediction Large Ensemble (DPLE)
-- MPI-GE: The Max Planck Institute for Meteorology (MPI-M) Grand Ensemble (MPI-GE)
-- GMET: The Gridded Meteorological Ensemble Tool data
-- ERA5: ECWMF ERA5 Reanalysis dataset stored on NCAR's GLADE in ``/glade/collections/rda/data/ds630.0``
+- `CMIP`_: Coupled Model Intercomparison Project (phase 5 and phase 6)
+- `CESM`_: Community Earth System Model Large Ensemble (LENS), and Decadal Prediction Large Ensemble (DPLE)
+- `MPI-GE`_: The Max Planck Institute for Meteorology (MPI-M) Grand Ensemble (MPI-GE)
+- `GMET`_: The Gridded Meteorological Ensemble Tool data
+- `ERA5`_: ECWMF ERA5 Reanalysis dataset stored on NCAR's GLADE in ``/glade/collections/rda/data/ds630.0``
+- `NA-CORDEX`_: The North American CORDEX program dataset residing on NCAR's GLADE in ``/glade/collections/cdg/data/cordex/data/``
+
+
+.. _CMIP: https://www.wcrp-climate.org/wgcm-cmip
+.. _CESM: http://www.cesm.ucar.edu/projects/community-projects/LENS/
+.. _ERA5: https://www.ecmwf.int/en/forecasts/datasets/reanalysis-datasets/era5
+.. _GMET: https://ncar.github.io/hydrology/models/GMET
+.. _MPI-GE: https://www.mpimet.mpg.de/en/grand-ensemble/
+.. _NA-CORDEX: https://na-cordex.org/
+
 
 See documentation_ for more information.
 
