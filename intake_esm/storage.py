@@ -1,8 +1,8 @@
 import fnmatch
+import os
 import shutil
 import subprocess
 from itertools import zip_longest
-from pathlib import Path
 from subprocess import PIPE, CalledProcessError, Popen
 from time import sleep
 from warnings import warn
@@ -93,9 +93,15 @@ class StorageResource(object):
     def _list_files_posix(self):
         """Get a list of files"""
         try:
-            pattern = '*' + self.file_extension
-            filelist = Path(self.urlpath).absolute().rglob(pattern)
-            filelist = [f.as_posix() for f in filelist]
+
+            w = os.walk(self.urlpath, followlinks=True)
+
+            filelist = []
+
+            for root, dirs, files in w:
+                filelist.extend(
+                    [os.path.join(root, f) for f in files if f.endswith(self.file_extension)]
+                )
             return filelist
         except Exception as e:
             warn(

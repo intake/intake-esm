@@ -20,7 +20,7 @@ data_sources:
         loc_type: posix
         direct_access: True
         urlpath: ./tests/sample_data/cmip/cmip5
-        exclude_dirs: ['*/files/*', 'latest']
+        exclude_dirs: ['*/files/*', '*/latest/*', '*/fio-esm/*', '*/ACCESS1.0/*']
         file_extension: .nc
 
 

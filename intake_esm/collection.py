@@ -1,5 +1,5 @@
-import os
 from abc import ABC, abstractclassmethod
+from pathlib import Path
 
 import docrep
 import pandas as pd
@@ -53,14 +53,16 @@ class Collection(ABC):
         self.df = pd.DataFrame(columns=self.columns)
         self._ds = xr.Dataset()
         self.exclude_patterns = self._get_exclude_patterns()
-        self.database_dir = config.get('database-directory', None)
+        self.database_dir = Path(config.get('database-directory')).absolute()
         self.order_by_columns = self.collection_definition.get('order-by-columns')
 
         self._validate()
 
         if self.database_dir:
-            self.collection_db_file = f"{self.database_dir}/{collection_spec['name']}.nc"
-            os.makedirs(self.database_dir, exist_ok=True)
+            self.collection_db_file = Path(
+                f"{self.database_dir}/{collection_spec['name']}.nc"
+            ).absolute()
+            self.database_dir.mkdir(parents=True, exist_ok=True)
 
     def build(self):
         """ Main method for looping through data sources and building
@@ -238,12 +240,11 @@ class Collection(ABC):
         """ Persist built collection database to disk.
         """
         if len(self._ds.index) > 0:
-            print(
-                f"Persisting {self.collection_spec['name']} at : {os.path.abspath(self.collection_db_file)}"
-            )
+            print(f"Persisting {self.collection_spec['name']} at : {self.collection_db_file}")
 
-            if os.path.exists(self.collection_db_file):
-                os.remove(self.collection_db_file)
+            if self.collection_db_file.exists():
+                self.collection_db_file.unlink()
+
             # specify encoding to avoid: ValueError: unsupported dtype for netCDF4 variable: bool
             self._ds.to_netcdf(
                 self.collection_db_file,

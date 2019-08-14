@@ -108,6 +108,29 @@ class CMIP6Collection(Collection):
          1. CMIP6 DRS: http://goo.gl/v1drZl
          2. Controlled Vocabularies (CVs) for use in CMIP6:
             https://github.com/WCRP-CMIP/CMIP6_CVs
+
+        Directory structure =
+
+        <mip_era>/
+            <activity_id>/
+                <institution_id>/
+                    <source_id>/
+                        <experiment_id>/
+                            <member_id>/
+                                <table_id>/
+                                    <variable_id>/
+                                        <grid_label>/
+                                            <version>
+
+        file name =
+        <variable_id>_<table_id>_<source_id>_<experiment_id >_<member_id>_<grid_label>[_<time_range>].nc
+
+        For time-invariant fields, the last segment (time_range) above is omitted.
+
+        Example when there is no sub-experiment: tas_Amon_GFDL-CM4_historical_r1i1p1f1_gn_196001-199912.nc
+        Example with a sub-experiment:   pr_day_CNRM-CM6-1_dcppA-hindcast_s1960-r2i1p1f1_gn_198001-198412.nc
+
+
         """
         keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
         fileparts = {key: None for key in keys}
@@ -125,22 +148,18 @@ class CMIP6Collection(Collection):
             file_basename, filename_template=filename_template, gridspec_template=gridspec_template
         )
         fileparts.update(f)
-        version_regex = r'v\d{4}\d{2}\d{2}|v\d{1}'
-        activity_ids = sorted(config.get('collections.cmip6.activity_ids').keys(), reverse=True)
-        institution_ids = sorted(
-            config.get('collections.cmip6.institution_ids').keys(), reverse=True
-        )
-        activity_id_regex = r'|'.join(activity_ids)
-        institution_id_regex = r'|'.join(institution_ids)
 
-        version = _extract_attr_with_regex(filepath, regex=version_regex) or 'v0'
-        activity_id = _extract_attr_with_regex(filepath, regex=activity_id_regex)
-        institution_id = _extract_attr_with_regex(
-            os.path.dirname(filepath), regex=institution_id_regex
-        )
+        parent = os.path.dirname(filepath).strip('/')
+        parent_split = parent.split(fileparts['source_id'])
+        part_1 = parent_split[0].strip('/').split('/')
+        # part_2 = parent_split[1].strip('/').split('/')
+
+        fileparts['activity_id'] = part_1[-2]
+        fileparts['institution_id'] = part_1[-1]
+
+        version_regex = r'v\d{4}\d{2}\d{2}|v\d{1}'
+        version = _extract_attr_with_regex(parent, regex=version_regex) or 'v0'
         fileparts['version'] = version
-        fileparts['activity_id'] = activity_id
-        fileparts['institution_id'] = institution_id
         fileparts['mip_era'] = config.get('collections.cmip6.mip_era')
         return fileparts
 
