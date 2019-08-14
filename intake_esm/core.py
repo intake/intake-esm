@@ -86,7 +86,16 @@ class ESMMetadataStoreCatalog(Catalog):
         self.fs = None
         self.ds = None
         self.collections = _get_built_collections()
-        if collection_name and collection_input_definition is None:
+
+        if (
+            collection_name
+            and (collection_name not in self.collections)
+            and (collection_name in FILE_ALIAS_DICT)
+        ):
+            self.input_collection = self._validate_collection_definition(collection_name, **kwargs)
+            self._build_collection(overwrite_existing)
+
+        elif collection_name and collection_input_definition is None:
             self.open_collection(collection_name)
 
         elif collection_input_definition and (collection_name is None):
@@ -156,7 +165,7 @@ class ESMMetadataStoreCatalog(Catalog):
 
     def _validate_collection_definition(self, definition, **kwargs):
 
-        if isinstance(definition, str) and definition in FILE_ALIAS_DICT.keys():
+        if isinstance(definition, str) and definition in FILE_ALIAS_DICT:
             input_collection = load_collection_input_file(definition, **kwargs)
 
         elif isinstance(definition, dict):
