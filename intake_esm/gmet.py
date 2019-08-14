@@ -1,7 +1,7 @@
 """ Implementation for The Gridded Meteorological Ensemble Tool (GMET) data holdings """
 import os
 
-from tqdm.autonotebook import tqdm
+from tqdm import tqdm
 
 from . import aggregate, config
 from .bld_collection_utils import _extract_attr_with_regex, get_subset

@@ -4,7 +4,7 @@ from abc import ABC, abstractclassmethod
 import docrep
 import pandas as pd
 import xarray as xr
-from tqdm.autonotebook import tqdm
+from tqdm import tqdm
 
 from . import config
 from .bld_collection_utils import make_attrs

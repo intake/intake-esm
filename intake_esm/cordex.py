@@ -1,7 +1,7 @@
 """ Implementation for The ECMWF ERA5 Reanalyses data holdings """
 import os
 
-from tqdm.autonotebook import tqdm
+from tqdm import tqdm
 
 from . import aggregate, config
 from .bld_collection_utils import _ensure_file_access, _reverse_filename_format, get_subset

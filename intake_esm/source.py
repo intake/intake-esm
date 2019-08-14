@@ -1,6 +1,6 @@
 import intake_xarray
 import xarray as xr
-from tqdm.autonotebook import tqdm
+from tqdm import tqdm
 
 from . import aggregate, config
 from .bld_collection_utils import _ensure_file_access, get_subset

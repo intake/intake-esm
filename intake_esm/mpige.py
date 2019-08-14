@@ -6,7 +6,7 @@ from warnings import warn
 
 import pandas as pd
 import xarray as xr
-from tqdm.autonotebook import tqdm
+from tqdm import tqdm
 
 from . import aggregate, config
 from .bld_collection_utils import _extract_attr_with_regex, get_subset
