@@ -23,13 +23,24 @@ class CMIP5Collection(Collection):
 
         - CMIP5 DRS: https://pcmdi.llnl.gov/mips/cmip5/docs/cmip5_data_reference_syntax.pdf?id=27
 
+        Directory:
+          <activity>/
+            <product>/
+                <institute>/
+                    <model>/
+                        <experiment>/
+                            <frequency>/
+                                <modeling realm>/
+                                    <MIP table>/
+                                        <ensemble member>/
+                                            <version number>/
+                                                <variable name>/
+                                                    <CMOR filename>.nc
+        CMOR filename:
+        <variable name>_<MIP table>_<model>_<experiment>_ <ensemble member>[_<temporal subset>][_<geographical info>].nc
         """
         keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
         fileparts = {key: None for key in keys}
-
-        freq_regex = r'/3hr/|/6hr/|/day/|/fx/|/mon/|/monClim/|/subhr/|/yr/'
-        realm_regex = r'aerosol|atmos|land|landIce|ocean|ocnBgchem|seaIce'
-        version_regex = r'v\d{4}\d{2}\d{2}|v\d{1}'
 
         file_basename = os.path.basename(filepath)
         fileparts['file_basename'] = file_basename
@@ -44,23 +55,23 @@ class CMIP5Collection(Collection):
         )
         fileparts.update(f)
 
-        institutes = config.get('collections.cmip5.institutes')
+        parent = os.path.dirname(filepath).strip('/')
+        parent_split = parent.split(fileparts['model'])
+        part_1 = parent_split[0].strip('/').split('/')
+        part_2 = parent_split[1].strip('/').split('/')
+
+        fileparts['institute'] = part_1[-1]
+        fileparts['frequency'] = part_2[1]
+        fileparts['modeling_realm'] = part_2[2]
 
         # Sort in reverse order for the regex to work
         products = sorted(config.get('collections.cmip5.products'), reverse=True)
-
-        institute_regex = r'|'.join(institutes)
+        version_regex = r'v\d{4}\d{2}\d{2}|v\d{1}'
         product_regex = r'|'.join(products)
-        product = _extract_attr_with_regex(filepath, regex=product_regex)
-        frequency = _extract_attr_with_regex(filepath, regex=freq_regex, strip_chars='/')
-        realm = _extract_attr_with_regex(filepath, regex=realm_regex)
-        version = _extract_attr_with_regex(filepath, regex=version_regex) or 'v0'
-        institute = _extract_attr_with_regex(os.path.dirname(filepath), regex=institute_regex)
-        fileparts['frequency'] = frequency
-        fileparts['modeling_realm'] = realm
+        product = _extract_attr_with_regex(parent, regex=product_regex) or 'unknown'
+        version = _extract_attr_with_regex(parent, regex=version_regex) or 'v0'
         fileparts['version'] = version
         fileparts['activity'] = config.get('collections.cmip5.mip_era')
-        fileparts['institute'] = institute
         fileparts['product'] = product
 
         return fileparts
@@ -115,10 +126,11 @@ class CMIP6Collection(Collection):
         )
         fileparts.update(f)
         version_regex = r'v\d{4}\d{2}\d{2}|v\d{1}'
-        activity_ids = config.get('collections.cmip6.activity_ids').keys()
+        activity_ids = sorted(config.get('collections.cmip6.activity_ids').keys(), reverse=True)
+        institution_ids = sorted(
+            config.get('collections.cmip6.institution_ids').keys(), reverse=True
+        )
         activity_id_regex = r'|'.join(activity_ids)
-
-        institution_ids = config.get('collections.cmip6.institution_ids').keys()
         institution_id_regex = r'|'.join(institution_ids)
 
         version = _extract_attr_with_regex(filepath, regex=version_regex) or 'v0'
