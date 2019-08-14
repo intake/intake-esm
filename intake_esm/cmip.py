@@ -45,7 +45,10 @@ class CMIP5Collection(Collection):
         fileparts.update(f)
 
         institutes = config.get('collections.cmip5.institutes')
-        products = config.get('collections.cmip5.products')
+
+        # Sort in reverse order for the regex to work
+        products = sorted(config.get('collections.cmip5.products'), reverse=True)
+
         institute_regex = r'|'.join(institutes)
         product_regex = r'|'.join(products)
         product = _extract_attr_with_regex(filepath, regex=product_regex)
