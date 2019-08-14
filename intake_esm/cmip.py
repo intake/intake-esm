@@ -1,6 +1,6 @@
 import os
 
-from . import aggregate
+from . import aggregate, config
 from .bld_collection_utils import _extract_attr_with_regex, _reverse_filename_format
 from .collection import Collection, docstrings
 from .source import BaseSource
@@ -14,7 +14,7 @@ class CMIP5Collection(Collection):
     """
     )
 
-    def _get_file_attrs(self, filepath, urlpath):
+    def _get_file_attrs(self, filepath):
         """ Extract attributes of a file using information from CMIP5 DRS.
 
         Notes
@@ -44,12 +44,21 @@ class CMIP5Collection(Collection):
         )
         fileparts.update(f)
 
+        institutes = config.get('collections.cmip5.institutes')
+        products = config.get('collections.cmip5.products')
+        institute_regex = r'|'.join(institutes)
+        product_regex = r'|'.join(products)
+        product = _extract_attr_with_regex(filepath, regex=product_regex)
         frequency = _extract_attr_with_regex(filepath, regex=freq_regex, strip_chars='/')
         realm = _extract_attr_with_regex(filepath, regex=realm_regex)
         version = _extract_attr_with_regex(filepath, regex=version_regex) or 'v0'
+        institute = _extract_attr_with_regex(os.path.dirname(filepath), regex=institute_regex)
         fileparts['frequency'] = frequency
         fileparts['modeling_realm'] = realm
         fileparts['version'] = version
+        fileparts['activity'] = config.get('collections.cmip5.mip_era')
+        fileparts['institute'] = institute
+        fileparts['product'] = product
 
         return fileparts
 
@@ -76,7 +85,7 @@ class CMIP6Collection(Collection):
     """
     )
 
-    def _get_file_attrs(self, filepath, urlpath):
+    def _get_file_attrs(self, filepath):
         """ Extract attributes of a file using information from CMI6 DRS.
 
         Notes
@@ -103,9 +112,21 @@ class CMIP6Collection(Collection):
         )
         fileparts.update(f)
         version_regex = r'v\d{4}\d{2}\d{2}|v\d{1}'
-        version = _extract_attr_with_regex(filepath, regex=version_regex) or 'v0'
-        fileparts['version'] = version
+        activity_ids = config.get('collections.cmip6.activity_ids').keys()
+        activity_id_regex = r'|'.join(activity_ids)
 
+        institution_ids = config.get('collections.cmip6.institution_ids').keys()
+        institution_id_regex = r'|'.join(institution_ids)
+
+        version = _extract_attr_with_regex(filepath, regex=version_regex) or 'v0'
+        activity_id = _extract_attr_with_regex(filepath, regex=activity_id_regex)
+        institution_id = _extract_attr_with_regex(
+            os.path.dirname(filepath), regex=institution_id_regex
+        )
+        fileparts['version'] = version
+        fileparts['activity_id'] = activity_id
+        fileparts['institution_id'] = institution_id
+        fileparts['mip_era'] = config.get('collections.cmip6.mip_era')
         return fileparts
 
 

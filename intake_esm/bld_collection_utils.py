@@ -245,7 +245,7 @@ def make_attrs(attrs=None):
 
 
 def _extract_attr_with_regex(input_str, regex, strip_chars=None):
-    pattern = re.compile(regex)
+    pattern = re.compile(regex, re.IGNORECASE)
     match = re.findall(pattern, input_str)
     if match:
         match = max(match, key=len)
