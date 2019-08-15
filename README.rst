@@ -37,8 +37,8 @@ such as `xarray` can be a daunting task due to the large number of files a user 
 
    .. code-block:: python
 
-   >>> import intake
-   >>> col = intake.open_esm_metadatastore(collection_name="GLADE-CMIP5")
+        >>> import intake
+        >>> col = intake.open_esm_metadatastore(collection_name="GLADE-CMIP5")
 
 
 - Search and Discovery: once the database is built, ``intake-esm`` can be used for searching and discovering
@@ -47,16 +47,16 @@ such as `xarray` can be a daunting task due to the large number of files a user 
 
    .. code-block:: python
 
-   >>> cat = col.search(variable=['hfls'], frequency='mon',
-       ...          modeling_realm='atmos',
-       ...          institute=['CCCma', 'CNRM-CERFACS'])
+        >>> cat = col.search(variable=['hfls'], frequency='mon',
+        ...          modeling_realm='atmos',
+        ...          institute=['CCCma', 'CNRM-CERFACS'])
 
 - Access: when the user is satisfied with the results of their query, they can ask ``intake-esm``
   to load the actual netCDF files into xarray datasets:
 
    .. code-block:: python
 
-   >>> dsets = cat.to_xarray(decode_times=True, chunks={'time': 50})
+        >>> dsets = cat.to_xarray(decode_times=True, chunks={'time': 50})
 
 
 Intake-esm supports data holdings from the following projects:
