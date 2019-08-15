@@ -1,10 +1,5 @@
-==========
-Intake-esm
-==========
+.. include:: ../../README.rst
 
-
-`Intake-esm` provides functionality to build and load `intake <https://intake.readthedocs.io/en/latest/>`_ catalogs
-for earth system data holdings produced by projects such as CMIP, CESM.
 
 
 Feedback
@@ -18,7 +13,7 @@ please open an issue at the GitHub `main repository <http://github.com/NCAR/inta
    :maxdepth: 2
    :caption: Documentation Contents
 
-   notebooks/overview.ipynb
+
    installation
    notebooks/cmip5.ipynb
    notebooks/cesm.ipynb
