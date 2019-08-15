@@ -11,6 +11,7 @@ collections:
       - resolution
       - file_fullpath
       - file_basename
+      - file_dirname
     order_by_columns:
       - member_id
       - time_range
@@ -23,6 +24,7 @@ collections:
       - direct_access
       - file_basename
       - file_fullpath
+      - file_dirname
       - forecast_initial_date
       - forecast_initial_hour
       - grid

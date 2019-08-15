@@ -25,6 +25,7 @@ class CORDEXCollection(Collection):
         fileparts = {key: None for key in keys}
         fileparts['file_basename'] = file_basename
         fileparts['file_fullpath'] = filepath
+        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
         filename_template = '{variable}.{experiment}.{global_climate_model}.{regional_climate_model}.{frequency}.{grid}.{bias_corrected_or_raw}.nc'
 
         f = _reverse_filename_format(file_basename, filename_template)

@@ -24,6 +24,7 @@ class GMETCollection(Collection):
         fileparts = {key: None for key in keys}
         fileparts['file_basename'] = file_basename
         fileparts['file_fullpath'] = filepath
+        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
 
         date_str_regex = r'\d{8}\_\d{8}'
         datestr = _extract_attr_with_regex(filepath, regex=date_str_regex)

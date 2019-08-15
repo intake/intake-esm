@@ -13,7 +13,9 @@ collections:
     - bias_corrected_or_raw
     - file_fullpath
     - file_basename
+    - file_dirname
     order_by_columns:
-      - file_fullpath
+      - variable
     required_columns:
+      - variable
       - file_fullpath
