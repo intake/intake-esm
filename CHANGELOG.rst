@@ -15,10 +15,7 @@ Features
   With `netCDF`, we can record very useful information into the global attributes of the netCDF dataset.
   (:pr:`119`) `Anderson Banihirwe`_
 
-  - For these attributes to be useful, the `.df` Pandas dataframe attribute was replaced with `.ds` xarray
-    dataset attribute:
-
-    .. code-block:: python
+  .. code-block:: python
 
     >>> import intake
     >>> col = intake.open_esm_metadatastore(collection_input_definition="GLADE-CMIP5")
@@ -61,7 +58,7 @@ Features
   if the specified collection is part of the curated collections in `intake-esm-datastore`_.
   (:pr:`124`) `Anderson Banihirwe`_
 
- .. code-block:: python
+  .. code-block:: python
 
     >>> import intake
     >>> col = intake.open_esm_metadatastore(collection_name="GLADE-CMIP5")
@@ -74,6 +71,72 @@ Features
 - Add ``.df`` property for interfacing with the built collection via dataframe
   To maintain backwards compatiblity. (:pr:`127`) `Anderson Banihirwe`_
 
+- Add ``unique()`` and ``nunique()`` methods for summarizing count and unique values in a collection.
+  (:pr:`128`) `Anderson Banihirwe`_
+
+  .. code-block:: python
+
+    >>> import intake
+    >>> col = intake.open_esm_metadatastore(collection_name="GLADE-CMIP5")
+    >>> col
+    GLADE-CMIP5 collection catalogue with 615853 entries:
+            > 3 resource(s)
+
+            > 1 resource_type(s)
+
+            > 1 direct_access(s)
+
+            > 1 activity(s)
+
+            > 218 ensemble_member(s)
+
+            > 51 experiment(s)
+
+            > 312093 file_basename(s)
+
+            > 615853 file_fullpath(s)
+
+            > 6 frequency(s)
+
+            > 25 institute(s)
+
+            > 15 mip_table(s)
+
+            > 53 model(s)
+
+            > 7 modeling_realm(s)
+
+            > 3 product(s)
+
+            > 9121 temporal_subset(s)
+
+            > 454 variable(s)
+
+            > 489 version(s)
+
+    >>> col.nunique()
+    resource                3
+    resource_type           1
+    direct_access           1
+    activity                1
+    ensemble_member       218
+    experiment             51
+    file_basename      312093
+    file_fullpath      615853
+    frequency               6
+    institute              25
+    mip_table              15
+    model                  53
+    modeling_realm          7
+    product                 3
+    temporal_subset      9121
+    variable              454
+    version               489
+    dtype: int64
+    >>> col.unique(columns=['frequency', 'modeling_realm'])
+    {'frequency': {'count': 6, 'values': ['mon', 'day', '6hr', 'yr', '3hr', 'fx']},
+    'modeling_realm': {'count': 7, 'values': ['atmos', 'land', 'ocean', 'seaIce', 'ocnBgchem',
+    'landIce', 'aerosol']}}
 
 .. _NA-CORDEX: https://na-cordex.org/
 .. _intake-esm-datastore: https://github.com/NCAR/intake-esm-datastore
