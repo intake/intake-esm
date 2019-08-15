@@ -1,7 +1,3 @@
-===========
-Intake-esm
-===========
-
 .. image:: https://img.shields.io/circleci/project/github/NCAR/intake-esm/master.svg?style=for-the-badge&logo=circleci
     :target: https://circleci.com/gh/NCAR/intake-esm/tree/master
 
@@ -22,6 +18,9 @@ Intake-esm
     :alt: Conda Version
 
 
+===========
+Intake-esm
+===========
 
 `Intake-esm` provides an `intake`_ plugin for creating ``file-based Intake catalogs``
 for climate data from project efforts such as the `Coupled Model Intercomparison Project (CMIP)`_
