@@ -4,7 +4,7 @@ from pathlib import Path
 import docrep
 import pandas as pd
 import xarray as xr
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 
 from . import config
 from .bld_collection_utils import make_attrs

@@ -30,6 +30,7 @@ def test_build_collection_file():
         )
         col = intake.open_esm_metadatastore(collection_name='cmip6_test_collection')
         assert isinstance(col.ds, xr.Dataset)
+        assert isinstance(col.df, pd.DataFrame)
 
 
 def test_search():
@@ -38,6 +39,8 @@ def test_search():
         cat = c.search(source_id=['BCC-ESM1', 'CNRM-CM6-1', 'CNRM-ESM2-1'])
         assert isinstance(cat.ds, xr.Dataset)
         assert len(cat.ds.index) > 0
+
+        assert isinstance(cat.df, pd.DataFrame)
 
 
 @pytest.mark.parametrize(

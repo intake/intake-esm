@@ -5,6 +5,7 @@ import uuid
 
 import numpy as np
 import s3fs
+from cached_property import cached_property
 from intake.catalog import Catalog
 from intake.catalog.local import LocalCatalogEntry
 from intake.utils import yaml_load
@@ -122,6 +123,10 @@ class ESMMetadataStoreCatalog(Catalog):
             )
 
         self._entries = {}
+
+    @cached_property
+    def df(self):
+        return self.ds.to_dataframe()
 
     def describe(self, variables=()):
         """
