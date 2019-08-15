@@ -1,10 +1,10 @@
 import datetime
-import functools
 import os
 import uuid
 
 import numpy as np
 import s3fs
+from cached_property import cached_property
 from intake.catalog import Catalog
 from intake.catalog.local import LocalCatalogEntry
 from intake.utils import yaml_load
@@ -123,42 +123,33 @@ class ESMMetadataStoreCatalog(Catalog):
 
         self._entries = {}
 
-    def describe(self, variables=()):
-        """
-        TODO: Generate summary for variables in the .ds attribute
-        """
-        raise NotImplementedError('Not implemented yet!')
+    @cached_property
+    def df(self):
+        return self.ds.to_dataframe()
 
-    @functools.lru_cache(maxsize=None)
-    def _info_cache(self, variables=()):
-        if variables:
-            if isinstance(variables, str):
-                d_vars = (variables,)
-            else:
-                d_vars = tuple(variables)
-        else:
-            d_vars = tuple(self.ds.variables)
+    def nunique(self):
+        """Count distinct observations across dataframe columns"""
+        return self.df.nunique()
+
+    def unique(self, columns=None):
+        """ Return unique values for given columns"""
+        if isinstance(columns, str):
+            columns = [columns]
+        if not columns:
+            columns = self.df.columns
 
         info = {}
-        for idx, variable in enumerate(d_vars):
-            a = np.unique(self.ds[variable].data)
-            info[variable] = a
+        for col in columns:
+            uniques = self.df[col].unique().tolist()
+            info[col] = {'count': len(uniques), 'values': uniques}
         return info
 
     def __repr__(self):
         """Making string representation of object."""
-        v = set(self.ds.data_vars) - set(
-            ['resource', 'resource_type', 'file_fullpath', 'file_basename', 'direct_access']
-        )
-        info = self._info_cache(variables=tuple(v))
+        info = self.nunique().to_dict()
         output = []
-        thresh = 5
         for key, values in info.items():
-            if len(values) > thresh:
-                dummy = '...'
-            else:
-                dummy = ''
-            output.append(f'{len(values)} {key}(s): \n\n\t\t{values[:thresh]} {dummy}\n')
+            output.append(f'{values} {key}(s)\n')
         output = '\n\t> '.join(output)
         items = len(self.ds.index)
         return f'{self.collection_name.upper()} collection catalogue with {items} entries:\n\t> {output}'

@@ -33,6 +33,7 @@ class CESMCollection(Collection):
         fileparts = {key: None for key in keys}
         fileparts['file_basename'] = file_basename
         fileparts['file_fullpath'] = filepath
+        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
 
         date_str_regex = r'\d{4}\-\d{4}|\d{6}\-\d{6}|\d{8}\-\d{8}|\d{10}Z\-\d{10}Z|\d{12}Z\-\d{12}Z'
         datestr = _extract_attr_with_regex(file_basename, regex=date_str_regex)

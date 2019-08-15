@@ -7,7 +7,7 @@ from subprocess import PIPE, CalledProcessError, Popen
 from time import sleep
 from warnings import warn
 
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from . import config
 

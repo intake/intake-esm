@@ -4,7 +4,7 @@ import os
 
 import pandas as pd
 import xarray as xr
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from . import aggregate, config
 from .bld_collection_utils import get_subset

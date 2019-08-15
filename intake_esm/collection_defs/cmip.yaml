@@ -9,6 +9,7 @@ collections:
     - experiment
     - file_basename
     - file_fullpath
+    - file_dirname
     - frequency
     - institute
     - mip_table
@@ -40,6 +41,7 @@ collections:
     - experiment_id
     - file_basename
     - file_fullpath
+    - file_dirname
     - grid_label
     - institution_id
     - member_id

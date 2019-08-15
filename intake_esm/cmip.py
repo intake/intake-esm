@@ -56,10 +56,11 @@ class CMIP5Collection(Collection):
         fileparts.update(f)
 
         parent = os.path.dirname(filepath).strip('/')
-        parent_split = parent.split(fileparts['model'])
+        parent_split = parent.split(f"/{fileparts['model']}/")
         part_1 = parent_split[0].strip('/').split('/')
         part_2 = parent_split[1].strip('/').split('/')
 
+        fileparts['file_dirname'] = parent + '/'
         fileparts['institute'] = part_1[-1]
         fileparts['frequency'] = part_2[1]
         fileparts['modeling_realm'] = part_2[2]
@@ -150,10 +151,13 @@ class CMIP6Collection(Collection):
         fileparts.update(f)
 
         parent = os.path.dirname(filepath).strip('/')
-        parent_split = parent.split(fileparts['source_id'])
+        parent_split = parent.split(f"/{fileparts['source_id']}/")
         part_1 = parent_split[0].strip('/').split('/')
-        # part_2 = parent_split[1].strip('/').split('/')
 
+        grid_label = parent.split(f"/{fileparts['variable_id']}/")[1].strip('/').split('/')[0]
+
+        fileparts['file_dirname'] = parent + '/'
+        fileparts['grid_label'] = grid_label
         fileparts['activity_id'] = part_1[-2]
         fileparts['institution_id'] = part_1[-1]
 
