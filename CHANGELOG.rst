@@ -71,16 +71,23 @@ Features
 - Revert back to using official DRS attributes when building CMIP5 and CMIP6 collections.
   (:pr:`126`) `Anderson Banihirwe`_
 
+- Add ``.df`` property for interfacing with the built collection via dataframe
+  To maintain backwards compatiblity. (:pr:`127`) `Anderson Banihirwe`_
+
 
 .. _NA-CORDEX: https://na-cordex.org/
 .. _intake-esm-datastore: https://github.com/NCAR/intake-esm-datastore
 
+
 Bug Fixes
 ----------
+
+-  For CMIP6, extract ``grid_label`` from directory path instead of file name. (:pr:`127`) `Anderson Banihirwe`_
 
 
 Internal Changes
 ----------------
+
 
 
 

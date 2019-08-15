@@ -1,6 +1,7 @@
 import intake_xarray
 import xarray as xr
-from tqdm.autonotebook import tqdm
+from cached_property import cached_property
+from tqdm.auto import tqdm
 
 from . import aggregate, config
 from .bld_collection_utils import _ensure_file_access, get_subset
@@ -39,6 +40,10 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
         """ Return collection entries matching query"""
         ds = get_subset(self.collection_name, self.query)
         return ds
+
+    @cached_property
+    def df(self):
+        return self.ds.to_dataframe()
 
     def _validate_kwargs(self, kwargs):
 

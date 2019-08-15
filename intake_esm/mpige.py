@@ -6,7 +6,7 @@ from warnings import warn
 
 import pandas as pd
 import xarray as xr
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 
 from . import aggregate, config
 from .bld_collection_utils import _extract_attr_with_regex, get_subset
@@ -36,6 +36,7 @@ class MPIGECollection(Collection):
         fileparts = {key: None for key in keys}
         fileparts['file_basename'] = file_basename
         fileparts['file_fullpath'] = filepath
+        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
 
         date_str_regex = r'\d{4}\_\d{4}|\d{6}\_\d{6}|\d{8}\_\d{8}|\d{10}\_\d{10}|\d{12}\_\d{12}'
         datestr = _extract_attr_with_regex(file_basename, regex=date_str_regex)
