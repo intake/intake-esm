@@ -72,6 +72,7 @@ Features
   To maintain backwards compatiblity. (:pr:`127`) `Anderson Banihirwe`_
 
 - Add ``unique()`` and ``nunique()`` methods for summarizing count and unique values in a collection.
+  (:pr:`128`) `Anderson Banihirwe`_
 
   .. code-block:: python
 
