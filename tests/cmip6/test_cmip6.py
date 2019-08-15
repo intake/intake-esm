@@ -31,6 +31,21 @@ def test_build_collection_file():
         col = intake.open_esm_metadatastore(collection_name='cmip6_test_collection')
         assert isinstance(col.ds, xr.Dataset)
         assert isinstance(col.df, pd.DataFrame)
+        assert set(col.df.grid_label.unique()) == set(['gr', 'gn'])
+        assert set(col.df.variable_id.unique()) == set(
+            [
+                'prsn',
+                'prra',
+                'tasmax',
+                'evspsblveg',
+                'landCoverFrac',
+                'mrso',
+                'co3',
+                'gpp',
+                'residualFrac',
+                'mrfso',
+            ]
+        )
 
 
 def test_search():
