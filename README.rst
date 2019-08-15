@@ -31,11 +31,11 @@ across multiple (in the order of ~ 300,000) netCDF files. Finding, investigating
 such as `xarray` can be a daunting task due to the large number of files a user may be interested in.
 ``Intake-esm`` addresses this issue in three steps:
 
-- `Datasets Collection Curation`_ in form of YAML files. These YAML files provide information about data locations, access pattern,  directory structure, etc. ``intake-esm`` uses these YAML files in conjunction with file name templates
+- `Datasets Collection Curation`_ in form of YAML files. These YAML files provide information about data locations, access     pattern,  directory structure, etc. ``intake-esm`` uses these YAML files in conjunction with file name templates
   to construct a local database. Each row in this database consists of a set of metadata such as ``experiment``,
   ``modeling realm``, ``frequency`` corresponding to data contained in one netCDF file.
 
-   .. code-block:: python
+  .. code-block:: python
 
         >>> import intake
         >>> col = intake.open_esm_metadatastore(collection_name="GLADE-CMIP5")
@@ -45,7 +45,7 @@ such as `xarray` can be a daunting task due to the large number of files a user 
   of climate datasets by eliminating the need for the user to know specific locations (file path) of
   their data set of interest:
 
-   .. code-block:: python
+  .. code-block:: python
 
         >>> cat = col.search(variable=['hfls'], frequency='mon',
         ...          modeling_realm='atmos',
@@ -54,7 +54,7 @@ such as `xarray` can be a daunting task due to the large number of files a user 
 - Access: when the user is satisfied with the results of their query, they can ask ``intake-esm``
   to load the actual netCDF files into xarray datasets:
 
-   .. code-block:: python
+  .. code-block:: python
 
         >>> dsets = cat.to_xarray(decode_times=True, chunks={'time': 50})
 
