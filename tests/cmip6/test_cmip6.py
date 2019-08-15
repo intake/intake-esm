@@ -8,66 +8,18 @@ from intake_esm import config
 
 cdef = yaml.safe_load(
     """
-name: cmip6_test_collection
-collection_type: cmip6
-data_sources:
-  BCC-CSM2-MR:
-    locations:
-     -  name: SAMPLE-DATA
-        loc_type: posix
-        direct_access: True
-        urlpath: ./intake-esm/tests/sample_data/cmip/CMIP6/CMIP/BCC/BCC-CSM2-MR
-        exclude_dirs: ['*/files/*', 'latest']
-        file_extension: .nc
-
-    extra_attributes:
-      mip_era: CMIP6
-      activity_id: CMIP
-      institution_id: BCC
-
-  BCC-ESM1:
-    locations:
-     -  name: SAMPLE-DATA
-        loc_type: posix
-        direct_access: True
-        urlpath: ./tests/sample_data/cmip/CMIP6/CMIP/BCC/BCC-ESM1
-        exclude_dirs: ['*/files/*', 'latest']
-        file_extension: .nc
-
-    extra_attributes:
-      mip_era: CMIP6
-      activity_id: CMIP
-      institution_id: BCC
-
-  CNRM-CM6-1:
-    locations:
-     -  name: SAMPLE-DATA
-        loc_type: posix
-        direct_access: True
-        urlpath: ./tests/sample_data/cmip/CMIP6/CMIP/CNRM-CERFACS/CNRM-CM6-1
-        exclude_dirs: ['*/files/*', 'latest']
-        file_extension: .nc
-
-    extra_attributes:
-      mip_era: CMIP6
-      activity_id: CMIP
-      institution_id: CNRM-CERFACS
-
-  CNRM-ESM2-1:
-    locations:
-     -  name: SAMPLE-DATA
-        loc_type: posix
-        direct_access: True
-        urlpath: ./tests/sample_data/cmip/CMIP6/CMIP/CNRM-CERFACS/CNRM-ESM2-1
-        exclude_dirs: ['*/files/*', 'latest']
-        file_extension: .nc
-
-    extra_attributes:
-      mip_era: CMIP6
-      activity_id: CMIP
-      institution_id: CNRM-CERFACS
-
-"""
+  name: cmip6_test_collection
+  collection_type: cmip6
+  data_sources:
+    TEST:
+      locations:
+      -  name: SAMPLE-DATA
+         loc_type: posix
+         direct_access: True
+         urlpath: ./tests/sample_data/cmip/CMIP6
+         exclude_dirs: ['*/files/*', 'latest']
+         file_extension: .nc
+  """
 )
 
 

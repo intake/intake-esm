@@ -93,7 +93,8 @@ class StorageResource(object):
     def _list_files_posix(self):
         """Get a list of files"""
         try:
-            w = os.walk(self.urlpath)
+
+            w = os.walk(self.urlpath, followlinks=True)
 
             filelist = []
 
@@ -101,7 +102,6 @@ class StorageResource(object):
                 filelist.extend(
                     [os.path.join(root, f) for f in files if f.endswith(self.file_extension)]
                 )
-
             return filelist
         except Exception as e:
             warn(

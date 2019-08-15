@@ -1,6 +1,6 @@
 import os
 
-from . import aggregate
+from . import aggregate, config
 from .bld_collection_utils import _extract_attr_with_regex, _reverse_filename_format
 from .collection import Collection, docstrings
 from .source import BaseSource
@@ -14,7 +14,7 @@ class CMIP5Collection(Collection):
     """
     )
 
-    def _get_file_attrs(self, filepath, urlpath):
+    def _get_file_attrs(self, filepath):
         """ Extract attributes of a file using information from CMIP5 DRS.
 
         Notes
@@ -23,13 +23,24 @@ class CMIP5Collection(Collection):
 
         - CMIP5 DRS: https://pcmdi.llnl.gov/mips/cmip5/docs/cmip5_data_reference_syntax.pdf?id=27
 
+        Directory:
+          <activity>/
+            <product>/
+                <institute>/
+                    <model>/
+                        <experiment>/
+                            <frequency>/
+                                <modeling realm>/
+                                    <MIP table>/
+                                        <ensemble member>/
+                                            <version number>/
+                                                <variable name>/
+                                                    <CMOR filename>.nc
+        CMOR filename:
+        <variable name>_<MIP table>_<model>_<experiment>_ <ensemble member>[_<temporal subset>][_<geographical info>].nc
         """
         keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
         fileparts = {key: None for key in keys}
-
-        freq_regex = r'/3hr/|/6hr/|/day/|/fx/|/mon/|/monClim/|/subhr/|/yr/'
-        realm_regex = r'aerosol|atmos|land|landIce|ocean|ocnBgchem|seaIce'
-        version_regex = r'v\d{4}\d{2}\d{2}|v\d{1}'
 
         file_basename = os.path.basename(filepath)
         fileparts['file_basename'] = file_basename
@@ -44,12 +55,24 @@ class CMIP5Collection(Collection):
         )
         fileparts.update(f)
 
-        frequency = _extract_attr_with_regex(filepath, regex=freq_regex, strip_chars='/')
-        realm = _extract_attr_with_regex(filepath, regex=realm_regex)
-        version = _extract_attr_with_regex(filepath, regex=version_regex) or 'v0'
-        fileparts['frequency'] = frequency
-        fileparts['modeling_realm'] = realm
+        parent = os.path.dirname(filepath).strip('/')
+        parent_split = parent.split(fileparts['model'])
+        part_1 = parent_split[0].strip('/').split('/')
+        part_2 = parent_split[1].strip('/').split('/')
+
+        fileparts['institute'] = part_1[-1]
+        fileparts['frequency'] = part_2[1]
+        fileparts['modeling_realm'] = part_2[2]
+
+        # Sort in reverse order for the regex to work
+        products = sorted(config.get('collections.cmip5.products'), reverse=True)
+        version_regex = r'v\d{4}\d{2}\d{2}|v\d{1}'
+        product_regex = r'|'.join(products)
+        product = _extract_attr_with_regex(parent, regex=product_regex) or 'unknown'
+        version = _extract_attr_with_regex(parent, regex=version_regex) or 'v0'
         fileparts['version'] = version
+        fileparts['activity'] = config.get('collections.cmip5.mip_era')
+        fileparts['product'] = product
 
         return fileparts
 
@@ -76,7 +99,7 @@ class CMIP6Collection(Collection):
     """
     )
 
-    def _get_file_attrs(self, filepath, urlpath):
+    def _get_file_attrs(self, filepath):
         """ Extract attributes of a file using information from CMI6 DRS.
 
         Notes
@@ -85,6 +108,29 @@ class CMIP6Collection(Collection):
          1. CMIP6 DRS: http://goo.gl/v1drZl
          2. Controlled Vocabularies (CVs) for use in CMIP6:
             https://github.com/WCRP-CMIP/CMIP6_CVs
+
+        Directory structure =
+
+        <mip_era>/
+            <activity_id>/
+                <institution_id>/
+                    <source_id>/
+                        <experiment_id>/
+                            <member_id>/
+                                <table_id>/
+                                    <variable_id>/
+                                        <grid_label>/
+                                            <version>
+
+        file name =
+        <variable_id>_<table_id>_<source_id>_<experiment_id >_<member_id>_<grid_label>[_<time_range>].nc
+
+        For time-invariant fields, the last segment (time_range) above is omitted.
+
+        Example when there is no sub-experiment: tas_Amon_GFDL-CM4_historical_r1i1p1f1_gn_196001-199912.nc
+        Example with a sub-experiment:   pr_day_CNRM-CM6-1_dcppA-hindcast_s1960-r2i1p1f1_gn_198001-198412.nc
+
+
         """
         keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
         fileparts = {key: None for key in keys}
@@ -102,10 +148,19 @@ class CMIP6Collection(Collection):
             file_basename, filename_template=filename_template, gridspec_template=gridspec_template
         )
         fileparts.update(f)
-        version_regex = r'v\d{4}\d{2}\d{2}|v\d{1}'
-        version = _extract_attr_with_regex(filepath, regex=version_regex) or 'v0'
-        fileparts['version'] = version
 
+        parent = os.path.dirname(filepath).strip('/')
+        parent_split = parent.split(fileparts['source_id'])
+        part_1 = parent_split[0].strip('/').split('/')
+        # part_2 = parent_split[1].strip('/').split('/')
+
+        fileparts['activity_id'] = part_1[-2]
+        fileparts['institution_id'] = part_1[-1]
+
+        version_regex = r'v\d{4}\d{2}\d{2}|v\d{1}'
+        version = _extract_attr_with_regex(parent, regex=version_regex) or 'v0'
+        fileparts['version'] = version
+        fileparts['mip_era'] = config.get('collections.cmip6.mip_era')
         return fileparts
 
 

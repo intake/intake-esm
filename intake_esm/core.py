@@ -190,8 +190,9 @@ class ESMMetadataStoreCatalog(Catalog):
     def _build_collection(self, overwrite_existing):
         """ Build a collection defined in a YAML input file or a dictionary of nested dictionaries"""
         name = self.input_collection['name']
+        collection_type = self.input_collection['collection_type']
         if name not in self.collections or overwrite_existing:
-            cc = ESMMetadataStoreCatalog.collection_types[self.collection_type]
+            cc = ESMMetadataStoreCatalog.collection_types[collection_type]
             cc = cc(self.input_collection, fs=self.fs)
             cc.build()
             self.collections = _get_built_collections()
