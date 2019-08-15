@@ -30,7 +30,8 @@ def test_build_collection_file():
         )
         col = intake.open_esm_metadatastore(collection_name='cmip6_test_collection')
         assert isinstance(col.ds, xr.Dataset)
-        assert isinstance(col.df, pd.DataFrame)
+        assert isinstance(col.nunique(), pd.Series)
+        assert isinstance(col.unique(), dict)
         assert set(col.df.grid_label.unique()) == set(['gr', 'gn'])
         assert set(col.df.variable_id.unique()) == set(
             [
@@ -56,6 +57,8 @@ def test_search():
         assert len(cat.ds.index) > 0
 
         assert isinstance(cat.df, pd.DataFrame)
+        assert isinstance(cat.nunique(), pd.Series)
+        assert isinstance(cat.unique(), dict)
 
 
 @pytest.mark.parametrize(

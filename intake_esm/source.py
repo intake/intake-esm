@@ -45,6 +45,23 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
     def df(self):
         return self.ds.to_dataframe()
 
+    def nunique(self):
+        """Count distinct observations across dataframe columns"""
+        return self.df.nunique()
+
+    def unique(self, columns=None):
+        """ Return unique values for given columns"""
+        if isinstance(columns, str):
+            columns = [columns]
+        if not columns:
+            columns = self.df.columns
+
+        info = {}
+        for col in columns:
+            uniques = self.df[col].unique().tolist()
+            info[col] = {'count': len(uniques), 'values': uniques}
+        return info
+
     def _validate_kwargs(self, kwargs):
 
         _kwargs = kwargs.copy()
