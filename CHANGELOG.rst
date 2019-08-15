@@ -15,7 +15,7 @@ Features
   With `netCDF`, we can record very useful information into the global attributes of the netCDF dataset.
   (:pr:`119`) `Anderson Banihirwe`_
 
-    .. code-block:: python
+  .. code-block:: python
 
     >>> import intake
     >>> col = intake.open_esm_metadatastore(collection_input_definition="GLADE-CMIP5")
@@ -58,7 +58,7 @@ Features
   if the specified collection is part of the curated collections in `intake-esm-datastore`_.
   (:pr:`124`) `Anderson Banihirwe`_
 
- .. code-block:: python
+  .. code-block:: python
 
     >>> import intake
     >>> col = intake.open_esm_metadatastore(collection_name="GLADE-CMIP5")
