@@ -68,7 +68,8 @@ Features
     >>> # if "GLADE-CMIP5" collection isn't built already, the above is equivalent to:
     >>> col = intake.open_esm_metadatastore(collection_input_definition="GLADE-CMIP5")
 
-
+- Revert back to using official DRS attributes when building CMIP5 and CMIP6 collections.
+  (:pr:`126`) `Anderson Banihirwe`_
 
 
 .. _NA-CORDEX: https://na-cordex.org/
