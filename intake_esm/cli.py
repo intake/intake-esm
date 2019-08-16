@@ -73,7 +73,7 @@ def _builder(collection_input_definition, overwrite_existing, database_dir, anon
     '--profile-name',
     type=str,
     default=None,
-    help='Named profile to use when authenticating',
+    help='Named profile to use for AWS-S3 authentication',
     show_default=True,
     required=False,
 )
