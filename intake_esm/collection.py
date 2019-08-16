@@ -85,7 +85,6 @@ class Collection(ABC):
         )
         self._ds.attrs = attrs
         self._persist_db_file()
-        print(self._ds)
 
     def assemble_file_list(self, data_source, data_source_attrs, exclude_patterns=[]):
         """ Assemble file listing for data sources into Pandas dataframes.
