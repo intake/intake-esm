@@ -15,12 +15,8 @@ please open an issue at the GitHub `main repository <http://github.com/NCAR/inta
 
 
    installation
-   notebooks/cmip5.ipynb
-   notebooks/cesm.ipynb
-   notebooks/mpige.ipynb
-   notebooks/gmet.ipynb
-   notebooks/era5.ipynb
-   notebooks/addingdatasets.ipynb
+   notebooks/tutorial.ipynb
+   notebooks/extension_guide.ipynb
    api
    cli
    configuration

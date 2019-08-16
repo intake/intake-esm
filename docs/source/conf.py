@@ -47,6 +47,7 @@ extensions = [
     'IPython.sphinxext.ipython_console_highlighting',
     'IPython.sphinxext.ipython_directive',
     'nbsphinx',
+    'sphinx_click.ext',
 ]
 
 extlinks = {

@@ -1,4 +1,4 @@
 default_chunk_size: 128MiB
 data_cache_directory: $TMPDIR/intake_esm/data_cache
 database_directory: ~/.intake_esm/collections
-progress_bar: False
+progress_bar: True
