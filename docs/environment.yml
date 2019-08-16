@@ -16,3 +16,4 @@ dependencies:
   - ipython
   - s3fs
   - fsspec
+  - sphinx-click
