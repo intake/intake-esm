@@ -116,9 +116,9 @@ class ESMMetadataStoreCatalog(Catalog):
 
             load_collection_input_file()
             raise ValueError(
-                'Cannot instantiate class with provided arguments. Please provide either \n'
-                '\t1) collection_input_definition to build a collection or\n'
-                '\t2) collection_name to open an existing/built collection.'
+                'Cannot instantiate class with provided arguments. Please provide either: \n'
+                '\t1) collection_input_definition: to build a collection or\n'
+                '\t2) collection_name: to open a collection.'
             )
 
         self._entries = {}
