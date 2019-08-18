@@ -18,7 +18,16 @@ from .storage import _get_hsi_files, _posix_symlink
 _default_cache_dir = config.get('database-directory')
 _default_cache_dir = f'{_default_cache_dir}/bld-collection-input'
 
-aliases = ['CESM1-LE', 'GLADE-CMIP5', 'GLADE-CMIP6', 'GLADE-RDA-ERA5', 'GLADE-GMET', 'MPI-GE']
+aliases = [
+    'CESM1-LE',
+    'GLADE-CMIP5',
+    'GLADE-CMIP6',
+    'GLADE-RDA-ERA5',
+    'GLADE-GMET',
+    'MPI-GE',
+    'AWS-CESM1-LE',
+    'GLADE-NA-CORDEX',
+]
 
 true_file_names = [
     'cesm1-le-collection',
@@ -27,16 +36,20 @@ true_file_names = [
     'glade-rda-era5-collection',
     'glade-gmet-collection',
     'mpige-collection',
+    'aws-cesm1-le-collection',
+    'glade-na-cordex-collection',
 ]
 
 
 descriptions = [
-    'Community Earth System Model Large Ensemble (LENS) data holdings',
+    'Community Earth System Model Large Ensemble (CESM LENS) data holdings @ NCAR',
     'Coupled Model Intercomparison Project - Phase 5 data holdings on the CMIP Analysis Platform @ NCAR',
     'Coupled Model Intercomparison Project - Phase 6 data holdings on the CMIP Analysis Platform @ NCAR',
-    'ECWMF ERA5 Reanalysis data holdings',
+    'ECWMF ERA5 Reanalysis data holdings @ NCAR',
     'The Gridded Meteorological Ensemble Tool data holdings',
     'The Max Planck Institute for Meteorology (MPI-M) Grand Ensemble (MPI-GE) data holdings',
+    'Community Earth System Model Large Ensemble (CESM LENS) data holdings publicly available on Amazon S3 (us-west-2 region)',
+    'The North American CORDEX program data holdings @ NCAR',
 ]
 
 
