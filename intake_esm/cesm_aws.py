@@ -90,7 +90,7 @@ class CESMAWSSource(BaseSource):
 
     def _open_dataset(self):
         # fields which define a single dataset
-        dataset_fields = ['component', 'frequency']
+        dataset_fields = ['component', 'experiment', 'frequency']
         zarr_kwargs = CESMAWSSource._validate_zarr_kwargs(self.kwargs)
 
         kwargs = {}
