@@ -66,7 +66,7 @@ Intake-esm supports data holdings from the following projects:
 - `GMET`_: The Gridded Meteorological Ensemble Tool data
 - `ERA5`_: ECWMF ERA5 Reanalysis dataset stored on NCAR's GLADE in ``/glade/collections/rda/data/ds630.0``
 - `NA-CORDEX`_: The North American CORDEX program dataset residing on NCAR's GLADE in ``/glade/collections/cdg/data/cordex/data/``
-
+- `CESM-LENS-AWS`_: Community Earth System Model Large Ensemble (CESM LENS) data holdings publicly available on Amazon S3 (us-west-2 region)
 
 .. _CMIP: https://www.wcrp-climate.org/wgcm-cmip
 .. _CESM: http://www.cesm.ucar.edu/projects/community-projects/LENS/
@@ -74,6 +74,7 @@ Intake-esm supports data holdings from the following projects:
 .. _GMET: https://ncar.github.io/hydrology/models/GMET
 .. _MPI-GE: https://www.mpimet.mpg.de/en/grand-ensemble/
 .. _NA-CORDEX: https://na-cordex.org/
+.. _CESM-LENS-AWS: http://ncar-aws-www.s3-website-us-west-2.amazonaws.com/
 .. _intake: https://github.com/intake/intake
 .. _Datasets Collection Curation: https://github.com/NCAR/intake-esm-datastore
 .. _Coupled Model Intercomparison Project (CMIP): https://www.wcrp-climate.org/wgcm-cmip
