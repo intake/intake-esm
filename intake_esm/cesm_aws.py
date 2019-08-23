@@ -90,7 +90,7 @@ class CESMAWSSource(BaseSource):
 
     def _open_dataset(self):
         # fields which define a single dataset
-        dataset_fields = ['component', 'frequency']
+        dataset_fields = ['component', 'experiment', 'frequency']
         zarr_kwargs = CESMAWSSource._validate_zarr_kwargs(self.kwargs)
 
         kwargs = {}
@@ -107,11 +107,7 @@ class CESMAWSSource(BaseSource):
             dsets = []
             for exp_id, exp_stores in grouped_exp:
                 exp_dsets = []
-                for v_id, v_stores in tqdm(
-                    exp_stores.groupby('variable'),
-                    desc='variable(s)',
-                    disable=not config.get('progress-bar'),
-                ):
+                for v_id, v_stores in exp_stores.groupby('variable'):
                     urlpath_ei_vi = v_stores['store_fullpath'].tolist()
                     v_dsets = [
                         aggregate.open_store(
