@@ -16,7 +16,7 @@ please open an issue at the GitHub `main repository <http://github.com/NCAR/inta
 
    installation
    notebooks/tutorial.ipynb
-   examples
+   notebooks/examples/cesm1-lens-aws.ipynb
    notebooks/extension_guide.ipynb
    api
    cli
