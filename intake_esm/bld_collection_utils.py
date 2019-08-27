@@ -27,6 +27,9 @@ aliases = [
     'MPI-GE',
     'AWS-CESM1-LE',
     'GLADE-NA-CORDEX',
+    'mistral-CMIP5',
+    'mistral-CMIP6',
+    'mistral-MPIGE',
 ]
 
 true_file_names = [
@@ -38,6 +41,9 @@ true_file_names = [
     'mpige-collection',
     'aws-cesm1-le-collection',
     'glade-na-cordex-collection',
+    'mistral-cmip5-collection',
+    'mistral-cmip6-collection',
+    'mistral-mpige-collection',
 ]
 
 
@@ -50,6 +56,12 @@ descriptions = [
     'The Max Planck Institute for Meteorology (MPI-M) Grand Ensemble (MPI-GE) data holdings',
     'Community Earth System Model Large Ensemble (CESM LENS) data holdings publicly available on Amazon S3 (us-west-2 region)',
     'The North American CORDEX program data holdings @ NCAR',
+    'Coupled Model Intercomparison Project - Phase 5 data holdings @ \
+     dkrz.mistral',
+    'Coupled Model Intercomparison Project - Phase 6 data holdings @ \
+     dkrz.mistral',
+    'Max Planck Institute for Meteorology Grand Ensemble (MPI-ESM GE) CMORized \
+     data holdings @ dkrz.mistral',
 ]
 
 
