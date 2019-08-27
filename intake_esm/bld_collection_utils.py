@@ -29,7 +29,7 @@ aliases = [
     'GLADE-NA-CORDEX',
     'mistral-CMIP5',
     'mistral-CMIP6',
-    'mistral-MPIGE'
+    'mistral-MPIGE',
 ]
 
 true_file_names = [
@@ -60,8 +60,8 @@ descriptions = [
      dkrz.mistral',
     'Coupled Model Intercomparison Project - Phase 6 data holdings @ \
      dkrz.mistral',
-    'Max Planck Institute for Meteorology Grand Ensemble (MPI-ESM GE) cmorized \
-     data holdings @ dkrz.mistral'
+    'Max Planck Institute for Meteorology Grand Ensemble (MPI-ESM GE) CMORized \
+     data holdings @ dkrz.mistral',
 ]
 
 
@@ -224,8 +224,7 @@ def get_subset(collection_name, query, order_by=None):
     query_results = ds.where(condition, drop=True)
 
     if order_by is None:
-        order_by = config.get('collections')[
-            collection_type]['order-by-columns']
+        order_by = config.get('collections')[collection_type]['order-by-columns']
 
     query_results = query_results.sortby(order_by, ascending=True)
     return query_results
@@ -359,17 +358,14 @@ def _ensure_file_access(
 
         else:
             file_remote = row[file_fullpath_column_name]
-            file_local = os.path.join(
-                data_cache_directory, os.path.basename(file_remote))
+            file_local = os.path.join(data_cache_directory, os.path.basename(file_remote))
             local_urlpaths.append(file_local)
 
             if not os.path.exists(file_local):
                 if row.resource_type not in resource_types:
-                    raise ValueError(
-                        f'unknown resource type: {row.resource_type}')
+                    raise ValueError(f'unknown resource type: {row.resource_type}')
 
-                file_remote_local[row.resource_type].append(
-                    (file_remote, file_local))
+                file_remote_local[row.resource_type].append((file_remote, file_local))
 
     for res_type in resource_types:
         if file_remote_local[res_type]:

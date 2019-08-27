@@ -8,7 +8,7 @@ Intake-esm v2019.8.xx (2019-08-xx)
 
 Features
 --------
-- Add `mistral` data holdings to `intake-esm-datastore` (:pr:`1xx`) `Aaron Spring`_
+- Add `mistral` data holdings to `intake-esm-datastore` (:pr:`133`) `Aaron Spring`_
 
 - Add support for `NA-CORDEX`_ data holdings. (:pr:`115`) `Julia Kent`_
 
