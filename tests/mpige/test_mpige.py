@@ -16,7 +16,7 @@ def test_build_collection():
         col = intake.open_esm_metadatastore(
             collection_input_definition=collection_input_definition, overwrite_existing=True
         )
-        assert isinstance(col.ds, xr.Dataset)
+        assert isinstance(col.df, pd.DataFrame)
 
 
 def test_search():
@@ -24,8 +24,8 @@ def test_search():
         c = intake.open_esm_metadatastore(collection_name='mpige_test')
         cat = c.search(component='mpiom', stream='monitoring_ym')
 
-        assert isinstance(cat.ds, xr.Dataset)
-        assert len(cat.ds.index) > 0
+        assert isinstance(cat.df, pd.DataFrame)
+        assert len(cat.df) > 0
 
 
 def test_to_xarray():

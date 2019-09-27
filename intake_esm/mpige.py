@@ -29,14 +29,12 @@ class MPIGECollection(Collection):
             config.normalize_key('component_streams'), None
         )
 
-    def _get_file_attrs(self, filepath):
+    def _get_store_attrs(self, storepath):
         """ Extract each part of case.stream.variable.datestr.nc file pattern. """
-        file_basename = os.path.basename(filepath)
-        keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
+        file_basename = os.path.basename(storepath)
+        keys = list(set(self.columns))
         fileparts = {key: None for key in keys}
-        fileparts['file_basename'] = file_basename
-        fileparts['file_fullpath'] = filepath
-        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
+        fileparts['store_fullpath'] = storepath
 
         date_str_regex = r'\d{4}\_\d{4}|\d{6}\_\d{6}|\d{8}\_\d{8}|\d{10}\_\d{10}|\d{12}\_\d{12}'
         datestr = _extract_attr_with_regex(file_basename, regex=date_str_regex)
@@ -113,15 +111,15 @@ class MPIGESource(BaseSource):
         self._open_dataset_groups(
             dataset_fields=dataset_fields,
             member_column_name='ensemble',
-            file_fullpath_column_name='file_fullpath',
+            store_fullpath_column_name='store_fullpath',
         )
 
-    def _open_dataset_groups(self, dataset_fields, member_column_name, file_fullpath_column_name):
+    def _open_dataset_groups(self, dataset_fields, member_column_name, store_fullpath_column_name):
         kwargs = self._validate_kwargs(self.kwargs)
 
-        ds = get_subset(self.collection_name, self.query)
-        df = ds.to_dataframe().groupby(dataset_fields)
-        all_dsets = OrderedDict()
+        df = get_subset(self.collection_name, self.query)
+        df = df.groupby(dataset_fields)
+        all_dsets = {}
         for dset_keys, dset_files in tqdm(
             df, desc='experiment', disable=not config.get('progress-bar')
         ):
@@ -131,7 +129,7 @@ class MPIGESource(BaseSource):
                 member_ids = []
                 member_dsets = []
                 for m_id, m_files in comp_files.groupby(member_column_name):
-                    files = m_files[file_fullpath_column_name]
+                    files = m_files[store_fullpath_column_name]
                     if kwargs['preprocess'] is not None:
                         ds = xr.open_mfdataset(
                             files,
