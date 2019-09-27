@@ -26,14 +26,14 @@ class CESMCollection(Collection):
         )
         self.replacements = self.collection_definition.get('replacements', {})
 
-    def _get_file_attrs(self, filepath):
+    def _get_store_attrs(self, storepath):
         """ Extract each part of case.stream.variable.datestr.nc file pattern. """
-        file_basename = os.path.basename(filepath)
-        keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
+
+        keys = list(set(self.columns))
         fileparts = {key: None for key in keys}
-        fileparts['file_basename'] = file_basename
-        fileparts['file_fullpath'] = filepath
-        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
+
+        fileparts['store_fullpath'] = storepath
+        file_basename = os.path.basename(storepath)
 
         date_str_regex = r'\d{4}\-\d{4}|\d{6}\-\d{6}|\d{8}\-\d{8}|\d{10}Z\-\d{10}Z|\d{12}Z\-\d{12}Z'
         datestr = _extract_attr_with_regex(file_basename, regex=date_str_regex)
@@ -150,5 +150,5 @@ class CESMSource(BaseSource):
             dataset_fields=dataset_fields,
             member_column_name='member_id',
             variable_column_name='variable',
-            file_fullpath_column_name='file_fullpath',
+            store_fullpath_column_name='store_fullpath',
         )

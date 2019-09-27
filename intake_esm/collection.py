@@ -234,7 +234,12 @@ class Collection(ABC):
             print(f"Persisting {self.collection_spec['name']} at : {self.collection_db_file}")
 
             with open(self.collection_db_file, mode='w'):
-                self._ds.to_netcdf(self.collection_db_file, mode='w', engine='netcdf4')
+                self._ds.to_netcdf(
+                    self.collection_db_file,
+                    mode='w',
+                    engine='netcdf4',
+                    encoding={'direct_access': {'dtype': 'bool'}},
+                )
 
         else:
             print(f"{self._ds} is an empty dataset. It won't be persisted to disk.")

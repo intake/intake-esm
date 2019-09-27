@@ -42,7 +42,7 @@ def test_storage_input_file():
 
     SR = StorageResource(urlpath, type_, exclude_dirs, file_extension)
     assert isinstance(SR, StorageResource)
-    files = SR.filelist
+    files = SR.storelist
     assert isinstance(files, list)
     assert len(files) == 4
 
@@ -57,7 +57,7 @@ def test_storage_hsi():
     file_extension = '.nc'
     SR = StorageResource(urlpath, loc_type, exclude_dirs, file_extension)
 
-    files = SR.filelist
+    files = SR.storelist
     assert isinstance(files, list)
     assert len(files) != 0
 
@@ -71,7 +71,7 @@ def test_storage_aws_s3():
         file_extension='.zarr',
         fs=fs,
     )
-    stores = SR.filelist
+    stores = SR.storelist
     assert len(stores) != 0
 
 
@@ -98,8 +98,8 @@ def test_file_transfer_symlink():
 
         cat = col.search(variable=['STF_O2', 'SHF'])
 
-        query_results = _ensure_file_access(cat.ds)
-        local_urlpaths = query_results['file_fullpath'].tolist()
+        query_results = _ensure_file_access(cat.df)
+        local_urlpaths = query_results['store_fullpath'].tolist()
         assert isinstance(local_urlpaths, list)
         assert len(local_urlpaths) > 0
 
@@ -123,8 +123,8 @@ def test_file_transfer_hsi():
 
         cat = col.search(variable=['SST'])
 
-        query_results = _ensure_file_access(cat.ds)
-        local_urlpaths = query_results['file_fullpath'].tolist()
+        query_results = _ensure_file_access(cat.df)
+        local_urlpaths = query_results['store_fullpath'].tolist()
         assert isinstance(local_urlpaths, list)
         assert len(local_urlpaths) > 0
 
@@ -140,8 +140,8 @@ def test_filter_query_results():
     ]
     direct_access = [True, False, False]
     df = pd.DataFrame(
-        {'resource_type': resource_type, 'file_basename': files, 'direct_access': direct_access}
+        {'resource_type': resource_type, 'store_fullpath': files, 'direct_access': direct_access}
     )
 
-    query_results = _filter_query_results(df.to_xarray(), file_basename_column_name='file_basename')
-    assert len(query_results.index) == 2
+    query_results = _filter_query_results(df, 'store_fullpath')
+    assert len(query_results) == 2

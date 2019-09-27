@@ -201,6 +201,7 @@ def _open_collection(collection_name):
     collections = _get_built_collections()
 
     with xr.open_dataset(collections[collection_name], engine='netcdf4') as ds:
+        ds['direct_access'] = ds['direct_access'].astype(bool)
         return ds
 
 

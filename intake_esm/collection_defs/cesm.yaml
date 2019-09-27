@@ -1,9 +1,6 @@
 collections:
   cesm:
     collection_columns:
-    - resource
-    - resource_type
-    - direct_access
     - experiment
     - case
     - component
@@ -11,18 +8,16 @@ collections:
     - variable
     - date_range
     - member_id
-    - file_fullpath
-    - file_basename
+    - store_fullpath
     - ctrl_branch_year
     - year_offset
     - sequence_order
-    - grid
     order_by_columns:
       - sequence_order
-      - file_fullpath
+      - store_fullpath
     required_columns:
       - sequence_order
-      - file_fullpath
+      - store_fullpath
     component_streams:
       atm:
       - cam.h0

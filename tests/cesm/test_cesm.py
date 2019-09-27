@@ -28,7 +28,7 @@ def test_build_collection_cesm1_le():
         col = intake.open_esm_metadatastore(
             collection_input_definition=collection_input_definition, overwrite_existing=True
         )
-        assert isinstance(col.ds, xr.Dataset)
+        assert isinstance(col.df, pd.DataFrame)
 
 
 @pytest.mark.xfail(reason='Feature not yet implemented')
@@ -67,7 +67,6 @@ def test_to_xarray_cesm(chunks, expected_chunks):
             'variable': ['STF_O2', 'SHF'],
             'member_id': [1, 3, 9],
             'experiment': ['20C', 'RCP85'],
-            'direct_access': True,
         }
         cat = c.search(**query)
         dset = cat.to_xarray(chunks=chunks)
@@ -78,22 +77,8 @@ def test_to_xarray_cesm(chunks, expected_chunks):
 @pytest.mark.parametrize(
     'query',
     [
-        (
-            {
-                'variable': ['STF_O2', 'SHF'],
-                'member_id': [1, 3, 9],
-                'experiment': ['20C', 'RCP85'],
-                'direct_access': True,
-            }
-        ),
-        (
-            {
-                'variable': ['STF_O2', 'SHF'],
-                'member_id': [1],
-                'experiment': ['20C', 'RCP85'],
-                'direct_access': True,
-            }
-        ),
+        ({'variable': ['STF_O2', 'SHF'], 'member_id': [1, 3, 9], 'experiment': ['20C', 'RCP85']}),
+        ({'variable': ['STF_O2', 'SHF'], 'member_id': [1], 'experiment': ['20C', 'RCP85']}),
     ],
 )
 def test_to_xarray_restore_non_coords(query):
