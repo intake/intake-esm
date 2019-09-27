@@ -29,7 +29,7 @@ def test_build_collection_file():
             collection_input_definition=cdef, overwrite_existing=True
         )
         col = intake.open_esm_metadatastore(collection_name='cmip6_test_collection')
-        assert isinstance(col.ds, xr.Dataset)
+        assert isinstance(col._collection, xr.Dataset)
         assert isinstance(col.nunique(), pd.Series)
         assert isinstance(col.unique(), dict)
         assert set(col.df.grid_label.unique()) == set(['gr', 'gn'])
@@ -53,9 +53,8 @@ def test_search():
     with config.set({'database-directory': './tests/test_collections'}):
         c = intake.open_esm_metadatastore(collection_name='cmip6_test_collection')
         cat = c.search(source_id=['BCC-ESM1', 'CNRM-CM6-1', 'CNRM-ESM2-1'])
-        assert isinstance(cat.ds, xr.Dataset)
-        assert len(cat.ds.index) > 0
 
+        assert len(cat.df) > 0
         assert isinstance(cat.df, pd.DataFrame)
         assert isinstance(cat.nunique(), pd.Series)
         assert isinstance(cat.unique(), dict)

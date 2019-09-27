@@ -13,7 +13,6 @@ from intake.source.utils import reverse_format
 from intake.utils import yaml_load
 
 from . import config
-from .storage import _get_hsi_files, _posix_symlink
 
 _default_cache_dir = config.get('database-directory')
 _default_cache_dir = f'{_default_cache_dir}/bld-collection-input'
@@ -201,9 +200,8 @@ def _open_collection(collection_name):
     """ Open an ESM collection"""
     collections = _get_built_collections()
 
-    ds = xr.open_dataset(collections[collection_name], engine='netcdf4')
-    ds['direct_access'] = ds['direct_access'].astype(bool)
-    return ds
+    with xr.open_dataset(collections[collection_name], engine='netcdf4') as ds:
+        return ds
 
 
 def get_subset(collection_name, query, order_by=None):
@@ -211,22 +209,27 @@ def get_subset(collection_name, query, order_by=None):
 
     ds = _open_collection(collection_name)
     collection_type = ds.attrs['collection_type']
-    condition = np.ones(len(ds.index), dtype=bool)
+    df = ds.to_dataframe()
+    condition = np.ones(len(df), dtype=bool)
+
     for key, val in query.items():
+
         if isinstance(val, list):
-            condition_i = np.zeros(len(ds.index), dtype=bool)
+            condition_i = np.zeros(len(df), dtype=bool)
             for val_i in val:
-                condition_i = condition_i | (ds[key] == val_i)
+                condition_i = condition_i | (df[key] == val_i)
             condition = condition & condition_i
 
         elif val is not None:
-            condition = condition & (ds[key] == val)
-    query_results = ds.where(condition, drop=True)
+            condition = condition & (df[key] == val)
+
+    query_results = df.loc[condition]
 
     if order_by is None:
         order_by = config.get('collections')[collection_type]['order-by-columns']
 
-    query_results = query_results.sortby(order_by, ascending=True)
+    query_results = query_results.sort_values(by=order_by, ascending=True)
+
     return query_results
 
 
@@ -305,59 +308,62 @@ def _reverse_filename_format(file_basename, filename_template=None, gridspec_tem
             return {}
 
 
-def _filter_query_results(ds, file_basename_column_name):
+def _filter_query_results(query_results, store_fullpath_column_name):
     """Filter for entries where file_basename is the same and remove all
        but the first ``direct_access = True`` row."""
+    import os
 
-    groups = ds.groupby(file_basename_column_name)
+    query_results['store_basename'] = query_results[store_fullpath_column_name].map(
+        lambda x: os.path.basename(x)
+    )
+    groups = query_results.groupby('store_basename')
 
     gps = []
     for _, group in groups:
 
-        g = group.where(group['direct_access'], drop=True)
+        g = group[group['direct_access']]
         # File does not exist on resource with high priority
-        if len(g.index) == 0:
+        if g.empty:
             gps.append(group)
 
         else:
             gps.append(g)
 
-    ds = xr.concat(gps, dim='index')
-    return ds
+    query_results = pd.concat(gps)
+    return query_results
 
 
-def _ensure_file_access(
-    ds, file_fullpath_column_name='file_fullpath', file_basename_column_name='file_basename'
-):
+def _ensure_file_access(query_results, store_fullpath_column_name='store_fullpath'):
     """Ensure that requested files are available locally.
-
     Paramters
     ---------
-    ds : `xarray.Dataset`
+    query_results : `pandas.DataFrame`
         Results of a query.
-
     Returns
     -------
-    df : `pandas.DataFrame`
-        Results of a query in form of a DataFrame with a modified List of urls to use when loading files.
+    local_urlpaths : list
+        List of urls to access files in `query_results`.
     """
 
-    resource_types = {'hsi': _get_hsi_files, 'copy-to-cache': _posix_symlink}
+    from .storage import _get_hsi_stores, _posix_symlink
+
+    resource_types = {'hsi': _get_hsi_stores, 'copy-to-cache': _posix_symlink}
 
     data_cache_directory = config.get('data-cache-directory')
 
     os.makedirs(data_cache_directory, exist_ok=True)
 
     file_remote_local = {k: [] for k in resource_types.keys()}
-    ds = _filter_query_results(ds, file_basename_column_name)
-    df = ds.to_dataframe()
+
+    query_results = _filter_query_results(query_results, store_fullpath_column_name)
+
     local_urlpaths = []
-    for idx, row in df.iterrows():
+    for idx, row in query_results.iterrows():
         if row.direct_access:
-            local_urlpaths.append(row[file_fullpath_column_name])
+            local_urlpaths.append(row[store_fullpath_column_name])
 
         else:
-            file_remote = row[file_fullpath_column_name]
+            file_remote = row[store_fullpath_column_name]
             file_local = os.path.join(data_cache_directory, os.path.basename(file_remote))
             local_urlpaths.append(file_local)
 
@@ -372,6 +378,6 @@ def _ensure_file_access(
             print(f'transfering {len(file_remote_local[res_type])} files')
             resource_types[res_type](file_remote_local[res_type])
 
-    df[file_fullpath_column_name] = local_urlpaths
+    query_results[store_fullpath_column_name] = local_urlpaths
 
-    return df
+    return query_results

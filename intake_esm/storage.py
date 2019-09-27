@@ -37,24 +37,24 @@ class StorageResource(object):
         self.type = loc_type
         self.file_extension = file_extension
         self.exclude_patterns = exclude_patterns
-        self.filelist = self._list_files()
+        self.storelist = self._list_stores()
 
-    def _list_files(self):
-        """ Get file listing for different location types such as
+    def _list_stores(self):
+        """ Get store/file listing for different location types such as
             tapes, posix filesystem, filelist.
         """
 
         if self.type == 'posix':
-            filelist = self._list_files_posix()
+            filelist = self._list_stores_posix()
 
         elif self.type == 'hsi':
-            filelist = self._list_files_hsi()
+            filelist = self._list_stores_hsi()
 
         elif self.type == 'input-file':
-            filelist = self._list_files_input_file()
+            filelist = self._list_stores_input_file()
 
         elif self.type == 'copy-to-cache':
-            filelist = self._list_files_posix()
+            filelist = self._list_stores_posix()
 
         elif self.type == 'aws-s3':
             filelist = self._list_s3_objects()
@@ -90,17 +90,17 @@ class StorageResource(object):
                 'StorageResource() with `fs` set to your authentication object.'
             )
 
-    def _list_files_posix(self):
-        """Get a list of files"""
+    def _list_stores_posix(self):
+        """Get a list of stores or files"""
         try:
 
             w = os.walk(self.urlpath, followlinks=True)
 
             filelist = []
 
-            for root, dirs, files in w:
+            for root, dirs, stores in w:
                 filelist.extend(
-                    [os.path.join(root, f) for f in files if f.endswith(self.file_extension)]
+                    [os.path.join(root, f) for f in stores if f.endswith(self.file_extension)]
                 )
             return filelist
         except Exception as e:
@@ -109,8 +109,8 @@ class StorageResource(object):
             )
             return []
 
-    def _list_files_hsi(self):
-        """Get a list of files from HPSS tapes"""
+    def _list_stores_hsi(self):
+        """Get a list of stores/files from HPSS tapes"""
         if shutil.which('hsi') is None:
             warn(f'no hsi; cannot access [HSI]{self.urlpath}')
             return []
@@ -141,13 +141,13 @@ class StorageResource(object):
 
         return filelist
 
-    def _list_files_input_file(self):
-        """return a list of files from a file containing a list of files"""
+    def _list_stores_input_file(self):
+        """return a list of stores/files from a file containing a list of stores"""
         with open(self.urlpath, 'r') as fid:
             return fid.read().splitlines()
 
 
-def _transfer_files(processes):
+def _transfer_stores(processes):
 
     """Executes a list of child programs in new processes"""
 
@@ -184,7 +184,7 @@ def _transfer_files(processes):
 
 
 def _posix_symlink(file_remote_local):
-    """Create symlinks of posix files into data-cache-directory.
+    """Create symlinks of posix stores/files into data-cache-directory.
 
     Parameters
     ----------
@@ -195,11 +195,11 @@ def _posix_symlink(file_remote_local):
     cmds = [['ln', '-s', file_remote, file_local] for file_remote, file_local in file_remote_local]
     processes = [Popen(cmd, stderr=PIPE, stdout=PIPE) for cmd in cmds]
 
-    _transfer_files(processes)
+    _transfer_stores(processes)
 
 
-def _get_hsi_files(file_remote_local):
-    """Transfer files from HPSS.
+def _get_hsi_stores(file_remote_local):
+    """Transfer stores/files from HPSS.
 
     Parameters
     ----------
@@ -223,4 +223,4 @@ def _get_hsi_files(file_remote_local):
 
         processes = [Popen(cmd, stderr=PIPE, stdout=PIPE) for cmd in cmds]
 
-        _transfer_files(processes)
+        _transfer_stores(processes)

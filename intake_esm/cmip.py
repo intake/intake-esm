@@ -14,8 +14,8 @@ class CMIP5Collection(Collection):
     """
     )
 
-    def _get_file_attrs(self, filepath):
-        """ Extract attributes of a file using information from CMIP5 DRS.
+    def _get_store_attrs(self, storepath):
+        """ Extract attributes of a store/file using information from CMIP5 DRS.
 
         Notes
         -----
@@ -39,12 +39,11 @@ class CMIP5Collection(Collection):
         CMOR filename:
         <variable name>_<MIP table>_<model>_<experiment>_ <ensemble member>[_<temporal subset>][_<geographical info>].nc
         """
-        keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
+        keys = list(set(self.columns))
         fileparts = {key: None for key in keys}
 
-        file_basename = os.path.basename(filepath)
-        fileparts['file_basename'] = file_basename
-        fileparts['file_fullpath'] = filepath
+        file_basename = os.path.basename(storepath)
+        fileparts['store_fullpath'] = storepath
 
         filename_template = (
             '{variable}_{mip_table}_{model}_{experiment}_{ensemble_member}_{temporal_subset}.nc'
@@ -55,12 +54,11 @@ class CMIP5Collection(Collection):
         )
         fileparts.update(f)
 
-        parent = os.path.dirname(filepath).strip('/')
+        parent = os.path.dirname(storepath).strip('/')
         parent_split = parent.split(f"/{fileparts['model']}/")
         part_1 = parent_split[0].strip('/').split('/')
         part_2 = parent_split[1].strip('/').split('/')
 
-        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
         fileparts['institute'] = part_1[-1]
         fileparts['frequency'] = part_2[1]
         fileparts['modeling_realm'] = part_2[2]
@@ -72,7 +70,6 @@ class CMIP5Collection(Collection):
         product = _extract_attr_with_regex(parent, regex=product_regex) or 'unknown'
         version = _extract_attr_with_regex(parent, regex=version_regex) or 'v0'
         fileparts['version'] = version
-        fileparts['activity'] = config.get('collections.cmip5.mip_era')
         fileparts['product'] = product
 
         return fileparts
@@ -88,7 +85,7 @@ class CMIP5Source(BaseSource):
             dataset_fields=dataset_fields,
             member_column_name='ensemble_member',
             variable_column_name='variable',
-            file_fullpath_column_name='file_fullpath',
+            store_fullpath_column_name='store_fullpath',
         )
 
 
@@ -100,8 +97,8 @@ class CMIP6Collection(Collection):
     """
     )
 
-    def _get_file_attrs(self, filepath):
-        """ Extract attributes of a file using information from CMI6 DRS.
+    def _get_store_attrs(self, storepath):
+        """ Extract attributes of a store/file using information from CMIP6 DRS.
 
         Notes
         -----
@@ -133,12 +130,11 @@ class CMIP6Collection(Collection):
 
 
         """
-        keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
+        keys = list(set(self.columns))
         fileparts = {key: None for key in keys}
 
-        file_basename = os.path.basename(filepath)
-        fileparts['file_basename'] = file_basename
-        fileparts['file_fullpath'] = filepath
+        file_basename = os.path.basename(storepath)
+        fileparts['store_fullpath'] = storepath
 
         filename_template = '{variable_id}_{table_id}_{source_id}_{experiment_id}_{member_id}_{grid_label}_{time_range}.nc'
         gridspec_template = (
@@ -150,21 +146,14 @@ class CMIP6Collection(Collection):
         )
         fileparts.update(f)
 
-        parent = os.path.dirname(filepath).strip('/')
+        parent = os.path.dirname(storepath).strip('/')
         parent_split = parent.split(f"/{fileparts['source_id']}/")
         part_1 = parent_split[0].strip('/').split('/')
 
         grid_label = parent.split(f"/{fileparts['variable_id']}/")[1].strip('/').split('/')[0]
-
-        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
         fileparts['grid_label'] = grid_label
         fileparts['activity_id'] = part_1[-2]
         fileparts['institution_id'] = part_1[-1]
-
-        version_regex = r'v\d{4}\d{2}\d{2}|v\d{1}'
-        version = _extract_attr_with_regex(parent, regex=version_regex) or 'v0'
-        fileparts['version'] = version
-        fileparts['mip_era'] = config.get('collections.cmip6.mip_era')
         return fileparts
 
 
@@ -179,5 +168,5 @@ class CMIP6Source(BaseSource):
             dataset_fields=dataset_fields,
             member_column_name='member_id',
             variable_column_name='variable_id',
-            file_fullpath_column_name='file_fullpath',
+            store_fullpath_column_name='store_fullpath',
         )

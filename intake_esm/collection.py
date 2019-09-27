@@ -43,20 +43,22 @@ class Collection(ABC):
         self.collection_definition = config.get('collections').get(
             collection_spec['collection_type'], None
         )
-        self.columns = self.collection_definition.get(
+        self._public_columns = self.collection_definition.get(
             config.normalize_key('collection_columns'), None
         )
-        if not self.columns:
+        if not self._public_columns:
             raise ValueError(
                 f"Unable to locate collection columns for {collection_spec['collection_type']} collection type in {config.PATH}"
             )
+
+        self._private_columns = ['resource', 'resource_type', 'direct_access']
+
+        self.columns = self._public_columns + self._private_columns
         self.df = pd.DataFrame(columns=self.columns)
         self._ds = xr.Dataset()
         self.exclude_patterns = self._get_exclude_patterns()
         self.database_dir = Path(config.get('database-directory')).absolute()
         self.order_by_columns = self.collection_definition.get('order-by-columns')
-
-        self._validate()
 
         if self.database_dir:
             self.collection_db_file = Path(
@@ -71,10 +73,11 @@ class Collection(ABC):
         dfs = {}
         data_sources = self.collection_spec['data_sources'].items()
         for data_source, data_source_attrs in data_sources:
-            df_i = self.assemble_file_list(data_source, data_source_attrs, self.exclude_patterns)
+            df_i = self.assemble_store_list(data_source, data_source_attrs, self.exclude_patterns)
             dfs.update(df_i)
 
         self._ds = self._finalize_build(dfs).reset_index(drop=True).to_xarray()
+        print(self._ds)
 
         attrs = make_attrs(
             attrs={
@@ -86,15 +89,15 @@ class Collection(ABC):
         self._ds.attrs = attrs
         self._persist_db_file()
 
-    def assemble_file_list(self, data_source, data_source_attrs, exclude_patterns=[]):
-        """ Assemble file listing for data sources into Pandas dataframes.
+    def assemble_store_list(self, data_source, data_source_attrs, exclude_patterns=[]):
+        """ Assemble store/file listing for data sources into Pandas dataframes.
         """
-        df_files = {}
+        df_stores = {}
         for location in data_source_attrs['locations']:
             res_key = ':'.join(
                 [data_source, location['name'], location['loc_type'], location['urlpath']]
             )
-            if res_key not in df_files:
+            if res_key not in df_stores:
                 print(f'Getting file listing: {res_key}')
 
                 resource = StorageResource(
@@ -105,20 +108,20 @@ class Collection(ABC):
                     fs=self.fs,
                 )
 
-                df_files[res_key] = self._assemble_collection_df_files(
+                df_stores[res_key] = self._assemble_collection_df_stores(
                     resource_key=res_key,
                     resource_type=location['loc_type'],
                     direct_access=location['direct_access'],
-                    filelist=resource.filelist,
+                    storelist=resource.storelist,
                     urlpath=location['urlpath'],
                 )
-                df_files[res_key] = self._add_extra_attributes(
+                df_stores[res_key] = self._add_extra_attributes(
                     data_source,
-                    df_files[res_key],
+                    df_stores[res_key],
                     extra_attrs=data_source_attrs.get('extra_attributes', {}),
                 )
 
-        return df_files
+        return df_stores
 
     def _add_extra_attributes(self, data_source, df, extra_attrs):
         """ Add extra attributes to individual data sources.
@@ -132,48 +135,48 @@ class Collection(ABC):
                 df[key] = value
         return df
 
-    def _assemble_collection_df_files(
-        self, resource_key, resource_type, direct_access, filelist, urlpath=None
+    def _assemble_collection_df_stores(
+        self, resource_key, resource_type, direct_access, storelist, urlpath=None
     ):
         entries = {key: [] for key in self.columns}
-        if not filelist:
+        if not storelist:
             return pd.DataFrame(entries)
 
-        # Check parameters of _get_file_attrs for presence of urlpath for backwards compatibility
+        # Check parameters of _get_store_attrs for presence of urlpath for backwards compatibility
         from inspect import signature
 
-        sig = signature(self._get_file_attrs)
+        sig = signature(self._get_store_attrs)
         if 'urlpath' in sig.parameters:
             pass_urlpath = True
         else:
             pass_urlpath = False
 
-        for f in tqdm(filelist, desc='file listing', disable=not config.get('progress-bar')):
+        for f in tqdm(storelist, desc='store/file listing', disable=not config.get('progress-bar')):
             if pass_urlpath:
-                file_attrs = self._get_file_attrs(f, urlpath)
+                store_attrs = self._get_store_attrs(f, urlpath)
             else:
-                file_attrs = self._get_file_attrs(f)
+                store_attrs = self._get_store_attrs(f)
 
-            if not file_attrs:
+            if not store_attrs:
                 continue
 
-            file_attrs['resource'] = resource_key
-            file_attrs['resource_type'] = resource_type
-            file_attrs['direct_access'] = direct_access
+            store_attrs['resource'] = resource_key
+            store_attrs['resource_type'] = resource_type
+            store_attrs['direct_access'] = direct_access
 
             for col in self.columns:
-                entries[col].append(file_attrs.get(col, None))
+                entries[col].append(store_attrs.get(col, None))
 
         return pd.DataFrame(entries)
 
     @abstractclassmethod
-    def _get_file_attrs(self, filepath):
+    def _get_store_attrs(self, filepath):
         """Extract attributes from file path
 
         """
         pass
 
-    def _finalize_build(self, df_files):
+    def _finalize_build(self, df_stores):
         """ This method is used to finalize the build process by:
 
             - Removing duplicates
@@ -181,7 +184,7 @@ class Collection(ABC):
 
         Parameters
         ----------
-        df_files : dict
+        df_stores : dict
              Dictionary containing Pandas dataframes for different data sources
 
 
@@ -196,12 +199,12 @@ class Collection(ABC):
         Subclasses can implement custom version.
         """
 
-        df = pd.concat(list(df_files.values()), ignore_index=True, sort=False)
+        df = pd.concat(list(df_stores.values()), ignore_index=True, sort=False)
         # Reorder columns
         df = df[self.columns]
 
         # Remove duplicates
-        df = df.drop_duplicates(subset=['resource', 'file_fullpath'], keep='last').reset_index(
+        df = df.drop_duplicates(subset=['resource', 'store_fullpath'], keep='last').reset_index(
             drop=True
         )
         df = df.sort_values(self.order_by_columns)
@@ -209,7 +212,7 @@ class Collection(ABC):
         return df
 
     def _get_exclude_patterns(self):
-        """Get patterns of files and directories to exclude from
+        """Get patterns of stores and directories to exclude from
            the collection
         """
         collection_spec = self.collection_spec
@@ -224,33 +227,14 @@ class Collection(ABC):
 
         return exclude_patterns
 
-    def _validate(self):
-        """Checks that collection columns are properly defined in `config.yaml` file.
-        """
-        for req_col in config.get('collections')[self.collection_spec['collection_type']][
-            'required-columns'
-        ]:
-            if req_col not in self.columns:
-                raise ValueError(
-                    f"Missing required column: {req_col} for {self.collection_spec['collection_type']} in {config.PATH}"
-                )
-
     def _persist_db_file(self):
         """ Persist built collection database to disk.
         """
         if len(self._ds.index) > 0:
             print(f"Persisting {self.collection_spec['name']} at : {self.collection_db_file}")
 
-            if self.collection_db_file.exists():
-                self.collection_db_file.unlink()
-
-            # specify encoding to avoid: ValueError: unsupported dtype for netCDF4 variable: bool
-            self._ds.to_netcdf(
-                self.collection_db_file,
-                mode='w',
-                engine='netcdf4',
-                encoding={'direct_access': {'dtype': 'bool'}},
-            )
+            with open(self.collection_db_file, mode='w'):
+                self._ds.to_netcdf(self.collection_db_file, mode='w', engine='netcdf4')
 
         else:
             print(f"{self._ds} is an empty dataset. It won't be persisted to disk.")

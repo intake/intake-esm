@@ -84,7 +84,8 @@ class ESMMetadataStoreCatalog(Catalog):
         self.storage_options = storage_options or {}
         self.collection_type = None
         self.fs = None
-        self.ds = None
+        self._collection = None
+        self._df = None
         self.collections = _get_built_collections()
 
         if (
@@ -125,7 +126,7 @@ class ESMMetadataStoreCatalog(Catalog):
 
     @cached_property
     def df(self):
-        return self.ds.to_dataframe()
+        return self._df[self._public_columns]
 
     def nunique(self):
         """Count distinct observations across dataframe columns"""
@@ -199,14 +200,20 @@ class ESMMetadataStoreCatalog(Catalog):
 
     def open_collection(self, collection_name):
         """ Open an ESM collection """
-        self.ds = _open_collection(collection_name)
-        self.collection_name = self.ds.attrs['name']
-        self.collection_type = self.ds.attrs['collection_type']
+        self._collection = _open_collection(collection_name)
+        self.collection_name = self._collection.attrs['name']
+        self.collection_type = self._collection.attrs['collection_type']
+        self._public_columns = (
+            config.get('collections')
+            .get(self.collection_type)
+            .get(config.normalize_key('collection_columns'))
+        )
+        self._df = self._collection.to_dataframe()
 
     def search(self, **query):
         """ Search for entries in the collection catalog
         """
-        collection_columns = list(self.ds.data_vars)
+        collection_columns = list(self._df.columns)
         for key in query.keys():
             if key not in collection_columns:
                 raise ValueError(f'{key} is not in {self.collection_name}')
@@ -222,7 +229,7 @@ class ESMMetadataStoreCatalog(Catalog):
         driver = config.get('sources')[self.collection_type]
         description = f'Catalog entry generated from {self.collection_name} collection'
         keys = ['created_at', 'intake_esm_version', 'intake_version', 'intake_xarray_version']
-        metadata = {k: self.ds.attrs[k] for k in keys}
+        metadata = {k: self._collection.attrs[k] for k in keys}
         metadata['catalog_entry_generated_at'] = datetime.datetime.utcnow().isoformat()
 
         cat = LocalCatalogEntry(

@@ -28,7 +28,7 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
         self.collection_name = collection_name
         self.query = query
         self.urlpath = ''
-        self.ds = self.get_results()
+        self._df = self.get_results()
         self._ds = None
         self.storage_options = storage_options
         self.kwargs = kwargs
@@ -38,12 +38,12 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
 
     def get_results(self):
         """ Return collection entries matching query"""
-        ds = get_subset(self.collection_name, self.query)
-        return ds
+        df = get_subset(self.collection_name, self.query)
+        return df
 
     @cached_property
     def df(self):
-        return self.ds.to_dataframe()
+        return self._df
 
     def nunique(self):
         """Count distinct observations across dataframe columns"""
@@ -65,7 +65,7 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
     def _validate_kwargs(self, kwargs):
 
         _kwargs = kwargs.copy()
-        if len(self.ds.index) == 0:
+        if len(self.df) == 0:
             raise ValueError(f'Query={self.query} returned empty results')
 
         if 'decode_times' not in _kwargs:
@@ -97,14 +97,13 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
         dataset_fields,
         member_column_name,
         variable_column_name,
-        file_fullpath_column_name='file_fullpath',
-        file_basename_column_name='file_basename',
+        store_fullpath_column_name='store_fullpath',
     ):
         kwargs = self._validate_kwargs(self.kwargs)
 
         all_dsets = {}
-        ds = get_subset(self.collection_name, self.query)
-        df = _ensure_file_access(ds, file_fullpath_column_name, file_basename_column_name)
+        df = get_subset(self.collection_name, self.query)
+        df = _ensure_file_access(df, store_fullpath_column_name)
         grouped = df.groupby(dataset_fields)
         for dset_keys, dset_files in tqdm(
             grouped, desc='dataset', disable=not config.get('progress-bar')
@@ -119,7 +118,7 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
             ):
                 var_dsets = []
                 for v_id, v_files in m_files.groupby(variable_column_name):
-                    urlpath_ei_vi = v_files[file_fullpath_column_name].tolist()
+                    urlpath_ei_vi = v_files[store_fullpath_column_name].tolist()
                     dsets = [
                         aggregate.open_dataset_delayed(
                             url,

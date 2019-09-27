@@ -35,22 +35,23 @@ def test_build_collection_file():
         col = intake.open_esm_metadatastore(
             collection_input_definition=cdef, overwrite_existing=True
         )
-        assert isinstance(col.ds, xr.Dataset)
+        assert isinstance(col._collection, xr.Dataset)
+        assert isinstance(col.df, pd.DataFrame)
 
 
 def test_search():
     with config.set({'database-directory': './tests/test_collections'}):
         c = intake.open_esm_metadatastore(collection_name='cmip5_test_collection')
         cat = c.search(model=['CanESM2', 'CSIRO-Mk3-6-0'])
-        assert isinstance(cat.ds, xr.Dataset)
-        assert len(cat.ds.index) > 0
+        assert isinstance(cat.df, pd.DataFrame)
+        assert len(cat.df) > 0
 
 
 def test_cat():
     with config.set({'database-directory': './tests/test_collections'}):
         cat = intake.open_catalog(os.path.join(here, 'cmip5_catalog.yaml'))
         cat = cat['cmip5_test_collection_b4cf52c3-4879-44c6-955e-f341b1f9b2d9']
-        assert isinstance(cat.ds, xr.Dataset)
+        assert isinstance(cat.df, pd.DataFrame)
 
 
 def test_to_xarray_cmip_empty():
