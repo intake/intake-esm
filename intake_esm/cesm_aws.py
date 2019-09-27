@@ -20,12 +20,11 @@ class CESMAWSCollection(Collection):
     """
     )
 
-    def _get_file_attrs(self, storepath):
+    def _get_store_attrs(self, storepath):
         """ Extract each part of cesmLE-experiment-component-frequency-variable.zarr store pattern. """
-        keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
+        keys = list(set(self.columns))
         storeparts = {key: None for key in keys}
         store_meta = storepath.split('/')
-        storeparts['store_bucketname'] = 's3://' + store_meta[0]
         storeparts['store_fullpath'] = 's3://' + storepath
         storeparts['component'] = store_meta[1]
         storeparts['frequency'] = store_meta[2]
@@ -35,35 +34,6 @@ class CESMAWSCollection(Collection):
         storeparts['variable'] = x[-1].split('.')[0]
 
         return storeparts
-
-    def _finalize_build(self, df_files):
-        """ This method is used to finalize the build process by:
-
-            - Removing duplicates
-            - Adding extra metadata
-
-        Parameters
-        ----------
-        df_files : dict
-             Dictionary containing Pandas dataframes for different data sources
-
-
-        Returns
-        --------
-        df : pandas.DataFrame
-            Cleaned pandas dataframe containing all entries
-
-        """
-
-        df = pd.concat(list(df_files.values()), ignore_index=True, sort=False)
-        # Reorder columns
-        df = df[self.columns]
-
-        # Remove duplicates
-        df = df.drop_duplicates(subset=['resource', 'store_fullpath'], keep='last').reset_index(
-            drop=True
-        )
-        return df
 
 
 class CESMAWSSource(BaseSource):
@@ -96,7 +66,7 @@ class CESMAWSSource(BaseSource):
         kwargs = {}
         kwargs['time_coord_name'] = zarr_kwargs.pop('time_coord_name')
 
-        df = get_subset(self.collection_name, self.query).to_dataframe()
+        df = get_subset(self.collection_name, self.query)
         grouped = df.groupby(dataset_fields)
         all_dsets = {}
         for dset_keys, dset_stores in tqdm(

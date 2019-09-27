@@ -1,15 +1,11 @@
 collections:
   cesm-aws:
     collection_columns:
-    - resource
-    - resource_type
-    - direct_access
     - experiment
     - frequency
     - component
     - variable
     - store_fullpath
-    - store_bucketname
     order_by_columns:
       - variable
       - component
