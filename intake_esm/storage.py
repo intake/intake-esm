@@ -94,8 +94,8 @@ class StorageResource(object):
         else:
             self.fs = fsspec.filesystem(self.type, **self.storage_options)
             objects = self.fs.glob(f'{self.urlpath}/**.zmetadata')
+            objects = [f'{self.type}://{os.path.dirname(obj)}' for obj in objects]
 
-        objects = [f'{self.type}://{os.path.dirname(obj)}' for obj in objects]
         return objects
 
     def _list_stores_posix(self):
