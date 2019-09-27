@@ -126,7 +126,8 @@ class ESMMetadataStoreCatalog(Catalog):
 
     @cached_property
     def df(self):
-        return self._df[self._public_columns]
+        cols = config.get(f'collections.{self.collection_type}.collection_columns')
+        return self._df[cols]
 
     def nunique(self):
         """Count distinct observations across dataframe columns"""
@@ -193,11 +194,6 @@ class ESMMetadataStoreCatalog(Catalog):
         self._collection = _open_collection(collection_name)
         self.collection_name = self._collection.attrs['name']
         self.collection_type = self._collection.attrs['collection_type']
-        self._public_columns = (
-            config.get('collections')
-            .get(self.collection_type)
-            .get(config.normalize_key('collection_columns'))
-        )
         self._df = self._collection.to_dataframe()
 
     def search(self, **query):

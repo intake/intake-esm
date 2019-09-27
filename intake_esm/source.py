@@ -4,7 +4,7 @@ from cached_property import cached_property
 from tqdm.auto import tqdm
 
 from . import aggregate, config
-from .bld_collection_utils import _ensure_file_access, get_subset
+from .bld_collection_utils import _ensure_file_access, _open_collection, get_subset
 
 
 class BaseSource(intake_xarray.base.DataSourceMixin):
@@ -30,6 +30,9 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
         self.urlpath = ''
         self._df = self.get_results()
         self._ds = None
+
+        self._collection_type = _open_collection(collection_name).attrs['collection_type']
+
         self.storage_options = storage_options
         self.kwargs = kwargs
         super(BaseSource, self).__init__(**kwargs)
@@ -43,7 +46,8 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
 
     @cached_property
     def df(self):
-        return self._df
+        cols = config.get(f'collections.{self._collection_type}.collection_columns')
+        return self._df[cols]
 
     def nunique(self):
         """Count distinct observations across dataframe columns"""

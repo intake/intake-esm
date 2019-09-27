@@ -36,6 +36,8 @@ def test_search():
         col = intake.open_esm_metadatastore(collection_name='PANGEO-CMIP6')
         cat = col.search(variable_id=['pr', 'ts'], experiment_id='ssp370')
         assert len(cat.df) > 0
+        assert len(col.df.columns) == len(cat.df.columns)
+        assert len(cat._df.columns) >= len(cat.df.columns)
 
 
 def test_to_xarray():
