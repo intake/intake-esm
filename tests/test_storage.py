@@ -12,15 +12,6 @@ from intake_esm import config
 from intake_esm.bld_collection_utils import _ensure_file_access, _filter_query_results
 from intake_esm.storage import StorageResource
 
-CIRCLE_CI_CHECK = os.environ.get('CIRCLECI', False)
-if CIRCLE_CI_CHECK:
-    profile_name = None
-
-else:
-    profile_name = 'intake-esm-tester'
-
-storage_options = {'anon': False, 'profile_name': profile_name}
-
 here = os.path.abspath(os.path.dirname(__file__))
 
 regex = re.compile(r'cheyenne|casper')
@@ -63,27 +54,14 @@ def test_storage_hsi():
 
 
 def test_storage_aws_s3():
-    fs = s3fs.S3FileSystem(**storage_options)
     SR = StorageResource(
         urlpath='s3://ncar-cesm-lens/lnd/monthly/',
-        loc_type='aws-s3',
+        loc_type='s3',
         exclude_patterns=[],
         file_extension='.zarr',
-        fs=fs,
     )
     stores = SR.storelist
     assert len(stores) != 0
-
-
-def test_storage_aws_s3_failure():
-    with pytest.raises(ValueError):
-        _ = StorageResource(
-            urlpath='s3://ncar-cesm-lens/lnd/monthly/',
-            loc_type='aws-s3',
-            exclude_patterns=[],
-            file_extension='.zarr',
-            fs=None,
-        )
 
 
 def test_file_transfer_symlink():
@@ -99,7 +77,7 @@ def test_file_transfer_symlink():
         cat = col.search(variable=['STF_O2', 'SHF'])
 
         query_results = _ensure_file_access(cat.df)
-        local_urlpaths = query_results['store_fullpath'].tolist()
+        local_urlpaths = query_results['path'].tolist()
         assert isinstance(local_urlpaths, list)
         assert len(local_urlpaths) > 0
 
@@ -124,7 +102,7 @@ def test_file_transfer_hsi():
         cat = col.search(variable=['SST'])
 
         query_results = _ensure_file_access(cat.df)
-        local_urlpaths = query_results['store_fullpath'].tolist()
+        local_urlpaths = query_results['path'].tolist()
         assert isinstance(local_urlpaths, list)
         assert len(local_urlpaths) > 0
 
@@ -140,8 +118,8 @@ def test_filter_query_results():
     ]
     direct_access = [True, False, False]
     df = pd.DataFrame(
-        {'resource_type': resource_type, 'store_fullpath': files, 'direct_access': direct_access}
+        {'resource_type': resource_type, 'path': files, 'direct_access': direct_access}
     )
 
-    query_results = _filter_query_results(df, 'store_fullpath')
+    query_results = _filter_query_results(df, 'path')
     assert len(query_results) == 2

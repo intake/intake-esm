@@ -5,13 +5,13 @@ collections:
     - frequency
     - component
     - variable
-    - store_fullpath
+    - path
     order_by_columns:
       - variable
       - component
       - frequency
     required_columns:
-      - store_fullpath
+      - path
       - variable
       - frequency
       - component

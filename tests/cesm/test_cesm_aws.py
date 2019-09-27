@@ -8,14 +8,6 @@ import yaml
 
 from intake_esm import config
 
-CIRCLE_CI_CHECK = os.environ.get('CIRCLECI', False)
-if CIRCLE_CI_CHECK:
-    profile_name = None
-
-else:
-    profile_name = 'intake-esm-tester'
-
-storage_options = {'anon': False, 'profile_name': profile_name}
 cdef = yaml.safe_load(
     """
 name: AWS-CESM1-LE
@@ -24,7 +16,7 @@ data_sources:
   land:
     locations:
       - name: land-monthly
-        loc_type: aws-s3
+        loc_type: s3
         direct_access: True
         urlpath: s3://ncar-cesm-lens/lnd/monthly
         file_extension: .zarr
@@ -32,7 +24,7 @@ data_sources:
   ocean:
     locations:
       - name: ocean-monthly
-        loc_type: aws-s3
+        loc_type: s3
         direct_access: True
         urlpath: s3://ncar-cesm-lens/ocn/monthly
         file_extension: .zarr
@@ -43,28 +35,22 @@ data_sources:
 def test_build_collection_cesm1_aws_le():
     with config.set({'database-directory': './tests/test_collections'}):
         col = intake.open_esm_metadatastore(
-            collection_input_definition=cdef,
-            overwrite_existing=True,
-            storage_options=storage_options,
+            collection_input_definition=cdef, overwrite_existing=True
         )
         assert isinstance(col.df, pd.DataFrame)
 
 
 def test_search():
     with config.set({'database-directory': './tests/test_collections'}):
-        col = intake.open_esm_metadatastore(
-            collection_name='AWS-CESM1-LE', storage_options=storage_options
-        )
+        col = intake.open_esm_metadatastore(collection_name='AWS-CESM1-LE')
         cat = col.search(variable=['RAIN', 'FSNO'])
         assert len(cat.df) > 0
 
 
 def test_to_xarray():
     with config.set({'database-directory': './tests/test_collections'}):
-        col = intake.open_esm_metadatastore(
-            collection_name='AWS-CESM1-LE', storage_options=storage_options
-        )
-        cat = col.search(variable='FSNO', experiment='20C', component='lnd')
+        col = intake.open_esm_metadatastore(collection_name='AWS-CESM1-LE')
+        cat = col.search(variable='SALT', experiment='20C')
         dsets = cat.to_xarray()
         _, ds = dsets.popitem()
         assert isinstance(ds, xr.Dataset)

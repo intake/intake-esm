@@ -309,12 +309,12 @@ def _reverse_filename_format(file_basename, filename_template=None, gridspec_tem
             return {}
 
 
-def _filter_query_results(query_results, store_fullpath_column_name):
+def _filter_query_results(query_results, path_column_name):
     """Filter for entries where file_basename is the same and remove all
        but the first ``direct_access = True`` row."""
     import os
 
-    query_results['store_basename'] = query_results[store_fullpath_column_name].map(
+    query_results['store_basename'] = query_results[path_column_name].map(
         lambda x: os.path.basename(x)
     )
     groups = query_results.groupby('store_basename')
@@ -334,7 +334,7 @@ def _filter_query_results(query_results, store_fullpath_column_name):
     return query_results
 
 
-def _ensure_file_access(query_results, store_fullpath_column_name='store_fullpath'):
+def _ensure_file_access(query_results, path_column_name='path'):
     """Ensure that requested files are available locally.
     Paramters
     ---------
@@ -356,15 +356,15 @@ def _ensure_file_access(query_results, store_fullpath_column_name='store_fullpat
 
     file_remote_local = {k: [] for k in resource_types.keys()}
 
-    query_results = _filter_query_results(query_results, store_fullpath_column_name)
+    query_results = _filter_query_results(query_results, path_column_name)
 
     local_urlpaths = []
     for idx, row in query_results.iterrows():
         if row.direct_access:
-            local_urlpaths.append(row[store_fullpath_column_name])
+            local_urlpaths.append(row[path_column_name])
 
         else:
-            file_remote = row[store_fullpath_column_name]
+            file_remote = row[path_column_name]
             file_local = os.path.join(data_cache_directory, os.path.basename(file_remote))
             local_urlpaths.append(file_local)
 
@@ -379,6 +379,6 @@ def _ensure_file_access(query_results, store_fullpath_column_name='store_fullpat
             print(f'transfering {len(file_remote_local[res_type])} files')
             resource_types[res_type](file_remote_local[res_type])
 
-    query_results[store_fullpath_column_name] = local_urlpaths
+    query_results[path_column_name] = local_urlpaths
 
     return query_results

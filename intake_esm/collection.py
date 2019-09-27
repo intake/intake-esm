@@ -142,10 +142,10 @@ class Collection(ABC):
         if not storelist:
             return pd.DataFrame(entries)
 
-        # Check parameters of _get_store_attrs for presence of urlpath for backwards compatibility
+        # Check parameters of _get_path_attrs for presence of urlpath for backwards compatibility
         from inspect import signature
 
-        sig = signature(self._get_store_attrs)
+        sig = signature(self._get_path_attrs)
         if 'urlpath' in sig.parameters:
             pass_urlpath = True
         else:
@@ -153,9 +153,9 @@ class Collection(ABC):
 
         for f in tqdm(storelist, desc='store/file listing', disable=not config.get('progress-bar')):
             if pass_urlpath:
-                store_attrs = self._get_store_attrs(f, urlpath)
+                store_attrs = self._get_path_attrs(f, urlpath)
             else:
-                store_attrs = self._get_store_attrs(f)
+                store_attrs = self._get_path_attrs(f)
 
             if not store_attrs:
                 continue
@@ -170,7 +170,7 @@ class Collection(ABC):
         return pd.DataFrame(entries)
 
     @abstractclassmethod
-    def _get_store_attrs(self, filepath):
+    def _get_path_attrs(self, filepath):
         """Extract attributes from file path
 
         """
@@ -204,9 +204,7 @@ class Collection(ABC):
         df = df[self.columns]
 
         # Remove duplicates
-        df = df.drop_duplicates(subset=['resource', 'store_fullpath'], keep='last').reset_index(
-            drop=True
-        )
+        df = df.drop_duplicates(subset=['resource', 'path'], keep='last').reset_index(drop=True)
         df = df.sort_values(self.order_by_columns)
 
         return df

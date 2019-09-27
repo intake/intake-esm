@@ -14,7 +14,7 @@ class CMIP5Collection(Collection):
     """
     )
 
-    def _get_store_attrs(self, storepath):
+    def _get_path_attrs(self, storepath):
         """ Extract attributes of a store/file using information from CMIP5 DRS.
 
         Notes
@@ -43,7 +43,7 @@ class CMIP5Collection(Collection):
         fileparts = {key: None for key in keys}
 
         file_basename = os.path.basename(storepath)
-        fileparts['store_fullpath'] = storepath
+        fileparts['path'] = storepath
 
         filename_template = (
             '{variable}_{mip_table}_{model}_{experiment}_{ensemble_member}_{temporal_subset}.nc'
@@ -85,7 +85,7 @@ class CMIP5Source(BaseSource):
             dataset_fields=dataset_fields,
             member_column_name='ensemble_member',
             variable_column_name='variable',
-            store_fullpath_column_name='store_fullpath',
+            path_column_name='path',
         )
 
 
@@ -97,7 +97,7 @@ class CMIP6Collection(Collection):
     """
     )
 
-    def _get_store_attrs(self, storepath):
+    def _get_path_attrs(self, storepath):
         """ Extract attributes of a store/file using information from CMIP6 DRS.
 
         Notes
@@ -134,7 +134,7 @@ class CMIP6Collection(Collection):
         fileparts = {key: None for key in keys}
 
         file_basename = os.path.basename(storepath)
-        fileparts['store_fullpath'] = storepath
+        fileparts['path'] = storepath
 
         filename_template = '{variable_id}_{table_id}_{source_id}_{experiment_id}_{member_id}_{grid_label}_{time_range}.nc'
         gridspec_template = (
@@ -168,5 +168,5 @@ class CMIP6Source(BaseSource):
             dataset_fields=dataset_fields,
             member_column_name='member_id',
             variable_column_name='variable_id',
-            store_fullpath_column_name='store_fullpath',
+            path_column_name='path',
         )

@@ -4,7 +4,7 @@ collections:
     - activity
     - ensemble_member
     - experiment
-    - store_fullpath
+    - path
     - frequency
     - institute
     - mip_table
@@ -34,7 +34,7 @@ collections:
     - source_id
     - table_id
     - variable_id
-    - store_fullpath
+    - path
     order_by_columns:
       - member_id
     required_columns:

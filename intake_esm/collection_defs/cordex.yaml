@@ -8,9 +8,9 @@ collections:
     - frequency
     - grid
     - bias_corrected_or_raw
-    - store_fullpath
+    - path
     order_by_columns:
       - variable
     required_columns:
       - variable
-      - store_fullpath
+      - path

@@ -1,7 +1,7 @@
 collections:
   era5:
     collection_columns:
-      - store_fullpath
+      - path
       - forecast_initial_date
       - forecast_initial_hour
       - grid
@@ -19,8 +19,8 @@ collections:
       - product_type
       - level_type
       - stream
-      - store_fullpath
+      - path
     order_by_columns:
       - level_type
       - product_type
-      - store_fullpath
+      - path

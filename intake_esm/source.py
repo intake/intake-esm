@@ -18,7 +18,7 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
 
     query : dict
 
-    storage_optinos : dict
+    storage_options : dict
 
     kwargs :
         Further parameters are passed to to_xarray() method
@@ -93,17 +93,13 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
         raise NotImplementedError()
 
     def _open_dataset_groups(
-        self,
-        dataset_fields,
-        member_column_name,
-        variable_column_name,
-        store_fullpath_column_name='store_fullpath',
+        self, dataset_fields, member_column_name, variable_column_name, path_column_name='path'
     ):
         kwargs = self._validate_kwargs(self.kwargs)
 
         all_dsets = {}
         df = get_subset(self.collection_name, self.query)
-        df = _ensure_file_access(df, store_fullpath_column_name)
+        df = _ensure_file_access(df, path_column_name)
         grouped = df.groupby(dataset_fields)
         for dset_keys, dset_files in tqdm(
             grouped, desc='dataset', disable=not config.get('progress-bar')
@@ -118,7 +114,7 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
             ):
                 var_dsets = []
                 for v_id, v_files in m_files.groupby(variable_column_name):
-                    urlpath_ei_vi = v_files[store_fullpath_column_name].tolist()
+                    urlpath_ei_vi = v_files[path_column_name].tolist()
                     dsets = [
                         aggregate.open_dataset_delayed(
                             url,

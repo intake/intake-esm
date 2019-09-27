@@ -20,12 +20,12 @@ class CESMAWSCollection(Collection):
     """
     )
 
-    def _get_store_attrs(self, storepath):
+    def _get_path_attrs(self, storepath):
         """ Extract each part of cesmLE-experiment-component-frequency-variable.zarr store pattern. """
         keys = list(set(self.columns))
         storeparts = {key: None for key in keys}
         store_meta = storepath.split('/')
-        storeparts['store_fullpath'] = 's3://' + storepath
+        storeparts['path'] = storepath
         storeparts['component'] = store_meta[1]
         storeparts['frequency'] = store_meta[2]
 
@@ -78,7 +78,7 @@ class CESMAWSSource(BaseSource):
             for exp_id, exp_stores in grouped_exp:
                 exp_dsets = []
                 for v_id, v_stores in exp_stores.groupby('variable'):
-                    urlpath_ei_vi = v_stores['store_fullpath'].tolist()
+                    urlpath_ei_vi = v_stores['path'].tolist()
                     v_dsets = [
                         aggregate.open_store(
                             url,

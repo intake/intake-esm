@@ -2,8 +2,8 @@ import datetime
 import os
 import uuid
 
+import fsspec
 import numpy as np
-import s3fs
 from cached_property import cached_property
 from intake.catalog import Catalog
 from intake.catalog.local import LocalCatalogEntry
@@ -152,7 +152,7 @@ class ESMMetadataStoreCatalog(Catalog):
         for key, values in info.items():
             output.append(f'{values} {key}(s)\n')
         output = '\n\t> '.join(output)
-        items = len(self.ds.index)
+        items = len(self.df.index)
         return f'{self.collection_name.upper()} collection catalogue with {items} entries:\n\t> {output}'
 
     def _validate_collection_definition(self, definition, **kwargs):
@@ -172,8 +172,6 @@ class ESMMetadataStoreCatalog(Catalog):
 
         name = input_collection.get('name', None)
         self.collection_type = input_collection.get('collection_type', None)
-        if self.collection_type == 'cesm-aws':
-            self._get_s3_connection_info()
         if name is None or self.collection_type is None:
             raise ValueError(f'name and/or collection_type keys are missing from {definition}')
         else:
@@ -189,14 +187,6 @@ class ESMMetadataStoreCatalog(Catalog):
             cc.build()
             self.collections = _get_built_collections()
         self.open_collection(name)
-
-    def _get_s3_connection_info(self):
-        try:
-            if 'requester_pays' not in self.storage_options:
-                self.storage_options['requester_pays'] = True
-            self.fs = s3fs.S3FileSystem(**self.storage_options)
-        except Exception as exc:
-            raise exc
 
     def open_collection(self, collection_name):
         """ Open an ESM collection """

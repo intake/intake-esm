@@ -15,7 +15,9 @@ from . import config
 class StorageResource(object):
     """ Defines a storage resource object"""
 
-    def __init__(self, urlpath, loc_type, exclude_patterns, file_extension='.nc', fs=None):
+    def __init__(
+        self, urlpath, loc_type, exclude_patterns, file_extension='.nc', fs=None, storage_options={}
+    ):
         """
 
         Parameters
@@ -33,6 +35,7 @@ class StorageResource(object):
         """
 
         self.fs = fs
+        self.storage_options = storage_options
         self.urlpath = urlpath
         self.type = loc_type
         self.file_extension = file_extension
@@ -56,8 +59,8 @@ class StorageResource(object):
         elif self.type == 'copy-to-cache':
             filelist = self._list_stores_posix()
 
-        elif self.type == 'aws-s3':
-            filelist = self._list_s3_objects()
+        elif self.type == 's3' or self.type == 'gs':
+            filelist = self._list_objects()
 
         else:
             raise ValueError(f'unknown resource type: {self.type}')
@@ -69,26 +72,20 @@ class StorageResource(object):
             fnmatch.fnmatch(path, pat=exclude_pattern) for exclude_pattern in self.exclude_patterns
         )
 
-    def _list_s3_objects(self):
-        """ Get a list of s3 objects.
-
-        Notes
-        -----
-        The following implementation uses
-        s3fs: https://github.com/dask/s3fs for S3 Filesystem.
+    def _list_objects(self):
+        """ Get a list of AWS s3 or Google Storage objects.
         """
-        if self.fs:
-            try:
-                objects = self.fs.ls(self.urlpath)[1:]
-                objects = [obj for obj in objects if obj.endswith(self.file_extension)]
-                return objects
-            except Exception as exc:
-                raise exc
-        else:
-            raise ValueError(
-                'Please authenticate with s3fs, and make sure to call\n'
-                'StorageResource() with `fs` set to your authentication object.'
-            )
+        import fsspec
+
+        self.fs = fsspec.filesystem(self.type, **self.storage_options)
+        try:
+            objects = self.fs.ls(self.urlpath)[1:]
+            objects = [
+                f'{self.type}://{obj}' for obj in objects if obj.endswith(self.file_extension)
+            ]
+            return objects
+        except Exception as exc:
+            raise exc
 
     def _list_stores_posix(self):
         """Get a list of stores or files"""

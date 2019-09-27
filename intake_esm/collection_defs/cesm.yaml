@@ -8,16 +8,16 @@ collections:
     - variable
     - date_range
     - member_id
-    - store_fullpath
+    - path
     - ctrl_branch_year
     - year_offset
     - sequence_order
     order_by_columns:
       - sequence_order
-      - store_fullpath
+      - path
     required_columns:
       - sequence_order
-      - store_fullpath
+      - path
     component_streams:
       atm:
       - cam.h0

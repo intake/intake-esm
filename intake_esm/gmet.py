@@ -17,12 +17,12 @@ class GMETCollection(Collection):
     """
     )
 
-    def _get_store_attrs(self, filepath):
+    def _get_path_attrs(self, filepath):
         file_basename = os.path.basename(filepath)
         keys = list(set(self.columns))
 
         fileparts = {key: None for key in keys}
-        fileparts['store_fullpath'] = filepath
+        fileparts['path'] = filepath
 
         date_str_regex = r'\d{8}\_\d{8}'
         datestr = _extract_attr_with_regex(filepath, regex=date_str_regex)
@@ -54,7 +54,7 @@ class GMETSource(BaseSource):
         member_ids = []
         member_dsets = []
         for m_id, m_files in tqdm(df, desc='member', disable=not config.get('progress-bar')):
-            files = m_files['store_fullpath'].tolist()
+            files = m_files['path'].tolist()
             dsets = [
                 aggregate.open_dataset_delayed(
                     url,
