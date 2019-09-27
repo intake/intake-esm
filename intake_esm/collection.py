@@ -98,14 +98,13 @@ class Collection(ABC):
                 [data_source, location['name'], location['loc_type'], location['urlpath']]
             )
             if res_key not in df_stores:
-                print(f'Getting file listing: {res_key}')
+                print(f'Getting store/file listing: {res_key}')
 
                 resource = StorageResource(
                     urlpath=location['urlpath'],
                     loc_type=location['loc_type'],
                     exclude_patterns=exclude_patterns,
                     file_extension=location.get('file_extension', '.nc'),
-                    fs=self.fs,
                 )
 
                 df_stores[res_key] = self._assemble_collection_df_stores(
@@ -151,7 +150,7 @@ class Collection(ABC):
         else:
             pass_urlpath = False
 
-        for f in tqdm(storelist, desc='store/file listing', disable=not config.get('progress-bar')):
+        for f in tqdm(storelist, desc='Progress', disable=not config.get('progress-bar')):
             if pass_urlpath:
                 store_attrs = self._get_path_attrs(f, urlpath)
             else:

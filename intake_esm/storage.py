@@ -16,7 +16,7 @@ class StorageResource(object):
     """ Defines a storage resource object"""
 
     def __init__(
-        self, urlpath, loc_type, exclude_patterns, file_extension='.nc', fs=None, storage_options={}
+        self, urlpath, loc_type, exclude_patterns, file_extension='.nc', storage_options={}
     ):
         """
 
@@ -31,13 +31,15 @@ class StorageResource(object):
                Directories to exclude during catalog generation
         file_extension : str, default `.nc`
               File extension
+        storage_options : dict
+            Parameters to pass to requests when issuing http commands to remote
+            backend file-systems such as s3.
 
         """
 
-        self.fs = fs
         self.storage_options = {'anon': True} or storage_options
         self.urlpath = urlpath
-        self.type = loc_type
+        self.loc_type = loc_type
         self.file_extension = file_extension
         self.exclude_patterns = exclude_patterns
         self.storelist = self._list_stores()
@@ -47,23 +49,26 @@ class StorageResource(object):
             tapes, posix filesystem, filelist.
         """
 
-        if self.type == 'posix':
+        if self.loc_type == 'posix':
             filelist = self._list_stores_posix()
 
-        elif self.type == 'hsi':
+        elif self.loc_type == 'hsi':
             filelist = self._list_stores_hsi()
 
-        elif self.type == 'input-file':
+        elif self.loc_type == 'input-file':
             filelist = self._list_stores_input_file()
 
-        elif self.type == 'copy-to-cache':
+        elif self.loc_type == 'copy-to-cache':
             filelist = self._list_stores_posix()
 
-        elif self.type == 's3' or self.type == 'gs':
-            filelist = self._list_objects()
+        elif self.loc_type == 's3':
+            filelist = self._list_s3_objects()
+
+        elif self.loc_type == 'gs':
+            filelist = self._list_gs_objects()
 
         else:
-            raise ValueError(f'unknown resource type: {self.type}')
+            raise ValueError(f'unknown resource type: {self.loc_type}')
 
         return list(filter(self._filter_func, filelist))
 
@@ -72,34 +77,38 @@ class StorageResource(object):
             fnmatch.fnmatch(path, pat=exclude_pattern) for exclude_pattern in self.exclude_patterns
         )
 
-    def _list_objects(self):
-        """ Get a list of AWS s3 or Google Storage objects.
-        """
-        from distutils.spawn import find_executable
+    def _list_s3_objects(self):
+        """ Get a list of AWS S3 objects"""
         import fsspec
 
-        objects = []
-        if self.type == 'gs':
-            has_gsutil = find_executable('gsutil')
-            if not has_gsutil:
-                raise RuntimeError('Please install google-cloud-sdk to access Google Storage')
-
-            cmd = f'gsutil -m ls {self.urlpath}/**.zmetadata'
-            p = Popen(cmd, shell=True, stderr=PIPE, stdout=PIPE)
-            out, err = p.communicate()
-
-            if p.returncode == 0:
-                objects = out.decode('UTF-8').strip().split('\n')
-
-        else:
-            self.fs = fsspec.filesystem(self.type, **self.storage_options)
-            objects = self.fs.glob(f'{self.urlpath}/**.zmetadata')
-            objects = [f'{self.type}://{os.path.dirname(obj)}' for obj in objects]
-
+        self.fs = fsspec.filesystem(self.loc_type, **self.storage_options)
+        objects = self.fs.glob(f'{self.urlpath}/**.zmetadata')
+        objects = [f'{self.loc_type}://{os.path.dirname(obj)}' for obj in objects]
         return objects
 
+    def _list_gs_objects(self):
+        """ Get a list of Google Storage objects.
+        """
+        from distutils.spawn import find_executable
+
+        has_gsutil = find_executable('gsutil')
+        if not has_gsutil:
+            raise RuntimeError('Please install google-cloud-sdk to access Google Storage')
+
+        cmd = f'gsutil -m ls {self.urlpath}/**.zmetadata'
+        p = Popen(cmd, shell=True, stderr=PIPE, stdout=PIPE)
+        out, err = p.communicate()
+
+        if p.returncode == 0:
+            objects = out.decode('UTF-8').strip().split('\n')
+            return objects
+        else:
+            raise RuntimeError(
+                f'{cmd} command failed: {p.returncode} {out.strip().decode()} {err.strip().decode()}'
+            )
+
     def _list_stores_posix(self):
-        """Get a list of stores or files"""
+        """Get a list of stores or files on a Posix filesystem"""
         try:
 
             w = os.walk(self.urlpath, followlinks=True)
