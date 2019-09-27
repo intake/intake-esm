@@ -17,4 +17,5 @@ dependencies:
   - tqdm
   - docrep
   - s3fs
+  - gcsfs
   - fsspec

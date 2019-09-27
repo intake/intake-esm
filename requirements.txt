@@ -5,4 +5,5 @@ pyyaml
 tqdm
 fsspec
 s3fs
+gcsfs
 cached-property

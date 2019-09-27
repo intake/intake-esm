@@ -79,10 +79,12 @@ class StorageResource(object):
 
         self.fs = fsspec.filesystem(self.type, **self.storage_options)
         try:
-            objects = self.fs.ls(self.urlpath)[1:]
-            objects = [
-                f'{self.type}://{obj}' for obj in objects if obj.endswith(self.file_extension)
-            ]
+            if self.file_extension == '.zarr':
+                objects = self.fs.glob(f'{self.urlpath}/**.zmetadata')
+            else:
+                objects = self.fs.glob(f'{self.urlpath}/**{self.file_extension}')
+
+            objects = [f'{self.type}://{os.path.dirname(obj)}' for obj in objects]
             return objects
         except Exception as exc:
             raise exc

@@ -107,7 +107,7 @@ class CMIP6Collection(Collection):
          2. Controlled Vocabularies (CVs) for use in CMIP6:
             https://github.com/WCRP-CMIP/CMIP6_CVs
 
-        Directory structure =
+        Directory structure for netCDF files=
 
         <mip_era>/
             <activity_id>/
@@ -129,31 +129,58 @@ class CMIP6Collection(Collection):
         Example with a sub-experiment:   pr_day_CNRM-CM6-1_dcppA-hindcast_s1960-r2i1p1f1_gn_198001-198412.nc
 
 
+        For Zarr-ified CMIP6, intake-esm assumes a very strict format
+
+        <activity_id>/
+            <institution_id>/
+                <source_id>/
+                    <experiment_id>/
+                        <member_id>/
+                            <table_id>/
+                                <variable_id>/
+                                    <grid_label>
+
         """
         keys = list(set(self.columns))
         fileparts = {key: None for key in keys}
-
-        file_basename = os.path.basename(storepath)
         fileparts['path'] = storepath
 
-        filename_template = '{variable_id}_{table_id}_{source_id}_{experiment_id}_{member_id}_{grid_label}_{time_range}.nc'
-        gridspec_template = (
-            '{variable_id}_{table_id}_{source_id}_{experiment_id}_{member_id}_{grid_label}.nc'
-        )
+        if storepath.endswith('.nc'):
+            file_basename = os.path.basename(storepath)
+            filename_template = '{variable_id}_{table_id}_{source_id}_{experiment_id}_{member_id}_{grid_label}_{time_range}.nc'
+            gridspec_template = (
+                '{variable_id}_{table_id}_{source_id}_{experiment_id}_{member_id}_{grid_label}.nc'
+            )
 
-        f = _reverse_filename_format(
-            file_basename, filename_template=filename_template, gridspec_template=gridspec_template
-        )
-        fileparts.update(f)
+            f = _reverse_filename_format(
+                file_basename,
+                filename_template=filename_template,
+                gridspec_template=gridspec_template,
+            )
 
-        parent = os.path.dirname(storepath).strip('/')
-        parent_split = parent.split(f"/{fileparts['source_id']}/")
-        part_1 = parent_split[0].strip('/').split('/')
+            fileparts.update(f)
 
-        grid_label = parent.split(f"/{fileparts['variable_id']}/")[1].strip('/').split('/')[0]
-        fileparts['grid_label'] = grid_label
-        fileparts['activity_id'] = part_1[-2]
-        fileparts['institution_id'] = part_1[-1]
+            parent = os.path.dirname(storepath).strip('/')
+            parent_split = parent.split(f"/{fileparts['source_id']}/")
+            part_1 = parent_split[0].strip('/').split('/')
+
+            grid_label = parent.split(f"/{fileparts['variable_id']}/")[1].strip('/').split('/')[0]
+            fileparts['grid_label'] = grid_label
+            fileparts['activity_id'] = part_1[-2]
+            fileparts['institution_id'] = part_1[-1]
+
+        else:
+            # For Zarr-ified CMIP6 data, we assume a very strict format:
+            # See docstring notes
+            parts = storepath.split('/')[-8:]
+            fileparts['activity_id'] = parts[0]
+            fileparts['institution_id'] = parts[1]
+            fileparts['source_id'] = parts[2]
+            fileparts['experiment_id'] = parts[3]
+            fileparts['member_id'] = parts[4]
+            fileparts['table_id'] = parts[5]
+            fileparts['variable_id'] = parts[6]
+            fileparts['grid_label'] = parts[7]
         return fileparts
 
 
