@@ -19,16 +19,14 @@ class ERA5Collection(Collection):
     """
     )
 
-    def _get_file_attrs(self, filepath):
+    def _get_store_attrs(self, filepath):
         file_basename = os.path.basename(filepath)
         fs = file_basename.split('.')
 
-        keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
+        keys = list(set(self.columns))
 
         fileparts = {key: None for key in keys}
-        fileparts['file_basename'] = file_basename
-        fileparts['file_fullpath'] = filepath
-        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
+        fileparts['store_fullpath'] = filepath
 
         fileparts['stream'] = fs[1]
         if fs[2] == 'an':
@@ -104,10 +102,10 @@ class ERA5Source(BaseSource):
         kwargs = self._validate_kwargs(self.kwargs)
         dataset_fields = ['product_type']
         variable_column_name = 'variable_short_name'
-        file_fullpath_column_name = 'file_fullpath'
+        store_fullpath_column_name = 'store_fullpath'
 
         invariant_files = get_subset(self.collection_name, {'product_type': 'invariant'})[
-            file_fullpath_column_name
+            store_fullpath_column_name
         ].tolist()
         invariants_dset = (
             xr.open_mfdataset(invariant_files, drop_variables=['time']).squeeze().load()
@@ -126,7 +124,7 @@ class ERA5Source(BaseSource):
                 desc='variable',
                 disable=not config.get('progress-bar'),
             ):
-                urlpath_ei_vi = v_files[file_fullpath_column_name].tolist()
+                urlpath_ei_vi = v_files[store_fullpath_column_name].tolist()
 
                 if v_id[0].isdigit():
                     v_id = 'var_' + v_id

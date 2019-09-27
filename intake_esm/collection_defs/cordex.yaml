@@ -1,9 +1,6 @@
 collections:
   cordex:
     collection_columns:
-    - resource
-    - resource_type
-    - direct_access
     - variable
     - experiment
     - global_climate_model
@@ -11,11 +8,9 @@ collections:
     - frequency
     - grid
     - bias_corrected_or_raw
-    - file_fullpath
-    - file_basename
-    - file_dirname
+    - store_fullpath
     order_by_columns:
       - variable
     required_columns:
       - variable
-      - file_fullpath
+      - store_fullpath

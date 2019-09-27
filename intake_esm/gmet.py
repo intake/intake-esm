@@ -17,14 +17,12 @@ class GMETCollection(Collection):
     """
     )
 
-    def _get_file_attrs(self, filepath):
+    def _get_store_attrs(self, filepath):
         file_basename = os.path.basename(filepath)
-        keys = list(set(self.columns) - set(['resource', 'resource_type', 'direct_access']))
+        keys = list(set(self.columns))
 
         fileparts = {key: None for key in keys}
-        fileparts['file_basename'] = file_basename
-        fileparts['file_fullpath'] = filepath
-        fileparts['file_dirname'] = os.path.dirname(filepath) + '/'
+        fileparts['store_fullpath'] = filepath
 
         date_str_regex = r'\d{8}\_\d{8}'
         datestr = _extract_attr_with_regex(filepath, regex=date_str_regex)
@@ -51,12 +49,12 @@ class GMETSource(BaseSource):
         kwargs = self._validate_kwargs(self.kwargs)
         data_vars = ['pcp', 't_mean', 't_range']
         dataset_fields = ['member_id']
-        ds = get_subset(self.collection_name, self.query)
-        df = ds.to_dataframe().groupby(dataset_fields)
+        df = get_subset(self.collection_name, self.query)
+        df = df.groupby(dataset_fields)
         member_ids = []
         member_dsets = []
         for m_id, m_files in tqdm(df, desc='member', disable=not config.get('progress-bar')):
-            files = m_files['file_fullpath'].tolist()
+            files = m_files['store_fullpath'].tolist()
             dsets = [
                 aggregate.open_dataset_delayed(
                     url,
