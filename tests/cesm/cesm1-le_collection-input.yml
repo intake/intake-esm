@@ -7,7 +7,7 @@ data_sources:
         loc_type: posix
         direct_access: True
         urlpath: ./tests/sample_data/cesm-le
-        file_extension: .nc
+        data_format: netcdf
     extra_attributes:
       component_attrs:
         ocn:
@@ -24,7 +24,7 @@ data_sources:
         loc_type: posix
         direct_access: True
         urlpath: ./tests/sample_data/cesm-le
-        file_extension: .nc
+        data_format: netcdf
     extra_attributes:
       component_attrs:
         ocn:
@@ -196,7 +196,7 @@ data_sources:
         loc_type: posix
         direct_access: True
         urlpath: ./tests/sample_data/cesm-le
-        file_extension: .nc
+        data_format: netcdf
 
     extra_attributes:
       component_attrs:

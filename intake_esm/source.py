@@ -95,6 +95,8 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
     def _open_dataset_groups(
         self, dataset_fields, member_column_name, variable_column_name, path_column_name='path'
     ):
+        import os
+
         kwargs = self._validate_kwargs(self.kwargs)
 
         all_dsets = {}
@@ -117,7 +119,9 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
                     urlpath_ei_vi = v_files[path_column_name].tolist()
                     dsets = []
                     for url in urlpath_ei_vi:
-                        if url.endswith('.nc'):
+                        extensions = set(['.nc', '.nc4'])
+                        ext = os.path.splitext(url)[-1]
+                        if ext in extensions:
                             d = aggregate.open_dataset_delayed(
                                 url,
                                 data_vars=[v_id],

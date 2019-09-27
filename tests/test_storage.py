@@ -29,9 +29,9 @@ def test_storage_input_file():
     urlpath = input_file
     type_ = 'input-file'
     exclude_dirs = ['*/avoid-this-dir/*']
-    file_extension = '.nc'
+    data_format = '.nc'
 
-    SR = StorageResource(urlpath, type_, exclude_dirs, file_extension)
+    SR = StorageResource(urlpath, type_, exclude_dirs, data_format)
     assert isinstance(SR, StorageResource)
     files = SR.storelist
     assert isinstance(files, list)
@@ -45,8 +45,8 @@ def test_storage_hsi():
     urlpath = '/CCSM/csm/CESM-CAM5-BGC-LE/ocn/proc/tseries/daily/SST'
     loc_type = 'hsi'
     exclude_dirs = []
-    file_extension = '.nc'
-    SR = StorageResource(urlpath, loc_type, exclude_dirs, file_extension)
+    data_format = '.nc'
+    SR = StorageResource(urlpath, loc_type, exclude_dirs, data_format)
 
     files = SR.storelist
     assert isinstance(files, list)
@@ -58,7 +58,7 @@ def test_storage_aws_s3():
         urlpath='s3://ncar-cesm-lens/lnd/monthly/',
         loc_type='s3',
         exclude_patterns=[],
-        file_extension='.zarr',
+        data_format='.zarr',
     )
     stores = SR.storelist
     assert len(stores) != 0

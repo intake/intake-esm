@@ -8,12 +8,12 @@ data_sources:
         direct_access: False
         urlpath: ./tests/gmet/gmet_v2_filelist.txt
         exclude_patterns: ['*/mean/*', '*/summary_files/*']
-        file_extension: .nc4
+        data_format: netcdf
       - name: GMET_V2-DISK
         loc_type: posix
         direct_access: True
         urlpath: ./tests/sample_data/gmet/v2_landmask
         exclude_patterns: ['*/mean/*', '*/summary_files/*']
-        file_extension: .nc4
+        data_format: netcdf
     extra_attributes:
       version: v2

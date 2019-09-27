@@ -18,7 +18,7 @@ cdef = yaml.safe_load(
          direct_access: True
          urlpath: ./tests/sample_data/cmip/CMIP6
          exclude_dirs: ['*/files/*', 'latest']
-         file_extension: .nc
+         data_format: netcdf
   """
 )
 

@@ -21,7 +21,7 @@ data_sources:
         direct_access: True
         urlpath: ./tests/sample_data/cmip/cmip5
         exclude_dirs: ['*/files/*', '*/latest/*', '*/fio-esm/*', '*/ACCESS1.0/*']
-        file_extension: .nc
+        data_format: netcdf
 
 
 

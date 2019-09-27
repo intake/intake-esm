@@ -7,7 +7,7 @@ data_sources:
         loc_type: copy-to-cache
         direct_access: False
         urlpath: ./tests/sample_data/cesm-le
-        file_extension: .nc
+        data_format: netcdf
     extra_attributes:
       component_attrs:
         ocn:

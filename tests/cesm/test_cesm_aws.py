@@ -19,7 +19,7 @@ data_sources:
         loc_type: s3
         direct_access: True
         urlpath: s3://ncar-cesm-lens/lnd/monthly
-        file_extension: .zarr
+        data_format: zarr
 
   ocean:
     locations:
@@ -27,7 +27,7 @@ data_sources:
         loc_type: s3
         direct_access: True
         urlpath: s3://ncar-cesm-lens/ocn/monthly
-        file_extension: .zarr
+        data_format: zarr
 """
 )
 

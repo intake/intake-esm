@@ -17,7 +17,7 @@ cdef = yaml.safe_load(
           loc_type: gs
           direct_access: True
           urlpath: gs://pangeo-cmip6/AR6_WG1/AerChemMIP
-          file_extension: .zarr
+          data_format: zarr
   """
 )
 

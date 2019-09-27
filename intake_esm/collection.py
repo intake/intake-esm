@@ -103,7 +103,7 @@ class Collection(ABC):
                     urlpath=location['urlpath'],
                     loc_type=location['loc_type'],
                     exclude_patterns=exclude_patterns,
-                    file_extension=location.get('file_extension', '.nc'),
+                    data_format=location.get('data_format', 'netcdf'),
                 )
 
                 df_stores[res_key] = self._assemble_collection_df_stores(

@@ -15,9 +15,7 @@ from . import config
 class StorageResource(object):
     """ Defines a storage resource object"""
 
-    def __init__(
-        self, urlpath, loc_type, exclude_patterns, file_extension='.nc', storage_options={}
-    ):
+    def __init__(self, urlpath, loc_type, exclude_patterns, data_format='nc', storage_options={}):
         """
 
         Parameters
@@ -29,8 +27,8 @@ class StorageResource(object):
               Type of storage resource. Supported resources include: posix, hsi (tape)
         exclude_patterns : str, list
                Directories to exclude during catalog generation
-        file_extension : str, default `.nc`
-              File extension
+        data_format : str, default `netcfg`
+              Data Format
         storage_options : dict
             Parameters to pass to requests when issuing http commands to remote
             backend file-systems such as s3.
@@ -40,7 +38,7 @@ class StorageResource(object):
         self.storage_options = {'anon': True} or storage_options
         self.urlpath = urlpath
         self.loc_type = loc_type
-        self.file_extension = file_extension
+        self.data_format = data_format
         self.exclude_patterns = exclude_patterns
         self.storelist = self._list_stores()
 
@@ -110,6 +108,9 @@ class StorageResource(object):
 
     def _list_stores_posix(self):
         """Get a list of stores or files on a Posix filesystem"""
+
+        if self.data_format == 'netcdf':
+            extensions = set(['.nc', '.nc4'])
         try:
 
             w = os.walk(self.urlpath, followlinks=True)
@@ -118,7 +119,7 @@ class StorageResource(object):
 
             for root, dirs, stores in w:
                 filelist.extend(
-                    [os.path.join(root, f) for f in stores if f.endswith(self.file_extension)]
+                    [os.path.join(root, f) for f in stores if os.path.splitext(f)[-1] in extensions]
                 )
             return filelist
         except Exception as e:
@@ -136,8 +137,8 @@ class StorageResource(object):
         p = subprocess.Popen(
             [
                 'hsi',
-                'find {urlpath} -name "*{file_extension}"'.format(
-                    urlpath=self.urlpath, file_extension=self.file_extension
+                'find {urlpath} -name "*{data_format}"'.format(
+                    urlpath=self.urlpath, data_format=self.data_format
                 ),
             ],
             stdout=subprocess.PIPE,
