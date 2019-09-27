@@ -29,3 +29,4 @@ dependencies:
   - s3fs
   - gcsfs
   - fsspec
+  - google-cloud-sdk

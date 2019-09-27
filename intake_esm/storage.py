@@ -35,7 +35,7 @@ class StorageResource(object):
         """
 
         self.fs = fs
-        self.storage_options = storage_options
+        self.storage_options = {'anon': True} or storage_options
         self.urlpath = urlpath
         self.type = loc_type
         self.file_extension = file_extension
@@ -75,19 +75,28 @@ class StorageResource(object):
     def _list_objects(self):
         """ Get a list of AWS s3 or Google Storage objects.
         """
+        from distutils.spawn import find_executable
         import fsspec
 
-        self.fs = fsspec.filesystem(self.type, **self.storage_options)
-        try:
-            if self.file_extension == '.zarr':
-                objects = self.fs.glob(f'{self.urlpath}/**.zmetadata')
-            else:
-                objects = self.fs.glob(f'{self.urlpath}/**{self.file_extension}')
+        objects = []
+        if self.type == 'gs':
+            has_gsutil = find_executable('gsutil')
+            if not has_gsutil:
+                raise RuntimeError('Please install google-cloud-sdk to access Google Storage')
 
-            objects = [f'{self.type}://{os.path.dirname(obj)}' for obj in objects]
-            return objects
-        except Exception as exc:
-            raise exc
+            cmd = f'gsutil -m ls {self.urlpath}/**.zmetadata'
+            p = Popen(cmd, shell=True, stderr=PIPE, stdout=PIPE)
+            out, err = p.communicate()
+
+            if p.returncode == 0:
+                objects = out.decode('UTF-8').strip().split('\n')
+
+        else:
+            self.fs = fsspec.filesystem(self.type, **self.storage_options)
+            objects = self.fs.glob(f'{self.urlpath}/**.zmetadata')
+
+        objects = [f'{self.type}://{os.path.dirname(obj)}' for obj in objects]
+        return objects
 
     def _list_stores_posix(self):
         """Get a list of stores or files"""
