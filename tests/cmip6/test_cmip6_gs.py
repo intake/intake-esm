@@ -36,3 +36,11 @@ def test_search():
         col = intake.open_esm_metadatastore(collection_name='PANGEO-CMIP6')
         cat = col.search(variable_id=['pr', 'ts'], experiment_id='ssp370')
         assert len(cat.df) > 0
+
+
+def test_to_xarray():
+    with config.set({'database-directory': './tests/test_collections'}):
+        col = intake.open_esm_metadatastore(collection_name='PANGEO-CMIP6')
+        cat = col.search(variable_id=['pr'], experiment_id='ssp370')
+        _, ds = cat.to_xarray().popitem()
+        assert isinstance(ds, xr.Dataset)

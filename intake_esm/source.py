@@ -115,15 +115,25 @@ class BaseSource(intake_xarray.base.DataSourceMixin):
                 var_dsets = []
                 for v_id, v_files in m_files.groupby(variable_column_name):
                     urlpath_ei_vi = v_files[path_column_name].tolist()
-                    dsets = [
-                        aggregate.open_dataset_delayed(
-                            url,
-                            data_vars=[v_id],
-                            chunks=kwargs['chunks'],
-                            decode_times=kwargs['decode_times'],
-                        )
-                        for url in urlpath_ei_vi
-                    ]
+                    dsets = []
+                    for url in urlpath_ei_vi:
+                        if url.endswith('.nc'):
+                            d = aggregate.open_dataset_delayed(
+                                url,
+                                data_vars=[v_id],
+                                chunks=kwargs['chunks'],
+                                decode_times=kwargs['decode_times'],
+                            )
+
+                        else:
+                            d = aggregate.open_store(
+                                url,
+                                data_vars=[v_id],
+                                storage_options=self.storage_options,
+                                consolidated=True,
+                            )
+
+                        dsets.append(d)
 
                     var_dset_i = aggregate.concat_time_levels(
                         dsets,
