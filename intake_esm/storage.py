@@ -101,6 +101,7 @@ class StorageResource(object):
 
         if p.returncode == 0:
             objects = out.decode('UTF-8').strip().split('\n')
+            objects = [os.path.dirname(obj) for obj in objects]
             return objects
         else:
             raise RuntimeError(

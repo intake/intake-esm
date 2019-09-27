@@ -77,7 +77,6 @@ class Collection(ABC):
             dfs.update(df_i)
 
         self._ds = self._finalize_build(dfs).reset_index(drop=True).to_xarray()
-        print(self._ds)
 
         attrs = make_attrs(
             attrs={
