@@ -70,6 +70,14 @@ def test_search():
 def test_to_xarray():
     with config.set({'database-directory': './tests/test_collections'}):
         col = intake.open_esm_metadatastore(collection_name='PANGEO-CMIP6')
-        cat = col.search(variable_id=['pr'], experiment_id='ssp370')
+        cat = col.search(
+            variable_id=['pr'],
+            experiment_id='ssp370',
+            activity_id='AerChemMIP',
+            source_id='BCC-ESM1',
+            table_id='Amon',
+            grid_label='gn',
+        )
         _, ds = cat.to_xarray().popitem()
         assert isinstance(ds, xr.Dataset)
+        assert 'member_id' in ds.dims
