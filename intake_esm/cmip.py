@@ -172,15 +172,15 @@ class CMIP6Collection(Collection):
         else:
             # For Zarr-ified CMIP6 data, we assume a very strict format:
             # See docstring notes
-            parts = storepath.split('/')[-8:]
-            fileparts['activity_id'] = parts[0]
-            fileparts['institution_id'] = parts[1]
-            fileparts['source_id'] = parts[2]
-            fileparts['experiment_id'] = parts[3]
-            fileparts['member_id'] = parts[4]
-            fileparts['table_id'] = parts[5]
-            fileparts['variable_id'] = parts[6]
-            fileparts['grid_label'] = parts[7]
+            parts = storepath.strip('/').split('/')[-8:]
+            fileparts['activity_id'] = parts[-8]
+            fileparts['institution_id'] = parts[-7]
+            fileparts['source_id'] = parts[-6]
+            fileparts['experiment_id'] = parts[-5]
+            fileparts['member_id'] = parts[-4]
+            fileparts['table_id'] = parts[-3]
+            fileparts['variable_id'] = parts[-2]
+            fileparts['grid_label'] = parts[-1]
         return fileparts
 
 

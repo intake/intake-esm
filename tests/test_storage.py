@@ -76,7 +76,7 @@ def test_file_transfer_symlink():
 
         cat = col.search(variable=['STF_O2', 'SHF'])
 
-        query_results = _ensure_file_access(cat.df)
+        query_results = _ensure_file_access(cat._df)
         local_urlpaths = query_results['path'].tolist()
         assert isinstance(local_urlpaths, list)
         assert len(local_urlpaths) > 0
