@@ -80,4 +80,3 @@ def test_to_xarray():
         )
         _, ds = cat.to_xarray().popitem()
         assert isinstance(ds, xr.Dataset)
-        assert 'member_id' in ds.dims
