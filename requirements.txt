@@ -1,5 +1,5 @@
 intake-xarray>=0.3.1
-xarray>=0.12.3
+xarray>=0.13.0
 pyyaml
 tqdm
 fsspec

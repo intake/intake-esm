@@ -3,7 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - intake-xarray>=0.3.1
-  - xarray==0.12.3
+  - xarray=>0.13
   - nbsphinx
   - numpydoc
   - python=3.7

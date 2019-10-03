@@ -19,8 +19,12 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
         self.collection_options = collection_options
 
     def search(self, **query):
+        """ Search for entries in the collection
+        """
+        import uuid
+
         args = {'path': self._path, 'query': query}
-        name = 'hello'
+        name = f'esm-collection-{str(uuid.uuid4())}'
         description = ''
         driver = 'intake_esm.core.ESMDatasetSource'
         cat = intake.catalog.local.LocalCatalogEntry(
@@ -56,7 +60,7 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
         return info
 
     def __repr__(self):
-        """Making string representation of object."""
+        """Make string representation of object."""
         info = self.nunique().to_dict()
         output = []
         for key, values in info.items():
@@ -94,6 +98,10 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         return query_results
 
     def to_xarray(self, **kwargs):
+        """ Return dataset as an xarray dataset
+        Additional keyword arguments are passed through to
+        `xarray.open_dataset()`, xarray.open_zarr()` methods
+        """
         return self.to_dask()
 
     def _get_schema(self):
