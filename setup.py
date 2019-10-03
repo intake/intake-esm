@@ -45,7 +45,7 @@ setup(
     zip_safe=False,
     entry_points={
         'console_scripts': ['intake-esm-builder = intake_esm.cli:main'],
-        'intake.drivers': ['esm_metadatastore = intake_esm.core:ESMMetadataStoreCatalog'],
+        'intake.drivers': ['esm_metadatastore = intake_esm.core:ESMMetadataStoreCollection'],
     },
     keywords='intake-esm',
     use_scm_version={'version_scheme': 'post-release', 'local_scheme': 'dirty-tag'},

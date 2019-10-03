@@ -4,7 +4,7 @@ import intake  # Import this first to avoid circular imports during discovery.
 from pkg_resources import DistributionNotFound, get_distribution
 
 from . import config
-from .core import ESMMetadataStoreCatalog
+from .core import ESMMetadataStoreCollection
 
 try:
     __version__ = get_distribution(__name__).version

@@ -1,133 +1,42 @@
-import datetime
-import os
-import uuid
+from functools import reduce
 
 import fsspec
+import intake
+import intake_xarray
 import numpy as np
-from cached_property import cached_property
-from intake.catalog import Catalog
-from intake.catalog.local import LocalCatalogEntry
-from intake.utils import yaml_load
-
-from . import config as config
-from .bld_collection_utils import (
-    FILE_ALIAS_DICT,
-    _get_built_collections,
-    _open_collection,
-    load_collection_input_file,
-)
-from .cesm import CESMCollection
-from .cesm_aws import CESMAWSCollection
-from .cmip import CMIP5Collection, CMIP6Collection
-from .cordex import CORDEXCollection
-from .era5 import ERA5Collection
-from .gmet import GMETCollection
-from .mpige import MPIGECollection
+import pandas as pd
+import xarray as xr
+from tqdm import tqdm
 
 
-class ESMMetadataStoreCatalog(Catalog):
-    """ESM collection Metadata store. This class acts as an entry point for ``intake_esm``.
-
-    Parameters
-    ----------
-
-    collection_input_definition : str, dict, filepath, default (None)
-
-                If None, prints out list of collection definitions supported
-                out of the box and raise `ValueError`.
-
-                If str, this should be a valid collection name among the ones
-                supported out of the box
-
-                If dict, or filepath, this should be a path to a YAML file
-                containing collection definition or a dictionary containing
-                nested dictionaries of entries.
-
-    collection_name : str
-                Name of the collection to use. This name should refer to
-                a collection catalog that is already built and persisted on disk.
-
-    overwrite_existing : bool,
-            Whether to overwrite existing built collection catalog.
-
-    storage_options : dict
-            Parameters to pass to requests when issuing http commands to remote
-            backend file-systems such as s3.
-
-    kwargs : dict, optional
-        Keyword arguments passed to ``intake_esm.bld_collection_utils.load_collection_input_file`` function
-
-    """
-
+class ESMMetadataStoreCollection(intake.catalog.Catalog):
     name = 'esm_metadatastore'
-    collection_types = {
-        'cesm': CESMCollection,
-        'cesm-aws': CESMAWSCollection,
-        'cmip5': CMIP5Collection,
-        'cmip6': CMIP6Collection,
-        'mpige': MPIGECollection,
-        'gmet': GMETCollection,
-        'era5': ERA5Collection,
-        'cordex': CORDEXCollection,
-    }
 
-    def __init__(
-        self,
-        collection_input_definition=None,
-        collection_name=None,
-        overwrite_existing=True,
-        storage_options=None,
-        **kwargs,
-    ):
+    def __init__(self, path, collection_options={}):
+        super().__init__()
+        self._path = path
+        self.df = pd.read_csv(path)
+        self.collection_options = collection_options
 
-        super().__init__(**kwargs)
-        self.storage_options = storage_options or {}
-        self.collection_type = None
-        self.fs = None
-        self._collection = None
-        self._df = None
-        self.collections = _get_built_collections()
-
-        if (
-            collection_name
-            and (collection_name not in self.collections)
-            and (collection_name in FILE_ALIAS_DICT)
-        ):
-            self.input_collection = self._validate_collection_definition(collection_name, **kwargs)
-            self._build_collection(overwrite_existing)
-
-        elif collection_name and collection_input_definition is None:
-            self.open_collection(collection_name)
-
-        elif collection_input_definition and (collection_name is None):
-            self.input_collection = self._validate_collection_definition(
-                collection_input_definition, **kwargs
-            )
-            self._build_collection(overwrite_existing)
-
-        else:
-
-            if self.collections:
-                print(
-                    '\n******************************************************\n'
-                    '* Collections with following names are built already *\n'
-                    '******************************************************\n\n'
-                    f'{list(self.collections.keys())}\n\n'
-                )
-
-            load_collection_input_file()
-            raise ValueError(
-                'Cannot instantiate class with provided arguments. Please provide either: \n'
-                '\t1) collection_input_definition: to build a collection or\n'
-                '\t2) collection_name: to open a collection.'
-            )
-
-        self._entries = {}
-
-    @cached_property
-    def df(self):
-        cols = config.get(f'collections.{self.collection_type}.collection_columns')
-        return self._df[cols]
+    def search(self, **query):
+        args = {'path': self._path, 'query': query}
+        name = 'hello'
+        description = ''
+        driver = 'intake_esm.core.ESMDatasetSource'
+        cat = intake.catalog.local.LocalCatalogEntry(
+            name=name,
+            description=description,
+            driver=driver,
+            direct_access=True,
+            args=args,
+            cache={},
+            parameters={},
+            metadata={},
+            catalog_dir='',
+            getenv=False,
+            getshell=False,
+        )
+        return cat
 
     def nunique(self):
         """Count distinct observations across dataframe columns"""
@@ -154,82 +63,119 @@ class ESMMetadataStoreCatalog(Catalog):
             output.append(f'{values} {key}(s)\n')
         output = '\n\t> '.join(output)
         items = len(self.df.index)
-        return f'{self.collection_name.upper()} collection catalogue with {items} entries:\n\t> {output}'
+        return f'ESM Collection with {items} entries:\n\t> {output}'
 
-    def _validate_collection_definition(self, definition, **kwargs):
 
-        if isinstance(definition, str) and definition in FILE_ALIAS_DICT:
-            input_collection = load_collection_input_file(definition, **kwargs)
+class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
+    container = 'xarray'
+    name = 'esm-dataset-source'
 
-        elif isinstance(definition, dict):
-            input_collection = definition.copy()
+    def __init__(self, path, query, **kwargs):
+        super().__init__(metadata={})
+        self.path = path
+        self.df = self._get_subset(**query)
+        self.urlpath = ''
+        self._ds = None
 
-        else:
-            try:
-                with open(os.path.abspath(definition)) as f:
-                    input_collection = yaml_load(f)
-            except Exception as exc:
-                raise exc
+    def _get_subset(self, **query):
+        df = pd.read_csv(self.path)
+        if not query:
+            return pd.DataFrame(columns=df.columns)
+        condition = np.ones(len(df), dtype=bool)
+        for key, val in query.items():
+            if isinstance(val, list):
+                condition_i = np.zeros(len(df), dtype=bool)
+                for val_i in val:
+                    condition_i = condition_i | (df[key] == val_i)
+                condition = condition & condition_i
+            elif val is not None:
+                condition = condition & (df[key] == val)
+        query_results = df.loc[condition]
+        return query_results
 
-        name = input_collection.get('name', None)
-        self.collection_type = input_collection.get('collection_type', None)
-        if name is None or self.collection_type is None:
-            raise ValueError(f'name and/or collection_type keys are missing from {definition}')
-        else:
-            return input_collection
+    def to_xarray(self, **kwargs):
+        return self.to_dask()
 
-    def _build_collection(self, overwrite_existing):
-        """ Build a collection defined in a YAML input file or a dictionary of nested dictionaries"""
-        name = self.input_collection['name']
-        collection_type = self.input_collection['collection_type']
-        if name not in self.collections or overwrite_existing:
-            cc = ESMMetadataStoreCatalog.collection_types[collection_type]
-            cc = cc(self.input_collection, fs=self.fs)
-            cc.build()
-            self.collections = _get_built_collections()
-        self.open_collection(name)
+    def _get_schema(self):
+        from intake.source.base import Schema
 
-    def open_collection(self, collection_name):
-        """ Open an ESM collection """
-        self._collection = _open_collection(collection_name)
-        self.collection_name = self._collection.attrs['name']
-        self.collection_type = self._collection.attrs['collection_type']
-        self._df = self._collection.to_dataframe()
-
-    def search(self, **query):
-        """ Search for entries in the collection catalog
-        """
-        collection_columns = list(self._df.columns)
-        for key in query.keys():
-            if key not in collection_columns:
-                raise ValueError(f'{key} is not in {self.collection_name}')
-        for key in collection_columns:
-            if key not in query:
-                query[key] = None
-        name = self.collection_name + '_' + str(uuid.uuid4())
-        args = {
-            'collection_name': self.collection_name,
-            'query': query,
-            'storage_options': self.storage_options,
-        }
-        driver = config.get('sources')[self.collection_type]
-        description = f'Catalog entry generated from {self.collection_name} collection'
-        keys = ['created_at', 'intake_esm_version', 'intake_version', 'intake_xarray_version']
-        metadata = {k: self._collection.attrs[k] for k in keys}
-        metadata['catalog_entry_generated_at'] = datetime.datetime.utcnow().isoformat()
-
-        cat = LocalCatalogEntry(
-            name=name,
-            description=description,
-            driver=driver,
-            direct_access=True,
-            args=args,
-            cache={},
-            parameters={},
-            metadata=metadata,
-            catalog_dir='',
-            getenv=False,
-            getshell=False,
+        self._open_dataset()
+        self._schema = Schema(
+            datashape=None, dtype=None, shape=None, npartitions=None, extra_metadata={}
         )
-        self._entries[name] = cat
-        return cat
+        return self._schema
+
+    def _open_dataset(self):
+        dataset_fields = [
+            'activity_id',
+            'institution_id',
+            'source_id',
+            'experiment_id',
+            'table_id',
+            'grid_label',
+        ]
+        groups = self.df.groupby(dataset_fields)
+        dsets = {}
+        for group, group_dsets in tqdm(groups, desc='Datasets'):
+            member_dsets = group_dsets.groupby('member_id')
+            datasets = []
+            for m_id, m_dset in member_dsets:
+                paths = zip(m_dset['path'].tolist(), m_dset['variable_id'].tolist())
+                temp_ds = [_open_store(path).expand_dims({'member_id': [m_id]}) for path in paths]
+                datasets.extend(temp_ds)
+            attrs = dict_union(*[ds.attrs for ds in datasets])
+            dset = xr.combine_by_coords(datasets)
+            dset = _restore_non_dim_coords(dset)
+            dset.attrs = attrs
+            group_id = '.'.join(group)
+            dsets[group_id] = dset
+
+        self._ds = dsets
+
+
+def _open_store(path):
+    mapper = fsspec.get_mapper(path[0])
+    ds = xr.open_zarr(mapper)
+    return _set_coords(ds, path[1])
+
+
+def _restore_non_dim_coords(ds):
+    """restore non_dim_coords to variables"""
+    non_dim_coords_reset = set(ds.coords) - set(ds.dims)
+    ds = ds.reset_coords(non_dim_coords_reset)
+    return ds
+
+
+def _set_coords(ds, varname):
+    """Set all variables except varname to be coords."""
+    if isinstance(varname, str):
+        varname = [varname]
+    coord_vars = set(ds.data_vars) - set(varname)
+    return ds.set_coords(coord_vars)
+
+
+def dict_union(*dicts, merge_keys=['history', 'tracking_id'], drop_keys=[]):
+    """Return the union of two or more dictionaries."""
+    if len(dicts) > 2:
+        return reduce(dict_union, dicts)
+    elif len(dicts) == 2:
+        d1, d2 = dicts
+        d = type(d1)()
+        # union
+        all_keys = set(d1) | set(d2)
+        for k in all_keys:
+            v1 = d1.get(k)
+            v2 = d2.get(k)
+            if (v1 is None and v2 is None) or k in drop_keys:
+                pass
+            elif v1 is None:
+                d[k] = v2
+            elif v2 is None:
+                d[k] = v1
+            elif v1 == v2:
+                d[k] = v1
+            elif k in merge_keys:
+                d[k] = '\n'.join([v1, v2])
+        return d
+    elif len(dicts) == 1:
+        return dicts[0]
