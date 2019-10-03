@@ -1,15 +1,8 @@
-import datetime
 import hashlib
 import os
-import re
-import urllib
-from pathlib import Path
 from urllib.request import urlopen, urlretrieve
 
-import numpy as np
 import pandas as pd
-import xarray as xr
-from intake.source.utils import reverse_format
 from intake.utils import yaml_load
 
 from . import config
@@ -179,134 +172,6 @@ def load_collection_input_file(
         os.remove(localfile)
 
     return d
-
-
-def _get_built_collections():
-    """Loads built collections in a dictionary with key=collection_name, value=collection_db_file_path"""
-    try:
-        db_dir = Path(config.get('database-directory'))
-        cc = db_dir.glob('*.nc')
-        collections = {}
-        for f in cc:
-            name = f.stem
-            fullpath = f.absolute()
-            collections[name] = fullpath
-        return collections
-    except Exception as e:
-        raise e
-
-
-def _open_collection(collection_name):
-    """ Open an ESM collection"""
-    collections = _get_built_collections()
-
-    with xr.open_dataset(collections[collection_name], engine='netcdf4') as ds:
-        ds['direct_access'] = ds['direct_access'].astype(bool)
-        return ds
-
-
-def get_subset(collection_name, query, order_by=None):
-    """ Get a subset of collection entries that match a query """
-
-    ds = _open_collection(collection_name)
-    collection_type = ds.attrs['collection_type']
-    df = ds.to_dataframe()
-    condition = np.ones(len(df), dtype=bool)
-
-    for key, val in query.items():
-
-        if isinstance(val, list):
-            condition_i = np.zeros(len(df), dtype=bool)
-            for val_i in val:
-                condition_i = condition_i | (df[key] == val_i)
-            condition = condition & condition_i
-
-        elif val is not None:
-            condition = condition & (df[key] == val)
-
-    query_results = df.loc[condition]
-
-    if order_by is None:
-        order_by = config.get('collections')[collection_type]['order-by-columns']
-
-    query_results = query_results.sort_values(by=order_by, ascending=True)
-
-    return query_results
-
-
-def make_attrs(attrs=None):
-    """Make standard attributes to attach to xarray datasets (collections).
-    Parameters
-    ----------
-    attrs : dict (optional)
-        Additional attributes to add or overwrite
-    Returns
-    -------
-    dict
-        attrs
-    """
-
-    import intake_xarray
-    import intake
-    import json
-    import pkg_resources
-
-    default_attrs = {
-        'created_at': datetime.datetime.utcnow().isoformat(),
-        'intake_esm_version': pkg_resources.get_distribution('intake_esm').version,
-    }
-
-    upstream_deps = [intake, intake_xarray]
-    for dep in upstream_deps:
-        dep_name = dep.__name__
-        try:
-            version = pkg_resources.get_distribution(dep_name).version
-            default_attrs[f'{dep_name}_version'] = version
-        except pkg_resources.DistributionNotFound:
-            if hasattr(dep, '__version__'):
-                version = dep.__version__
-                default_attrs[f'{dep_name}_version'] = version
-    if attrs is not None:
-        if 'collection_spec' in attrs:
-            attrs['collection_spec'] = json.dumps(attrs['collection_spec'])
-        default_attrs.update(attrs)
-    return default_attrs
-
-
-def _extract_attr_with_regex(input_str, regex, strip_chars=None):
-    pattern = re.compile(regex, re.IGNORECASE)
-    match = re.findall(pattern, input_str)
-    if match:
-        match = max(match, key=len)
-        if strip_chars:
-            match = match.strip(strip_chars)
-
-        else:
-            match = match.strip()
-
-        return match
-
-    else:
-        return None
-
-
-def _reverse_filename_format(file_basename, filename_template=None, gridspec_template=None):
-    """
-    Uses intake's ``reverse_format`` utility to reverse the string method format.
-
-    Given format_string and resolved_string, find arguments
-    that would give format_string.format(arguments) == resolved_string
-    """
-    try:
-        return reverse_format(filename_template, file_basename)
-    except ValueError:
-        try:
-            return reverse_format(gridspec_template, file_basename)
-        except:
-            print(
-                f'Failed to parse file: {file_basename} using patterns: {filename_template} and {gridspec_template}'
-            )
-            return {}
 
 
 def _filter_query_results(query_results, path_column_name):
