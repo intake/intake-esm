@@ -1,30 +1,13 @@
 import os
 import stat
-import sys
 from collections import OrderedDict
 from contextlib import contextmanager
 
-import pytest
 import yaml
 from dask.utils import tmpfile
 
 from intake_esm import config as _config
-from intake_esm.config import (
-    collect,
-    collect_env,
-    collect_yaml,
-    ensure_file,
-    expand_environment_variables,
-    get,
-    merge,
-    normalize_key,
-    normalize_nested_keys,
-    refresh,
-    rename,
-    set,
-    update,
-    update_defaults,
-)
+from intake_esm.config import collect_env, collect_yaml, expand_environment_variables, merge, update
 
 
 def test_update():
@@ -103,10 +86,6 @@ def no_read_permissions(path):
         yield
     finally:
         os.chmod(path, perm_orig)
-
-
-def test_default_config():
-    assert isinstance(_config.get('collections')['cesm'], dict)
 
 
 def test_set_options():
