@@ -1,77 +1,34 @@
+import os
+
 import intake
-import pandas as pd
 import pytest
 import xarray as xr
-import yaml
 
-from intake_esm import config
-
-cdef = yaml.safe_load(
-    """
-  name: cmip6_test_collection
-  collection_type: cmip6
-  data_sources:
-    TEST:
-      locations:
-      -  name: SAMPLE-DATA
-         loc_type: posix
-         direct_access: True
-         urlpath: ./tests/sample_data/cmip/CMIP6
-         exclude_dirs: ['*/files/*', 'latest']
-         data_format: netcdf
-  """
+here = os.path.abspath(os.path.dirname(__file__))
+csv_zarr = os.path.join(here, 'cmip6-zarr-consolidated-stores.csv')
+csv_cdf = os.path.join(here, 'cmip6-netcdf-test.csv')
+zarr_query = dict(
+    variable_id=['pr'],
+    experiment_id='ssp370',
+    activity_id='AerChemMIP',
+    source_id='BCC-ESM1',
+    table_id='Amon',
+    grid_label='gn',
 )
+cdf_query = dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_id=['tasmax'])
 
 
-def test_build_collection_file():
-    with config.set({'database-directory': './tests/test_collections'}):
-        col = intake.open_esm_metadatastore(
-            collection_input_definition=cdef, overwrite_existing=True
-        )
-        col = intake.open_esm_metadatastore(collection_name='cmip6_test_collection')
-        assert isinstance(col._collection, xr.Dataset)
-        assert isinstance(col.nunique(), pd.Series)
-        assert isinstance(col.unique(), dict)
-        assert set(col.df.grid_label.unique()) == set(['gr', 'gn'])
-        assert set(col.df.variable_id.unique()) == set(
-            [
-                'prsn',
-                'prra',
-                'tasmax',
-                'evspsblveg',
-                'landCoverFrac',
-                'mrso',
-                'co3',
-                'gpp',
-                'residualFrac',
-                'mrfso',
-            ]
-        )
+@pytest.mark.parametrize('path, query', [(csv_zarr, zarr_query), (csv_cdf, cdf_query)])
+def test_search(path, query):
+    col = intake.open_esm_metadatastore(path=csv_zarr)
+    cat = col.search(**query)
+    assert len(cat.df) > 0
+    assert len(col.df.columns) == len(cat.df.columns)
 
 
-def test_search():
-    with config.set({'database-directory': './tests/test_collections'}):
-        c = intake.open_esm_metadatastore(collection_name='cmip6_test_collection')
-        cat = c.search(source_id=['BCC-ESM1', 'CNRM-CM6-1', 'CNRM-ESM2-1'])
-
-        assert len(cat.df) > 0
-        assert isinstance(cat.df, pd.DataFrame)
-        assert isinstance(cat.nunique(), pd.Series)
-        assert isinstance(cat.unique(), dict)
-
-
-@pytest.mark.parametrize(
-    'chunks, expected_chunks',
-    [({'time': 1, 'lat': 2, 'lon': 2}, (1, 2, 2)), ({'time': 2, 'lat': 1, 'lon': 1}, (2, 1, 1))],
-)
-def test_to_xarray_cmip(chunks, expected_chunks):
-    with config.set({'database-directory': './tests/test_collections'}):
-        c = intake.open_esm_metadatastore(collection_name='cmip6_test_collection')
-
-        # Test for data from multiple models
-        cat = c.search(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_id=['tasmax'])
-        ds = cat.to_xarray(decode_times=False, chunks=chunks)
-        print(ds)
-        assert isinstance(ds, dict)
-        _, dset = ds.popitem()
-        assert dset['tasmax'].data.chunksize == expected_chunks
+@pytest.mark.parametrize('path, query', [(csv_zarr, zarr_query)])
+def test_to_xarray(path, query):
+    col = intake.open_esm_metadatastore(path=csv_zarr)
+    cat = col.search(**query)
+    _, ds = cat.to_xarray().popitem()
+    assert isinstance(ds, xr.Dataset)
