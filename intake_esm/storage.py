@@ -4,7 +4,6 @@ import shutil
 import subprocess
 from itertools import zip_longest
 from subprocess import PIPE, CalledProcessError, Popen
-from time import sleep
 from warnings import warn
 
 from tqdm.auto import tqdm
