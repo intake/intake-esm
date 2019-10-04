@@ -128,8 +128,9 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
             member_dsets = group_dsets.groupby('member_id')
             datasets = []
             for m_id, m_dset in member_dsets:
-                paths = zip(m_dset['path'].tolist(), m_dset['variable_id'].tolist())
-                temp_ds = [_open_store(path).expand_dims({'member_id': [m_id]}) for path in paths]
+                temp_ds = []
+                for _, row in m_dset.iterrows():
+                    temp_ds.append(_open_dataset(row, expand_dims={'member_id': [m_id]}))
                 datasets.extend(temp_ds)
             attrs = dict_union(*[ds.attrs for ds in datasets])
             dset = xr.combine_by_coords(datasets)
@@ -141,10 +142,32 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         self._ds = dsets
 
 
-def _open_store(path):
-    mapper = fsspec.get_mapper(path[0])
+def _open_store(path, varname):
+    """ Open zarr store """
+    mapper = fsspec.get_mapper(path)
     ds = xr.open_zarr(mapper)
-    return _set_coords(ds, path[1])
+    return _set_coords(ds, varname)
+
+
+def _open_cdf_dataset(path, varname):
+    """ Open netcdf file """
+    ds = xr.open_dataset(path)
+    return _set_coords(ds, varname)
+
+
+def _open_dataset(row, expand_dims={}):
+    path = row['path']
+    variable = row['variable_id']
+    data_format = row['data_format']
+    if data_format == 'zarr':
+        ds = _open_store(path, variable)
+    else:
+        ds = _open_cdf_dataset(path, variable)
+
+    if expand_dims:
+        return ds.expand_dims(expand_dims)
+    else:
+        return ds
 
 
 def _restore_non_dim_coords(ds):

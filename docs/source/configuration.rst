@@ -30,21 +30,21 @@ the ``config`` dictionary or the ``get`` function:
 
    import intake_esm
    intake_esm.config.config
-   intake_esm.config.get('collections.cmip5')
-   intake_esm.config.get('sources')
+
+
 
 
 You may wish to inspect the ``intake_esm.config.config`` dictionary to get a sense
 for what configuration is being used by your current system.
 
 Note that the ``get`` function treats underscores and hyphens identically.
-For example, ``intake_esm.config.get('collections.cmip5.collection_columns')`` is equivalent to
-``intake_esm.config.get('collections.cmip5.collection-columns')``.
+For example, ``intake_esm.config.get('database_directory')`` is equivalent to
+``intake_esm.config.get('database-directory')``.
 
 .. ipython:: python
 
-   intake_esm.config.get('collections.cmip5.collection_columns')
-   intake_esm.config.get('collections.cmip5.collection-columns')
+   intake_esm.config.get('database-directory')
+   intake_esm.config.get('database_directory')
 
 
 Specify Configuration
