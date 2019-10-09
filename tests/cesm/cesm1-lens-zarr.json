@@ -22,5 +22,11 @@
     "assets": {
       "column_name": "path",
       "format": "zarr"
-    }
+    },
+    "aggregations": [
+      {
+        "type": "union",
+        "attribute_name": "variable"
+      }
+      ]
   }

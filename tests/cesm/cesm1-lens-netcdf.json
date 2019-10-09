@@ -29,5 +29,15 @@
     "assets": {
       "column_name": "path",
       "format": "netcdf"
-    }
+    },
+    "aggregations": [
+      {
+        "type": "union",
+        "attribute_name": "variable"
+      },
+      {
+        "type": "join_new",
+        "attribute_name": "member_id"
+      }
+     ]
   }
