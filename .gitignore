@@ -110,5 +110,4 @@ docs/_build
 notes/
 docs/source/collections/*
 pip-wheel-metadata/*
-*.csv
 tests/test_collections/*.nc
