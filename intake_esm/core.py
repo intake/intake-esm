@@ -133,7 +133,7 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         dsets = {}
         for _, row in self.df.iterrows():
             keys = set(row.keys()) - set([path_column_name])
-            keys = [str(key) for key in keys]
+            keys = [str(row[key]) for key in keys]
             dataset_id = '.'.join(keys)
             if use_format_column:
                 data_format = row[format_column_name]
