@@ -1,29 +1,33 @@
-from functools import reduce
+import json
+import logging
+from urllib.parse import urlparse
 
 import fsspec
 import intake
 import intake_xarray
 import numpy as np
 import pandas as pd
+import requests
 import xarray as xr
-from tqdm import tqdm
+
+logger = logging.getLogger(__name__)
 
 
 class ESMMetadataStoreCollection(intake.catalog.Catalog):
     name = 'esm_metadatastore'
 
-    def __init__(self, path, collection_options={}):
+    def __init__(self, esmcol_path):
         super().__init__()
-        self._path = path
-        self.df = pd.read_csv(path)
-        self.collection_options = collection_options
+        self.esmcol_path = esmcol_path
+        self._col_data = _fetch_and_parse_file(esmcol_path)
+        self.df = pd.read_csv(self._col_data['catalog_file'])
 
     def search(self, **query):
         """ Search for entries in the collection
         """
         import uuid
 
-        args = {'path': self._path, 'query': query}
+        args = {'esmcol_path': self.esmcol_path, 'query': query}
         name = f'esm-collection-{str(uuid.uuid4())}'
         description = ''
         driver = 'intake_esm.core.ESMDatasetSource'
@@ -74,15 +78,16 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
     container = 'xarray'
     name = 'esm-dataset-source'
 
-    def __init__(self, path, query, **kwargs):
+    def __init__(self, esmcol_path, query, **kwargs):
         super().__init__(metadata={})
-        self.path = path
+        self.esmcol_path = esmcol_path
+        self._col_data = _fetch_and_parse_file(esmcol_path)
         self.df = self._get_subset(**query)
         self.urlpath = ''
         self._ds = None
 
     def _get_subset(self, **query):
-        df = pd.read_csv(self.path)
+        df = pd.read_csv(self._col_data['catalog_file'])
         if not query:
             return pd.DataFrame(columns=df.columns)
         condition = np.ones(len(df), dtype=bool)
@@ -97,11 +102,13 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         query_results = df.loc[condition]
         return query_results
 
-    def to_xarray(self, **kwargs):
+    def to_xarray(self, zarr_kwargs={}, cdf_kwargs={}):
         """ Return dataset as an xarray dataset
         Additional keyword arguments are passed through to
         `xarray.open_dataset()`, xarray.open_zarr()` methods
         """
+        self.zarr_kwargs = zarr_kwargs
+        self.cdf_kwargs = cdf_kwargs
         return self.to_dask()
 
     def _get_schema(self):
@@ -114,55 +121,99 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         return self._schema
 
     def _open_dataset(self):
-        dataset_fields = [
-            'activity_id',
-            'institution_id',
-            'source_id',
-            'experiment_id',
-            'table_id',
-            'grid_label',
-        ]
-        groups = self.df.groupby(dataset_fields)
-        dsets = {}
-        for group, group_dsets in tqdm(groups, desc='Datasets'):
-            member_dsets = group_dsets.groupby('member_id')
-            datasets = []
-            for m_id, m_dset in member_dsets:
-                temp_ds = []
-                for _, row in m_dset.iterrows():
-                    temp_ds.append(_open_dataset(row, expand_dims={'member_id': [m_id]}))
-                datasets.extend(temp_ds)
-            attrs = dict_union(*[ds.attrs for ds in datasets])
-            dset = xr.combine_by_coords(datasets)
-            dset = _restore_non_dim_coords(dset)
-            dset.attrs = attrs
-            group_id = '.'.join(group)
-            dsets[group_id] = dset
 
+        path_column_name = self._col_data['assets']['column_name']
+        if 'format' in self._col_data['assets']:
+            data_format = self._col_data['assets']['format']
+            use_format_column = False
+        else:
+            format_column_name = self._col_data['assets']['format_column_name']
+            use_format_column = True
+
+        dsets = {}
+        for _, row in self.df.iterrows():
+            keys = set(row.keys()) - set([path_column_name])
+            keys = [str(key) for key in keys]
+            dataset_id = '.'.join(keys)
+            if use_format_column:
+                data_format = row[format_column_name]
+            dsets[dataset_id] = _open_dataset(
+                row,
+                path_column_name,
+                data_format,
+                zarr_kwargs=self.zarr_kwargs,
+                cdf_kwargs=self.cdf_kwargs,
+            )
         self._ds = dsets
 
 
-def _open_store(path, varname):
+def _is_valid_url(url):
+    """ Check if path is URL or not
+    Parameters
+    ----------
+    url : str
+        path to check
+    Returns
+    -------
+    boolean
+    """
+    try:
+        result = urlparse(url)
+        return result.scheme and result.netloc and result.path
+    except Exception:
+        return False
+
+
+def _fetch_and_parse_file(input_path):
+    """ Fetch and parse ESMCol file.
+    Parameters
+    ----------
+    input_path : str
+            ESMCol file to get and read
+    Returns
+    -------
+    data : dict
+    """
+
+    data = None
+
+    try:
+        if _is_valid_url(input_path):
+            logger.info('Loading ESMCol from URL')
+            resp = requests.get(input_path)
+            data = resp.json()
+        else:
+            with open(input_path) as f:
+                logger.info('Loading ESMCol from filesystem')
+                data = json.load(f)
+
+    except Exception as e:
+        raise e
+
+    return data
+
+
+def _open_store(path, zarr_kwargs):
     """ Open zarr store """
     mapper = fsspec.get_mapper(path)
-    ds = xr.open_zarr(mapper)
-    return _set_coords(ds, varname)
+    ds = xr.open_zarr(mapper, **zarr_kwargs)
+    return ds
 
 
-def _open_cdf_dataset(path, varname):
+def _open_cdf_dataset(path, cdf_kwargs):
     """ Open netcdf file """
-    ds = xr.open_dataset(path)
-    return _set_coords(ds, varname)
+    ds = xr.open_dataset(path, **cdf_kwargs)
+    return ds
 
 
-def _open_dataset(row, expand_dims={}):
-    path = row['path']
-    variable = row['variable_id']
-    data_format = row['data_format']
+def _open_dataset(
+    row, path_column_name, data_format, expand_dims={}, zarr_kwargs={}, cdf_kwargs={}
+):
+    path = row[path_column_name]
     if data_format == 'zarr':
-        ds = _open_store(path, variable)
+        ds = _open_store(path, zarr_kwargs)
     else:
-        ds = _open_cdf_dataset(path, variable)
+        ds = _open_cdf_dataset(path, cdf_kwargs)
 
     if expand_dims:
         return ds.expand_dims(expand_dims)
@@ -187,6 +238,8 @@ def _set_coords(ds, varname):
 
 def dict_union(*dicts, merge_keys=['history', 'tracking_id'], drop_keys=[]):
     """Return the union of two or more dictionaries."""
+    from functools import reduce
+
     if len(dicts) > 2:
         return reduce(dict_union, dicts)
     elif len(dicts) == 2:

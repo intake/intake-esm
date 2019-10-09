@@ -1,6 +1,4 @@
 [run]
-omit = 
+omit =
     tests/*.py
-    intake_esm/_version.py
-    versioneer.py
     setup.py
