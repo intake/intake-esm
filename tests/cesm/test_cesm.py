@@ -26,8 +26,8 @@ def test_to_xarray_zarr():
 @pytest.mark.parametrize(
     'chunks, expected_chunks',
     [
-        ({'time': 100, 'nlat': 2, 'nlon': 2}, (100, 2, 2)),
-        ({'time': 200, 'nlat': 1, 'nlon': 1}, (200, 1, 1)),
+        ({'time': 100, 'nlat': 2, 'nlon': 2}, (1, 100, 2, 2)),
+        ({'time': 200, 'nlat': 1, 'nlon': 1}, (1, 200, 1, 1)),
     ],
 )
 def test_to_xarray_cesm_netcdf(chunks, expected_chunks):

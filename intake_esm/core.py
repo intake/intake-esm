@@ -1,5 +1,6 @@
 import json
 import logging
+from collections.abc import Iterable
 from urllib.parse import urlparse
 
 import fsspec
@@ -142,13 +143,21 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
             .difference(union)
         )
 
-        return (use_format_column, list(union), list(join_new), list(dset_groupby_column_names))
+        return (
+            use_format_column,
+            list(union),
+            list(join_new),
+            sorted(list(dset_groupby_column_names)),
+        )
 
     def _open_dataset(self):
 
         path_column_name = self._col_data['assets']['column_name']
         use_format_column, union, join_new, dset_groupby_column_names = (
             self._get_open_dset_settings()
+        )
+        print(
+            f"--> The keys in the returned dictionary of datasets are constructed as follows:\n\t{'.'.join(dset_groupby_column_names)}"
         )
         if use_format_column:
             format_column_name = self._col_data['assets']['format_column_name']
@@ -175,14 +184,14 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
                     else:
                         data_format = self._col_data['assets']['format']
                     if join_new:
-                        if isinstance(join_new_key, str):
+                        if not isinstance(join_new_key, Iterable):
                             join_new_key = [join_new_key]
-                        expand_dims = dict(zip(join_new, join_new_key))
+                    expand_dims = dict(zip(join_new, join_new_key))
 
-                        expand_dims = {
-                            dim_name: [dim_value] for dim_name, dim_value in expand_dims.items()
-                        }
-                    varname = [row[union]]
+                    expand_dims = {
+                        dim_name: [dim_value] for dim_name, dim_value in expand_dims.items()
+                    }
+                    varname = row[union].tolist()
                     temp_ds.append(
                         _open_dataset(
                             row,

@@ -1,53 +1,53 @@
 {
-    "esmcat_version": "0.1.0",
-    "id": "sample-cmip5",
-    "description": "This is a sample ESM collection for CMIP5 data in netcdf format",
-    "catalog_file": "./tests/cmip5/cmip5-netcdf.csv",
-    "attributes": [
-      {
-        "column_name": "activity",
-        "vocabulary": ""
-      },
-      {
-        "column_name": "ensemble_member",
-        "vocabulary": ""
-      },
-      {
-        "column_name": "experiment",
-        "vocabulary": ""
-      },
-      {
-        "column_name": "frequency",
-        "vocabulary": ""
-      },
-      { "column_name": "institute", "vocabulary": "" },
-      {
-        "column_name": "model",
-        "vocabulary": ""
-      },
-      { "column_name": "modeling_realm", "vocabulary": "" },
-      {
-        "column_name": "variable",
-        "vocabulary": ""
-      }
-    ],
-    "assets": {
-      "column_name": "path",
-      "format": "netcdf"
+  "esmcat_version": "0.1.0",
+  "id": "sample-cmip5",
+  "description": "This is a sample ESM collection for CMIP5 data in netcdf format",
+  "catalog_file": "./tests/cmip5/cmip5-netcdf.csv",
+  "attributes": [
+    {
+      "column_name": "activity",
+      "vocabulary": ""
     },
-    "aggregations": [
-      {
-        "type": "union",
-        "attribute_name": "variable_id"
-      },
-      {
-        "type": "join_new",
-        "attribute_name": "ensemble_member"
-      },
-      {
-        "type": "join_existing",
-        "attribute_name": "time_range",
-        "dim_name": "time"
-      }]
+    {
+      "column_name": "ensemble_member",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "experiment",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "frequency",
+      "vocabulary": ""
+    },
+    { "column_name": "institute", "vocabulary": "" },
+    {
+      "column_name": "model",
+      "vocabulary": ""
+    },
+    { "column_name": "modeling_realm", "vocabulary": "" },
+    {
+      "column_name": "variable",
+      "vocabulary": ""
+    }
+  ],
+  "assets": {
+    "column_name": "path",
+    "format": "netcdf"
+  },
+  "aggregations": [
+    {
+      "type": "union",
+      "attribute_name": "variable"
+    },
+    {
+      "type": "join_new",
+      "attribute_name": "ensemble_member"
+    },
+    {
+      "type": "join_existing",
+      "attribute_name": "time_range",
+      "dim_name": "time"
+    }]
 
-  }
+}
