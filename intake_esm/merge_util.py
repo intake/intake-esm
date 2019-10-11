@@ -2,10 +2,6 @@ import fsspec
 import xarray as xr
 
 
-def open_dataset(path, user_kwargs={'chunks': {'time': 36}}):
-    return xr.open_dataset(path, **user_kwargs)
-
-
 def join_new(dsets, dim_name, coord_value, options={}):
     concat_dim = xr.DataArray(coord_value, dims=(dim_name), name=dim_name)
     return xr.concat(dsets, dim=concat_dim, **options)
@@ -30,7 +26,22 @@ def to_nested_dict(df):
         return df.to_dict()
 
 
-def aggregate(aggregations, v):
+def _create_asset_info_lookup(
+    df, path_column_name, variable_column_name, data_format=None, format_column_name=None
+):
+
+    if data_format:
+        return dict(
+            zip(df[path_column_name], tuple(zip(df[variable_column_name], [data_format] * len(df))))
+        )
+
+    elif format_column_name is not None:
+        return dict(
+            zip(df[path_column_name], tuple(zip(df[variable_column_name], df[format_column_name])))
+        )
+
+
+def aggregate(aggregation_dict, agg_columns, n_agg, v, lookup, zarr_kwargs, cdf_kwargs):
     def apply_aggregation(v, agg_column=None, key=None, level=0):
         """Recursively descend into nested dictionary and aggregate items.
         level tells how deep we are."""
@@ -39,7 +50,16 @@ def aggregate(aggregations, v):
 
         if level == n_agg:
             # bottom of the hierarchy - should be an actual path at this point
-            return open_dataset(v)
+            # return open_dataset(v)
+            varname = lookup[v][0]
+            data_format = lookup[v][1]
+            return open_dataset(
+                v,
+                varname=[varname],
+                data_format=data_format,
+                zarr_kwargs=zarr_kwargs,
+                cdf_kwargs=cdf_kwargs,
+            )
 
         else:
             agg_column = agg_columns[level]
@@ -58,56 +78,32 @@ def aggregate(aggregations, v):
             ]
             keys = list(v.keys())
 
+            attrs = dict_union(*[ds.attrs for ds in dsets])
+
             if agg_type == 'join_new':
-                return join_new(dsets, dim_name=agg_column, coord_value=keys, options=agg_options)
+                ds = join_new(dsets, dim_name=agg_column, coord_value=keys, options=agg_options)
 
             elif agg_type == 'join_existing':
-                return join_existing(dsets, options=agg_options)
+                ds = join_existing(dsets, options=agg_options)
 
             elif agg_type == 'union':
-                return union(dsets, options=agg_options)
+                ds = union(dsets, options=agg_options)
 
-    aggregation_dict = {}
-    for agg in aggregations:
-        key = agg['attribute_name']
-        rest = agg.copy()
-        del rest['attribute_name']
-        aggregation_dict[key] = rest
-
-    agg_columns = list(aggregation_dict.keys())
-
-    # the number of aggregation columns determines the level of recursion
-    n_agg = len(agg_columns)
+            ds.attrs = attrs
+            return ds
 
     return apply_aggregation(v)
 
 
-def _open_store(path, varname, zarr_kwargs):
-    """ Open zarr store """
-    mapper = fsspec.get_mapper(path)
-    ds = xr.open_zarr(mapper, **zarr_kwargs)
-    return _set_coords(ds, varname)
-
-
-def _open_cdf_dataset(path, varname, cdf_kwargs):
-    """ Open netcdf file """
-    ds = xr.open_dataset(path, **cdf_kwargs)
-    return _set_coords(ds, varname)
-
-
-def _open_dataset(
-    row, path_column_name, varname, data_format, expand_dims={}, zarr_kwargs={}, cdf_kwargs={}
-):
-    path = row[path_column_name]
+def open_dataset(path, varname, data_format, zarr_kwargs, cdf_kwargs):
     if data_format == 'zarr':
-        ds = _open_store(path, varname, zarr_kwargs)
-    else:
-        ds = _open_cdf_dataset(path, varname, cdf_kwargs)
+        mapper = fsspec.get_mapper(path)
+        ds = xr.open_zarr(mapper, **zarr_kwargs)
+        return _set_coords(ds, varname)
 
-    if expand_dims:
-        return ds.expand_dims(expand_dims)
     else:
-        return ds
+        ds = xr.open_dataset(path, **cdf_kwargs)
+        return _set_coords(ds, varname)
 
 
 def _restore_non_dim_coords(ds):

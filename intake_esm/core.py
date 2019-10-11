@@ -2,13 +2,19 @@ import json
 import logging
 from urllib.parse import urlparse
 
-import fsspec
 import intake
 import intake_xarray
 import numpy as np
 import pandas as pd
 import requests
-import xarray as xr
+from tqdm.auto import tqdm
+
+from .merge_util import (
+    _create_asset_info_lookup,
+    _restore_non_dim_coords,
+    aggregate,
+    to_nested_dict,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -21,10 +27,33 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
         self.esmcol_path = esmcol_path
         self._col_data = _fetch_and_parse_file(esmcol_path)
         self.df = pd.read_csv(self._col_data['catalog_file'])
+        self._entries = {}
 
     def search(self, **query):
-        """ Search for entries in the collection
+        """ Search for entries in the collection catalog
+
+        Returns
+        -------
+        cat : Catalog
+          A new Catalog with a subset of the entries in this Catalog.
+
+        Examples
+        --------
+        >>> import intake
+        >>> col = intake.open_esm_metadatastore("pangeo-cmip6.json")
+        >>> cat = col.search(source_id=['BCC-CSM2-MR', 'CNRM-CM6-1', 'CNRM-ESM2-1'],
+        ...                       experiment_id=['historical', 'ssp585'], variable_id='pr',
+        ...                       table_id='Amon', grid_label='gn')
+        >>> cat.df.head()
+            activity_id institution_id  ... grid_label                                             zstore
+        216           CMIP            BCC  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r1i...
+        302           CMIP            BCC  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r2i...
+        357           CMIP            BCC  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r3i...
+        17859  ScenarioMIP            BCC  ...         gn  gs://cmip6/ScenarioMIP/BCC/BCC-CSM2-MR/ssp585/...
+
+        [4 rows x 9 columns]
         """
+
         import uuid
 
         args = {'esmcol_path': self.esmcol_path, 'query': query}
@@ -44,6 +73,7 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
             getenv=False,
             getshell=False,
         )
+        self._entries[name] = cat
         return cat
 
     def nunique(self):
@@ -103,9 +133,34 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         return query_results
 
     def to_xarray(self, zarr_kwargs={}, cdf_kwargs={}):
-        """ Return dataset as an xarray dataset
-        Additional keyword arguments are passed through to
-        `xarray.open_dataset()`, xarray.open_zarr()` methods
+        """ Load catalog entries into a dictionary of xarray datasets.
+        Parameters
+        ----------
+        zarr_kwargs : dict
+            Keyword arguments to pass to `xarray.open_zarr()` function
+        cdf_kwargs : dict
+            Keyword arguments to pass to `xarray.open_dataset()` function
+
+        Returns
+        -------
+        dsets : dict
+           A dictionary of xarray datasets.
+
+        Examples
+        --------
+        >>> import intake
+        >>> col = intake.open_esm_metadatastore("glade-cmip6.json")
+        >>> cat = col.search(source_id=['BCC-CSM2-MR', 'CNRM-CM6-1', 'CNRM-ESM2-1'],
+        ...                       experiment_id=['historical', 'ssp585'], variable_id='pr',
+        ...                       table_id='Amon', grid_label='gn')
+        >>> dsets = cat.to_xarray(cdf_kwargs={'chunks': {'time' : 36}, 'decode_times': False})
+        --> The keys in the returned dictionary of datasets are constructed as follows:
+                'activity_id.institution_id.source_id.experiment_id.table_id.grid_label'
+        Dataset(s): 100%|██████████████████████████████████████████████████████████| 2/2 [00:17<00:00,  8.57s/it]
+        >>> dsets.keys()
+        dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
+
+
         """
         self.zarr_kwargs = zarr_kwargs
         self.cdf_kwargs = cdf_kwargs
@@ -132,9 +187,23 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
             format_column_name = self._col_data['assets']['format_column_name']
 
         groupby_attrs = self._col_data['aggregation_control'].get('groupby_attrs', [])
+        aggregations = self._col_data['aggregation_control'].get('aggregations', [])
+        variable_column_name = self._col_data['aggregation_control']['variable_column_name']
+
+        aggregation_dict = {}
+        for agg in aggregations:
+            key = agg['attribute_name']
+            rest = agg.copy()
+            del rest['attribute_name']
+            aggregation_dict[key] = rest
+
+        agg_columns = list(aggregation_dict.keys())
+
+        # the number of aggregation columns determines the level of recursion
+        n_agg = len(agg_columns)
 
         print(
-            f"--> The keys in the returned dictionary of datasets are constructed as follows:\n\t{'.'.join(groupby_attrs)}"
+            f"""--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{".".join(groupby_attrs)}'"""
         )
 
         if groupby_attrs:
@@ -144,8 +213,30 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
 
         dsets = {}
 
-        for compat_key, compatible_group in groups:
-            print(format_column_name, path_column_name)
+        for compat_key, compatible_group in tqdm(groups, desc='Dataset(s)', leave=True):
+            mi = compatible_group.set_index(agg_columns)
+            nd = to_nested_dict(mi[path_column_name])
+            if use_format_column:
+                lookup = _create_asset_info_lookup(
+                    compatible_group,
+                    path_column_name,
+                    variable_column_name,
+                    format_column_name=format_column_name,
+                )
+            else:
+
+                lookup = _create_asset_info_lookup(
+                    compatible_group,
+                    path_column_name,
+                    variable_column_name,
+                    data_format=self._col_data['assets']['format'],
+                )
+
+            ds = aggregate(
+                aggregation_dict, agg_columns, n_agg, nd, lookup, self.zarr_kwargs, self.cdf_kwargs
+            )
+            group_id = '.'.join(compat_key)
+            dsets[group_id] = _restore_non_dim_coords(ds)
 
         self._ds = dsets
 
@@ -194,75 +285,3 @@ def _fetch_and_parse_file(input_path):
         raise e
 
     return data
-
-
-def _open_store(path, varname, zarr_kwargs):
-    """ Open zarr store """
-    mapper = fsspec.get_mapper(path)
-    ds = xr.open_zarr(mapper, **zarr_kwargs)
-    return _set_coords(ds, varname)
-
-
-def _open_cdf_dataset(path, varname, cdf_kwargs):
-    """ Open netcdf file """
-    ds = xr.open_dataset(path, **cdf_kwargs)
-    return _set_coords(ds, varname)
-
-
-def _open_dataset(
-    row, path_column_name, varname, data_format, expand_dims={}, zarr_kwargs={}, cdf_kwargs={}
-):
-    path = row[path_column_name]
-    if data_format == 'zarr':
-        ds = _open_store(path, varname, zarr_kwargs)
-    else:
-        ds = _open_cdf_dataset(path, varname, cdf_kwargs)
-
-    if expand_dims:
-        return ds.expand_dims(expand_dims)
-    else:
-        return ds
-
-
-def _restore_non_dim_coords(ds):
-    """restore non_dim_coords to variables"""
-    non_dim_coords_reset = set(ds.coords) - set(ds.dims)
-    ds = ds.reset_coords(non_dim_coords_reset)
-    return ds
-
-
-def _set_coords(ds, varname):
-    """Set all variables except varname to be coords."""
-    if isinstance(varname, str):
-        varname = [varname]
-    coord_vars = set(ds.data_vars) - set(varname)
-    return ds.set_coords(coord_vars)
-
-
-def dict_union(*dicts, merge_keys=['history', 'tracking_id'], drop_keys=[]):
-    """Return the union of two or more dictionaries."""
-    from functools import reduce
-
-    if len(dicts) > 2:
-        return reduce(dict_union, dicts)
-    elif len(dicts) == 2:
-        d1, d2 = dicts
-        d = type(d1)()
-        # union
-        all_keys = set(d1) | set(d2)
-        for k in all_keys:
-            v1 = d1.get(k)
-            v2 = d2.get(k)
-            if (v1 is None and v2 is None) or k in drop_keys:
-                pass
-            elif v1 is None:
-                d[k] = v2
-            elif v2 is None:
-                d[k] = v1
-            elif v1 == v2:
-                d[k] = v1
-            elif k in merge_keys:
-                d[k] = '\n'.join([v1, v2])
-        return d
-    elif len(dicts) == 1:
-        return dicts[0]
