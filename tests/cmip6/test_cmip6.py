@@ -2,7 +2,6 @@ import os
 
 import intake
 import pytest
-import xarray as xr
 
 here = os.path.abspath(os.path.dirname(__file__))
 zarr_col = os.path.join(here, 'pangeo-cmip6-zarr.json')
@@ -26,9 +25,15 @@ def test_search(esmcol_path, query):
     assert len(col.df.columns) == len(cat.df.columns)
 
 
-@pytest.mark.parametrize('esmcol_path, query', [(zarr_col, zarr_query)])
-def test_to_xarray(esmcol_path, query):
+@pytest.mark.parametrize(
+    'esmcol_path, query, kwargs',
+    [(zarr_col, zarr_query, {}), (cdf_col, cdf_query, {'chunks': {'time': 1}})],
+)
+def test_to_xarray(esmcol_path, query, kwargs):
     col = intake.open_esm_metadatastore(esmcol_path)
     cat = col.search(**query)
+    if kwargs:
+        _, ds = cat.to_xarray(cdf_kwargs=kwargs).popitem()
     _, ds = cat.to_xarray().popitem()
-    assert isinstance(ds, xr.Dataset)
+    assert 'member_id' in ds.dims
+    assert len(ds.__dask_keys__()) > 0

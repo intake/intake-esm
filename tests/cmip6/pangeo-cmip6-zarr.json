@@ -44,23 +44,17 @@
         "experiment_id",
         "table_id",
         "grid_label"
-      ]
-    },
-
-    "aggregations": [
+      ],
+        "aggregations": [
       {
         "type": "join_new",
         "attribute_name": "member_id",
-        "options": { "coords": "minimal" }
-      },
-      {
-        "type": "join_existing",
-        "attribute_name": "time_range",
-        "options": { "dim": ["time"] }
+        "options": { "coords": "minimal", "compat": "override"}
       },
       {
         "type": "union",
         "attribute_name": "variable_id"
       }
     ]
+    }
   }
