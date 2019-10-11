@@ -17,13 +17,13 @@ Collection
    :members:
 
 
-
-Storage Resource
-~~~~~~~~~~~~~~~~
+Dataset Source
+~~~~~~~~~~~~~~
 
 .. autosummary::
 
-   intake_esm.storage.StorageResource
+   intake_esm.core.ESMDatasetSource
 
-.. autoclass:: intake_esm.storage.StorageResource
+
+.. autoclass:: intake_esm.core.ESMDatasetSource
    :members:
