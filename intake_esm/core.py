@@ -186,7 +186,7 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
             use_format_column = True
 
         mapper_dict = {
-            path: fsspec.get_mapper(path) for path in self.df[path_column_name]
+            path: _path_to_mapper(path) for path in self.df[path_column_name]
         }  # replace path column with mapper (dependent on filesystem type)
 
         groupby_attrs = self._col_data['aggregation_control'].get('groupby_attrs', [])
