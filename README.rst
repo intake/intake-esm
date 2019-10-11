@@ -55,7 +55,7 @@ such as `xarray` can be a daunting task due to the large number of files a user 
 
   .. code-block:: python
 
-        >>> dsets = cat.to_xarray(decode_times=True, chunks={'time': 50})
+        >>> dsets = cat.to_dataset_dict(decode_times=True, chunks={'time': 50})
 
 
 Intake-esm supports data holdings from the following projects:

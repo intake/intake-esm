@@ -26,6 +26,6 @@ def test_to_xarray_cmip(chunks, expected_chunks):
     c = intake.open_esm_metadatastore(esmcol_path)
     cat = c.search(variable=['hfls'], frequency='mon', modeling_realm='atmos', model=['CNRM-CM5'])
 
-    dset = cat.to_xarray(cdf_kwargs=dict(chunks=chunks))
+    dset = cat.to_dataset_dict(cdf_kwargs=dict(chunks=chunks))
     _, ds = dset.popitem()
     assert ds['hfls'].data.chunksize == expected_chunks

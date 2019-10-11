@@ -29,12 +29,12 @@ def test_search(esmcol_path, query):
     'esmcol_path, query, kwargs',
     [(zarr_col, zarr_query, {}), (cdf_col, cdf_query, {'chunks': {'time': 1}})],
 )
-def test_to_xarray(esmcol_path, query, kwargs):
+def test_to_dataset_dict(esmcol_path, query, kwargs):
     col = intake.open_esm_metadatastore(esmcol_path)
     cat = col.search(**query)
     if kwargs:
-        _, ds = cat.to_xarray(cdf_kwargs=kwargs).popitem()
-    _, ds = cat.to_xarray().popitem()
+        _, ds = cat.to_dataset_dict(cdf_kwargs=kwargs).popitem()
+    _, ds = cat.to_dataset_dict().popitem()
     assert 'member_id' in ds.dims
     assert len(ds.__dask_keys__()) > 0
 

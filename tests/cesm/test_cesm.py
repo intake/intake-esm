@@ -18,7 +18,7 @@ def test_search():
 def test_to_xarray_zarr():
     col = intake.open_esm_metadatastore(zarr_col)
     cat = col.search(variable='RAIN', experiment='20C')
-    dsets = cat.to_xarray()
+    dsets = cat.to_dataset_dict()
     _, ds = dsets.popitem()
     assert isinstance(ds, xr.Dataset)
 
@@ -34,6 +34,6 @@ def test_to_xarray_cesm_netcdf(chunks, expected_chunks):
     c = intake.open_esm_metadatastore(cdf_col)
     query = {'variable': ['SHF'], 'member_id': [1, 3, 9], 'experiment': ['20C', 'RCP85']}
     cat = c.search(**query)
-    dset = cat.to_xarray(cdf_kwargs=dict(chunks=chunks))
+    dset = cat.to_dataset_dict(cdf_kwargs=dict(chunks=chunks))
     _, ds = dset.popitem()
     assert ds['SHF'].data.chunksize == expected_chunks

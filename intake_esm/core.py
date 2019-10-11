@@ -132,7 +132,7 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         query_results = df.loc[condition]
         return query_results
 
-    def to_xarray(self, zarr_kwargs={}, cdf_kwargs={}):
+    def to_dataset_dict(self, zarr_kwargs={}, cdf_kwargs={}):
         """ Load catalog entries into a dictionary of xarray datasets.
         Parameters
         ----------
@@ -153,7 +153,7 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         >>> cat = col.search(source_id=['BCC-CSM2-MR', 'CNRM-CM6-1', 'CNRM-ESM2-1'],
         ...                       experiment_id=['historical', 'ssp585'], variable_id='pr',
         ...                       table_id='Amon', grid_label='gn')
-        >>> dsets = cat.to_xarray(cdf_kwargs={'chunks': {'time' : 36}, 'decode_times': False})
+        >>> dsets = cat.to_dataset_dict(cdf_kwargs={'chunks': {'time' : 36}, 'decode_times': False})
         --> The keys in the returned dictionary of datasets are constructed as follows:
                 'activity_id.institution_id.source_id.experiment_id.table_id.grid_label'
         Dataset(s): 100%|██████████████████████████████████████████████████████████| 2/2 [00:17<00:00,  8.57s/it]
