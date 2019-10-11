@@ -15,8 +15,6 @@ import datetime
 import os
 import sys
 
-import intake
-
 import intake_esm
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -47,7 +45,6 @@ extensions = [
     'IPython.sphinxext.ipython_console_highlighting',
     'IPython.sphinxext.ipython_directive',
     'nbsphinx',
-    'sphinx_click.ext',
 ]
 
 extlinks = {
