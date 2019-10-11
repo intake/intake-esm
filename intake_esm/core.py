@@ -233,6 +233,7 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         ]
 
         dsets = dask.compute(*dsets)
+        del mapper_dict
 
         self._ds = {dset[0]: dset[1] for dset in dsets}
 
