@@ -1,6 +1,5 @@
 import json
 import logging
-from collections.abc import Iterable
 from urllib.parse import urlparse
 
 import fsspec
@@ -121,95 +120,32 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         )
         return self._schema
 
-    def _get_open_dset_settings(self):
+    def _open_dataset(self):
 
+        path_column_name = self._col_data['assets']['column_name']
         if 'format' in self._col_data['assets']:
             use_format_column = False
         else:
             use_format_column = True
 
-        union = set()
-        join_new = set()
-        aggs = self._col_data['aggregations']
-        for agg in aggs:
-            if agg['type'] == 'union':
-                union.add(agg['attribute_name'])
-            elif agg['type'] == 'join_new':
-                join_new.add(agg['attribute_name'])
-
-        dset_groupby_column_names = (
-            set([item['column_name'] for item in self._col_data['attributes']])
-            .difference(join_new)
-            .difference(union)
-        )
-
-        return (
-            use_format_column,
-            list(union),
-            list(join_new),
-            sorted(list(dset_groupby_column_names)),
-        )
-
-    def _open_dataset(self):
-
-        path_column_name = self._col_data['assets']['column_name']
-        use_format_column, union, join_new, dset_groupby_column_names = (
-            self._get_open_dset_settings()
-        )
-        print(
-            f"--> The keys in the returned dictionary of datasets are constructed as follows:\n\t{'.'.join(dset_groupby_column_names)}"
-        )
         if use_format_column:
             format_column_name = self._col_data['assets']['format_column_name']
 
-        if dset_groupby_column_names:
-            groups = self.df.groupby(dset_groupby_column_names)
+        groupby_attrs = self._col_data['aggregation_control'].get('groupby_attrs', [])
+
+        print(
+            f"--> The keys in the returned dictionary of datasets are constructed as follows:\n\t{'.'.join(groupby_attrs)}"
+        )
+
+        if groupby_attrs:
+            groups = self.df.groupby(groupby_attrs)
         else:
             groups = self.df.groupby(self.df.columns.tolist())
 
         dsets = {}
 
         for compat_key, compatible_group in groups:
-            if join_new:
-                join_new_groups = compatible_group.groupby(join_new)
-            else:
-                join_new_groups = compatible_group.groupby(compatible_group.columns.tolist())
-
-            datasets = []
-            for join_new_key, join_new_group in join_new_groups:
-                temp_ds = []
-                for _, row in join_new_group.iterrows():
-                    if use_format_column:
-                        data_format = row[format_column_name]
-                    else:
-                        data_format = self._col_data['assets']['format']
-                    if join_new:
-                        if not isinstance(join_new_key, Iterable):
-                            join_new_key = [join_new_key]
-                    expand_dims = dict(zip(join_new, join_new_key))
-
-                    expand_dims = {
-                        dim_name: [dim_value] for dim_name, dim_value in expand_dims.items()
-                    }
-                    varname = row[union].tolist()
-                    temp_ds.append(
-                        _open_dataset(
-                            row,
-                            path_column_name,
-                            varname,
-                            data_format,
-                            expand_dims=expand_dims,
-                            zarr_kwargs=self.zarr_kwargs,
-                            cdf_kwargs=self.cdf_kwargs,
-                        )
-                    )
-                datasets.extend(temp_ds)
-            attrs = dict_union(*[ds.attrs for ds in datasets])
-            dset = xr.combine_by_coords(datasets)
-            dset = _restore_non_dim_coords(dset)
-            dset.attrs = attrs
-            group_id = '.'.join(compat_key)
-            dsets[group_id] = dset
+            print(format_column_name, path_column_name)
 
         self._ds = dsets
 

@@ -35,19 +35,32 @@
       "column_name": "path",
       "format": "zarr"
     },
+    "aggregation_control": {
+      "variable_column_name": "variable_id",
+      "groupby_attrs": [
+        "activity_id",
+        "institution_id",
+        "source_id",
+        "experiment_id",
+        "table_id",
+        "grid_label"
+      ]
+    },
+
     "aggregations": [
       {
-        "type": "union",
-        "attribute_name": "variable_id"
-      },
-      {
         "type": "join_new",
-        "attribute_name": "member_id"
+        "attribute_name": "member_id",
+        "options": { "coords": "minimal" }
       },
       {
         "type": "join_existing",
         "attribute_name": "time_range",
-        "dim_name": "time"
-      }]
-
+        "options": { "dim": ["time"] }
+      },
+      {
+        "type": "union",
+        "attribute_name": "variable_id"
+      }
+    ]
   }
