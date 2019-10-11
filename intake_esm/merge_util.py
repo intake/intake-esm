@@ -1,4 +1,3 @@
-import fsspec
 import xarray as xr
 
 
@@ -41,7 +40,9 @@ def _create_asset_info_lookup(
         )
 
 
-def aggregate(aggregation_dict, agg_columns, n_agg, v, lookup, zarr_kwargs, cdf_kwargs):
+def aggregate(
+    aggregation_dict, agg_columns, n_agg, v, lookup, mapper_dict, zarr_kwargs, cdf_kwargs
+):
     def apply_aggregation(v, agg_column=None, key=None, level=0):
         """Recursively descend into nested dictionary and aggregate items.
         level tells how deep we are."""
@@ -54,7 +55,7 @@ def aggregate(aggregation_dict, agg_columns, n_agg, v, lookup, zarr_kwargs, cdf_
             varname = lookup[v][0]
             data_format = lookup[v][1]
             return open_dataset(
-                v,
+                mapper_dict[v],
                 varname=[varname],
                 data_format=data_format,
                 zarr_kwargs=zarr_kwargs,
@@ -96,9 +97,9 @@ def aggregate(aggregation_dict, agg_columns, n_agg, v, lookup, zarr_kwargs, cdf_
 
 
 def open_dataset(path, varname, data_format, zarr_kwargs, cdf_kwargs):
+
     if data_format == 'zarr':
-        mapper = fsspec.get_mapper(path)
-        ds = xr.open_zarr(mapper, **zarr_kwargs)
+        ds = xr.open_zarr(path, **zarr_kwargs)
         return _set_coords(ds, varname)
 
     else:

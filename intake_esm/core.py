@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 
 import dask
 import dask.delayed
+import fsspec
 import intake
 import intake_xarray
 import numpy as np
@@ -184,6 +185,10 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         else:
             use_format_column = True
 
+        mapper_dict = {
+            path: fsspec.get_mapper(path) for path in self.df[path_column_name]
+        }  # replace path column with mapper (dependent on filesystem type)
+
         groupby_attrs = self._col_data['aggregation_control'].get('groupby_attrs', [])
         aggregations = self._col_data['aggregation_control'].get('aggregations', [])
         variable_column_name = self._col_data['aggregation_control']['variable_column_name']
@@ -220,6 +225,7 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
                 path_column_name,
                 variable_column_name,
                 use_format_column,
+                mapper_dict,
                 self.zarr_kwargs,
                 self.cdf_kwargs,
             )
@@ -242,6 +248,7 @@ def _load_group_dataset(
     path_column_name,
     variable_column_name,
     use_format_column,
+    mapper_dict,
     zarr_kwargs,
     cdf_kwargs,
 ):
@@ -258,7 +265,9 @@ def _load_group_dataset(
             df, path_column_name, variable_column_name, data_format=col_data['assets']['format']
         )
 
-    ds = aggregate(aggregation_dict, agg_columns, n_agg, nd, lookup, zarr_kwargs, cdf_kwargs)
+    ds = aggregate(
+        aggregation_dict, agg_columns, n_agg, nd, lookup, mapper_dict, zarr_kwargs, cdf_kwargs
+    )
     group_id = '.'.join(key)
     return group_id, _restore_non_dim_coords(ds)
 
@@ -307,3 +316,11 @@ def _fetch_and_parse_file(input_path):
         raise e
 
     return data
+
+
+def _path_to_mapper(path):
+    """Convert path to mapper if necessary."""
+    if fsspec.core.split_protocol(path)[0] is not None:
+        return fsspec.get_mapper(path)
+    else:
+        return path
