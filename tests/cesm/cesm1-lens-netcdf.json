@@ -30,14 +30,28 @@
       "column_name": "path",
       "format": "netcdf"
     },
-    "aggregations": [
-      {
-        "type": "union",
-        "attribute_name": "variable"
-      },
-      {
-        "type": "join_new",
-        "attribute_name": "member_id"
-      }
-     ]
+
+    "aggregation_control": {
+      "variable_column_name": "variable",
+      "groupby_attrs": [
+        "component", "experiment", "stream"
+      ],
+        "aggregations": [
+          {
+            "type": "join_new",
+            "attribute_name": "member_id",
+            "options": { "coords": "minimal", "compat": "override"}
+          },
+          {
+            "type": "join_existing",
+            "attribute_name": "time_range",
+            "options": { "dim": ["time"] }
+          },
+          {
+            "type": "union",
+            "attribute_name": "variable"
+          }
+        ]
+    }
+
   }

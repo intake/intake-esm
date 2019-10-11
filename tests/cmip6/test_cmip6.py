@@ -37,3 +37,8 @@ def test_to_xarray(esmcol_path, query, kwargs):
     _, ds = cat.to_xarray().popitem()
     assert 'member_id' in ds.dims
     assert len(ds.__dask_keys__()) > 0
+
+
+def test_repr():
+    col = intake.open_esm_metadatastore(zarr_col)
+    assert repr(col).startswith('ESM Collection')

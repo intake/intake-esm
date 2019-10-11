@@ -23,10 +23,16 @@
       "column_name": "path",
       "format": "zarr"
     },
-    "aggregations": [
-      {
-        "type": "union",
-        "attribute_name": "variable"
-      }
-      ]
+    "aggregation_control": {
+      "variable_column_name": "variable",
+      "groupby_attrs": [
+        "component", "experiment", "frequency"
+      ],
+        "aggregations": [
+          {
+            "type": "union",
+            "attribute_name": "variable"
+          }
+        ]
+    }
   }

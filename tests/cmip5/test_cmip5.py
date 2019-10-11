@@ -17,7 +17,10 @@ def test_search():
 
 @pytest.mark.parametrize(
     'chunks, expected_chunks',
-    [({'time': 1, 'lat': 2, 'lon': 2}, (1, 2, 2)), ({'time': 2, 'lat': 1, 'lon': 1}, (2, 1, 1))],
+    [
+        ({'time': 1, 'lat': 2, 'lon': 2}, (1, 1, 2, 2)),
+        ({'time': 2, 'lat': 1, 'lon': 1}, (1, 2, 1, 1)),
+    ],
 )
 def test_to_xarray_cmip(chunks, expected_chunks):
     c = intake.open_esm_metadatastore(esmcol_path)
