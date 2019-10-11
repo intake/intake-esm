@@ -2,12 +2,13 @@ import json
 import logging
 from urllib.parse import urlparse
 
+import dask
+import dask.delayed
 import intake
 import intake_xarray
 import numpy as np
 import pandas as pd
 import requests
-from tqdm.auto import tqdm
 
 from .merge_util import (
     _create_asset_info_lookup,
@@ -183,9 +184,6 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         else:
             use_format_column = True
 
-        if use_format_column:
-            format_column_name = self._col_data['assets']['format_column_name']
-
         groupby_attrs = self._col_data['aggregation_control'].get('groupby_attrs', [])
         aggregations = self._col_data['aggregation_control'].get('aggregations', [])
         variable_column_name = self._col_data['aggregation_control']['variable_column_name']
@@ -211,34 +209,58 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         else:
             groups = self.df.groupby(self.df.columns.tolist())
 
-        dsets = {}
-
-        for compat_key, compatible_group in tqdm(groups, desc='Dataset(s)', leave=True):
-            mi = compatible_group.set_index(agg_columns)
-            nd = to_nested_dict(mi[path_column_name])
-            if use_format_column:
-                lookup = _create_asset_info_lookup(
-                    compatible_group,
-                    path_column_name,
-                    variable_column_name,
-                    format_column_name=format_column_name,
-                )
-            else:
-
-                lookup = _create_asset_info_lookup(
-                    compatible_group,
-                    path_column_name,
-                    variable_column_name,
-                    data_format=self._col_data['assets']['format'],
-                )
-
-            ds = aggregate(
-                aggregation_dict, agg_columns, n_agg, nd, lookup, self.zarr_kwargs, self.cdf_kwargs
+        dsets = [
+            _load_group_dataset(
+                key,
+                df,
+                self._col_data,
+                agg_columns,
+                aggregation_dict,
+                n_agg,
+                path_column_name,
+                variable_column_name,
+                use_format_column,
+                self.zarr_kwargs,
+                self.cdf_kwargs,
             )
-            group_id = '.'.join(compat_key)
-            dsets[group_id] = _restore_non_dim_coords(ds)
+            for key, df in groups
+        ]
 
-        self._ds = dsets
+        dsets = dask.compute(*dsets)
+
+        self._ds = {dset[0]: dset[1] for dset in dsets}
+
+
+@dask.delayed
+def _load_group_dataset(
+    key,
+    df,
+    col_data,
+    agg_columns,
+    aggregation_dict,
+    n_agg,
+    path_column_name,
+    variable_column_name,
+    use_format_column,
+    zarr_kwargs,
+    cdf_kwargs,
+):
+    mi = df.set_index(agg_columns)
+    nd = to_nested_dict(mi[path_column_name])
+    if use_format_column:
+        format_column_name = col_data['assets']['format_column_name']
+        lookup = _create_asset_info_lookup(
+            df, path_column_name, variable_column_name, format_column_name=format_column_name
+        )
+    else:
+
+        lookup = _create_asset_info_lookup(
+            df, path_column_name, variable_column_name, data_format=col_data['assets']['format']
+        )
+
+    ds = aggregate(aggregation_dict, agg_columns, n_agg, nd, lookup, zarr_kwargs, cdf_kwargs)
+    group_id = '.'.join(key)
+    return group_id, _restore_non_dim_coords(ds)
 
 
 def _is_valid_url(url):
