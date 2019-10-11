@@ -15,7 +15,6 @@ dependencies:
   - python=3.6
   - pyyaml
   - tqdm
-  - docrep
   - s3fs
   - gcsfs
   - fsspec
