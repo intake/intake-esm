@@ -8,7 +8,7 @@ def join_new(dsets, dim_name, coord_value, options={}):
 
 
 def join_existing(dsets, options={}):
-    return xr.concat(dsets, dim='time')
+    return xr.concat(dsets, **options)
 
 
 def union(dsets, options={}):

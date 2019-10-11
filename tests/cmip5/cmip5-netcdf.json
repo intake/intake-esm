@@ -51,7 +51,7 @@
           {
             "type": "join_existing",
             "attribute_name": "time_range",
-            "options": { "dim": ["time"] }
+            "options": { "dim": "time" }
           },
           {
             "type": "union",
