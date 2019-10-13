@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 from urllib.parse import urlparse
@@ -206,9 +207,6 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
 
         agg_columns = list(aggregation_dict.keys())
 
-        # the number of aggregation columns determines the level of recursion
-        n_agg = len(agg_columns)
-
         if groupby_attrs:
             groups = self.df.groupby(groupby_attrs)
         else:
@@ -225,7 +223,6 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
                 self._col_data,
                 agg_columns,
                 aggregation_dict,
-                n_agg,
                 path_column_name,
                 variable_column_name,
                 use_format_column,
@@ -249,7 +246,6 @@ def _load_group_dataset(
     col_data,
     agg_columns,
     aggregation_dict,
-    n_agg,
     path_column_name,
     variable_column_name,
     use_format_column,
@@ -257,8 +253,22 @@ def _load_group_dataset(
     zarr_kwargs,
     cdf_kwargs,
 ):
+
+    aggregation_dict = copy.deepcopy(aggregation_dict)
+    agg_columns = agg_columns.copy()
+    drop_cols = []
+    for col in agg_columns:
+        if df[col].isnull().all():
+            drop_cols.append(col)
+            del aggregation_dict[col]
+
+    agg_columns = list(filter(lambda x: x not in drop_cols, agg_columns))
+    # the number of aggregation columns determines the level of recursion
+    n_agg = len(agg_columns)
+
     mi = df.set_index(agg_columns)
     nd = to_nested_dict(mi[path_column_name])
+
     if use_format_column:
         format_column_name = col_data['assets']['format_column_name']
         lookup = _create_asset_info_lookup(
