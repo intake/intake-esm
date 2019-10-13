@@ -213,10 +213,10 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
             groups = self.df.groupby(groupby_attrs)
         else:
             groups = self.df.groupby(self.df.columns.tolist())
-        logger.info(
+        print(
             f"""--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{".".join(groupby_attrs)}'"""
         )
-        logger.info(f'\n--> There will be {len(groups)} groups')
+        print(f'\n--> There will be {len(groups)} groups')
 
         dsets = [
             _load_group_dataset(

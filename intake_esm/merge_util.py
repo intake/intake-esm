@@ -85,6 +85,7 @@ def aggregate(
                 ds = join_new(dsets, dim_name=agg_column, coord_value=keys, options=agg_options)
 
             elif agg_type == 'join_existing':
+
                 ds = join_existing(dsets, options=agg_options)
 
             elif agg_type == 'union':
