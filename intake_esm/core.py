@@ -134,7 +134,7 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         query_results = df.loc[condition]
         return query_results
 
-    def to_dataset_dict(self, zarr_kwargs={}, cdf_kwargs={}):
+    def to_dataset_dict(self, zarr_kwargs={}, cdf_kwargs={'chunks': {}}):
         """ Load catalog entries into a dictionary of xarray datasets.
         Parameters
         ----------
@@ -158,12 +158,16 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         >>> dsets = cat.to_dataset_dict(cdf_kwargs={'chunks': {'time' : 36}, 'decode_times': False})
         --> The keys in the returned dictionary of datasets are constructed as follows:
                 'activity_id.institution_id.source_id.experiment_id.table_id.grid_label'
-        Dataset(s): 100%|██████████████████████████████████████████████████████████| 2/2 [00:17<00:00,  8.57s/it]
         >>> dsets.keys()
         dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
 
 
         """
+        if 'chunks' in cdf_kwargs and not cdf_kwargs['chunks']:
+            logger.warning(
+                'xarray will load the datasets with dask using a single chunk for all arrays.'
+            )
+
         self.zarr_kwargs = zarr_kwargs
         self.cdf_kwargs = cdf_kwargs
         return self.to_dask()
@@ -205,14 +209,14 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         # the number of aggregation columns determines the level of recursion
         n_agg = len(agg_columns)
 
-        print(
-            f"""--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{".".join(groupby_attrs)}'"""
-        )
-
         if groupby_attrs:
             groups = self.df.groupby(groupby_attrs)
         else:
             groups = self.df.groupby(self.df.columns.tolist())
+        logger.info(
+            f"""--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{".".join(groupby_attrs)}'"""
+        )
+        logger.info(f'\n--> There will be {len(groups)} groups')
 
         dsets = [
             _load_group_dataset(
