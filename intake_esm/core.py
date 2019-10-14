@@ -306,7 +306,7 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         >>> dsets.keys()
         dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
 
-        >>> >>> dsets['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn']
+        >>> dsets['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn']
         <xarray.Dataset>
         Dimensions:    (bnds: 2, lat: 160, lon: 320, member_id: 3, time: 1980)
         Coordinates:
