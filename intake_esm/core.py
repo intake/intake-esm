@@ -1,5 +1,6 @@
 import copy
 import json
+import logging
 from urllib.parse import urlparse
 
 import dask
@@ -18,25 +19,29 @@ from .merge_util import (
     to_nested_dict,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class ESMMetadataStoreCollection(intake.catalog.Catalog):
+    """ This Catalog is backed by a CSV file.
+
+    The in-memory representation for this catalog is a Pandas DataFrame.
+
+    Parameters
+    ----------
+
+    esmcol_path : str
+        Path or URL to an ESM collection JSON file
+    **kwargs :
+        Additional keyword arguments are passed through to the base class,
+        Catalog.
+
+    """
+
     name = 'esm_metadatastore'
 
     def __init__(self, esmcol_path, **kwargs):
-        """ This Catalog is backed by a CSV file.
 
-        The in-memory representation for this catalog is a Pandas DataFrame.
-
-        Parameters
-        ----------
-
-        esmcol_path : str
-           Path to an ESM collection JSON file
-        **kwargs :
-            Additional keyword arguments are passed through to the base class,
-            Catalog.
-
-        """
         self.esmcol_path = esmcol_path
         self._col_data = _fetch_and_parse_file(esmcol_path)
         self.df = pd.read_csv(self._col_data['catalog_file'])
@@ -55,17 +60,23 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
         --------
         >>> import intake
         >>> col = intake.open_esm_metadatastore("pangeo-cmip6.json")
-        >>> cat = col.search(source_id=['BCC-CSM2-MR', 'CNRM-CM6-1', 'CNRM-ESM2-1'],
-        ...                       experiment_id=['historical', 'ssp585'], variable_id='pr',
-        ...                       table_id='Amon', grid_label='gn')
-        >>> cat.df.head()
-            activity_id institution_id  ... grid_label                                             zstore
-        216           CMIP            BCC  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r1i...
-        302           CMIP            BCC  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r2i...
-        357           CMIP            BCC  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r3i...
-        17859  ScenarioMIP            BCC  ...         gn  gs://cmip6/ScenarioMIP/BCC/BCC-CSM2-MR/ssp585/...
+        >>> col.df.head(3)
+        activity_id institution_id source_id  ... grid_label                                             zstore dcpp_init_year
+        0  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+        1  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+        2  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
 
-        [4 rows x 9 columns]
+        [3 rows x 10 columns]
+        >>> cat = col.search(source_id=['BCC-CSM2-MR', 'CNRM-CM6-1', 'CNRM-ESM2-1'],
+        ...                 experiment_id=['historical', 'ssp585'], variable_id='pr',
+        ...                table_id='Amon', grid_label='gn')
+        >>> cat.df.head(3)
+            activity_id institution_id    source_id  ... grid_label                                             zstore dcpp_init_year
+        260        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r1i...            NaN
+        346        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r2i...            NaN
+        401        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r3i...            NaN
+
+        [3 rows x 10 columns]
         """
 
         import uuid
@@ -91,7 +102,32 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
         return cat
 
     def nunique(self):
-        """Count distinct observations across dataframe columns"""
+        """Count distinct observations across dataframe columns
+
+        Examples
+        --------
+        >>> import intake
+        >>> col = intake.open_esm_metadatastore("pangeo-cmip6.json")
+        >>> col.df.head(3)
+        activity_id institution_id source_id  ... grid_label                                             zstore dcpp_init_year
+        0  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+        1  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+        2  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+
+        [3 rows x 10 columns]
+        >>> col.nunique()
+        activity_id          10
+        institution_id       23
+        source_id            48
+        experiment_id        29
+        member_id            86
+        table_id             19
+        variable_id         187
+        grid_label            7
+        zstore            27437
+        dcpp_init_year       59
+        dtype: int64
+        """
         return self.df.nunique()
 
     def unique(self, columns=None):
@@ -106,6 +142,51 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
         -------
         info : dict
            dictionary containing count, and unique values
+
+        Examples
+        --------
+        >>> import intake
+        >>> import pprint
+        >>> col = intake.open_esm_metadatastore("pangeo-cmip6.json")
+        >>> col.df.head(3)
+        activity_id institution_id source_id  ... grid_label                                             zstore dcpp_init_year
+        0  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+        1  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+        2  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+
+        [3 rows x 10 columns]
+
+        >>> uniques = col.unique(columns=["activity_id", "source_id"])
+        >>> pprint.pprint(uniques)
+        {'activity_id': {'count': 10,
+                        'values': ['AerChemMIP',
+                                    'C4MIP',
+                                    'CMIP',
+                                    'DAMIP',
+                                    'DCPP',
+                                    'HighResMIP',
+                                    'LUMIP',
+                                    'OMIP',
+                                    'PMIP',
+                                    'ScenarioMIP']},
+        'source_id': {'count': 17,
+                    'values': ['BCC-ESM1',
+                                'CNRM-ESM2-1',
+                                'E3SM-1-0',
+                                'MIROC6',
+                                'HadGEM3-GC31-LL',
+                                'MRI-ESM2-0',
+                                'GISS-E2-1-G-CC',
+                                'CESM2-WACCM',
+                                'NorCPM1',
+                                'GFDL-AM4',
+                                'GFDL-CM4',
+                                'NESM3',
+                                'ECMWF-IFS-LR',
+                                'IPSL-CM6A-ATM-HR',
+                                'NICAM16-7S',
+                                'GFDL-CM4C192',
+                                'MPI-ESM1-2-HR']}}
 
         """
         return _unique(self.df, columns)
@@ -135,16 +216,34 @@ def _unique(df, columns):
 
 
 class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
+    """ Load assets into xarray datasets.
+
+    Parameters
+    ----------
+    esmcol_path : str
+        Path or URL to an ESM collection JSON file
+
+    query : dict
+        A dictionary contain query to execute against the catalog.
+
+    **kwargs :
+        Additional keyword arguments are passed through to the base class,
+        Catalog.
+
+    """
+
     container = 'xarray'
     name = 'esm-dataset-source'
 
     def __init__(self, esmcol_path, query, **kwargs):
-        super().__init__(metadata={})
+
         self.esmcol_path = esmcol_path
         self._col_data = _fetch_and_parse_file(esmcol_path)
         self.df = self._get_subset(**query)
         self.urlpath = ''
         self._ds = None
+        self.metadata = {}
+        super().__init__(**kwargs)
 
     def _get_subset(self, **query):
         df = pd.read_csv(self._col_data['catalog_file'])
@@ -204,16 +303,73 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         >>> cat = col.search(source_id=['BCC-CSM2-MR', 'CNRM-CM6-1', 'CNRM-ESM2-1'],
         ...                       experiment_id=['historical', 'ssp585'], variable_id='pr',
         ...                       table_id='Amon', grid_label='gn')
-        >>> dsets = cat.to_dataset_dict(cdf_kwargs={'chunks': {'time' : 36}, 'decode_times': False})
+        >>> dsets = cat.to_dataset_dict()
         --> The keys in the returned dictionary of datasets are constructed as follows:
-                'activity_id.institution_id.source_id.experiment_id.table_id.grid_label'
+        'activity_id.institution_id.source_id.experiment_id.table_id.grid_label'
+
+        --> There will be 2 group(s)
         >>> dsets.keys()
         dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
 
+        >>> >>> dsets['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn']
+        <xarray.Dataset>
+        Dimensions:    (bnds: 2, lat: 160, lon: 320, member_id: 3, time: 1980)
+        Coordinates:
+        * lon        (lon) float64 0.0 1.125 2.25 3.375 ... 355.5 356.6 357.8 358.9
+        * lat        (lat) float64 -89.14 -88.03 -86.91 -85.79 ... 86.91 88.03 89.14
+        * time       (time) object 1850-01-16 12:00:00 ... 2014-12-16 12:00:00
+        * member_id  (member_id) <U8 'r1i1p1f1' 'r2i1p1f1' 'r3i1p1f1'
+        Dimensions without coordinates: bnds
+        Data variables:
+            lat_bnds   (lat, bnds) float64 dask.array<chunksize=(160, 2), meta=np.ndarray>
+            lon_bnds   (lon, bnds) float64 dask.array<chunksize=(320, 2), meta=np.ndarray>
+            time_bnds  (time, bnds) object dask.array<chunksize=(1980, 2), meta=np.ndarray>
+            pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
+        Attributes:
+            parent_experiment_id:   piControl
+            frequency:              mon
+            run_variant:            forcing: greenhouse gases,solar constant,aerosol,...
+            activity_id:            CMIP
+            parent_time_units:      days since 1850-01-01
+            nominal_resolution:     100 km
+            parent_activity_id:     CMIP
+            cmor_version:           3.3.2
+            history:                2018-11-26T05:08:26Z ; CMOR rewrote data to be co...
+            contact:                Dr. Tongwen Wu(twwu@cma.gov.cn)
+            references:             Model described by Tongwen Wu et al. (JGR 2013; J...
+            branch_method:          Standard
+            parent_mip_era:         CMIP6
+            experiment_id:          historical
+            comment:                The model integration starts from the piControl e...
+            mip_era:                CMIP6
+            tracking_id:            hdl:21.14100/7b6d329a-4b9a-4646-8e7c-0c2a56bfd098...
+            grid_label:             gn
+            institution_id:         BCC
+            initialization_index:   1
+            external_variables:     areacella
+            variant_label:          r3i1p1f1
+            license:                CMIP6 model data produced by BCC is licensed unde...
+            title:                  BCC-CSM2-MR output prepared for CMIP6
+            Conventions:            CF-1.7 CMIP-6.2
+            source:                 BCC-CSM 2 MR (2017):   aerosol: none  atmos: BCC_...
+            table_id:               Amon
+            realization_index:      3
+            source_id:              BCC-CSM2-MR
+            grid:                   T106
+            description:            DECK: historical
+            variable_id:            pr
 
         """
-        if 'chunks' in cdf_kwargs and not cdf_kwargs['chunks']:
-            print('xarray will load the datasets with dask using a single chunk for all arrays.')
+        if (
+            'chunks' in cdf_kwargs
+            and not cdf_kwargs['chunks']
+            and self._col_data['assets'].get('format') != 'zarr'
+        ):
+            print(
+                """\nxarray will load netCDF datasets with dask using a single chunk for all arrays.
+                     For effective chunking, please provide chunks in cdf_kwargs.
+                     For example: cdf_kwargs={'chunks': {'time': 36}}\n"""
+            )
 
         self.zarr_kwargs = zarr_kwargs
         self.cdf_kwargs = cdf_kwargs
@@ -369,12 +525,12 @@ def _fetch_and_parse_file(input_path):
 
     try:
         if _is_valid_url(input_path):
-            print('Loading ESMCol from URL')
+            logger.info('Loading ESMCol from URL')
             resp = requests.get(input_path)
             data = resp.json()
         else:
             with open(input_path) as f:
-                print('Loading ESMCol from filesystem')
+                logger.info('Loading ESMCol from filesystem')
                 data = json.load(f)
 
     except Exception as e:
