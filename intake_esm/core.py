@@ -23,9 +23,10 @@ logger = logging.getLogger(__name__)
 
 
 class ESMMetadataStoreCollection(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
-    """ This Catalog is backed by a CSV file.
+    """ An intake plugin for parsing an ESM (Earth System Model) Collection/catalog and loading assets
+    (netCDF files and/or Zarr stores) into xarray datasets.
 
-    The in-memory representation for this catalog is a Pandas DataFrame.
+    The in-memory representation for the catalog is a Pandas DataFrame.
 
     Parameters
     ----------
@@ -35,6 +36,24 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog, intake_xarray.base.Data
     **kwargs :
         Additional keyword arguments are passed through to the base class,
         Catalog.
+
+    Examples
+    --------
+
+    At import time, this plugin is available in intake's registry as `esm_metadatastore` and
+    can be accessed with `intake.open_esm_metadatastore()`:
+
+    >>> import intake
+    >>> url = "https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json"
+
+    >>> col = intake.open_esm_metadatastore(url)
+    >>> col.df.head()
+    activity_id institution_id source_id experiment_id  ... variable_id grid_label                                             zstore dcpp_init_year
+    0  AerChemMIP            BCC  BCC-ESM1        ssp370  ...          pr         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+    1  AerChemMIP            BCC  BCC-ESM1        ssp370  ...        prsn         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+    2  AerChemMIP            BCC  BCC-ESM1        ssp370  ...         tas         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+    3  AerChemMIP            BCC  BCC-ESM1        ssp370  ...      tasmax         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+    4  AerChemMIP            BCC  BCC-ESM1        ssp370  ...      tasmin         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
 
     """
 
