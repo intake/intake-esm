@@ -22,7 +22,7 @@ from .merge_util import (
 logger = logging.getLogger(__name__)
 
 
-class ESMMetadataStoreCollection(intake.catalog.Catalog):
+class ESMMetadataStoreCollection(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
     """ This Catalog is backed by a CSV file.
 
     The in-memory representation for this catalog is a Pandas DataFrame.
@@ -39,6 +39,7 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
     """
 
     name = 'esm_metadatastore'
+    container = 'xarray'
 
     def __init__(self, esmcol_path, **kwargs):
 
@@ -46,6 +47,9 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
         self._col_data = _fetch_and_parse_file(esmcol_path)
         self.df = pd.read_csv(self._col_data['catalog_file'])
         self._entries = {}
+        self.urlpath = ''
+        self._ds = None
+        self.metadata = {}
         super().__init__(**kwargs)
 
     def search(self, **query):
@@ -77,27 +81,8 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
 
         """
 
-        import uuid
-
-        args = {'esmcol_path': self.esmcol_path, 'query': query}
-        name = f'{self._col_data["id"]}-esm-collection-{str(uuid.uuid4())}'
-        description = ''
-        driver = 'intake_esm.core.ESMDatasetSource'
-        cat = intake.catalog.local.LocalCatalogEntry(
-            name=name,
-            description=description,
-            driver=driver,
-            direct_access=True,
-            args=args,
-            cache={},
-            parameters={},
-            metadata={},
-            catalog_dir='',
-            getenv=False,
-            getshell=False,
-        )
-        self._entries[name] = cat
-        return cat
+        self.df = self._get_subset(**query)
+        return self
 
     def nunique(self):
         """Count distinct observations across dataframe columns
@@ -196,85 +181,20 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
         items = len(self.df.index)
         return f'{self._col_data["id"]}-ESM Collection with {items} entries:\n\t> {output}'
 
-
-def _unique(df, columns):
-    if isinstance(columns, str):
-        columns = [columns]
-    if not columns:
-        columns = df.columns
-
-    info = {}
-    for col in columns:
-        uniques = df[col].unique().tolist()
-        info[col] = {'count': len(uniques), 'values': uniques}
-    return info
-
-
-class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
-    """ Load assets into xarray datasets.
-
-    Parameters
-    ----------
-    esmcol_path : str
-        Path or URL to an ESM collection JSON file
-
-    query : dict
-        A dictionary contain query to execute against the catalog.
-
-    **kwargs :
-        Additional keyword arguments are passed through to the base class,
-        Catalog.
-
-    """
-
-    container = 'xarray'
-    name = 'esm-dataset-source'
-
-    def __init__(self, esmcol_path, query, **kwargs):
-
-        self.esmcol_path = esmcol_path
-        self._col_data = _fetch_and_parse_file(esmcol_path)
-        self.df = self._get_subset(**query)
-        self.urlpath = ''
-        self._ds = None
-        self.metadata = {}
-        super().__init__(**kwargs)
-
     def _get_subset(self, **query):
-        df = pd.read_csv(self._col_data['catalog_file'])
         if not query:
-            return pd.DataFrame(columns=df.columns)
-        condition = np.ones(len(df), dtype=bool)
+            return pd.DataFrame(columns=self.df.columns)
+        condition = np.ones(len(self.df), dtype=bool)
         for key, val in query.items():
             if isinstance(val, list):
-                condition_i = np.zeros(len(df), dtype=bool)
+                condition_i = np.zeros(len(self.df), dtype=bool)
                 for val_i in val:
-                    condition_i = condition_i | (df[key] == val_i)
+                    condition_i = condition_i | (self.df[key] == val_i)
                 condition = condition & condition_i
             elif val is not None:
-                condition = condition & (df[key] == val)
-        query_results = df.loc[condition]
+                condition = condition & (self.df[key] == val)
+        query_results = self.df.loc[condition]
         return query_results
-
-    def unique(self, columns=None):
-        """ Return unique values for given columns
-
-        Parameters
-        ----------
-        columns : str, list
-           name of columns for which to get unique values
-
-        Returns
-        -------
-        info : dict
-           dictionary containing count, and unique values
-
-        """
-        return _unique(self.df, columns)
-
-    def nunique(self):
-        """Count distinct observations across dataframe columns"""
-        return self.df.nunique()
 
     def to_dataset_dict(self, zarr_kwargs={}, cdf_kwargs={'chunks': {}}):
         """ Load catalog entries into a dictionary of xarray datasets.
@@ -434,6 +354,19 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         del mapper_dict
 
         self._ds = {dset[0]: dset[1] for dset in dsets}
+
+
+def _unique(df, columns):
+    if isinstance(columns, str):
+        columns = [columns]
+    if not columns:
+        columns = df.columns
+
+    info = {}
+    for col in columns:
+        uniques = df[col].unique().tolist()
+        info[col] = {'count': len(uniques), 'values': uniques}
+    return info
 
 
 @dask.delayed

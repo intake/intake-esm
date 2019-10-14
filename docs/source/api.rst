@@ -15,15 +15,3 @@ Collection
 
 .. autoclass:: intake_esm.core.ESMMetadataStoreCollection
    :members:
-
-
-Dataset Source
-~~~~~~~~~~~~~~
-
-.. autosummary::
-
-   intake_esm.core.ESMDatasetSource
-
-
-.. autoclass:: intake_esm.core.ESMDatasetSource
-   :members:
