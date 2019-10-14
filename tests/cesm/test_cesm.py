@@ -10,13 +10,13 @@ cdf_col = os.path.join(here, 'cesm1-lens-netcdf.json')
 
 
 def test_search():
-    col = intake.open_esm_metadatastore(cdf_col)
+    col = intake.open_esm_datastore(cdf_col)
     cat = col.search(variable=['SHF'])
     assert len(cat.df) > 0
 
 
 def test_to_xarray_zarr():
-    col = intake.open_esm_metadatastore(zarr_col)
+    col = intake.open_esm_datastore(zarr_col)
     cat = col.search(variable='RAIN', experiment='20C')
     dsets = cat.to_dataset_dict()
     _, ds = dsets.popitem()
@@ -31,7 +31,7 @@ def test_to_xarray_zarr():
     ],
 )
 def test_to_xarray_cesm_netcdf(chunks, expected_chunks):
-    c = intake.open_esm_metadatastore(cdf_col)
+    c = intake.open_esm_datastore(cdf_col)
     query = {'variable': ['SHF'], 'member_id': [1, 3, 9], 'experiment': ['20C', 'RCP85']}
     cat = c.search(**query)
     dset = cat.to_dataset_dict(cdf_kwargs=dict(chunks=chunks))

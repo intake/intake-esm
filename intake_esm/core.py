@@ -22,7 +22,7 @@ from .merge_util import (
 logger = logging.getLogger(__name__)
 
 
-class ESMMetadataStoreCollection(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
+class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
     """ An intake plugin for parsing an ESM (Earth System Model) Collection/catalog and loading assets
     (netCDF files and/or Zarr stores) into xarray datasets.
 
@@ -37,16 +37,17 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog, intake_xarray.base.Data
         Additional keyword arguments are passed through to the base class,
         Catalog.
 
+
     Examples
     --------
 
-    At import time, this plugin is available in intake's registry as `esm_metadatastore` and
-    can be accessed with `intake.open_esm_metadatastore()`:
+    At import time, this plugin is available in intake's registry as `esm_datastore` and
+    can be accessed with `intake.open_esm_datastore()`:
 
     >>> import intake
     >>> url = "https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json"
 
-    >>> col = intake.open_esm_metadatastore(url)
+    >>> col = intake.open_esm_datastore(url)
     >>> col.df.head()
     activity_id institution_id source_id experiment_id  ... variable_id grid_label                                             zstore dcpp_init_year
     0  AerChemMIP            BCC  BCC-ESM1        ssp370  ...          pr         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
@@ -57,11 +58,12 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog, intake_xarray.base.Data
 
     """
 
-    name = 'esm_metadatastore'
+    name = 'esm_datastore'
     container = 'xarray'
 
     def __init__(self, esmcol_path, **kwargs):
-
+        """Main entry point.
+        """
         self.esmcol_path = esmcol_path
         self._col_data = _fetch_and_parse_file(esmcol_path)
         self.df = pd.read_csv(self._col_data['catalog_file'])
@@ -72,17 +74,17 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog, intake_xarray.base.Data
         super().__init__(**kwargs)
 
     def search(self, **query):
-        """ Search for entries in the collection catalog
+        """Search for entries in the catalog.
 
         Returns
         -------
-        cat : Catalog
+        cat : intake_esm.core.esm_datastore
           A new Catalog with a subset of the entries in this Catalog.
 
         Examples
         --------
         >>> import intake
-        >>> col = intake.open_esm_metadatastore("pangeo-cmip6.json")
+        >>> col = intake.open_esm_datastore("pangeo-cmip6.json")
         >>> col.df.head(3)
         activity_id institution_id source_id  ... grid_label                                             zstore dcpp_init_year
         0  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
@@ -105,11 +107,12 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog, intake_xarray.base.Data
 
     def nunique(self):
         """Count distinct observations across dataframe columns
+        in the catalog.
 
         Examples
         --------
         >>> import intake
-        >>> col = intake.open_esm_metadatastore("pangeo-cmip6.json")
+        >>> col = intake.open_esm_datastore("pangeo-cmip6.json")
         >>> col.df.head(3)
         activity_id institution_id source_id  ... grid_label                                             zstore dcpp_init_year
         0  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
@@ -132,7 +135,8 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog, intake_xarray.base.Data
         return self.df.nunique()
 
     def unique(self, columns=None):
-        """ Return unique values for given columns
+        """Return unique values for given columns in the
+        catalog.
 
         Parameters
         ----------
@@ -148,7 +152,7 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog, intake_xarray.base.Data
         --------
         >>> import intake
         >>> import pprint
-        >>> col = intake.open_esm_metadatastore("pangeo-cmip6.json")
+        >>> col = intake.open_esm_datastore("pangeo-cmip6.json")
         >>> col.df.head(3)
         activity_id institution_id source_id  ... grid_label                                             zstore dcpp_init_year
         0  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
@@ -216,7 +220,7 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog, intake_xarray.base.Data
         return query_results
 
     def to_dataset_dict(self, zarr_kwargs={}, cdf_kwargs={'chunks': {}}):
-        """ Load catalog entries into a dictionary of xarray datasets.
+        """Load catalog entries into a dictionary of xarray datasets.
 
         Parameters
         ----------
@@ -233,7 +237,7 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog, intake_xarray.base.Data
         Examples
         --------
         >>> import intake
-        >>> col = intake.open_esm_metadatastore("glade-cmip6.json")
+        >>> col = intake.open_esm_datastore("glade-cmip6.json")
         >>> cat = col.search(source_id=['BCC-CSM2-MR', 'CNRM-CM6-1', 'CNRM-ESM2-1'],
         ...                       experiment_id=['historical', 'ssp585'], variable_id='pr',
         ...                       table_id='Amon', grid_label='gn')

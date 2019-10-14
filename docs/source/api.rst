@@ -10,8 +10,8 @@ Collection
 
 .. autosummary::
 
-   intake_esm.core.ESMMetadataStoreCollection
+   intake_esm.core.esm_datastore
 
 
-.. autoclass:: intake_esm.core.ESMMetadataStoreCollection
+.. autoclass:: intake_esm.core.esm_datastore
    :members:

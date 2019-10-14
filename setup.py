@@ -43,9 +43,7 @@ setup(
     install_requires=install_requires,
     license='Apache 2.0',
     zip_safe=False,
-    entry_points={
-        'intake.drivers': ['esm_metadatastore = intake_esm.core:ESMMetadataStoreCollection']
-    },
+    entry_points={'intake.drivers': ['esm_datastore = intake_esm.core:esm_datastore']},
     keywords='intake-esm',
     use_scm_version={'version_scheme': 'post-release', 'local_scheme': 'dirty-tag'},
     setup_requires=['setuptools_scm', 'setuptools>=30.3.0'],

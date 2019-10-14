@@ -156,7 +156,19 @@ html_theme_options = {'logo_only': False, 'style_nav_header_background': '#28938
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ['../_build/html/_static']
+
+# Sometimes the savefig directory doesn't exist and needs to be created
+# https://github.com/ipython/ipython/issues/8733
+# becomes obsolete when we can pin ipython>=5.2; see ci/requirements/doc.yml
+ipython_savefig_dir = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), '_build', 'html', '_static'
+)
+
+savefig_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'source', '_static')
+
+os.makedirs(ipython_savefig_dir, exist_ok=True)
+os.makedirs(savefig_dir, exist_ok=True)
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.

@@ -20,7 +20,7 @@ cdf_query = dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_i
 
 @pytest.mark.parametrize('esmcol_path, query', [(zarr_col, zarr_query), (cdf_col, cdf_query)])
 def test_search(esmcol_path, query):
-    col = intake.open_esm_metadatastore(esmcol_path)
+    col = intake.open_esm_datastore(esmcol_path)
     cat = col.search(**query)
     assert len(cat.df) > 0
     assert len(col.df.columns) == len(cat.df.columns)
@@ -31,7 +31,7 @@ def test_search(esmcol_path, query):
     [(zarr_col, zarr_query, {}), (cdf_col, cdf_query, {'chunks': {'time': 1}})],
 )
 def test_to_dataset_dict(esmcol_path, query, kwargs):
-    col = intake.open_esm_metadatastore(esmcol_path)
+    col = intake.open_esm_datastore(esmcol_path)
     cat = col.search(**query)
     if kwargs:
         _, ds = cat.to_dataset_dict(cdf_kwargs=kwargs).popitem()
@@ -41,12 +41,12 @@ def test_to_dataset_dict(esmcol_path, query, kwargs):
 
 
 def test_repr():
-    col = intake.open_esm_metadatastore(zarr_col)
+    col = intake.open_esm_datastore(zarr_col)
     assert 'ESM Collection' in repr(col)
 
 
 def test_load_esmcol_remote():
-    col = intake.open_esm_metadatastore(
+    col = intake.open_esm_datastore(
         'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
     )
     assert isinstance(col.df, pd.DataFrame)

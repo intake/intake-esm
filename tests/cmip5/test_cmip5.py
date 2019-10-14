@@ -9,7 +9,7 @@ esmcol_path = os.path.join(here, 'cmip5-netcdf.json')
 
 
 def test_search():
-    c = intake.open_esm_metadatastore(esmcol_path)
+    c = intake.open_esm_datastore(esmcol_path)
     cat = c.search(model=['CanESM2', 'CSIRO-Mk3-6-0'])
     assert isinstance(cat.df, pd.DataFrame)
     assert len(cat.df) > 0
@@ -23,7 +23,7 @@ def test_search():
     ],
 )
 def test_to_xarray_cmip(chunks, expected_chunks):
-    c = intake.open_esm_metadatastore(esmcol_path)
+    c = intake.open_esm_datastore(esmcol_path)
     cat = c.search(variable=['hfls'], frequency='mon', modeling_realm='atmos', model=['CNRM-CM5'])
 
     dset = cat.to_dataset_dict(cdf_kwargs=dict(chunks=chunks))

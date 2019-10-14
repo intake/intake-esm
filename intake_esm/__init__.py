@@ -4,7 +4,7 @@
 import intake  # noqa: F401
 from pkg_resources import DistributionNotFound, get_distribution
 
-from .core import ESMMetadataStoreCollection  # noqa: F401
+from .core import esm_datastore  # noqa: F401
 
 try:
     __version__ = get_distribution(__name__).version
