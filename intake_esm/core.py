@@ -1,6 +1,5 @@
 import copy
 import json
-import logging
 from urllib.parse import urlparse
 
 import dask
@@ -19,18 +18,30 @@ from .merge_util import (
     to_nested_dict,
 )
 
-logger = logging.getLogger(__name__)
-
 
 class ESMMetadataStoreCollection(intake.catalog.Catalog):
     name = 'esm_metadatastore'
 
-    def __init__(self, esmcol_path):
-        super().__init__()
+    def __init__(self, esmcol_path, **kwargs):
+        """ This Catalog is backed by a CSV file.
+
+        The in-memory representation for this catalog is a Pandas DataFrame.
+
+        Parameters
+        ----------
+
+        esmcol_path : str
+           Path to an ESM collection JSON file
+        **kwargs :
+            Additional keyword arguments are passed through to the base class,
+            Catalog.
+
+        """
         self.esmcol_path = esmcol_path
         self._col_data = _fetch_and_parse_file(esmcol_path)
         self.df = pd.read_csv(self._col_data['catalog_file'])
         self._entries = {}
+        super().__init__(**kwargs)
 
     def search(self, **query):
         """ Search for entries in the collection catalog
@@ -60,7 +71,7 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
         import uuid
 
         args = {'esmcol_path': self.esmcol_path, 'query': query}
-        name = f'esm-collection-{str(uuid.uuid4())}'
+        name = f'{self._col_data["id"]}-esm-collection-{str(uuid.uuid4())}'
         description = ''
         driver = 'intake_esm.core.ESMDatasetSource'
         cat = intake.catalog.local.LocalCatalogEntry(
@@ -84,17 +95,17 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
         return self.df.nunique()
 
     def unique(self, columns=None):
-        """ Return unique values for given columns"""
-        if isinstance(columns, str):
-            columns = [columns]
-        if not columns:
-            columns = self.df.columns
+        """ Return unique values for given columns
+        Parameters
+        ----------
+        columns : str, list
+           name of columns for which to get unique values
 
-        info = {}
-        for col in columns:
-            uniques = self.df[col].unique().tolist()
-            info[col] = {'count': len(uniques), 'values': uniques}
-        return info
+        info : dict
+           dictionary containing count, and unique values
+
+        """
+        return _unique(self.df, columns)
 
     def __repr__(self):
         """Make string representation of object."""
@@ -104,7 +115,20 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
             output.append(f'{values} {key}(s)\n')
         output = '\n\t> '.join(output)
         items = len(self.df.index)
-        return f'ESM Collection with {items} entries:\n\t> {output}'
+        return f'{self._col_data["id"]}-ESM Collection with {items} entries:\n\t> {output}'
+
+
+def _unique(df, columns):
+    if isinstance(columns, str):
+        columns = [columns]
+    if not columns:
+        columns = df.columns
+
+    info = {}
+    for col in columns:
+        uniques = df[col].unique().tolist()
+        info[col] = {'count': len(uniques), 'values': uniques}
+    return info
 
 
 class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
@@ -134,6 +158,23 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
                 condition = condition & (df[key] == val)
         query_results = df.loc[condition]
         return query_results
+
+    def unique(self, columns=None):
+        """ Return unique values for given columns
+        Parameters
+        ----------
+        columns : str, list
+           name of columns for which to get unique values
+
+        info : dict
+           dictionary containing count, and unique values
+
+        """
+        return _unique(self.df, columns)
+
+    def nunique(self):
+        """Count distinct observations across dataframe columns"""
+        return self.df.nunique()
 
     def to_dataset_dict(self, zarr_kwargs={}, cdf_kwargs={'chunks': {}}):
         """ Load catalog entries into a dictionary of xarray datasets.
@@ -165,9 +206,7 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
 
         """
         if 'chunks' in cdf_kwargs and not cdf_kwargs['chunks']:
-            logger.warning(
-                'xarray will load the datasets with dask using a single chunk for all arrays.'
-            )
+            print('xarray will load the datasets with dask using a single chunk for all arrays.')
 
         self.zarr_kwargs = zarr_kwargs
         self.cdf_kwargs = cdf_kwargs
@@ -214,7 +253,7 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         print(
             f"""--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{".".join(groupby_attrs)}'"""
         )
-        print(f'\n--> There will be {len(groups)} groups')
+        print(f'\n--> There will be {len(groups)} group(s)')
 
         dsets = [
             _load_group_dataset(
@@ -319,12 +358,12 @@ def _fetch_and_parse_file(input_path):
 
     try:
         if _is_valid_url(input_path):
-            logger.info('Loading ESMCol from URL')
+            print('Loading ESMCol from URL')
             resp = requests.get(input_path)
             data = resp.json()
         else:
             with open(input_path) as f:
-                logger.info('Loading ESMCol from filesystem')
+                print('Loading ESMCol from filesystem')
                 data = json.load(f)
 
     except Exception as e:

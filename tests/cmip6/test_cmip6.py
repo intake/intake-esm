@@ -1,6 +1,7 @@
 import os
 
 import intake
+import pandas as pd
 import pytest
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -41,4 +42,11 @@ def test_to_dataset_dict(esmcol_path, query, kwargs):
 
 def test_repr():
     col = intake.open_esm_metadatastore(zarr_col)
-    assert repr(col).startswith('ESM Collection')
+    assert 'ESM Collection' in repr(col)
+
+
+def test_load_esmcol_remote():
+    col = intake.open_esm_metadatastore(
+        'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
+    )
+    assert isinstance(col.df, pd.DataFrame)

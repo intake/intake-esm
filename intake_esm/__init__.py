@@ -4,7 +4,6 @@
 import intake  # noqa: F401
 from pkg_resources import DistributionNotFound, get_distribution
 
-from . import config  # noqa: F401
 from .core import ESMMetadataStoreCollection  # noqa: F401
 
 try:

@@ -19,7 +19,6 @@ please open an issue at the GitHub `main repository <http://github.com/NCAR/inta
    notebooks/examples/cesm1-lens-aws.ipynb
    notebooks/extension_guide.ipynb
    api
-   configuration
    contributing
    changelog
 
