@@ -66,7 +66,6 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
         1  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
         2  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
 
-        [3 rows x 10 columns]
         >>> cat = col.search(source_id=['BCC-CSM2-MR', 'CNRM-CM6-1', 'CNRM-ESM2-1'],
         ...                 experiment_id=['historical', 'ssp585'], variable_id='pr',
         ...                table_id='Amon', grid_label='gn')
@@ -76,7 +75,6 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
         346        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r2i...            NaN
         401        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r3i...            NaN
 
-        [3 rows x 10 columns]
         """
 
         import uuid
@@ -114,7 +112,6 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
         1  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
         2  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
 
-        [3 rows x 10 columns]
         >>> col.nunique()
         activity_id          10
         institution_id       23
@@ -153,8 +150,6 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
         0  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
         1  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
         2  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
-
-        [3 rows x 10 columns]
 
         >>> uniques = col.unique(columns=["activity_id", "source_id"])
         >>> pprint.pprint(uniques)
@@ -306,8 +301,8 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
         >>> dsets = cat.to_dataset_dict()
         --> The keys in the returned dictionary of datasets are constructed as follows:
         'activity_id.institution_id.source_id.experiment_id.table_id.grid_label'
-
         --> There will be 2 group(s)
+
         >>> dsets.keys()
         dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
 
