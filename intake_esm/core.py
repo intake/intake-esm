@@ -96,11 +96,14 @@ class ESMMetadataStoreCollection(intake.catalog.Catalog):
 
     def unique(self, columns=None):
         """ Return unique values for given columns
+
         Parameters
         ----------
         columns : str, list
            name of columns for which to get unique values
 
+        Returns
+        -------
         info : dict
            dictionary containing count, and unique values
 
@@ -161,11 +164,14 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
 
     def unique(self, columns=None):
         """ Return unique values for given columns
+
         Parameters
         ----------
         columns : str, list
            name of columns for which to get unique values
 
+        Returns
+        -------
         info : dict
            dictionary containing count, and unique values
 
@@ -178,6 +184,7 @@ class ESMDatasetSource(intake_xarray.base.DataSourceMixin):
 
     def to_dataset_dict(self, zarr_kwargs={}, cdf_kwargs={'chunks': {}}):
         """ Load catalog entries into a dictionary of xarray datasets.
+
         Parameters
         ----------
         zarr_kwargs : dict
@@ -328,10 +335,12 @@ def _load_group_dataset(
 
 def _is_valid_url(url):
     """ Check if path is URL or not
+
     Parameters
     ----------
     url : str
         path to check
+
     Returns
     -------
     boolean
@@ -345,10 +354,12 @@ def _is_valid_url(url):
 
 def _fetch_and_parse_file(input_path):
     """ Fetch and parse ESMCol file.
+
     Parameters
     ----------
     input_path : str
             ESMCol file to get and read
+
     Returns
     -------
     data : dict
