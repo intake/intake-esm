@@ -16,6 +16,13 @@ Features
 .. _(esm-collection-spec): https://github.com/NCAR/esm-collection-spec
 
 
+Breaking changes
+----------------
+
+- Replaced `intake.open_esm_metadatastore()` with `intake.open_esm_datastore()`, see the API reference for more details.
+- `intake-esm` won't build collection catalogs anymore. `intake-esm` now expects an ESM collection JSON file
+  as input. This JSON should conform to the `(esm-collection-spec)`_ Earth System Model Collection specification.
+
 
 
 Intake-esm v2019.08.23
