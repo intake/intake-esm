@@ -8,11 +8,10 @@ dependencies:
   - flake8
   - git
   - intake-xarray>=0.3.1
+  - xarray=>0.13
   - ipykernel
   - isort
   - make
-  - nbsphinx
-  - numpydoc
   - pip
   - pre_commit
   - pytest
@@ -20,10 +19,7 @@ dependencies:
   - pytest-icdiff
   - python=3.7
   - pyyaml
-  - recommonmark
-  - sphinx_rtd_theme
-  - sphinx>=1.6
   - tqdm
-  - docrep
   - s3fs
+  - gcsfs
   - fsspec

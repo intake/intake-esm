@@ -1,242 +1,511 @@
-import datetime
-import os
-import uuid
+import copy
+import json
+import logging
+from functools import lru_cache
+from urllib.parse import urlparse
 
+import dask
+import dask.delayed
+import fsspec
+import intake
+import intake_xarray
 import numpy as np
-import s3fs
-from cached_property import cached_property
-from intake.catalog import Catalog
-from intake.catalog.local import LocalCatalogEntry
-from intake.utils import yaml_load
+import pandas as pd
+import requests
 
-from . import config as config
-from .bld_collection_utils import (
-    FILE_ALIAS_DICT,
-    _get_built_collections,
-    _open_collection,
-    load_collection_input_file,
+from .merge_util import (
+    _create_asset_info_lookup,
+    _restore_non_dim_coords,
+    aggregate,
+    to_nested_dict,
 )
-from .cesm import CESMCollection
-from .cesm_aws import CESMAWSCollection
-from .cmip import CMIP5Collection, CMIP6Collection
-from .cordex import CORDEXCollection
-from .era5 import ERA5Collection
-from .gmet import GMETCollection
-from .mpige import MPIGECollection
+
+logger = logging.getLogger(__name__)
 
 
-class ESMMetadataStoreCatalog(Catalog):
-    """ESM collection Metadata store. This class acts as an entry point for ``intake_esm``.
+class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
+    """ An intake plugin for parsing an ESM (Earth System Model) Collection/catalog and loading assets
+    (netCDF files and/or Zarr stores) into xarray datasets.
+
+    The in-memory representation for the catalog is a Pandas DataFrame.
 
     Parameters
     ----------
 
-    collection_input_definition : str, dict, filepath, default (None)
+    esmcol_path : str
+        Path or URL to an ESM collection JSON file
+    **kwargs :
+        Additional keyword arguments are passed through to the base class,
+        Catalog.
 
-                If None, prints out list of collection definitions supported
-                out of the box and raise `ValueError`.
 
-                If str, this should be a valid collection name among the ones
-                supported out of the box
+    Examples
+    --------
 
-                If dict, or filepath, this should be a path to a YAML file
-                containing collection definition or a dictionary containing
-                nested dictionaries of entries.
+    At import time, this plugin is available in intake's registry as `esm_datastore` and
+    can be accessed with `intake.open_esm_datastore()`:
 
-    collection_name : str
-                Name of the collection to use. This name should refer to
-                a collection catalog that is already built and persisted on disk.
+    >>> import intake
+    >>> url = "https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json"
 
-    overwrite_existing : bool,
-            Whether to overwrite existing built collection catalog.
-
-    storage_options : dict
-            Parameters to pass to requests when issuing http commands to remote
-            backend file-systems such as s3.
-
-    kwargs : dict, optional
-        Keyword arguments passed to ``intake_esm.bld_collection_utils.load_collection_input_file`` function
+    >>> col = intake.open_esm_datastore(url)
+    >>> col.df.head()
+    activity_id institution_id source_id experiment_id  ... variable_id grid_label                                             zstore dcpp_init_year
+    0  AerChemMIP            BCC  BCC-ESM1        ssp370  ...          pr         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+    1  AerChemMIP            BCC  BCC-ESM1        ssp370  ...        prsn         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+    2  AerChemMIP            BCC  BCC-ESM1        ssp370  ...         tas         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+    3  AerChemMIP            BCC  BCC-ESM1        ssp370  ...      tasmax         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+    4  AerChemMIP            BCC  BCC-ESM1        ssp370  ...      tasmin         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
 
     """
 
-    name = 'esm_metadatastore'
-    collection_types = {
-        'cesm': CESMCollection,
-        'cesm-aws': CESMAWSCollection,
-        'cmip5': CMIP5Collection,
-        'cmip6': CMIP6Collection,
-        'mpige': MPIGECollection,
-        'gmet': GMETCollection,
-        'era5': ERA5Collection,
-        'cordex': CORDEXCollection,
-    }
+    name = 'esm_datastore'
+    container = 'xarray'
 
-    def __init__(
-        self,
-        collection_input_definition=None,
-        collection_name=None,
-        overwrite_existing=True,
-        storage_options=None,
-        **kwargs,
-    ):
-
-        super().__init__(**kwargs)
-        self.storage_options = storage_options or {}
-        self.collection_type = None
-        self.fs = None
-        self.ds = None
-        self.collections = _get_built_collections()
-
-        if (
-            collection_name
-            and (collection_name not in self.collections)
-            and (collection_name in FILE_ALIAS_DICT)
-        ):
-            self.input_collection = self._validate_collection_definition(collection_name, **kwargs)
-            self._build_collection(overwrite_existing)
-
-        elif collection_name and collection_input_definition is None:
-            self.open_collection(collection_name)
-
-        elif collection_input_definition and (collection_name is None):
-            self.input_collection = self._validate_collection_definition(
-                collection_input_definition, **kwargs
-            )
-            self._build_collection(overwrite_existing)
-
-        else:
-
-            if self.collections:
-                print(
-                    '\n******************************************************\n'
-                    '* Collections with following names are built already *\n'
-                    '******************************************************\n\n'
-                    f'{list(self.collections.keys())}\n\n'
-                )
-
-            load_collection_input_file()
-            raise ValueError(
-                'Cannot instantiate class with provided arguments. Please provide either: \n'
-                '\t1) collection_input_definition: to build a collection or\n'
-                '\t2) collection_name: to open a collection.'
-            )
-
+    def __init__(self, esmcol_path, **kwargs):
+        """Main entry point.
+        """
+        self.esmcol_path = esmcol_path
+        self._col_data = _fetch_and_parse_file(esmcol_path)
+        self.df = self._fetch_catalog()
         self._entries = {}
+        self.urlpath = ''
+        self._ds = None
+        self.metadata = {}
+        super().__init__(**kwargs)
 
-    @cached_property
-    def df(self):
-        return self.ds.to_dataframe()
+    def search(self, **query):
+        """Search for entries in the catalog.
+
+        Returns
+        -------
+        cat : intake_esm.core.esm_datastore
+          A new Catalog with a subset of the entries in this Catalog.
+
+        Examples
+        --------
+        >>> import intake
+        >>> col = intake.open_esm_datastore("pangeo-cmip6.json")
+        >>> col.df.head(3)
+        activity_id institution_id source_id  ... grid_label                                             zstore dcpp_init_year
+        0  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+        1  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+        2  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+
+        >>> cat = col.search(source_id=['BCC-CSM2-MR', 'CNRM-CM6-1', 'CNRM-ESM2-1'],
+        ...                 experiment_id=['historical', 'ssp585'], variable_id='pr',
+        ...                table_id='Amon', grid_label='gn')
+        >>> cat.df.head(3)
+            activity_id institution_id    source_id  ... grid_label                                             zstore dcpp_init_year
+        260        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r1i...            NaN
+        346        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r2i...            NaN
+        401        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r3i...            NaN
+
+        """
+
+        ret = copy.copy(self)
+        ret.df = self._get_subset(**query)
+        return ret
+
+    lru_cache(maxsize=None)
+
+    def _fetch_catalog(self):
+        """Get the catalog file and cache it.
+        """
+        return pd.read_csv(self._col_data['catalog_file'])
 
     def nunique(self):
-        """Count distinct observations across dataframe columns"""
+        """Count distinct observations across dataframe columns
+        in the catalog.
+
+        Examples
+        --------
+        >>> import intake
+        >>> col = intake.open_esm_datastore("pangeo-cmip6.json")
+        >>> col.df.head(3)
+        activity_id institution_id source_id  ... grid_label                                             zstore dcpp_init_year
+        0  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+        1  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+        2  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+
+        >>> col.nunique()
+        activity_id          10
+        institution_id       23
+        source_id            48
+        experiment_id        29
+        member_id            86
+        table_id             19
+        variable_id         187
+        grid_label            7
+        zstore            27437
+        dcpp_init_year       59
+        dtype: int64
+        """
         return self.df.nunique()
 
     def unique(self, columns=None):
-        """ Return unique values for given columns"""
-        if isinstance(columns, str):
-            columns = [columns]
-        if not columns:
-            columns = self.df.columns
+        """Return unique values for given columns in the
+        catalog.
 
-        info = {}
-        for col in columns:
-            uniques = self.df[col].unique().tolist()
-            info[col] = {'count': len(uniques), 'values': uniques}
-        return info
+        Parameters
+        ----------
+        columns : str, list
+           name of columns for which to get unique values
+
+        Returns
+        -------
+        info : dict
+           dictionary containing count, and unique values
+
+        Examples
+        --------
+        >>> import intake
+        >>> import pprint
+        >>> col = intake.open_esm_datastore("pangeo-cmip6.json")
+        >>> col.df.head(3)
+        activity_id institution_id source_id  ... grid_label                                             zstore dcpp_init_year
+        0  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+        1  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+        2  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
+
+        >>> uniques = col.unique(columns=["activity_id", "source_id"])
+        >>> pprint.pprint(uniques)
+        {'activity_id': {'count': 10,
+                        'values': ['AerChemMIP',
+                                    'C4MIP',
+                                    'CMIP',
+                                    'DAMIP',
+                                    'DCPP',
+                                    'HighResMIP',
+                                    'LUMIP',
+                                    'OMIP',
+                                    'PMIP',
+                                    'ScenarioMIP']},
+        'source_id': {'count': 17,
+                    'values': ['BCC-ESM1',
+                                'CNRM-ESM2-1',
+                                'E3SM-1-0',
+                                'MIROC6',
+                                'HadGEM3-GC31-LL',
+                                'MRI-ESM2-0',
+                                'GISS-E2-1-G-CC',
+                                'CESM2-WACCM',
+                                'NorCPM1',
+                                'GFDL-AM4',
+                                'GFDL-CM4',
+                                'NESM3',
+                                'ECMWF-IFS-LR',
+                                'IPSL-CM6A-ATM-HR',
+                                'NICAM16-7S',
+                                'GFDL-CM4C192',
+                                'MPI-ESM1-2-HR']}}
+
+        """
+        return _unique(self.df, columns)
 
     def __repr__(self):
-        """Making string representation of object."""
+        """Make string representation of object."""
         info = self.nunique().to_dict()
         output = []
         for key, values in info.items():
             output.append(f'{values} {key}(s)\n')
         output = '\n\t> '.join(output)
-        items = len(self.ds.index)
-        return f'{self.collection_name.upper()} collection catalogue with {items} entries:\n\t> {output}'
+        items = len(self.df.index)
+        return f'{self._col_data["id"]}-ESM Collection with {items} entries:\n\t> {output}'
 
-    def _validate_collection_definition(self, definition, **kwargs):
+    def _get_subset(self, **query):
+        if not query:
+            return pd.DataFrame(columns=self.df.columns)
+        condition = np.ones(len(self.df), dtype=bool)
+        for key, val in query.items():
+            if isinstance(val, list):
+                condition_i = np.zeros(len(self.df), dtype=bool)
+                for val_i in val:
+                    condition_i = condition_i | (self.df[key] == val_i)
+                condition = condition & condition_i
+            elif val is not None:
+                condition = condition & (self.df[key] == val)
+        query_results = self.df.loc[condition]
+        return query_results
 
-        if isinstance(definition, str) and definition in FILE_ALIAS_DICT:
-            input_collection = load_collection_input_file(definition, **kwargs)
+    def to_dataset_dict(self, zarr_kwargs={}, cdf_kwargs={'chunks': {}}):
+        """Load catalog entries into a dictionary of xarray datasets.
 
-        elif isinstance(definition, dict):
-            input_collection = definition.copy()
+        Parameters
+        ----------
+        zarr_kwargs : dict
+            Keyword arguments to pass to `xarray.open_zarr()` function
+        cdf_kwargs : dict
+            Keyword arguments to pass to `xarray.open_dataset()` function
 
-        else:
-            try:
-                with open(os.path.abspath(definition)) as f:
-                    input_collection = yaml_load(f)
-            except Exception as exc:
-                raise exc
+        Returns
+        -------
+        dsets : dict
+           A dictionary of xarray datasets.
 
-        name = input_collection.get('name', None)
-        self.collection_type = input_collection.get('collection_type', None)
-        if self.collection_type == 'cesm-aws':
-            self._get_s3_connection_info()
-        if name is None or self.collection_type is None:
-            raise ValueError(f'name and/or collection_type keys are missing from {definition}')
-        else:
-            return input_collection
+        Examples
+        --------
+        >>> import intake
+        >>> col = intake.open_esm_datastore("glade-cmip6.json")
+        >>> cat = col.search(source_id=['BCC-CSM2-MR', 'CNRM-CM6-1', 'CNRM-ESM2-1'],
+        ...                       experiment_id=['historical', 'ssp585'], variable_id='pr',
+        ...                       table_id='Amon', grid_label='gn')
+        >>> dsets = cat.to_dataset_dict()
+        --> The keys in the returned dictionary of datasets are constructed as follows:
+        'activity_id.institution_id.source_id.experiment_id.table_id.grid_label'
+        --> There will be 2 group(s)
 
-    def _build_collection(self, overwrite_existing):
-        """ Build a collection defined in a YAML input file or a dictionary of nested dictionaries"""
-        name = self.input_collection['name']
-        collection_type = self.input_collection['collection_type']
-        if name not in self.collections or overwrite_existing:
-            cc = ESMMetadataStoreCatalog.collection_types[collection_type]
-            cc = cc(self.input_collection, fs=self.fs)
-            cc.build()
-            self.collections = _get_built_collections()
-        self.open_collection(name)
+        >>> dsets.keys()
+        dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
 
-    def _get_s3_connection_info(self):
-        try:
-            if 'requester_pays' not in self.storage_options:
-                self.storage_options['requester_pays'] = True
-            self.fs = s3fs.S3FileSystem(**self.storage_options)
-        except Exception as exc:
-            raise exc
+        >>> dsets['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn']
+        <xarray.Dataset>
+        Dimensions:    (bnds: 2, lat: 160, lon: 320, member_id: 3, time: 1980)
+        Coordinates:
+        * lon        (lon) float64 0.0 1.125 2.25 3.375 ... 355.5 356.6 357.8 358.9
+        * lat        (lat) float64 -89.14 -88.03 -86.91 -85.79 ... 86.91 88.03 89.14
+        * time       (time) object 1850-01-16 12:00:00 ... 2014-12-16 12:00:00
+        * member_id  (member_id) <U8 'r1i1p1f1' 'r2i1p1f1' 'r3i1p1f1'
+        Dimensions without coordinates: bnds
+        Data variables:
+            lat_bnds   (lat, bnds) float64 dask.array<chunksize=(160, 2), meta=np.ndarray>
+            lon_bnds   (lon, bnds) float64 dask.array<chunksize=(320, 2), meta=np.ndarray>
+            time_bnds  (time, bnds) object dask.array<chunksize=(1980, 2), meta=np.ndarray>
+            pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
+        Attributes:
+            parent_experiment_id:   piControl
+            frequency:              mon
+            run_variant:            forcing: greenhouse gases,solar constant,aerosol,...
+            activity_id:            CMIP
+            parent_time_units:      days since 1850-01-01
+            nominal_resolution:     100 km
+            parent_activity_id:     CMIP
+            cmor_version:           3.3.2
+            history:                2018-11-26T05:08:26Z ; CMOR rewrote data to be co...
+            contact:                Dr. Tongwen Wu(twwu@cma.gov.cn)
+            references:             Model described by Tongwen Wu et al. (JGR 2013; J...
+            branch_method:          Standard
+            parent_mip_era:         CMIP6
+            experiment_id:          historical
+            comment:                The model integration starts from the piControl e...
+            mip_era:                CMIP6
+            tracking_id:            hdl:21.14100/7b6d329a-4b9a-4646-8e7c-0c2a56bfd098...
+            grid_label:             gn
+            institution_id:         BCC
+            initialization_index:   1
+            external_variables:     areacella
+            variant_label:          r3i1p1f1
+            license:                CMIP6 model data produced by BCC is licensed unde...
+            title:                  BCC-CSM2-MR output prepared for CMIP6
+            Conventions:            CF-1.7 CMIP-6.2
+            source:                 BCC-CSM 2 MR (2017):   aerosol: none  atmos: BCC_...
+            table_id:               Amon
+            realization_index:      3
+            source_id:              BCC-CSM2-MR
+            grid:                   T106
+            description:            DECK: historical
+            variable_id:            pr
 
-    def open_collection(self, collection_name):
-        """ Open an ESM collection """
-        self.ds = _open_collection(collection_name)
-        self.collection_name = self.ds.attrs['name']
-        self.collection_type = self.ds.attrs['collection_type']
-
-    def search(self, **query):
-        """ Search for entries in the collection catalog
         """
-        collection_columns = list(self.ds.data_vars)
-        for key in query.keys():
-            if key not in collection_columns:
-                raise ValueError(f'{key} is not in {self.collection_name}')
-        for key in collection_columns:
-            if key not in query:
-                query[key] = None
-        name = self.collection_name + '_' + str(uuid.uuid4())
-        args = {
-            'collection_name': self.collection_name,
-            'query': query,
-            'storage_options': self.storage_options,
-        }
-        driver = config.get('sources')[self.collection_type]
-        description = f'Catalog entry generated from {self.collection_name} collection'
-        keys = ['created_at', 'intake_esm_version', 'intake_version', 'intake_xarray_version']
-        metadata = {k: self.ds.attrs[k] for k in keys}
-        metadata['catalog_entry_generated_at'] = datetime.datetime.utcnow().isoformat()
+        if (
+            'chunks' in cdf_kwargs
+            and not cdf_kwargs['chunks']
+            and self._col_data['assets'].get('format') != 'zarr'
+        ):
+            print(
+                '\nxarray will load netCDF datasets with dask using a single chunk for all arrays.'
+            )
+            print('For effective chunking, please provide chunks in cdf_kwargs.')
+            print("For example: cdf_kwargs={'chunks': {'time': 36}}\n")
 
-        cat = LocalCatalogEntry(
-            name=name,
-            description=description,
-            driver=driver,
-            direct_access=True,
-            args=args,
-            cache={},
-            parameters={},
-            metadata=metadata,
-            catalog_dir='',
-            getenv=False,
-            getshell=False,
+        self.zarr_kwargs = zarr_kwargs
+        self.cdf_kwargs = cdf_kwargs
+        return self.to_dask()
+
+    def _get_schema(self):
+        from intake.source.base import Schema
+
+        self._open_dataset()
+        self._schema = Schema(
+            datashape=None, dtype=None, shape=None, npartitions=None, extra_metadata={}
         )
-        self._entries[name] = cat
-        return cat
+        return self._schema
+
+    def _open_dataset(self):
+
+        path_column_name = self._col_data['assets']['column_name']
+        if 'format' in self._col_data['assets']:
+            use_format_column = False
+        else:
+            use_format_column = True
+
+        mapper_dict = {
+            path: _path_to_mapper(path) for path in self.df[path_column_name]
+        }  # replace path column with mapper (dependent on filesystem type)
+
+        groupby_attrs = self._col_data['aggregation_control'].get('groupby_attrs', [])
+        aggregations = self._col_data['aggregation_control'].get('aggregations', [])
+        variable_column_name = self._col_data['aggregation_control']['variable_column_name']
+
+        aggregation_dict = {}
+        for agg in aggregations:
+            key = agg['attribute_name']
+            rest = agg.copy()
+            del rest['attribute_name']
+            aggregation_dict[key] = rest
+
+        agg_columns = list(aggregation_dict.keys())
+
+        if groupby_attrs:
+            groups = self.df.groupby(groupby_attrs)
+        else:
+            groups = self.df.groupby(self.df.columns.tolist())
+        print(
+            f"""--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{".".join(groupby_attrs)}'"""
+        )
+        print(f'\n--> There will be {len(groups)} group(s)')
+
+        dsets = [
+            _load_group_dataset(
+                key,
+                df,
+                self._col_data,
+                agg_columns,
+                aggregation_dict,
+                path_column_name,
+                variable_column_name,
+                use_format_column,
+                mapper_dict,
+                self.zarr_kwargs,
+                self.cdf_kwargs,
+            )
+            for key, df in groups
+        ]
+
+        dsets = dask.compute(*dsets)
+        del mapper_dict
+
+        self._ds = {dset[0]: dset[1] for dset in dsets}
+
+
+def _unique(df, columns):
+    if isinstance(columns, str):
+        columns = [columns]
+    if not columns:
+        columns = df.columns
+
+    info = {}
+    for col in columns:
+        uniques = df[col].unique().tolist()
+        info[col] = {'count': len(uniques), 'values': uniques}
+    return info
+
+
+@dask.delayed
+def _load_group_dataset(
+    key,
+    df,
+    col_data,
+    agg_columns,
+    aggregation_dict,
+    path_column_name,
+    variable_column_name,
+    use_format_column,
+    mapper_dict,
+    zarr_kwargs,
+    cdf_kwargs,
+):
+
+    aggregation_dict = copy.deepcopy(aggregation_dict)
+    agg_columns = agg_columns.copy()
+    drop_cols = []
+    for col in agg_columns:
+        if df[col].isnull().all():
+            drop_cols.append(col)
+            del aggregation_dict[col]
+        elif df[col].isnull().any():
+            raise ValueError(
+                f'The data in the {col} column for {key} group should either be all NaN or there should be no NaNs'
+            )
+
+    agg_columns = list(filter(lambda x: x not in drop_cols, agg_columns))
+    # the number of aggregation columns determines the level of recursion
+    n_agg = len(agg_columns)
+
+    mi = df.set_index(agg_columns)
+    nd = to_nested_dict(mi[path_column_name])
+
+    if use_format_column:
+        format_column_name = col_data['assets']['format_column_name']
+        lookup = _create_asset_info_lookup(
+            df, path_column_name, variable_column_name, format_column_name=format_column_name
+        )
+    else:
+
+        lookup = _create_asset_info_lookup(
+            df, path_column_name, variable_column_name, data_format=col_data['assets']['format']
+        )
+
+    ds = aggregate(
+        aggregation_dict, agg_columns, n_agg, nd, lookup, mapper_dict, zarr_kwargs, cdf_kwargs
+    )
+    group_id = '.'.join(key)
+    return group_id, _restore_non_dim_coords(ds)
+
+
+def _is_valid_url(url):
+    """ Check if path is URL or not
+
+    Parameters
+    ----------
+    url : str
+        path to check
+
+    Returns
+    -------
+    boolean
+    """
+    try:
+        result = urlparse(url)
+        return result.scheme and result.netloc and result.path
+    except Exception:
+        return False
+
+
+def _fetch_and_parse_file(input_path):
+    """ Fetch and parse ESMCol file.
+
+    Parameters
+    ----------
+    input_path : str
+            ESMCol file to get and read
+
+    Returns
+    -------
+    data : dict
+    """
+
+    data = None
+
+    try:
+        if _is_valid_url(input_path):
+            logger.info('Loading ESMCol from URL')
+            resp = requests.get(input_path)
+            data = resp.json()
+        else:
+            with open(input_path) as f:
+                logger.info('Loading ESMCol from filesystem')
+                data = json.load(f)
+
+    except Exception as e:
+        raise e
+
+    return data
+
+
+def _path_to_mapper(path):
+    """Convert path to mapper if necessary."""
+    if fsspec.core.split_protocol(path)[0] is not None:
+        return fsspec.get_mapper(path)
+    else:
+        return path

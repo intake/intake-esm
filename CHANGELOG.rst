@@ -2,8 +2,25 @@
 Changelog History
 =================
 
-Intake-esm v2019.8.xx (2019-08-xx)
-==================================
+
+Intake-esm v2019.10.xx (2019-10-xx Unreleased)
+==============================================
+
+
+Features
+--------
+
+- Rewrite `intake-esm`'s core based on `(esm-collection-spec)`_ Earth System Model Collection specification
+  (:pr:`135`) `Anderson Banihirwe`_, `Matthew Long`_, `Ryan Abernathey`_
+
+
+.. _(esm-collection-spec): https://github.com/NCAR/esm-collection-spec
+
+
+
+
+Intake-esm v2019.08.23 (2019-08-23)
+===================================
 
 
 Features
@@ -270,3 +287,4 @@ Trivial/Internal Changes
 .. _`Matthew Long`: https://github.com/matt-long
 .. _`Naomi Henderson`: https://github.com/naomi-henderson
 .. _`Paul Branson`: https://github.com/pbranson
+.. _`Ryan Abernathey`: https://github.com/rabernat
