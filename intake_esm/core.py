@@ -313,10 +313,10 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
             and self._col_data['assets'].get('format') != 'zarr'
         ):
             print(
-                """\nxarray will load netCDF datasets with dask using a single chunk for all arrays.
-                     For effective chunking, please provide chunks in cdf_kwargs.
-                     For example: cdf_kwargs={'chunks': {'time': 36}}\n"""
+                '\nxarray will load netCDF datasets with dask using a single chunk for all arrays.'
             )
+            print('For effective chunking, please provide chunks in cdf_kwargs.')
+            print("For example: cdf_kwargs={'chunks': {'time': 36}}\n")
 
         self.zarr_kwargs = zarr_kwargs
         self.cdf_kwargs = cdf_kwargs
@@ -423,6 +423,10 @@ def _load_group_dataset(
         if df[col].isnull().all():
             drop_cols.append(col)
             del aggregation_dict[col]
+        elif df[col].isnull().any():
+            raise ValueError(
+                f'The data in the {col} column for {key} group should either be all NaN or there should be no NaNs'
+            )
 
     agg_columns = list(filter(lambda x: x not in drop_cols, agg_columns))
     # the number of aggregation columns determines the level of recursion

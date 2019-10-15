@@ -45,6 +45,12 @@ def test_repr():
     assert 'ESM Collection' in repr(col)
 
 
+def test_unique():
+    col = intake.open_esm_datastore(zarr_col)
+    uniques = col.unique(columns=['activity_id', 'experiment_id'])
+    assert isinstance(uniques, dict)
+
+
 def test_load_esmcol_remote():
     col = intake.open_esm_datastore(
         'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
