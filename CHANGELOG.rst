@@ -3,9 +3,8 @@ Changelog History
 =================
 
 
-Intake-esm v2019.10.xx (2019-10-xx Unreleased)
-==============================================
-
+Intake-esm v2019.10.15
+=======================
 
 Features
 --------
@@ -19,8 +18,8 @@ Features
 
 
 
-Intake-esm v2019.08.23 (2019-08-23)
-===================================
+Intake-esm v2019.08.23
+=======================
 
 
 Features
@@ -172,8 +171,8 @@ Internal Changes
 
 
 
-Intake-esm v2019.8.5 (2019-08-05)
-==================================
+Intake-esm v2019.8.5
+=====================
 
 
 Features
@@ -227,8 +226,8 @@ Internal Changes
   (:pr:`114`) `Anderson Banihirwe`_
 
 
-Intake-esm v2019.5.11 (2019-05-11)
-===================================
+Intake-esm v2019.5.11
+======================
 
 
 Features
@@ -240,8 +239,8 @@ Features
 - Add implementation for ERA5 datasets (:pr:`68`) `Anderson Banihirwe`_
 
 
-Intake-esm v2019.4.26 (2019-04-26)
-===================================
+Intake-esm v2019.4.26
+======================
 
 
 Features
@@ -258,9 +257,8 @@ Bug Fixes
 - Include multiple netcdf files in same subdirectory (:pr:`55`) & (:issue:`54`) `Naomi Henderson`_ and `Anderson Banihirwe`_
 
 
-Intake-esm v2019.2.28 (2019-02-28)
-===================================
-
+Intake-esm v2019.2.28
+======================
 
 Features
 ---------
