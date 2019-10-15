@@ -11,7 +11,7 @@ Features
 --------
 
 - Rewrite `intake-esm`'s core based on `(esm-collection-spec)`_ Earth System Model Collection specification
-  (:pr:`135`) `Anderson Banihirwe`_
+  (:pr:`135`) `Anderson Banihirwe`_, `Matthew Long`_, `Ryan Abernathey`_
 
 
 .. _(esm-collection-spec): https://github.com/NCAR/esm-collection-spec
@@ -287,3 +287,4 @@ Trivial/Internal Changes
 .. _`Matthew Long`: https://github.com/matt-long
 .. _`Naomi Henderson`: https://github.com/naomi-henderson
 .. _`Paul Branson`: https://github.com/pbranson
+.. _`Ryan Abernathey`: https://github.com/rabernat
