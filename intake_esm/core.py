@@ -1,6 +1,7 @@
 import copy
 import json
 import logging
+from functools import lru_cache
 from urllib.parse import urlparse
 
 import dask
@@ -66,7 +67,7 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         """
         self.esmcol_path = esmcol_path
         self._col_data = _fetch_and_parse_file(esmcol_path)
-        self.df = pd.read_csv(self._col_data['catalog_file'])
+        self.df = self._fetch_catalog()
         self._entries = {}
         self.urlpath = ''
         self._ds = None
@@ -102,8 +103,16 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
 
         """
 
-        self.df = self._get_subset(**query)
-        return self
+        ret = copy.copy(self)
+        ret.df = self._get_subset(**query)
+        return ret
+
+    lru_cache(maxsize=None)
+
+    def _fetch_catalog(self):
+        """Get the catalog file and cache it.
+        """
+        return pd.read_csv(self._col_data['catalog_file'])
 
     def nunique(self):
         """Count distinct observations across dataframe columns
