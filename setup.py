@@ -30,7 +30,7 @@ CLASSIFIERS = [
 
 setup(
     name='intake-esm',
-    description='An intake plugin for building and loading earth system data sets such as CMIP, CESM Large Ensemble',
+    description='An intake plugin for parsing an ESM (Earth System Model) Collection/catalog and loading assets (netCDF files and/or Zarr stores) into xarray datasets.',
     long_description=long_description,
     python_requires='>=3.6',
     maintainer='Anderson Banihirwe',
