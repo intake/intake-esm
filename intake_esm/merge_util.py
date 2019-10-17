@@ -90,17 +90,35 @@ def aggregate(
 
             attrs = dict_union(*[ds.attrs for ds in dsets])
 
+            # copy encoding for each variable from first encounter
+            variables = set([v for ds in dsets for v in ds.variables])
+
+            encoding = {}
+            for ds in dsets:
+                for v in variables:
+                    if v in ds.variables and v not in encoding:
+                        if ds[v].encoding:
+                            encoding[v] = ds[v].encoding
+                            # get rid of the misleading file-specific attributes
+                            # github.com/pydata/xarray/issues/2550
+                            for enc_attrs in ['source', 'original_shape']:
+                                if enc_attrs in encoding[v]:
+                                    del encoding[v][enc_attrs]
+
             if agg_type == 'join_new':
                 ds = join_new(dsets, dim_name=agg_column, coord_value=keys, options=agg_options)
 
             elif agg_type == 'join_existing':
-
                 ds = join_existing(dsets, options=agg_options)
 
             elif agg_type == 'union':
                 ds = union(dsets, options=agg_options)
 
             ds.attrs = attrs
+            for v in ds.variables:
+                if v in encoding and not ds[v].encoding:
+                    ds[v].encoding = encoding[v]
+
             return ds
 
     return apply_aggregation(v)
