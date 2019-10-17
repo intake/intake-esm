@@ -71,6 +71,9 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         self._entries = {}
         self.urlpath = ''
         self._ds = None
+        self.zarr_kwargs = None
+        self.cdf_kwargs = None
+        self.preprocess = None
         self.metadata = {}
         super().__init__(**kwargs)
 
@@ -309,6 +312,10 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
             variable_id:            pr
 
         """
+
+        # set _schema to None to remove any previously cached dataset
+        self._schema = None
+
         if (
             'chunks' in cdf_kwargs
             and not cdf_kwargs['chunks']

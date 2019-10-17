@@ -43,22 +43,35 @@ def test_to_dataset_dict(esmcol_path, query, kwargs):
 @pytest.mark.parametrize(
     'esmcol_path, query, kwargs',
     [(zarr_col, zarr_query, {}), (cdf_col, cdf_query, {'chunks': {'time': 1}})],
-)    
+)
 def test_to_dataset_dict_w_preprocess(esmcol_path, query, kwargs):
-    
     def rename_coords(ds):
         return ds.rename({'lon': 'longitude', 'lat': 'latitude'})
-    
+
     col = intake.open_esm_datastore(esmcol_path)
     col_sub = col.search(**query)
-    
+
     dsets = col_sub.to_dataset_dict(preprocess=rename_coords)
     _, ds = dsets.popitem()
     assert 'latitude' in ds.dims
     assert 'longitude' in ds.dims
-    
-    
-    
+
+
+@pytest.mark.parametrize('esmcol_path, query', [(zarr_col, zarr_query), (cdf_col, cdf_query)])
+def test_to_dataset_dict_nocache(esmcol_path, query):
+    col = intake.open_esm_datastore(esmcol_path)
+
+    cat = col.search(**query)
+    _, ds = cat.to_dataset_dict().popitem()
+
+    id1 = id(ds)
+
+    cat = col.search(**query)
+    _, ds = cat.to_dataset_dict().popitem()
+
+    assert id1 != id(ds)
+
+
 def test_repr():
     col = intake.open_esm_datastore(zarr_col)
     assert 'ESM Collection' in repr(col)
