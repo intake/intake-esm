@@ -38,6 +38,7 @@ def test_to_dataset_dict(esmcol_path, query, kwargs):
     _, ds = cat.to_dataset_dict().popitem()
     assert 'member_id' in ds.dims
     assert len(ds.__dask_keys__()) > 0
+    assert ds.time.encoding
 
 
 @pytest.mark.parametrize(
