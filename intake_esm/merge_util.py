@@ -41,7 +41,15 @@ def _create_asset_info_lookup(
 
 
 def aggregate(
-    aggregation_dict, agg_columns, n_agg, v, lookup, mapper_dict, zarr_kwargs, cdf_kwargs, preprocess,
+    aggregation_dict,
+    agg_columns,
+    n_agg,
+    v,
+    lookup,
+    mapper_dict,
+    zarr_kwargs,
+    cdf_kwargs,
+    preprocess,
 ):
     def apply_aggregation(v, agg_column=None, key=None, level=0):
         """Recursively descend into nested dictionary and aggregate items.
@@ -105,7 +113,7 @@ def open_dataset(path, varname, data_format, zarr_kwargs, cdf_kwargs, preprocess
 
     else:
         ds = xr.open_dataset(path, **cdf_kwargs)
-        
+
     if preprocess is None:
         return _set_coords(ds, varname)
     else:

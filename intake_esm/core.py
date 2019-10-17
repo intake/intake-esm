@@ -237,9 +237,9 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
             Keyword arguments to pass to `xarray.open_zarr()` function
         cdf_kwargs : dict
             Keyword arguments to pass to `xarray.open_dataset()` function
-        preprocess : (callable, optional) 
+        preprocess : (callable, optional)
             If provided, call this function on each dataset prior to aggregation.
-            
+
         Returns
         -------
         dsets : dict
@@ -322,12 +322,12 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
 
         self.zarr_kwargs = zarr_kwargs
         self.cdf_kwargs = cdf_kwargs
-        
+
         if preprocess is not None and not callable(preprocess):
             raise ValueError('preprocess argument must be callable')
-            
+
         self.preprocess = preprocess
-        
+
         return self.to_dask()
 
     def _get_schema(self):
@@ -457,7 +457,15 @@ def _load_group_dataset(
         )
 
     ds = aggregate(
-        aggregation_dict, agg_columns, n_agg, nd, lookup, mapper_dict, zarr_kwargs, cdf_kwargs, preprocess,
+        aggregation_dict,
+        agg_columns,
+        n_agg,
+        nd,
+        lookup,
+        mapper_dict,
+        zarr_kwargs,
+        cdf_kwargs,
+        preprocess,
     )
     group_id = '.'.join(key)
     return group_id, _restore_non_dim_coords(ds)
