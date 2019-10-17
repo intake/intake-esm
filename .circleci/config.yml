@@ -6,6 +6,7 @@ workflows:
     jobs:
       - "python-3.7"
       - "python-3.6"
+      - "dev"
       - "docs-build"
       - "test-linting"
 
@@ -34,15 +35,6 @@ jobs:
           command: |
             source activate ${ENV_NAME}
             pytest --junitxml=test-reports/junit.xml --cov=./ --verbose
-
-
-      - run:
-          name: Code Coverage
-          command: |
-            source activate ${ENV_NAME}
-
-            echo "[Upload coverage]"
-            codecov
 
       - save_cache:
           key: deps-{{ .Branch }}-3.6-{{ checksum "ci/environment-dev-3.6.yml" }}
@@ -93,6 +85,42 @@ jobs:
       # Cache some files for a speedup in subsequent builds
       - save_cache:
           key: deps-{{ .Branch }}-3.7-{{ checksum "ci/environment-dev-3.7.yml" }}
+          paths:
+            - "/opt/conda/envs/${ENV_NAME}/"
+            - "/opt/conda/pkgs"
+
+      - store_test_results:
+          path: test-reports
+
+      - store_artifacts:
+          path: test-reports
+
+  "dev":
+    docker:
+      - image: conda/miniconda3:latest
+
+    environment:
+      PYTHON: "3.7-dev"
+      ENV_NAME: "intake-esm-dev"
+
+    steps:
+      - checkout
+
+      # Restore cached files to speed things up
+      - restore_cache:
+          key: deps-{{ .Branch }}-3.7-dev-{{ checksum "ci/environment-dev-3.7-dev.yml" }}
+
+      - run: # install and activate conda environment
+          name: Install conda environment
+          command: ./ci/install-circle.sh
+
+      - run:
+          command: |
+            source activate ${ENV_NAME}
+            pytest --junitxml=test-reports/junit.xml --cov=./ --verbose
+
+      - save_cache:
+          key: deps-{{ .Branch }}-3.7-dev-{{ checksum "ci/environment-dev-3.7-dev.yml" }}
           paths:
             - "/opt/conda/envs/${ENV_NAME}/"
             - "/opt/conda/pkgs"
