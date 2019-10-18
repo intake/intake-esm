@@ -401,7 +401,7 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         dsets = dask.compute(*dsets)
         del mapper_dict
 
-        self._ds = {dset[0]: dset[1] for dset in dsets}
+        self._ds = {group_id: ds for group_id, ds in dsets}
 
 
 def _unique(df, columns):
