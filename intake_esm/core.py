@@ -245,7 +245,8 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
             Keyword arguments to pass to `xarray.open_dataset()` function
         preprocess : (callable, optional)
             If provided, call this function on each dataset prior to aggregation.
-
+        aggregate : (boolean, optional)
+            If "False", no aggregation will be done.
         Returns
         -------
         dsets : dict
