@@ -14,10 +14,10 @@ import pandas as pd
 import requests
 
 from .merge_util import (
+    _aggregate,
     _create_asset_info_lookup,
     _restore_non_dim_coords,
-    aggregate,
-    to_nested_dict,
+    _to_nested_dict,
 )
 
 logger = logging.getLogger(__name__)
@@ -74,6 +74,7 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         self.zarr_kwargs = None
         self.cdf_kwargs = None
         self.preprocess = None
+        self.aggregate = None
         self.metadata = {}
         super().__init__(**kwargs)
 
@@ -231,7 +232,9 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         query_results = self.df.loc[condition]
         return query_results
 
-    def to_dataset_dict(self, zarr_kwargs={}, cdf_kwargs={'chunks': {}}, preprocess=None):
+    def to_dataset_dict(
+        self, zarr_kwargs={}, cdf_kwargs={'chunks': {}}, preprocess=None, aggregate=True
+    ):
         """Load catalog entries into a dictionary of xarray datasets.
 
         Parameters
@@ -242,7 +245,8 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
             Keyword arguments to pass to `xarray.open_dataset()` function
         preprocess : (callable, optional)
             If provided, call this function on each dataset prior to aggregation.
-
+        aggregate : (boolean, optional)
+            If "False", no aggregation will be done.
         Returns
         -------
         dsets : dict
@@ -329,6 +333,7 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
 
         self.zarr_kwargs = zarr_kwargs
         self.cdf_kwargs = cdf_kwargs
+        self.aggregate = aggregate
 
         if preprocess is not None and not callable(preprocess):
             raise ValueError('preprocess argument must be callable')
@@ -358,25 +363,50 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
             path: _path_to_mapper(path) for path in self.df[path_column_name]
         }  # replace path column with mapper (dependent on filesystem type)
 
-        groupby_attrs = self._col_data['aggregation_control'].get('groupby_attrs', [])
-        aggregations = self._col_data['aggregation_control'].get('aggregations', [])
-        variable_column_name = self._col_data['aggregation_control']['variable_column_name']
-
+        groupby_attrs = []
+        variable_column_name = None
+        aggregations = []
         aggregation_dict = {}
-        for agg in aggregations:
-            key = agg['attribute_name']
-            rest = agg.copy()
-            del rest['attribute_name']
-            aggregation_dict[key] = rest
+        agg_columns = []
+        if self.aggregate:
+            if 'aggregation_control' in self._col_data:
+                variable_column_name = self._col_data['aggregation_control']['variable_column_name']
+                groupby_attrs = self._col_data['aggregation_control'].get('groupby_attrs', [])
+                aggregations = self._col_data['aggregation_control'].get('aggregations', [])
 
-        agg_columns = list(aggregation_dict.keys())
+                for agg in aggregations:
+                    key = agg['attribute_name']
+                    rest = agg.copy()
+                    del rest['attribute_name']
+                    aggregation_dict[key] = rest
 
-        if groupby_attrs:
-            groups = self.df.groupby(groupby_attrs)
+            agg_columns = list(aggregation_dict.keys())
+
+        if not groupby_attrs:
+            groupby_attrs = self.df.columns.tolist()
+
+        # filter groupby_attrs to ensure no columns with all nans
+        def _allnan_or_nonan(column):
+            if self.df[column].isnull().all():
+                return False
+            elif self.df[column].isnull().any():
+                raise ValueError(
+                    f'The data in the {column} column should either be all NaN or there should be no NaNs'
+                )
+            else:
+                return True
+
+        groupby_attrs = list(filter(_allnan_or_nonan, groupby_attrs))
+
+        groups = self.df.groupby(groupby_attrs)
+
+        if agg_columns:
+            keys = '.'.join(groupby_attrs)
         else:
-            groups = self.df.groupby(self.df.columns.tolist())
+            keys = path_column_name
+
         print(
-            f"""--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{".".join(groupby_attrs)}'"""
+            f"""--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{keys}'"""
         )
         print(f'\n--> There will be {len(groups)} group(s)')
 
@@ -399,9 +429,8 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         ]
 
         dsets = dask.compute(*dsets)
-        del mapper_dict
 
-        self._ds = {dset[0]: dset[1] for dset in dsets}
+        self._ds = {group_id: ds for (group_id, ds) in dsets}
 
 
 def _unique(df, columns):
@@ -449,8 +478,13 @@ def _load_group_dataset(
     # the number of aggregation columns determines the level of recursion
     n_agg = len(agg_columns)
 
-    mi = df.set_index(agg_columns)
-    nd = to_nested_dict(mi[path_column_name])
+    if agg_columns:
+        mi = df.set_index(agg_columns)
+        nd = _to_nested_dict(mi[path_column_name])
+        group_id = '.'.join(key)
+    else:
+        nd = df.iloc[0][path_column_name]
+        group_id = nd
 
     if use_format_column:
         format_column_name = col_data['assets']['format_column_name']
@@ -458,12 +492,11 @@ def _load_group_dataset(
             df, path_column_name, variable_column_name, format_column_name=format_column_name
         )
     else:
-
         lookup = _create_asset_info_lookup(
             df, path_column_name, variable_column_name, data_format=col_data['assets']['format']
         )
 
-    ds = aggregate(
+    ds = _aggregate(
         aggregation_dict,
         agg_columns,
         n_agg,
@@ -474,8 +507,11 @@ def _load_group_dataset(
         cdf_kwargs,
         preprocess,
     )
-    group_id = '.'.join(key)
-    return group_id, _restore_non_dim_coords(ds)
+
+    if variable_column_name is None:
+        return group_id, ds
+    else:
+        return group_id, _restore_non_dim_coords(ds)
 
 
 def _is_valid_url(url):

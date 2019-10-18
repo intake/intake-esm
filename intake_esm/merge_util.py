@@ -14,33 +14,35 @@ def union(dsets, options={}):
     return xr.merge(dsets, **options)
 
 
-def to_nested_dict(df):
+def _to_nested_dict(df):
     """Converts a multiindex series to nested dict"""
     if hasattr(df.index, 'levels') and len(df.index.levels) > 1:
         ret = {}
         for k, v in df.groupby(level=0):
-            ret[k] = to_nested_dict(v.droplevel(0))
+            ret[k] = _to_nested_dict(v.droplevel(0))
         return ret
     else:
         return df.to_dict()
 
 
 def _create_asset_info_lookup(
-    df, path_column_name, variable_column_name, data_format=None, format_column_name=None
+    df, path_column_name, variable_column_name=None, data_format=None, format_column_name=None
 ):
 
     if data_format:
-        return dict(
-            zip(df[path_column_name], tuple(zip(df[variable_column_name], [data_format] * len(df))))
-        )
-
+        data_format_list = [data_format] * len(df)
     elif format_column_name is not None:
-        return dict(
-            zip(df[path_column_name], tuple(zip(df[variable_column_name], df[format_column_name])))
-        )
+        data_format_list = df[format_column_name]
+
+    if variable_column_name is None:
+        varname_list = [None] * len(df)
+    else:
+        varname_list = df[variable_column_name]
+
+    return dict(zip(df[path_column_name], tuple(zip(varname_list, data_format_list))))
 
 
-def aggregate(
+def _aggregate(
     aggregation_dict,
     agg_columns,
     n_agg,
@@ -62,9 +64,9 @@ def aggregate(
             # return open_dataset(v)
             varname = lookup[v][0]
             data_format = lookup[v][1]
-            return open_dataset(
+            return _open_asset(
                 mapper_dict[v],
-                varname=[varname],
+                varname=varname,
                 data_format=data_format,
                 zarr_kwargs=zarr_kwargs,
                 cdf_kwargs=cdf_kwargs,
@@ -124,7 +126,7 @@ def aggregate(
     return apply_aggregation(v)
 
 
-def open_dataset(path, varname, data_format, zarr_kwargs, cdf_kwargs, preprocess):
+def _open_asset(path, varname, data_format, zarr_kwargs, cdf_kwargs, preprocess):
 
     if data_format == 'zarr':
         ds = xr.open_zarr(path, **zarr_kwargs)
@@ -147,9 +149,13 @@ def _restore_non_dim_coords(ds):
 
 def _set_coords(ds, varname):
     """Set all variables except varname to be coords."""
+    if varname is None:
+        return ds
+
     if isinstance(varname, str):
         varname = [varname]
     coord_vars = set(ds.data_vars) - set(varname)
+
     return ds.set_coords(coord_vars)
 
 

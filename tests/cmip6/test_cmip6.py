@@ -3,10 +3,12 @@ import os
 import intake
 import pandas as pd
 import pytest
+import xarray as xr
 
 here = os.path.abspath(os.path.dirname(__file__))
 zarr_col = os.path.join(here, 'pangeo-cmip6-zarr.json')
 cdf_col = os.path.join(here, 'cmip6-netcdf.json')
+
 zarr_query = dict(
     variable_id=['pr'],
     experiment_id='ssp370',
@@ -35,10 +37,25 @@ def test_to_dataset_dict(esmcol_path, query, kwargs):
     cat = col.search(**query)
     if kwargs:
         _, ds = cat.to_dataset_dict(cdf_kwargs=kwargs).popitem()
-    _, ds = cat.to_dataset_dict().popitem()
+    else:
+        _, ds = cat.to_dataset_dict().popitem()
     assert 'member_id' in ds.dims
     assert len(ds.__dask_keys__()) > 0
     assert ds.time.encoding
+
+
+@pytest.mark.parametrize('esmcol_path, query', [(cdf_col, cdf_query)])
+def test_to_dataset_dict_aggfalse(esmcol_path, query):
+    col = intake.open_esm_datastore(esmcol_path)
+    cat = col.search(**query)
+    nds = len(cat.df)
+
+    dsets = cat.to_dataset_dict(aggregate=False)
+    assert len(dsets.keys()) == nds
+    path, ds = dsets.popitem()
+
+    xr_ds = xr.open_dataset(path)
+    xr.testing.assert_identical(xr_ds, ds)
 
 
 @pytest.mark.parametrize(
