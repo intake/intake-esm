@@ -285,6 +285,10 @@ Trivial/Internal Changes
 - Update CircleCI workflow (:pr:`32`) `Anderson Banihirwe`_
 - Rename package from `intake-cesm` to `intake-esm` (:pr:`34`) `Anderson Banihirwe`_
 
+Documentation
+-------------
+
+- Add example for preprocessing function (:pr:`168`) `Julius Busecke`_
 
 .. _`Aaron Spring`: https://github.com/aaronspring
 .. _`Anderson Banihirwe`: https://github.com/andersy005
@@ -293,3 +297,4 @@ Trivial/Internal Changes
 .. _`Naomi Henderson`: https://github.com/naomi-henderson
 .. _`Paul Branson`: https://github.com/pbranson
 .. _`Ryan Abernathey`: https://github.com/rabernat
+.. _`Julius Busecke`: https://github.com/jbusecke
