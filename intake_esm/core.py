@@ -373,7 +373,8 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
                 variable_column_name = self._col_data['aggregation_control']['variable_column_name']
                 groupby_attrs = self._col_data['aggregation_control'].get('groupby_attrs', [])
                 aggregations = self._col_data['aggregation_control'].get('aggregations', [])
-
+                # Sort aggregations to make sure join_existing is always done before join_new
+                aggregations = sorted(aggregations, key=lambda i: i['type'], reverse=True)
                 for agg in aggregations:
                     key = agg['attribute_name']
                     rest = agg.copy()
