@@ -404,8 +404,9 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         if agg_columns:
             keys = '.'.join(groupby_attrs)
         else:
-            keys = path_column_name
-
+            keys = groupby_attrs.copy()
+            keys.remove(path_column_name)
+            keys = '.'.join(keys)
         print(
             f"""--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{keys}'"""
         )
@@ -485,7 +486,11 @@ def _load_group_dataset(
         group_id = '.'.join(key)
     else:
         nd = df.iloc[0][path_column_name]
-        group_id = nd
+        # Cast key from tuple to list
+        key = list(key)
+        # Remove path from the list
+        key.remove(nd)
+        group_id = '.'.join(key)
 
     if use_format_column:
         format_column_name = col_data['assets']['format_column_name']
