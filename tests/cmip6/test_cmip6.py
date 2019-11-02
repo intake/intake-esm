@@ -3,7 +3,6 @@ import os
 import intake
 import pandas as pd
 import pytest
-import xarray as xr
 
 here = os.path.abspath(os.path.dirname(__file__))
 zarr_col = os.path.join(here, 'pangeo-cmip6-zarr.json')
@@ -36,7 +35,7 @@ def test_to_dataset_dict(esmcol_path, query, kwargs):
     col = intake.open_esm_datastore(esmcol_path)
     cat = col.search(**query)
     if kwargs:
-        _, ds = cat.to_dataset_dict(cdf_kwargs=kwargs).popitem()
+        _, ds = cat.to_dataset_dict(zarr_kwargs={'consolidated': True}, cdf_kwargs=kwargs).popitem()
     else:
         _, ds = cat.to_dataset_dict().popitem()
     assert 'member_id' in ds.dims
@@ -50,12 +49,10 @@ def test_to_dataset_dict_aggfalse(esmcol_path, query):
     cat = col.search(**query)
     nds = len(cat.df)
 
-    dsets = cat.to_dataset_dict(aggregate=False)
+    dsets = cat.to_dataset_dict(zarr_kwargs={'consolidated': True}, aggregate=False)
     assert len(dsets.keys()) == nds
-    path, ds = dsets.popitem()
-
-    xr_ds = xr.open_dataset(path)
-    xr.testing.assert_identical(xr_ds, ds)
+    key, ds = dsets.popitem()
+    assert 'tasmax' in key
 
 
 @pytest.mark.parametrize(
@@ -69,7 +66,7 @@ def test_to_dataset_dict_w_preprocess(esmcol_path, query, kwargs):
     col = intake.open_esm_datastore(esmcol_path)
     col_sub = col.search(**query)
 
-    dsets = col_sub.to_dataset_dict(preprocess=rename_coords)
+    dsets = col_sub.to_dataset_dict(zarr_kwargs={'consolidated': True}, preprocess=rename_coords)
     _, ds = dsets.popitem()
     assert 'latitude' in ds.dims
     assert 'longitude' in ds.dims
@@ -80,12 +77,12 @@ def test_to_dataset_dict_nocache(esmcol_path, query):
     col = intake.open_esm_datastore(esmcol_path)
 
     cat = col.search(**query)
-    _, ds = cat.to_dataset_dict().popitem()
+    _, ds = cat.to_dataset_dict(zarr_kwargs={'consolidated': True}).popitem()
 
     id1 = id(ds)
 
     cat = col.search(**query)
-    _, ds = cat.to_dataset_dict().popitem()
+    _, ds = cat.to_dataset_dict(zarr_kwargs={'consolidated': True}).popitem()
 
     assert id1 != id(ds)
 
