@@ -17,6 +17,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-icdiff
+  - pytest-xdist
   - python=3.7
   - pyyaml
   - tqdm
