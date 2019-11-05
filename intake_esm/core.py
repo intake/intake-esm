@@ -572,7 +572,11 @@ def _fetch_and_parse_file(input_path):
 
 def _path_to_mapper(path):
     """Convert path to mapper if necessary."""
-    if fsspec.core.split_protocol(path)[0] is not None:
-        return fsspec.get_mapper(path)
-    else:
+
+    protocol = fsspec.core.split_protocol(path)[0]
+
+    if protocol in {'http', 'https'} or protocol is None:
         return path
+
+    else:
+        return fsspec.get_mapper(path)

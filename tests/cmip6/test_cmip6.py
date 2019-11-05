@@ -3,6 +3,7 @@ import os
 import intake
 import pandas as pd
 import pytest
+import xarray as xr
 
 here = os.path.abspath(os.path.dirname(__file__))
 zarr_col = os.path.join(here, 'pangeo-cmip6-zarr.json')
@@ -85,6 +86,21 @@ def test_to_dataset_dict_nocache(esmcol_path, query):
     _, ds = cat.to_dataset_dict(zarr_kwargs={'consolidated': True}).popitem()
 
     assert id1 != id(ds)
+
+
+def test_opendap_endpoint():
+    col = intake.open_esm_datastore('http://haden.ldeo.columbia.edu/catalogs/hyrax_cmip6.json')
+    cat = col.search(
+        source_id='CAMS-CSM1-0',
+        experiment_id='historical',
+        member_id='r1i1p1f1',
+        table_id='Amon',
+        grid_label='gn',
+        version='v1',
+    )
+    dsets = cat.to_dataset_dict(cdf_kwargs={'chunks': {'time': 36}})
+    _, ds = dsets.popitem()
+    assert isinstance(ds, xr.Dataset)
 
 
 def test_repr():
