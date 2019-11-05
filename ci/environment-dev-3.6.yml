@@ -12,6 +12,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-icdiff
+  - pytest-xdist
   - python=3.6
   - pyyaml
   - tqdm

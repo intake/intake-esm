@@ -13,12 +13,7 @@ import numpy as np
 import pandas as pd
 import requests
 
-from .merge_util import (
-    _aggregate,
-    _create_asset_info_lookup,
-    _restore_non_dim_coords,
-    _to_nested_dict,
-)
+from .merge_util import _aggregate, _create_asset_info_lookup, _to_nested_dict
 
 logger = logging.getLogger(__name__)
 
@@ -514,10 +509,7 @@ def _load_group_dataset(
         preprocess,
     )
 
-    if variable_column_name is None:
-        return group_id, ds
-    else:
-        return group_id, _restore_non_dim_coords(ds)
+    return group_id, ds
 
 
 def _is_valid_url(url):
