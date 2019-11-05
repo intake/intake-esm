@@ -1,9 +1,11 @@
 import xarray as xr
 
 
-def join_new(dsets, dim_name, coord_value, options={}):
+def join_new(dsets, dim_name, coord_value, varname, options={}):
+    if isinstance(varname, str):
+        varname = [varname]
     concat_dim = xr.DataArray(coord_value, dims=(dim_name), name=dim_name)
-    return xr.concat(dsets, dim=concat_dim, **options)
+    return xr.concat(dsets, dim=concat_dim, data_vars=varname, **options)
 
 
 def join_existing(dsets, options={}):
@@ -62,16 +64,19 @@ def _aggregate(
         if level == n_agg:
             # bottom of the hierarchy - should be an actual path at this point
             # return open_dataset(v)
-            varname = lookup[v][0]
             data_format = lookup[v][1]
-            return _open_asset(
+            # Get varname in order to specify data_vars=[varname] during concatenation
+            # See https://github.com/NCAR/intake-esm/issues/172#issuecomment-549001751
+            varname = lookup[v][0]
+            ds = _open_asset(
                 mapper_dict[v],
-                varname=varname,
                 data_format=data_format,
                 zarr_kwargs=zarr_kwargs,
                 cdf_kwargs=cdf_kwargs,
                 preprocess=preprocess,
             )
+            ds.attrs['intake_esm_varname'] = varname
+            return ds
 
         else:
             agg_column = agg_columns[level]
@@ -108,7 +113,14 @@ def _aggregate(
                                     del encoding[v][enc_attrs]
 
             if agg_type == 'join_new':
-                ds = join_new(dsets, dim_name=agg_column, coord_value=keys, options=agg_options)
+                varname = dsets[0].attrs['intake_esm_varname']
+                ds = join_new(
+                    dsets,
+                    dim_name=agg_column,
+                    coord_value=keys,
+                    varname=varname,
+                    options=agg_options,
+                )
 
             elif agg_type == 'join_existing':
                 ds = join_existing(dsets, options=agg_options)
@@ -126,7 +138,7 @@ def _aggregate(
     return apply_aggregation(v)
 
 
-def _open_asset(path, varname, data_format, zarr_kwargs, cdf_kwargs, preprocess):
+def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess):
 
     if data_format == 'zarr':
         ds = xr.open_zarr(path, **zarr_kwargs)
@@ -135,28 +147,9 @@ def _open_asset(path, varname, data_format, zarr_kwargs, cdf_kwargs, preprocess)
         ds = xr.open_dataset(path, **cdf_kwargs)
 
     if preprocess is None:
-        return _set_coords(ds, varname)
-    else:
-        return _set_coords(preprocess(ds), varname)
-
-
-def _restore_non_dim_coords(ds):
-    """restore non_dim_coords to variables"""
-    non_dim_coords_reset = set(ds.coords) - set(ds.dims)
-    ds = ds.reset_coords(non_dim_coords_reset)
-    return ds
-
-
-def _set_coords(ds, varname):
-    """Set all variables except varname to be coords."""
-    if varname is None:
         return ds
-
-    if isinstance(varname, str):
-        varname = [varname]
-    coord_vars = set(ds.data_vars) - set(varname)
-
-    return ds.set_coords(coord_vars)
+    else:
+        return preprocess(ds)
 
 
 def dict_union(*dicts, merge_keys=['history', 'tracking_id'], drop_keys=[]):
