@@ -106,12 +106,48 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         ret.df = self._get_subset(**query)
         return ret
 
-    lru_cache(maxsize=None)
-
+    @lru_cache(maxsize=None)
     def _fetch_catalog(self):
         """Get the catalog file and cache it.
         """
         return pd.read_csv(self._col_data['catalog_file'])
+
+    def serialize(self, name, directory=None):
+        """Serialize collection/catalog to corresponding json and csv files.
+
+        Parameters
+        ----------
+        name : str
+            name to use when creating ESM collection json file and csv catalog.
+        directory : str, PathLike, default None
+               The path to the local directory. If None, use the current directory
+
+        Examples
+        --------
+        >>> import intake
+        >>> col = intake.open_esm_datastore("pangeo-cmip6.json")
+        >>> col_subset = col.search(source_id="BCC-ESM1", grid_label="gn",
+        ...                      table_id="Amon", experiment_id="historical")
+
+        >>> col_subset.serialize(name="cmip6_bcc_esm1")
+        Writing csv catalog to: cmip6_bcc_esm1.csv.gz
+        Writing ESM collection json file to: cmip6_bcc_esm1.json
+        """
+        from pathlib import Path
+
+        csv_file_name = Path(f'{name}.csv.gz')
+        json_file_name = Path(f'{name}.json')
+        if directory:
+            directory = Path(directory)
+            directory.mkdir(parents=True, exist_ok=True)
+            csv_file_name = directory / csv_file_name
+            json_file_name = directory / json_file_name
+
+        print(f'Writing csv catalog to: {csv_file_name}')
+        self.df.to_csv(csv_file_name, compression='gzip', index=False)
+        print(f'Writing ESM collection json file to: {json_file_name}')
+        with open(json_file_name, 'w') as outfile:
+            json.dump(self._col_data, outfile)
 
     def nunique(self):
         """Count distinct observations across dataframe columns

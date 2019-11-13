@@ -1,4 +1,5 @@
 import os
+from tempfile import TemporaryDirectory
 
 import intake
 import pandas as pd
@@ -119,3 +120,18 @@ def test_load_esmcol_remote():
         'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
     )
     assert isinstance(col.df, pd.DataFrame)
+
+
+def test_serialize():
+    with TemporaryDirectory() as local_store:
+        col = intake.open_esm_datastore(
+            'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
+        )
+        col_subset = col.search(
+            source_id='BCC-ESM1', grid_label='gn', table_id='Amon', experiment_id='historical'
+        )
+
+        col_subset.serialize(name='cmip6_bcc_esm1', directory=local_store)
+
+        col = intake.open_esm_datastore(f'{local_store}/cmip6_bcc_esm1.json')
+        assert len(col.df) > 0
