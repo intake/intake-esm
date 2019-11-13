@@ -143,11 +143,15 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
             csv_file_name = directory / csv_file_name
             json_file_name = directory / json_file_name
 
+        collection_data = self._col_data.copy()
+        collection_data['catalog_file'] = csv_file_name.as_posix()
+        collection_data['id'] = name
+
         print(f'Writing csv catalog to: {csv_file_name}')
         self.df.to_csv(csv_file_name, compression='gzip', index=False)
         print(f'Writing ESM collection json file to: {json_file_name}')
         with open(json_file_name, 'w') as outfile:
-            json.dump(self._col_data, outfile)
+            json.dump(collection_data, outfile)
 
     def nunique(self):
         """Count distinct observations across dataframe columns
