@@ -268,7 +268,12 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         return query_results.reset_index(drop=True)
 
     def to_dataset_dict(
-        self, zarr_kwargs={}, cdf_kwargs={'chunks': {}}, preprocess=None, aggregate=True
+        self,
+        zarr_kwargs={},
+        cdf_kwargs={'chunks': {}},
+        preprocess=None,
+        aggregate=True,
+        storage_options={},
     ):
         """Load catalog entries into a dictionary of xarray datasets.
 
@@ -282,6 +287,8 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
             If provided, call this function on each dataset prior to aggregation.
         aggregate : (boolean, optional)
             If "False", no aggregation will be done.
+        storage_options : dict, optional
+            Parameters passed to the backend file-system
         Returns
         -------
         dsets : dict
@@ -370,6 +377,7 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         self.cdf_kwargs = cdf_kwargs
         self.aggregate = aggregate
 
+        self.storage_options = storage_options
         if preprocess is not None and not callable(preprocess):
             raise ValueError('preprocess argument must be callable')
 
@@ -395,7 +403,7 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
             use_format_column = True
 
         mapper_dict = {
-            path: _path_to_mapper(path) for path in self.df[path_column_name]
+            path: _path_to_mapper(path, self.storage_options) for path in self.df[path_column_name]
         }  # replace path column with mapper (dependent on filesystem type)
 
         groupby_attrs = []
@@ -602,7 +610,7 @@ def _fetch_and_parse_file(input_path):
     return data
 
 
-def _path_to_mapper(path):
+def _path_to_mapper(path, storage_options):
     """Convert path to mapper if necessary."""
 
     protocol = fsspec.core.split_protocol(path)[0]
@@ -611,4 +619,4 @@ def _path_to_mapper(path):
         return path
 
     else:
-        return fsspec.get_mapper(path)
+        return fsspec.get_mapper(path, **storage_options)
