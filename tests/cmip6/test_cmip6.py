@@ -136,6 +136,6 @@ def test_serialize():
         col_subset.serialize(name=name, directory=local_store)
 
         col = intake.open_esm_datastore(f'{local_store}/cmip6_bcc_esm1.json')
-        pd.testing.assert_frame_equal(col_subset.df.reset_index(drop=True), col.df)
+        pd.testing.assert_frame_equal(col_subset.df, col.df)
 
         assert col._col_data['id'] == name

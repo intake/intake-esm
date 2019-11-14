@@ -265,7 +265,7 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
             elif val is not None:
                 condition = condition & (self.df[key] == val)
         query_results = self.df.loc[condition]
-        return query_results
+        return query_results.reset_index(drop=True)
 
     def to_dataset_dict(
         self, zarr_kwargs={}, cdf_kwargs={'chunks': {}}, preprocess=None, aggregate=True
