@@ -1,4 +1,5 @@
 import os
+from tempfile import TemporaryDirectory
 
 import intake
 import pandas as pd
@@ -88,6 +89,7 @@ def test_to_dataset_dict_nocache(esmcol_path, query):
     assert id1 != id(ds)
 
 
+@pytest.mark.skip(reason='LDEO opendap servers seem not be working properly')
 def test_opendap_endpoint():
     col = intake.open_esm_datastore('http://haden.ldeo.columbia.edu/catalogs/hyrax_cmip6.json')
     cat = col.search(
@@ -119,3 +121,21 @@ def test_load_esmcol_remote():
         'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
     )
     assert isinstance(col.df, pd.DataFrame)
+
+
+def test_serialize():
+    with TemporaryDirectory() as local_store:
+        col = intake.open_esm_datastore(
+            'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
+        )
+        col_subset = col.search(
+            source_id='BCC-ESM1', grid_label='gn', table_id='Amon', experiment_id='historical'
+        )
+
+        name = 'cmip6_bcc_esm1'
+        col_subset.serialize(name=name, directory=local_store)
+
+        col = intake.open_esm_datastore(f'{local_store}/cmip6_bcc_esm1.json')
+        pd.testing.assert_frame_equal(col_subset.df, col.df)
+
+        assert col._col_data['id'] == name
