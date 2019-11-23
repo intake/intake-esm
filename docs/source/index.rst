@@ -17,6 +17,7 @@ please open an issue at the GitHub `main repository <http://github.com/NCAR/inta
    installation
    notebooks/tutorial.ipynb
    faq
+   cmip_ap
    api
    contributing
    changelog

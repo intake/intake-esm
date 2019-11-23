@@ -45,7 +45,6 @@ extensions = [
     'IPython.sphinxext.ipython_console_highlighting',
     'IPython.sphinxext.ipython_directive',
     'nbsphinx',
-    'sphinx_copybutton',
 ]
 
 extlinks = {
@@ -58,6 +57,16 @@ templates_path = ['_templates']
 # Generate the API documentation when building
 autosummary_generate = True
 numpydoc_show_class_members = False
+
+
+# Enable notebook execution
+# https://nbsphinx.readthedocs.io/en/0.4.2/never-execute.html
+nbsphinx_execute = 'auto'
+# Allow errors in all notebooks by
+nbsphinx_allow_errors = True
+
+# Disable cell timeout
+nbsphinx_timeout = -1
 
 
 # The suffix of source filenames.
@@ -73,7 +82,7 @@ master_doc = 'index'
 current_year = datetime.datetime.now().year
 project = u'Intake-esm'
 copyright = u'2018-{}, University Corporation for Atmospheric Research'.format(current_year)
-author = u'Earth System Informatics Team'
+author = u'intake-esm developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -156,7 +165,7 @@ html_theme_options = {'logo_only': False, 'style_nav_header_background': '#28938
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['../_build/html/_static']
+html_static_path = ['_build/html/_static']
 
 # Sometimes the savefig directory doesn't exist and needs to be created
 # https://github.com/ipython/ipython/issues/8733
