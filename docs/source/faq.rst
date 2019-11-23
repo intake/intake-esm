@@ -5,17 +5,17 @@ Frequently Asked Questions
 How do I create my own catalog?
 -------------------------------
 Intake-esm catalogs include two pieces: 1) a ESM-Collection file and
-2) a Catalog file. 
+2) a Catalog file.
 
 1. The ESM-Collection file is a simple json file that provides metadata about
 the catalog. The specification for this json file is found in the
 `esm-collection-spec <https://github.com/NCAR/esm-collection-spec/blob/master/collection-spec/collection-spec.md>`_
-repository. 
+repository.
 
 2. The Catalog file is a CSV file that lists the catalog contents. This file
 includes one row per dataset granule (e.g. a NetCDF file or Zarr dataset).
 The columns in this CSV must match the attributes and assets listed in the
-ESM-Collection file. A short example of a Catlog file is shown below::
+ESM-Collection file. A short example of a catalog file is shown below::
 
     activity_id,institution_id,source_id,experiment_id,member_id,table_id,variable_id,grid_label,zstore,dcpp_init_year
     AerChemMIP,BCC,BCC-ESM1,piClim-CH4,r1i1p1f1,Amon,ch4,gn,gs://cmip6/AerChemMIP/BCC/BCC-ESM1/piClim-CH4/r1i1p1f1/Amon/ch4/gn/,
@@ -28,19 +28,34 @@ Is there a list of existing catalogs?
 -------------------------------------
 
 The table below is an incomplete list of existing catalogs.
-Please feel free to add to this list.
+Please feel free to add to this list or raise an issue on `GitHub <https://github.com/NCAR/intake-esm/issues/new>`_.
 
-+-------------------+--------------------+-----------------+
-| Catalog Name      | Platform           | Details         |
-+===================+====================+=================+
-| CMIP6-GLADE       | NCAR-Cheyenne      | TBD             |
-+-------------------+--------------------+-----------------+
-| CMIP6-GCP         | GCP                | TBD             |
-+-------------------+--------------------+-----------------+
-| CMIP5-GLADE       | NCAR-Cheyenne      | TBD             |
-+-------------------+--------------------+-----------------+
-| CESM-GLADE        | NCAR-Cheyenne      | TBD             |
-+-------------------+--------------------+-----------------+
-| CESM LENS         | AWS                | TBD             |
-+-------------------+--------------------+-----------------+
++-------------------------+-----------------+-----------------+
+| Catalog Name            | Platform        | Details         |
++=========================+=================+=================+
+| `CMIP6-GLADE`_          | NCAR-Cheyenne   | TBD             |
++-------------------------+-----------------+-----------------+
+| `CMIP6-GCP`_            | GCP             | TBD             |
++-------------------------+-----------------+-----------------+
+| `CMIP5-GLADE`_          | NCAR-Cheyenne   | TBD             |
++-------------------------+-----------------+-----------------+
+| CESM-GLADE              | NCAR-Cheyenne   | TBD             |
++-------------------------+-----------------+-----------------+
+| `CESM1-LENS-AWS`_       | AWS (us-west-2) | TBD             |
++-------------------------+-----------------+-----------------+
+| CMIP5-MISTRAL           | DKRZ-MISTRAL    | TBD             |
++-------------------------+-----------------+-----------------+
+| CMIP6-MISTRAL           | DKRZ-MISTRAL    | TBD             |
++-------------------------+-----------------+-----------------+
+| `MPI Grand Ensemble`_   | DKRZ-MISTRAL    | TBD             |
++-------------------------+-----------------+-----------------+
+| `MiKlip-MISTRAL`_       | DKRZ-MISTRAL    | TBD             |
++-------------------------+-----------------+-----------------+
 
+
+.. _MPI Grand Ensemble: https://www.mpimet.mpg.de/en/grand-ensemble/
+.. _MiKlip-MISTRAL: https://www.mpimet.mpg.de/en/science/projects/miklip-projekt/
+.. _CMIP6-GLADE: ./cmip_ap.html
+.. _CMIP5-GLADE: ./cmip_ap.html
+.. _CESM1-LENS-AWS: https://registry.opendata.aws/ncar-cesm-lens/
+.. _CMIP6-GCP: https://pangeo-data.github.io/pangeo-datastore/cmip6_pangeo.html
