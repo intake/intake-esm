@@ -16,6 +16,7 @@ please open an issue at the GitHub `main repository <http://github.com/NCAR/inta
 
    installation
    notebooks/tutorial.ipynb
+   faq
    api
    contributing
    changelog
