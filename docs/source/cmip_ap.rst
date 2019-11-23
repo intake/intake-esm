@@ -3,7 +3,7 @@ NCAR CMIP Analysis Platform
 ===========================
 
 `NCAR's CMIP Analysis Platform (CMIP AP) <https://www2.cisl.ucar.edu/resources/cmip-analysis-platform>`_
-inncludes a large collection of CMIP5 and CMIP6 data sets. 
+includes a large collection of CMIP5 and CMIP6 data sets.
 
 Requesting data sets
 --------------------
@@ -30,4 +30,6 @@ GLADE. Those catalogs are listed below:
 | CMIP6                  | `/glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cmip6.json`                     |
 +------------------------+------------------------------------------------------------------------------------------------------+
 | CMIP6-CESM2-Timeseries | `/glade/collections/cmip/catalog/intake-esm-datastore/catalogs/campaign-cesm2-cmip6-timeseries.json` |
++------------------------+------------------------------------------------------------------------------------------------------+
+| CESM1 Large Ensemble   | `/glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cesm1-le.json`                  |
 +------------------------+------------------------------------------------------------------------------------------------------+
