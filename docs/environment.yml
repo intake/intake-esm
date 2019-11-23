@@ -17,3 +17,4 @@ dependencies:
   - jupyterlab
   - s3fs
   - fsspec
+  - watermark
