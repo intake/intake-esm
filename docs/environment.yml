@@ -14,6 +14,6 @@ dependencies:
   - tqdm
   - git
   - make
-  - ipython
+  - jupyterlab
   - s3fs
   - fsspec
