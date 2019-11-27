@@ -64,7 +64,7 @@ numpydoc_show_class_members = False
 
 # Enable notebook execution
 # https://nbsphinx.readthedocs.io/en/0.4.2/never-execute.html
-nbsphinx_execute = 'never'
+nbsphinx_execute = 'auto'
 # Allow errors in all notebooks by
 nbsphinx_allow_errors = True
 
