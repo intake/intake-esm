@@ -25,7 +25,7 @@ catalogs:
 
   - name: CESM1-LENS-GLADE
     url: /glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cesm1-le.json
-    description: CESM1 LENS data stored on NCAR's GLADE disk storage system
+    description: CESM1 Large Ensemble data stored on NCAR's GLADE disk storage system
     platform: NCAR-GLADE
     data_format: netCDF
 
