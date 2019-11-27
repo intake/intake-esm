@@ -33,11 +33,14 @@ Please feel free to add to this list or raise an issue on `GitHub <https://githu
 
 {% for catalog in catalogs %}
 {{ catalog.name }}
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * *Description*: **{{ catalog.description }}**
 * *Platform*: **{{ catalog.platform }}**
 * *Catalog path or url*: **{{ catalog.url }}**
 * *Data Format*: **{{ catalog.data_format }}**
+{% if catalog.dataset_docs_link %}
+* `Documentation Page <{{ catalog.dataset_docs_link }}>`_
+{% endif %}
 
 {% endfor %}
 

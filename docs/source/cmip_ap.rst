@@ -27,11 +27,14 @@ GLADE. Those catalogs are listed below:
 
 {% if 'ncar' in catalog.platform.lower() %}
 {{ catalog.name }}
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * *Description*: **{{ catalog.description }}**
 * *Platform*: **{{ catalog.platform }}**
 * *Catalog path or url*: **{{ catalog.url }}**
 * *Data Format*: **{{ catalog.data_format }}**
+{% if catalog.dataset_docs_link %}
+* `Documentation Page <{{ catalog.dataset_docs_link }}>`_
+{% endif %}
 
 {% endif %}
 {% endfor %}
