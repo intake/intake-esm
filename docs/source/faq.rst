@@ -30,32 +30,24 @@ Is there a list of existing catalogs?
 The table below is an incomplete list of existing catalogs.
 Please feel free to add to this list or raise an issue on `GitHub <https://github.com/NCAR/intake-esm/issues/new>`_.
 
-+-------------------------+-----------------+-----------------+
-| Catalog Name            | Platform        | Details         |
-+=========================+=================+=================+
-| `CMIP6-GLADE`_          | NCAR-Cheyenne   | TBD             |
-+-------------------------+-----------------+-----------------+
-| `CMIP6-GCP`_            | GCP             | TBD             |
-+-------------------------+-----------------+-----------------+
-| `CMIP5-GLADE`_          | NCAR-Cheyenne   | TBD             |
-+-------------------------+-----------------+-----------------+
-| CESM-GLADE              | NCAR-Cheyenne   | TBD             |
-+-------------------------+-----------------+-----------------+
-| `CESM1-LENS-AWS`_       | AWS (us-west-2) | TBD             |
-+-------------------------+-----------------+-----------------+
-| CMIP5-MISTRAL           | DKRZ-MISTRAL    | TBD             |
-+-------------------------+-----------------+-----------------+
-| CMIP6-MISTRAL           | DKRZ-MISTRAL    | TBD             |
-+-------------------------+-----------------+-----------------+
-| `MPI Grand Ensemble`_   | DKRZ-MISTRAL    | TBD             |
-+-------------------------+-----------------+-----------------+
-| `MiKlip-MISTRAL`_       | DKRZ-MISTRAL    | TBD             |
-+-------------------------+-----------------+-----------------+
-
-
-.. _MPI Grand Ensemble: https://www.mpimet.mpg.de/en/grand-ensemble/
-.. _MiKlip-MISTRAL: https://www.mpimet.mpg.de/en/science/projects/miklip-projekt/
-.. _CMIP6-GLADE: ./cmip_ap.html
-.. _CMIP5-GLADE: ./cmip_ap.html
-.. _CESM1-LENS-AWS: https://registry.opendata.aws/ncar-cesm-lens/
-.. _CMIP6-GCP: https://pangeo-data.github.io/pangeo-datastore/cmip6_pangeo.html
++-------------------------+-----------------+--------------------------------------+
+| Catalog Name            | Platform        | Details                              |
++=========================+=================+======================================+
+| CMIP6-GLADE             | NCAR-Cheyenne   | `more <./cmip_ap.html>`_             |
++-------------------------+-----------------+--------------------------------------+
+| CMIP6-CESM2-Timeseries  | NCAR-Cheyenne   | `more <./cmip_ap.html>`_             |
++-------------------------+-----------------+--------------------------------------+
+| CMIP5-GLADE             | NCAR-Cheyenne   | `more <./cmip_ap.html>`_             |
++-------------------------+-----------------+--------------------------------------+
+| CMIP6-GCP               | GCP             | TBD                                  |
++-------------------------+-----------------+--------------------------------------+
+| CESM1-LENS-AWS          | AWS (us-west-2) | TBD                                  |
++-------------------------+-----------------+--------------------------------------+
+| CMIP5-MISTRAL           | DKRZ-MISTRAL    | TBD                                  |
++-------------------------+-----------------+--------------------------------------+
+| CMIP6-MISTRAL           | DKRZ-MISTRAL    | TBD                                  |
++-------------------------+-----------------+--------------------------------------+
+| MPI Grand Ensemble      | DKRZ-MISTRAL    | TBD                                  |
++-------------------------+-----------------+--------------------------------------+
+| MiKlip-MISTRAL          | DKRZ-MISTRAL    | TBD                                  |
++-------------------------+-----------------+--------------------------------------+
