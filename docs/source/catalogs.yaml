@@ -58,3 +58,9 @@ catalogs:
     description: Max Planck Institute Grand Ensemble (Maher et al. 2019 https://doi.org/10/gf3kgt) cmorized by CMIP5-standards
     platform: DKRZ (German Climate Computing Centre)-MISTRAL
     data_format: netCDF
+
+  - name: CMIP6-LDEO-OpenDAP
+    url: http://haden.ldeo.columbia.edu/catalogs/hyrax_cmip6.json
+    description: CMIP6 data accessible via Hyrax OpenDAP Server at Lamont-Doherty Earth Observatory
+    platform: LDEO-OpenDAP
+    data_format: netCDF
