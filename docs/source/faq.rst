@@ -30,24 +30,17 @@ Is there a list of existing catalogs?
 The table below is an incomplete list of existing catalogs.
 Please feel free to add to this list or raise an issue on `GitHub <https://github.com/NCAR/intake-esm/issues/new>`_.
 
-+-------------------------+-----------------+--------------------------------------+
-| Catalog Name            | Platform        | Details                              |
-+=========================+=================+======================================+
-| CMIP6-GLADE             | NCAR-Cheyenne   | `more <./cmip_ap.html>`_             |
-+-------------------------+-----------------+--------------------------------------+
-| CMIP6-CESM2-Timeseries  | NCAR-Cheyenne   | `more <./cmip_ap.html>`_             |
-+-------------------------+-----------------+--------------------------------------+
-| CMIP5-GLADE             | NCAR-Cheyenne   | `more <./cmip_ap.html>`_             |
-+-------------------------+-----------------+--------------------------------------+
-| CMIP6-GCP               | GCP             | TBD                                  |
-+-------------------------+-----------------+--------------------------------------+
-| CESM1-LENS-AWS          | AWS (us-west-2) | TBD                                  |
-+-------------------------+-----------------+--------------------------------------+
-| CMIP5-MISTRAL           | DKRZ-MISTRAL    | TBD                                  |
-+-------------------------+-----------------+--------------------------------------+
-| CMIP6-MISTRAL           | DKRZ-MISTRAL    | TBD                                  |
-+-------------------------+-----------------+--------------------------------------+
-| MPI Grand Ensemble      | DKRZ-MISTRAL    | TBD                                  |
-+-------------------------+-----------------+--------------------------------------+
-| MiKlip-MISTRAL          | DKRZ-MISTRAL    | TBD                                  |
-+-------------------------+-----------------+--------------------------------------+
+
+{% for catalog in catalogs %}
+{{ catalog.name }}
+~~~~~~~~~~~~~~~~~~~~~
+* *Description*: **{{ catalog.description }}**
+* *Platform*: **{{ catalog.platform }}**
+* *Catalog path or url*: **{{ catalog.url }}**
+* *Data Format*: **{{ catalog.data_format }}**
+
+{% endfor %}
+
+.. note::
+
+    Some of these catalogs are also stored in `intake-esm-datastore GitHub repository <https://github.com/NCAR/intake-esm-datastore/tree/master/catalogs>`_

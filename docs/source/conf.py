@@ -15,6 +15,8 @@ import datetime
 import os
 import sys
 
+import yaml
+
 import intake_esm
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -62,7 +64,7 @@ numpydoc_show_class_members = False
 
 # Enable notebook execution
 # https://nbsphinx.readthedocs.io/en/0.4.2/never-execute.html
-nbsphinx_execute = 'auto'
+nbsphinx_execute = 'never'
 # Allow errors in all notebooks by
 nbsphinx_allow_errors = True
 
@@ -307,3 +309,29 @@ intersphinx_mapping = {
     'xarray': ('http://xarray.pydata.org/en/stable/', None),
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
 }
+
+
+# https://www.ericholscher.com/blog/2016/jul/25/integrating-jinja-rst-sphinx/
+
+
+def rstjinja(app, docname, source):
+    """
+    Render our pages as a jinja template for fancy templating goodness.
+    """
+    # Make sure we're outputting HTML
+    if app.builder.format != 'html':
+        return
+    src = source[0]
+    rendered = app.builder.templates.render_string(src, app.config.html_context)
+    source[0] = rendered
+
+
+def setup(app):
+    app.connect('source-read', rstjinja)
+
+
+with open('catalogs.yaml') as f:
+    catalogs = yaml.safe_load(f)
+
+
+html_context = {'catalogs': catalogs['catalogs']}

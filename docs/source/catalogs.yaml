@@ -1,0 +1,60 @@
+catalogs:
+  - name: CMIP6-GLADE
+    url: /glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cmip6.json
+    description: CMIP6 data accessible on the NCAR's GLADE disk storage system
+    platform: NCAR-GLADE
+    data_format: netCDF
+
+  - name: CMIP6-CESM2-Timeseries
+    url: /glade/collections/cmip/catalog/intake-esm-datastore/catalogs/campaign-cesm2-cmip6-timeseries.json
+    description: CESM2 raw output (non-cmorized) that went into CMIP6 data
+    platform: NCAR-CAMPAIGN
+    data_format: netCDF
+
+  - name: CMIP5-GLADE
+    url: /glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cmip5.json
+    description: CMIP5 data accessible on the NCAR's GLADE disk storage system
+    platform: NCAR-GLADE
+    data_format: netCDF
+
+  - name: CESM1-LENS-AWS
+    url: https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json
+    description: CESM1 Large Ensemble data publicly available on Amazon S3
+    platform: AWS S3 (us-west-2 region)
+    data_format: Zarr
+
+  - name: CESM1-LENS-GLADE
+    url: /glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cesm1-le.json
+    description: CESM1 LENS data stored on NCAR's GLADE disk storage system
+    platform: NCAR-GLADE
+    data_format: netCDF
+
+  - name: CMIP6-GCP
+    url: https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json
+    description: CMIP6 Zarr data residing in Pangeo's Google Storage
+    platform: Google Cloud Platform
+    data_format: Zarr
+
+  - name: CMIP6-MISTRAL
+    url: /home/mpim/m300524/intake-esm-datastore/catalogs/mistral-cmip6.json
+    description: CMIP6 data accessible on the DKRZ's MISTRAL disk storage system
+    platform: DKRZ (German Climate Computing Centre)-MISTRAL
+    data_format: netCDF
+
+  - name: CMIP5-MISTRAL
+    url: /home/mpim/m300524/intake-esm-datastore/catalogs/mistral-cmip5.json
+    description: CMIP5 data accessible on the DKRZ's MISTRAL disk storage system
+    platform: DKRZ (German Climate Computing Centre)-MISTRAL
+    data_format: netCDF
+
+  - name: MiKlip-MISTRAL
+    url: /home/mpim/m300524/intake-esm-datastore/catalogs/mistral-miklip.json
+    description: Data from MiKlip projects at the Max Planck Institute for Meteorology (MPI-M)
+    platform: DKRZ (German Climate Computing Centre)-MISTRAL
+    data_format: netCDF
+
+  - name: MPI-GE-MISTRAL
+    url: /home/mpim/m300524/intake-esm-datastore/catalogs/mistral-MPI-GE.json
+    description: Max Planck Institute Grand Ensemble (Maher et al. 2019 https://doi.org/10/gf3kgt) cmorized by CMIP5-standards
+    platform: DKRZ (German Climate Computing Centre)-MISTRAL
+    data_format: netCDF

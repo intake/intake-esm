@@ -22,14 +22,16 @@ Available catalogs at NCAR
 NCAR has created multiple Intake ESM catalogs that work on datasets stored on
 GLADE. Those catalogs are listed below:
 
-+------------------------+------------------------------------------------------------------------------------------------------+
-| Catalog Name           | Catalog Path                                                                                         |
-+========================+======================================================================================================+
-| CMIP5                  | `/glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cmip5.json`                     |
-+------------------------+------------------------------------------------------------------------------------------------------+
-| CMIP6                  | `/glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cmip6.json`                     |
-+------------------------+------------------------------------------------------------------------------------------------------+
-| CMIP6-CESM2-Timeseries | `/glade/collections/cmip/catalog/intake-esm-datastore/catalogs/campaign-cesm2-cmip6-timeseries.json` |
-+------------------------+------------------------------------------------------------------------------------------------------+
-| CESM1 Large Ensemble   | `/glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cesm1-le.json`                  |
-+------------------------+------------------------------------------------------------------------------------------------------+
+
+{% for catalog in catalogs %}
+
+{% if 'ncar' in catalog.platform.lower() %}
+{{ catalog.name }}
+~~~~~~~~~~~~~~~~~~~~~
+* *Description*: **{{ catalog.description }}**
+* *Platform*: **{{ catalog.platform }}**
+* *Catalog path or url*: **{{ catalog.url }}**
+* *Data Format*: **{{ catalog.data_format }}**
+
+{% endif %}
+{% endfor %}
