@@ -3,6 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - intake-xarray
+  - nb_conda_kernels
   - nbsphinx
   - python=3.7
   - sphinx_rtd_theme
