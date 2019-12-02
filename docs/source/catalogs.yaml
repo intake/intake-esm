@@ -1,0 +1,77 @@
+catalogs:
+  - name: CMIP6-GLADE
+    url: /glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cmip6.json
+    description: CMIP6 data accessible on the NCAR's GLADE disk storage system
+    platform: NCAR-GLADE
+    data_format: netCDF
+    dataset_docs_link: https://pcmdi.llnl.gov/CMIP6/Guide/dataUsers.html
+
+  - name: CMIP6-CESM2-Timeseries
+    url: /glade/collections/cmip/catalog/intake-esm-datastore/catalogs/campaign-cesm2-cmip6-timeseries.json
+    description: CESM2 raw output (non-cmorized) that went into CMIP6 data
+    platform: NCAR-CAMPAIGN
+    data_format: netCDF
+    dataset_docs_link: http://www.cesm.ucar.edu/models/cesm2/
+
+  - name: CMIP5-GLADE
+    url: /glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cmip5.json
+    description: CMIP5 data accessible on the NCAR's GLADE disk storage system
+    platform: NCAR-GLADE
+    data_format: netCDF
+    dataset_docs_link: https://pcmdi.llnl.gov/mips/cmip5/guide.html
+
+  - name: CESM1-LENS-AWS
+    url: https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json
+    description: CESM1 Large Ensemble data publicly available on Amazon S3
+    platform: AWS S3 (us-west-2 region)
+    data_format: Zarr
+    dataset_docs_link: https://doi.org/10.26024/wt24-5j82
+
+  - name: CESM1-LENS-GLADE
+    url: /glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cesm1-le.json
+    description: CESM1 Large Ensemble data stored on NCAR's GLADE disk storage system
+    platform: NCAR-GLADE
+    data_format: netCDF
+    dataset_docs_link: https://doi.org/10.5065/d6j101d1
+
+  - name: CMIP6-GCP
+    url: https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json
+    description: CMIP6 Zarr data residing in Pangeo's Google Storage
+    platform: Google Cloud Platform
+    data_format: Zarr
+    dataset_docs_link: https://pcmdi.llnl.gov/CMIP6/Guide/dataUsers.html
+
+  - name: CMIP6-MISTRAL
+    url: /home/mpim/m300524/intake-esm-datastore/catalogs/mistral-cmip6.json
+    description: CMIP6 data accessible on the DKRZ's MISTRAL disk storage system
+    platform: DKRZ (German Climate Computing Centre)-MISTRAL
+    data_format: netCDF
+    dataset_docs_link: https://pcmdi.llnl.gov/CMIP6/Guide/dataUsers.html
+
+  - name: CMIP5-MISTRAL
+    url: /home/mpim/m300524/intake-esm-datastore/catalogs/mistral-cmip5.json
+    description: CMIP5 data accessible on the DKRZ's MISTRAL disk storage system
+    platform: DKRZ (German Climate Computing Centre)-MISTRAL
+    data_format: netCDF
+    dataset_docs_link: https://pcmdi.llnl.gov/mips/cmip5/guide.html
+
+  - name: MiKlip-MISTRAL
+    url: /home/mpim/m300524/intake-esm-datastore/catalogs/mistral-miklip.json
+    description: Data from MiKlip projects at the Max Planck Institute for Meteorology (MPI-M)
+    platform: DKRZ (German Climate Computing Centre)-MISTRAL
+    data_format: netCDF
+    dataset_docs_link: https://www.fona-miklip.de/
+
+  - name: MPI-GE-MISTRAL
+    url: /home/mpim/m300524/intake-esm-datastore/catalogs/mistral-MPI-GE.json
+    description: Max Planck Institute Grand Ensemble cmorized by CMIP5-standards
+    platform: DKRZ (German Climate Computing Centre)-MISTRAL
+    data_format: netCDF
+    dataset_docs_link: https://doi.org/10/gf3kgt
+
+  - name: CMIP6-LDEO-OpenDAP
+    url: http://haden.ldeo.columbia.edu/catalogs/hyrax_cmip6.json
+    description: CMIP6 data accessible via Hyrax OpenDAP Server at Lamont-Doherty Earth Observatory
+    platform: LDEO-OpenDAP
+    data_format: netCDF
+    dataset_docs_link: https://pcmdi.llnl.gov/CMIP6/Guide/dataUsers.html

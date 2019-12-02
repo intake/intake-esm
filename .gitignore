@@ -111,3 +111,4 @@ notes/
 docs/source/collections/*
 pip-wheel-metadata/*
 tests/test_collections/*.nc
+.DS_Store
