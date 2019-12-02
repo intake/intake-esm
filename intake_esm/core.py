@@ -42,7 +42,6 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
 
     >>> import intake
     >>> url = "https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json"
-
     >>> col = intake.open_esm_datastore(url)
     >>> col.df.head()
     activity_id institution_id source_id experiment_id  ... variable_id grid_label                                             zstore dcpp_init_year
@@ -128,7 +127,6 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         >>> col = intake.open_esm_datastore("pangeo-cmip6.json")
         >>> col_subset = col.search(source_id="BCC-ESM1", grid_label="gn",
         ...                      table_id="Amon", experiment_id="historical")
-
         >>> col_subset.serialize(name="cmip6_bcc_esm1")
         Writing csv catalog to: cmip6_bcc_esm1.csv.gz
         Writing ESM collection json file to: cmip6_bcc_esm1.json
@@ -166,7 +164,6 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         0  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
         1  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
         2  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
-
         >>> col.nunique()
         activity_id          10
         institution_id       23
@@ -206,7 +203,6 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         0  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
         1  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
         2  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
-
         >>> uniques = col.unique(columns=["activity_id", "source_id"])
         >>> pprint.pprint(uniques)
         {'activity_id': {'count': 10,
@@ -283,9 +279,9 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
             Keyword arguments to pass to `xarray.open_zarr()` function
         cdf_kwargs : dict
             Keyword arguments to pass to `xarray.open_dataset()` function
-        preprocess : (callable, optional)
+        preprocess : callable, optional
             If provided, call this function on each dataset prior to aggregation.
-        aggregate : (boolean, optional)
+        aggregate : bool, optional
             If "False", no aggregation will be done.
         storage_options : dict, optional
             Parameters passed to the backend file-system
@@ -305,10 +301,8 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         --> The keys in the returned dictionary of datasets are constructed as follows:
         'activity_id.institution_id.source_id.experiment_id.table_id.grid_label'
         --> There will be 2 group(s)
-
         >>> dsets.keys()
         dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
-
         >>> dsets['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn']
         <xarray.Dataset>
         Dimensions:    (bnds: 2, lat: 160, lon: 320, member_id: 3, time: 1980)
@@ -323,40 +317,6 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
             lon_bnds   (lon, bnds) float64 dask.array<chunksize=(320, 2), meta=np.ndarray>
             time_bnds  (time, bnds) object dask.array<chunksize=(1980, 2), meta=np.ndarray>
             pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
-        Attributes:
-            parent_experiment_id:   piControl
-            frequency:              mon
-            run_variant:            forcing: greenhouse gases,solar constant,aerosol,...
-            activity_id:            CMIP
-            parent_time_units:      days since 1850-01-01
-            nominal_resolution:     100 km
-            parent_activity_id:     CMIP
-            cmor_version:           3.3.2
-            history:                2018-11-26T05:08:26Z ; CMOR rewrote data to be co...
-            contact:                Dr. Tongwen Wu(twwu@cma.gov.cn)
-            references:             Model described by Tongwen Wu et al. (JGR 2013; J...
-            branch_method:          Standard
-            parent_mip_era:         CMIP6
-            experiment_id:          historical
-            comment:                The model integration starts from the piControl e...
-            mip_era:                CMIP6
-            tracking_id:            hdl:21.14100/7b6d329a-4b9a-4646-8e7c-0c2a56bfd098...
-            grid_label:             gn
-            institution_id:         BCC
-            initialization_index:   1
-            external_variables:     areacella
-            variant_label:          r3i1p1f1
-            license:                CMIP6 model data produced by BCC is licensed unde...
-            title:                  BCC-CSM2-MR output prepared for CMIP6
-            Conventions:            CF-1.7 CMIP-6.2
-            source:                 BCC-CSM 2 MR (2017):   aerosol: none  atmos: BCC_...
-            table_id:               Amon
-            realization_index:      3
-            source_id:              BCC-CSM2-MR
-            grid:                   T106
-            description:            DECK: historical
-            variable_id:            pr
-
         """
 
         # set _schema to None to remove any previously cached dataset
@@ -570,7 +530,7 @@ def _is_valid_url(url):
 
     Returns
     -------
-    boolean
+    bool
     """
     try:
         result = urlparse(url)
