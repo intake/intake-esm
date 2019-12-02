@@ -2,17 +2,10 @@ name: intake-esm-dev
 channels:
   - conda-forge
 dependencies:
-  - intake-xarray>=0.3.1
-  - xarray=>0.13
+  - intake-xarray
   - nbsphinx
   - python=3.7
-  - pyyaml
   - sphinx_rtd_theme
   - dask
-  - tqdm
-  - git
-  - make
   - jupyter_client
-  - s3fs
-  - fsspec
   - watermark
