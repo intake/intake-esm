@@ -18,7 +18,7 @@
     :alt: Conda Version
 
 .. image:: http://img.shields.io/badge/DOI-10.5281%20%2F%20zenodo.3491062-blue.svg?style=for-the-badge
-    :target: https://zenodo.org/badge/latestdoi/3491062
+    :target: https://doi.org/10.5281/zenodo.3491062
     :alt: Zenodo
 
 
