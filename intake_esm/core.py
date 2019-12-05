@@ -1,11 +1,10 @@
 import copy
 import json
-import logging
+import sys
+from concurrent import futures
 from functools import lru_cache
 from urllib.parse import urlparse
 
-import dask
-import dask.delayed
 import fsspec
 import intake
 import intake_xarray
@@ -15,7 +14,10 @@ import requests
 
 from .merge_util import _aggregate, _create_asset_info_lookup, _to_nested_dict
 
-logger = logging.getLogger(__name__)
+try:
+    from tqdm import tqdm
+except ImportError:
+    tqdm = None
 
 
 class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
@@ -415,25 +417,40 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         )
         print(f'\n--> There will be {len(groups)} group(s)')
 
-        dsets = [
-            _load_group_dataset(
-                key,
-                df,
-                self._col_data,
-                agg_columns,
-                aggregation_dict,
-                path_column_name,
-                variable_column_name,
-                use_format_column,
-                mapper_dict,
-                self.zarr_kwargs,
-                self.cdf_kwargs,
-                self.preprocess,
-            )
-            for key, df in groups
-        ]
+        dsets = []
+        total = len(groups)
+        if tqdm is not None:
+            # Need to use ascii characters on Windows because there isn't
+            # always full unicode support
+            # (see https://github.com/tqdm/tqdm/issues/454)
+            use_ascii = bool(sys.platform == 'win32')
+            progressbar = tqdm(total=total, ncols=79, ascii=use_ascii, leave=True)
 
-        dsets = dask.compute(*dsets)
+        with futures.ThreadPoolExecutor(max_workers=total) as executor:
+            future_tasks = [
+                executor.submit(
+                    _load_group_dataset,
+                    key,
+                    df,
+                    self._col_data,
+                    agg_columns,
+                    aggregation_dict,
+                    path_column_name,
+                    variable_column_name,
+                    use_format_column,
+                    mapper_dict,
+                    self.zarr_kwargs,
+                    self.cdf_kwargs,
+                    self.preprocess,
+                )
+                for key, df in groups
+            ]
+
+            for task in futures.as_completed(future_tasks):
+                result = task.result()
+                dsets.append(result)
+                if progressbar:
+                    progressbar.update(1)
 
         self._ds = {group_id: ds for (group_id, ds) in dsets}
 
@@ -451,7 +468,6 @@ def _unique(df, columns):
     return info
 
 
-@dask.delayed
 def _load_group_dataset(
     key,
     df,
@@ -556,12 +572,10 @@ def _fetch_and_parse_file(input_path):
 
     try:
         if _is_valid_url(input_path):
-            logger.info('Loading ESMCol from URL')
             resp = requests.get(input_path)
             data = resp.json()
         else:
             with open(input_path) as f:
-                logger.info('Loading ESMCol from filesystem')
                 data = json.load(f)
 
     except Exception as e:

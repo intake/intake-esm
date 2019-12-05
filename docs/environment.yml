@@ -10,3 +10,4 @@ dependencies:
   - dask
   - jupyter_client
   - watermark
+  - matplotlib
