@@ -8,6 +8,7 @@ dependencies:
   - flake8
   - git
   - intake-xarray>=0.3.1
+  - xarray=>0.13
   - ipykernel
   - isort
   - make
@@ -17,11 +18,9 @@ dependencies:
   - pytest-cov
   - pytest-icdiff
   - pytest-xdist
-  - python=3.7
+  - python=3.8
   - pyyaml
   - tqdm
-  - pip:
-    - git+https://github.com/pydata/xarray.git
-    - git+https://github.com/intake/filesystem_spec.git
-    - git+https://github.com/dask/gcsfs.git
-    - git+https://github.com/dask/s3fs.git
+  - s3fs
+  - gcsfs
+  - fsspec
