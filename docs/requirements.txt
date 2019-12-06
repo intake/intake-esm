@@ -4,8 +4,7 @@ nbsphinx
 matplotlib
 numpy
 xarray
-jupyter_client
-ipython
+jupyterlab
 netcdf4
 tqdm
 dask
