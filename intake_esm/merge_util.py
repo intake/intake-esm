@@ -1,4 +1,9 @@
+import logging
+
+import fsspec
 import xarray as xr
+
+logger = logging.getLogger('intake-esm')
 
 
 def join_new(dsets, dim_name, coord_value, varname, options={}):
@@ -113,6 +118,7 @@ def _aggregate(
                                     del encoding[v][enc_attrs]
 
             if agg_type == 'join_new':
+                logger.info(f'join new with dimension_name={agg_column} and options={agg_options}')
                 varname = dsets[0].attrs['intake_esm_varname']
                 ds = join_new(
                     dsets,
@@ -123,9 +129,11 @@ def _aggregate(
                 )
 
             elif agg_type == 'join_existing':
+                logger.info(f'join existing with options={agg_options}')
                 ds = join_existing(dsets, options=agg_options)
 
             elif agg_type == 'union':
+                logger.info(f'join union with options={agg_options}')
                 ds = union(dsets, options=agg_options)
 
             ds.attrs = attrs
@@ -139,16 +147,32 @@ def _aggregate(
 
 
 def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess):
+    if isinstance(path, fsspec.mapping.FSMap):
+        protocol = path.fs.protocol
+        if protocol in {'http', 'https', 'file'} or protocol is None:
+            path = path.root
+            root = path
 
+        else:
+            root = path.root
     if data_format == 'zarr':
-        ds = xr.open_zarr(path, **zarr_kwargs)
+        logger.info(f'Opening zarr store: {root} - protocol: {protocol}')
+        try:
+            ds = xr.open_zarr(path, **zarr_kwargs)
+        except Exception as e:
+            logger.error(f'Failed to open zarr store. {str(e)}')
 
     else:
-        ds = xr.open_dataset(path, **cdf_kwargs)
+        logger.info('Opening netCDF/HDF dataset: {root} - protocol: {protocol}')
+        try:
+            ds = xr.open_dataset(path, **cdf_kwargs)
+        except Exception as e:
+            logger.error(f'Failed to open netCDF/HDF dataset. {str(e)}')
 
     if preprocess is None:
         return ds
     else:
+        logger.info('Applying preprocessing...')
         return preprocess(ds)
 
 

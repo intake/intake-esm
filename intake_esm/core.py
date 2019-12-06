@@ -1,5 +1,6 @@
 import copy
 import json
+import logging
 import sys
 from concurrent import futures
 from functools import lru_cache
@@ -12,6 +13,7 @@ import numpy as np
 import pandas as pd
 import requests
 
+from .logging_util import logger
 from .merge_util import _aggregate, _create_asset_info_lookup, _to_nested_dict
 
 try:
@@ -31,6 +33,8 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
 
     esmcol_path : str
         Path or URL to an ESM collection JSON file
+    log_level: str
+        Level of logging to report
     **kwargs :
         Additional keyword arguments are passed through to the base class,
         Catalog.
@@ -58,10 +62,16 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
     name = 'esm_datastore'
     container = 'xarray'
 
-    def __init__(self, esmcol_path, **kwargs):
+    def __init__(self, esmcol_path, progressbar=True, log_level='CRITICAL', **kwargs):
         """Main entry point.
         """
+
+        numeric_log_level = getattr(logging, log_level.upper(), None)
+        if not isinstance(numeric_log_level, int):
+            raise ValueError(f'Invalid log level: {log_level}')
+        logger.setLevel(numeric_log_level)
         self.esmcol_path = esmcol_path
+        self.progressbar = progressbar
         self._col_data = _fetch_and_parse_file(esmcol_path)
         self.df = self._fetch_catalog()
         self._entries = {}
@@ -426,6 +436,7 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
             use_ascii = bool(sys.platform == 'win32')
             progressbar = tqdm(total=total, ncols=79, ascii=use_ascii, leave=True)
 
+        logger.debug(f'Using {total} threads for loading dataset groups')
         with futures.ThreadPoolExecutor(max_workers=total) as executor:
             future_tasks = [
                 executor.submit(
@@ -555,6 +566,7 @@ def _is_valid_url(url):
         return False
 
 
+@lru_cache(maxsize=None)
 def _fetch_and_parse_file(input_path):
     """ Fetch and parse ESMCol file.
 
@@ -572,10 +584,12 @@ def _fetch_and_parse_file(input_path):
 
     try:
         if _is_valid_url(input_path):
+            logger.info(f'Loading ESMCol from URL: {input_path}')
             resp = requests.get(input_path)
             data = resp.json()
         else:
             with open(input_path) as f:
+                logger.info(f'Loading ESMCol from filesystem: {input_path}')
                 data = json.load(f)
 
     except Exception as e:
@@ -585,12 +599,5 @@ def _fetch_and_parse_file(input_path):
 
 
 def _path_to_mapper(path, storage_options):
-    """Convert path to mapper if necessary."""
-
-    protocol = fsspec.core.split_protocol(path)[0]
-
-    if protocol in {'http', 'https'} or protocol is None:
-        return path
-
-    else:
-        return fsspec.get_mapper(path, **storage_options)
+    """Convert path to mapper"""
+    return fsspec.get_mapper(path, **storage_options)
