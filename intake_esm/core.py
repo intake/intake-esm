@@ -424,10 +424,6 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
             keys = groupby_attrs.copy()
             keys.remove(path_column_name)
             keys = '.'.join(keys)
-        print(
-            f"""--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{keys}'"""
-        )
-        print(f'\n--> There will be {len(groups)} group(s)')
 
         dsets = []
         total = len(groups)
@@ -436,9 +432,9 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
             # always full unicode support
             # (see https://github.com/tqdm/tqdm/issues/454)
             use_ascii = bool(sys.platform == 'win32')
-            progressbar = tqdm(total=total, ncols=79, ascii=use_ascii, leave=True)
+            progressbar = tqdm(total=total, ncols=79, ascii=use_ascii, leave=True, desc='group(s)')
 
-        logger.debug(f'Using {total} threads for loading dataset groups')
+        logger.info(f'Using {total} threads for loading dataset groups')
         with futures.ThreadPoolExecutor(max_workers=total) as executor:
             future_tasks = [
                 executor.submit(
@@ -465,6 +461,10 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
                 if progressbar:
                     progressbar.update(1)
 
+        print(
+            f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{keys}'
+             \n--> There are {len(groups)} group(s)"""
+        )
         self._ds = {group_id: ds for (group_id, ds) in dsets}
 
 
