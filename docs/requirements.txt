@@ -1,0 +1,13 @@
+sphinx
+sphinx_rtd_theme
+nbsphinx
+bottleneck
+matplotlib
+numpy
+xarray
+jupyter_client
+netcdf4
+tqdm
+toolz
+zarr
+numcodecs
