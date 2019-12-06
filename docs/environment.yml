@@ -9,4 +9,3 @@ dependencies:
   - sphinx_rtd_theme
   - jupyter_client
   - watermark
-  - matplotlib
