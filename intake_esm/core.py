@@ -296,7 +296,9 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         aggregate : bool, optional
             If "False", no aggregation will be done.
         storage_options : dict, optional
-            Parameters passed to the backend file-system
+            Parameters passed to the backend file-system such as Google Cloud Storage,
+            Amazon Web Service S3.
+
         Returns
         -------
         dsets : dict

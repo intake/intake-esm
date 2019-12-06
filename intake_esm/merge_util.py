@@ -1,4 +1,5 @@
 import logging
+import sys
 
 import fsspec
 import xarray as xr
@@ -9,16 +10,28 @@ logger = logging.getLogger('intake-esm')
 def join_new(dsets, dim_name, coord_value, varname, options={}):
     if isinstance(varname, str):
         varname = [varname]
-    concat_dim = xr.DataArray(coord_value, dims=(dim_name), name=dim_name)
-    return xr.concat(dsets, dim=concat_dim, data_vars=varname, **options)
+    try:
+        concat_dim = xr.DataArray(coord_value, dims=(dim_name), name=dim_name)
+        return xr.concat(dsets, dim=concat_dim, data_vars=varname, **options)
+    except Exception as e:
+        logger.error(f'Failed to join datasets along new dimension. {str(e)}')
+        sys.exit(1)
 
 
 def join_existing(dsets, options={}):
-    return xr.concat(dsets, **options)
+    try:
+        return xr.concat(dsets, **options)
+    except Exception as e:
+        logger.error(f'Failed to join datasets along existing dimension. {str(e)}')
+        sys.exit(1)
 
 
 def union(dsets, options={}):
-    return xr.merge(dsets, **options)
+    try:
+        return xr.merge(dsets, **options)
+    except Exception as e:
+        logger.error(f'Failed to merge datasets. {str(e)}')
+        sys.exit(1)
 
 
 def _to_nested_dict(df):
@@ -118,7 +131,9 @@ def _aggregate(
                                     del encoding[v][enc_attrs]
 
             if agg_type == 'join_new':
-                logger.info(f'join new with dimension_name={agg_column} and options={agg_options}')
+                logger.info(
+                    f'Joining {len(dsets)} dataset(s) along new {agg_column} dimension with options={agg_options}'
+                )
                 varname = dsets[0].attrs['intake_esm_varname']
                 ds = join_new(
                     dsets,
@@ -129,11 +144,15 @@ def _aggregate(
                 )
 
             elif agg_type == 'join_existing':
-                logger.info(f'join existing with options={agg_options}')
+                logger.info(
+                    f'Joining {len(dsets)} dataset(s) along existing dimension with options={agg_options}'
+                )
                 ds = join_existing(dsets, options=agg_options)
 
             elif agg_type == 'union':
-                logger.info(f'join union with options={agg_options}')
+                logger.info(
+                    f'Merging {len(dsets)} dataset(s) into a single Dataset with options={agg_options}'
+                )
                 ds = union(dsets, options=agg_options)
 
             ds.attrs = attrs
@@ -173,7 +192,7 @@ def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess):
     if preprocess is None:
         return ds
     else:
-        logger.info('Applying preprocessing...')
+        logger.info(f'Applying pre-processing with {preprocess.__name__} function')
         return preprocess(ds)
 
 
