@@ -2,7 +2,7 @@
   "esmcat_version": "0.1.0",
   "id": "sample-cmip6",
   "description": "This is a sample ESM collection for CMIP6 data in netcdf format",
-  "catalog_file": "./tests/cmip6/cmip6-netcdf-test.csv",
+  "catalog_file": "./tests/cmip6-netcdf-test.csv",
   "attributes": [
     {
       "column_name": "activity_id",
