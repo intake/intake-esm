@@ -139,6 +139,7 @@ def test_to_dataset_dict_nocache(esmcol_path, query):
     assert id1 != id(ds)
 
 
+@pytest.mark.skip(reason='LDEO opendap servers seem not be working properly')
 def test_opendap_endpoint():
     col = intake.open_esm_datastore('http://haden.ldeo.columbia.edu/catalogs/hyrax_cmip6.json')
     cat = col.search(
