@@ -149,12 +149,13 @@ def _aggregate(
 def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess):
     if isinstance(path, fsspec.mapping.FSMap):
         protocol = path.fs.protocol
+        root = path.root
         if protocol in {'http', 'https', 'file'} or protocol is None:
             path = path.root
-            root = path
+    else:
+        protocol = None
+        root = path
 
-        else:
-            root = path.root
     if data_format == 'zarr':
         logger.info(f'Opening zarr store: {root} - protocol: {protocol}')
         try:
@@ -163,7 +164,7 @@ def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess):
             logger.error(f'Failed to open zarr store. {str(e)}')
 
     else:
-        logger.info('Opening netCDF/HDF dataset: {root} - protocol: {protocol}')
+        logger.info(f'Opening netCDF/HDF dataset: {root} - protocol: {protocol}')
         try:
             ds = xr.open_dataset(path, **cdf_kwargs)
         except Exception as e:
