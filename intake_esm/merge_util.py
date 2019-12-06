@@ -181,6 +181,7 @@ def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess):
             ds = xr.open_zarr(path, **zarr_kwargs)
         except Exception as e:
             logger.error(f'Failed to open zarr store. {str(e)}')
+            sys.exit(1)
 
     else:
         logger.info(f'Opening netCDF/HDF dataset: {root} - protocol: {protocol}')
@@ -188,6 +189,7 @@ def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess):
             ds = xr.open_dataset(path, **cdf_kwargs)
         except Exception as e:
             logger.error(f'Failed to open netCDF/HDF dataset. {str(e)}')
+            sys.exit(1)
 
     if preprocess is None:
         return ds
