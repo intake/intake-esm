@@ -1,5 +1,4 @@
 import logging
-import sys
 
 import fsspec
 import xarray as xr
@@ -14,24 +13,24 @@ def join_new(dsets, dim_name, coord_value, varname, options={}):
         concat_dim = xr.DataArray(coord_value, dims=(dim_name), name=dim_name)
         return xr.concat(dsets, dim=concat_dim, data_vars=varname, **options)
     except Exception as e:
-        logger.error(f'Failed to join datasets along new dimension. {str(e)}')
-        sys.exit(1)
+        logger.error(f'Failed to join datasets along new dimension.')
+        raise e
 
 
 def join_existing(dsets, options={}):
     try:
         return xr.concat(dsets, **options)
     except Exception as e:
-        logger.error(f'Failed to join datasets along existing dimension. {str(e)}')
-        sys.exit(1)
+        logger.error(f'Failed to join datasets along existing dimension.')
+        raise e
 
 
 def union(dsets, options={}):
     try:
         return xr.merge(dsets, **options)
     except Exception as e:
-        logger.error(f'Failed to merge datasets. {str(e)}')
-        sys.exit(1)
+        logger.error(f'Failed to merge datasets.')
+        raise e
 
 
 def _to_nested_dict(df):
@@ -167,10 +166,13 @@ def _aggregate(
 
 def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess):
     if isinstance(path, fsspec.mapping.FSMap):
-        protocol, _ = fsspec.core.split_protocol(path)
-        root = path.root
+        protocol = path.fs.protocol
+        if isinstance(protocol, list):
+            protocol = tuple(protocol)
         if protocol in {'http', 'https', 'file'} or protocol is None:
             path = path.root
+
+        root = path.root
     else:
         protocol = None
         root = path
@@ -180,16 +182,16 @@ def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess):
         try:
             ds = xr.open_zarr(path, **zarr_kwargs)
         except Exception as e:
-            logger.error(f'Failed to open zarr store. {str(e)}')
-            sys.exit(1)
+            logger.error(f'Failed to open zarr store.')
+            raise e
 
     else:
         logger.info(f'Opening netCDF/HDF dataset: {root} - protocol: {protocol}')
         try:
             ds = xr.open_dataset(path, **cdf_kwargs)
         except Exception as e:
-            logger.error(f'Failed to open netCDF/HDF dataset. {str(e)}')
-            sys.exit(1)
+            logger.error(f'Failed to open netCDF/HDF dataset.')
+            raise e
 
     if preprocess is None:
         return ds
