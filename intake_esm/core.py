@@ -27,11 +27,22 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
 
     esmcol_path : str
         Path or URL to an ESM collection JSON file
+    progressbar : bool
+         If True, will print a progress bar to standard error (stderr)
+         when loading datasets into :py:class:`~xarray.Dataset`.
     log_level: str
-        Level of logging to report
+        Level of logging to report. Accepted values include:
+
+        - CRITICAL
+        - ERROR
+        - WARNING
+        - INFO
+        - DEBUG
+        - NOTSET
     **kwargs :
-        Additional keyword arguments are passed through to the base class,
-        Catalog.
+        Additional keyword arguments are passed through to the
+        :py:class:`~intake.catalog.Catalog` base class.
+
 
 
     Examples
@@ -83,7 +94,7 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
 
         Returns
         -------
-        cat : intake_esm.core.esm_datastore
+        cat : :py:class:`~intake_esm.core.esm_datastore`
           A new Catalog with a subset of the entries in this Catalog.
 
         Examples
@@ -296,7 +307,7 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         Returns
         -------
         dsets : dict
-           A dictionary of xarray datasets.
+           A dictionary of xarray :py:class:`~xarray.Dataset` s.
 
         Examples
         --------
