@@ -165,17 +165,19 @@ def _aggregate(
 
 
 def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess):
+    protocol = None
+    root = path
     if isinstance(path, fsspec.mapping.FSMap):
         protocol = path.fs.protocol
         if isinstance(protocol, list):
             protocol = tuple(protocol)
+
         if protocol in {'http', 'https', 'file'} or protocol is None:
             path = path.root
+            root = path
 
-        root = path.root
-    else:
-        protocol = None
-        root = path
+        else:
+            root = path.root
 
     if data_format == 'zarr':
         logger.info(f'Opening zarr store: {root} - protocol: {protocol}')
