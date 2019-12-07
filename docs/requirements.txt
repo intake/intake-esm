@@ -6,7 +6,6 @@ numpy
 xarray
 jupyterlab
 netcdf4
-tqdm
 dask
 toolz
 zarr

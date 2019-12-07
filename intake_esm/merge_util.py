@@ -167,7 +167,7 @@ def _aggregate(
 
 def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess):
     if isinstance(path, fsspec.mapping.FSMap):
-        protocol = path.fs.protocol
+        protocol, _ = fsspec.core.split_protocol(path)
         root = path.root
         if protocol in {'http', 'https', 'file'} or protocol is None:
             path = path.root
