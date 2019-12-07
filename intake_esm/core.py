@@ -1,7 +1,6 @@
 import copy
 import json
 import logging
-import sys
 from concurrent import futures
 from functools import lru_cache
 from urllib.parse import urlparse
@@ -13,13 +12,8 @@ import numpy as np
 import pandas as pd
 import requests
 
-from .logging_util import logger
+from ._util import logger, print_progressbar
 from .merge_util import _aggregate, _create_asset_info_lookup, _to_nested_dict
-
-try:
-    from tqdm import tqdm
-except ImportError:
-    tqdm = None
 
 
 class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
@@ -427,13 +421,6 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
 
         dsets = []
         total = len(groups)
-        if tqdm is not None:
-            # Need to use ascii characters on Windows because there isn't
-            # always full unicode support
-            # (see https://github.com/tqdm/tqdm/issues/454)
-            use_ascii = bool(sys.platform == 'win32')
-            progressbar = tqdm(total=total, ncols=79, ascii=use_ascii, leave=True, desc='group(s)')
-
         logger.info(f'Using {total} threads for loading dataset groups')
         with futures.ThreadPoolExecutor(max_workers=total) as executor:
             future_tasks = [
@@ -455,11 +442,15 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
                 for key, df in groups
             ]
 
-            for task in futures.as_completed(future_tasks):
+            if self.progressbar:
+                print_progressbar(0, total, prefix='Progress:', suffix='', bar_length=79)
+
+            for i, task in enumerate(futures.as_completed(future_tasks)):
                 result = task.result()
                 dsets.append(result)
-                if progressbar:
-                    progressbar.update(1)
+                if self.progressbar:
+                    # Update Progress Bar
+                    print_progressbar(i + 1, total, prefix='Progress:', suffix='', bar_length=79)
 
         print(
             f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{keys}'

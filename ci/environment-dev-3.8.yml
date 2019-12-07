@@ -19,8 +19,6 @@ dependencies:
   - pytest-icdiff
   - pytest-xdist
   - python=3.8
-  - pyyaml
-  - tqdm
   - s3fs
   - gcsfs
   - fsspec
