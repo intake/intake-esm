@@ -310,6 +310,7 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'xarray': ('http://xarray.pydata.org/en/stable/', None),
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
+    'intake': ('https://intake.readthedocs.io/en/latest/', None),
 }
 
 

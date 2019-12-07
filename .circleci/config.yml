@@ -4,6 +4,7 @@ workflows:
   version: 2
   default:
     jobs:
+      - "python-3.8"
       - "python-3.7"
       - "python-3.6"
       - "dev"
@@ -84,6 +85,42 @@ jobs:
       # Cache some files for a speedup in subsequent builds
       - save_cache:
           key: deps-{{ .Branch }}-3.7-{{ checksum "ci/environment-dev-3.7.yml" }}
+          paths:
+            - "/opt/conda/envs/${ENV_NAME}/"
+            - "/opt/conda/pkgs"
+
+      - store_test_results:
+          path: test-reports
+
+      - store_artifacts:
+          path: test-reports
+
+  "python-3.8":
+    docker:
+      - image: conda/miniconda3:latest
+
+    environment:
+      PYTHON: "3.8"
+      ENV_NAME: "intake-esm-dev"
+
+    steps:
+      - checkout
+
+      # Restore cached files to speed things up
+      - restore_cache:
+          key: deps-{{ .Branch }}-3.8-{{ checksum "ci/environment-dev-3.8.yml" }}
+
+      - run: # install and activate conda environment
+          name: Install conda environment
+          command: ./ci/install-circle.sh
+
+      - run:
+          command: |
+            source activate ${ENV_NAME}
+            pytest -n 8 --junitxml=test-reports/junit.xml --cov=./ --verbose
+
+      - save_cache:
+          key: deps-{{ .Branch }}-3.8-{{ checksum "ci/environment-dev-3.8.yml" }}
           paths:
             - "/opt/conda/envs/${ENV_NAME}/"
             - "/opt/conda/pkgs"

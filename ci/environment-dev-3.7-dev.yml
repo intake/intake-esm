@@ -19,9 +19,8 @@ dependencies:
   - pytest-xdist
   - python=3.7
   - pyyaml
-  - tqdm
   - pip:
     - git+https://github.com/pydata/xarray.git
-    - git+https://github.com/intake/filesystem_spec.git#egg=fsspec
+    - git+https://github.com/intake/filesystem_spec.git
     - git+https://github.com/dask/gcsfs.git
     - git+https://github.com/dask/s3fs.git

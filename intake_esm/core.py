@@ -1,6 +1,6 @@
 import copy
 import json
-import sys
+import logging
 from concurrent import futures
 from functools import lru_cache
 from urllib.parse import urlparse
@@ -12,12 +12,8 @@ import numpy as np
 import pandas as pd
 import requests
 
+from ._util import logger, print_progressbar
 from .merge_util import _aggregate, _create_asset_info_lookup, _to_nested_dict
-
-try:
-    from tqdm import tqdm
-except ImportError:
-    tqdm = None
 
 
 class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
@@ -31,9 +27,22 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
 
     esmcol_path : str
         Path or URL to an ESM collection JSON file
+    progressbar : bool
+         If True, will print a progress bar to standard error (stderr)
+         when loading datasets into :py:class:`~xarray.Dataset`.
+    log_level: str
+        Level of logging to report. Accepted values include:
+
+        - CRITICAL
+        - ERROR
+        - WARNING
+        - INFO
+        - DEBUG
+        - NOTSET
     **kwargs :
-        Additional keyword arguments are passed through to the base class,
-        Catalog.
+        Additional keyword arguments are passed through to the
+        :py:class:`~intake.catalog.Catalog` base class.
+
 
 
     Examples
@@ -58,10 +67,16 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
     name = 'esm_datastore'
     container = 'xarray'
 
-    def __init__(self, esmcol_path, **kwargs):
+    def __init__(self, esmcol_path, progressbar=True, log_level='CRITICAL', **kwargs):
         """Main entry point.
         """
+
+        numeric_log_level = getattr(logging, log_level.upper(), None)
+        if not isinstance(numeric_log_level, int):
+            raise ValueError(f'Invalid log level: {log_level}')
+        logger.setLevel(numeric_log_level)
         self.esmcol_path = esmcol_path
+        self.progressbar = progressbar
         self._col_data = _fetch_and_parse_file(esmcol_path)
         self.df = self._fetch_catalog()
         self._entries = {}
@@ -79,7 +94,7 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
 
         Returns
         -------
-        cat : intake_esm.core.esm_datastore
+        cat : :py:class:`~intake_esm.core.esm_datastore`
           A new Catalog with a subset of the entries in this Catalog.
 
         Examples
@@ -286,11 +301,13 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         aggregate : bool, optional
             If "False", no aggregation will be done.
         storage_options : dict, optional
-            Parameters passed to the backend file-system
+            Parameters passed to the backend file-system such as Google Cloud Storage,
+            Amazon Web Service S3.
+
         Returns
         -------
         dsets : dict
-           A dictionary of xarray datasets.
+           A dictionary of xarray :py:class:`~xarray.Dataset` s.
 
         Examples
         --------
@@ -412,20 +429,10 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
             keys = groupby_attrs.copy()
             keys.remove(path_column_name)
             keys = '.'.join(keys)
-        print(
-            f"""--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{keys}'"""
-        )
-        print(f'\n--> There will be {len(groups)} group(s)')
 
         dsets = []
         total = len(groups)
-        if tqdm is not None:
-            # Need to use ascii characters on Windows because there isn't
-            # always full unicode support
-            # (see https://github.com/tqdm/tqdm/issues/454)
-            use_ascii = bool(sys.platform == 'win32')
-            progressbar = tqdm(total=total, ncols=79, ascii=use_ascii, leave=True)
-
+        logger.info(f'Using {total} threads for loading dataset groups')
         with futures.ThreadPoolExecutor(max_workers=total) as executor:
             future_tasks = [
                 executor.submit(
@@ -446,12 +453,20 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
                 for key, df in groups
             ]
 
-            for task in futures.as_completed(future_tasks):
+            if self.progressbar:
+                print_progressbar(0, total, prefix='Progress:', suffix='', bar_length=79)
+
+            for i, task in enumerate(futures.as_completed(future_tasks)):
                 result = task.result()
                 dsets.append(result)
-                if progressbar:
-                    progressbar.update(1)
+                if self.progressbar:
+                    # Update Progress Bar
+                    print_progressbar(i + 1, total, prefix='Progress:', suffix='', bar_length=79)
 
+        print(
+            f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{keys}'
+             \n--> There are {len(groups)} group(s)"""
+        )
         self._ds = {group_id: ds for (group_id, ds) in dsets}
 
 
@@ -555,6 +570,7 @@ def _is_valid_url(url):
         return False
 
 
+@lru_cache(maxsize=None)
 def _fetch_and_parse_file(input_path):
     """ Fetch and parse ESMCol file.
 
@@ -572,10 +588,12 @@ def _fetch_and_parse_file(input_path):
 
     try:
         if _is_valid_url(input_path):
+            logger.info(f'Loading ESMCol from URL: {input_path}')
             resp = requests.get(input_path)
             data = resp.json()
         else:
             with open(input_path) as f:
+                logger.info(f'Loading ESMCol from filesystem: {input_path}')
                 data = json.load(f)
 
     except Exception as e:
@@ -585,12 +603,5 @@ def _fetch_and_parse_file(input_path):
 
 
 def _path_to_mapper(path, storage_options):
-    """Convert path to mapper if necessary."""
-
-    protocol = fsspec.core.split_protocol(path)[0]
-
-    if protocol in {'http', 'https'} or protocol is None:
-        return path
-
-    else:
-        return fsspec.get_mapper(path, **storage_options)
+    """Convert path to mapper"""
+    return fsspec.get_mapper(path, **storage_options)

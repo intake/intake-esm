@@ -1,19 +1,36 @@
+import logging
+
+import fsspec
 import xarray as xr
+
+logger = logging.getLogger('intake-esm')
 
 
 def join_new(dsets, dim_name, coord_value, varname, options={}):
     if isinstance(varname, str):
         varname = [varname]
-    concat_dim = xr.DataArray(coord_value, dims=(dim_name), name=dim_name)
-    return xr.concat(dsets, dim=concat_dim, data_vars=varname, **options)
+    try:
+        concat_dim = xr.DataArray(coord_value, dims=(dim_name), name=dim_name)
+        return xr.concat(dsets, dim=concat_dim, data_vars=varname, **options)
+    except Exception as e:
+        logger.error(f'Failed to join datasets along new dimension.')
+        raise e
 
 
 def join_existing(dsets, options={}):
-    return xr.concat(dsets, **options)
+    try:
+        return xr.concat(dsets, **options)
+    except Exception as e:
+        logger.error(f'Failed to join datasets along existing dimension.')
+        raise e
 
 
 def union(dsets, options={}):
-    return xr.merge(dsets, **options)
+    try:
+        return xr.merge(dsets, **options)
+    except Exception as e:
+        logger.error(f'Failed to merge datasets.')
+        raise e
 
 
 def _to_nested_dict(df):
@@ -113,6 +130,9 @@ def _aggregate(
                                     del encoding[v][enc_attrs]
 
             if agg_type == 'join_new':
+                logger.info(
+                    f'Joining {len(dsets)} dataset(s) along new {agg_column} dimension with options={agg_options}'
+                )
                 varname = dsets[0].attrs['intake_esm_varname']
                 ds = join_new(
                     dsets,
@@ -123,9 +143,15 @@ def _aggregate(
                 )
 
             elif agg_type == 'join_existing':
+                logger.info(
+                    f'Joining {len(dsets)} dataset(s) along existing dimension with options={agg_options}'
+                )
                 ds = join_existing(dsets, options=agg_options)
 
             elif agg_type == 'union':
+                logger.info(
+                    f'Merging {len(dsets)} dataset(s) into a single Dataset with options={agg_options}'
+                )
                 ds = union(dsets, options=agg_options)
 
             ds.attrs = attrs
@@ -139,16 +165,40 @@ def _aggregate(
 
 
 def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess):
+    protocol = None
+    root = path
+    if isinstance(path, fsspec.mapping.FSMap):
+        protocol = path.fs.protocol
+        if isinstance(protocol, list):
+            protocol = tuple(protocol)
+
+        if protocol in {'http', 'https', 'file'} or protocol is None:
+            path = path.root
+            root = path
+
+        else:
+            root = path.root
 
     if data_format == 'zarr':
-        ds = xr.open_zarr(path, **zarr_kwargs)
+        logger.info(f'Opening zarr store: {root} - protocol: {protocol}')
+        try:
+            ds = xr.open_zarr(path, **zarr_kwargs)
+        except Exception as e:
+            logger.error(f'Failed to open zarr store.')
+            raise e
 
     else:
-        ds = xr.open_dataset(path, **cdf_kwargs)
+        logger.info(f'Opening netCDF/HDF dataset: {root} - protocol: {protocol}')
+        try:
+            ds = xr.open_dataset(path, **cdf_kwargs)
+        except Exception as e:
+            logger.error(f'Failed to open netCDF/HDF dataset.')
+            raise e
 
     if preprocess is None:
         return ds
     else:
+        logger.info(f'Applying pre-processing with {preprocess.__name__} function')
         return preprocess(ds)
 
 

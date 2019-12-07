@@ -7,7 +7,5 @@ dependencies:
   - nbsphinx
   - python=3.7
   - sphinx_rtd_theme
-  - dask
   - jupyter_client
   - watermark
-  - matplotlib

@@ -1,0 +1,16 @@
+sphinx
+sphinx_rtd_theme
+nbsphinx
+matplotlib
+numpy
+xarray
+jupyterlab
+netcdf4
+dask
+toolz
+zarr
+numcodecs
+intake-xarray
+fsspec
+gcsfs
+watermark
