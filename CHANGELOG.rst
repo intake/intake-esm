@@ -9,28 +9,30 @@ Intake-esm v2019.12.13
 Features
 --------
 
-- Add optional `preprocess` argument to :py:meth:`core.esm_datastore.to_dataset_dict`
+- Add optional `preprocess` argument to :py:meth:`~intake_esm.core.esm_datastore.to_dataset_dict`
   (:pr:`155`) `Matthew Long`_
-- Allow users to disable dataset aggregations by passing `aggregation=False`
-  to :py:meth:`core.esm_datastore.to_dataset_dict` (:pr:`164`) `Matthew Long`_
-- Avoid manipulating dataset coordinates by using `data_vars=varname`
-  when concatenating datasets via `xarray.concat()` (:pr:`174`) `Anderson Banihirwe`_
+- Allow users to disable dataset aggregations by passing ``aggregate=False``
+  to :py:meth:`~intake_esm.core.esm_datastore.to_dataset_dict` (:pr:`164`) `Matthew Long`_
+- Avoid manipulating dataset coordinates by using ``data_vars=varname``
+  when concatenating datasets via xarray :py:func:`~xarray.concat()`
+  (:pr:`174`) `Anderson Banihirwe`_
 - Support loading netCDF assets from openDAP endpoints
   (:pr:`176`) `Anderson Banihirwe`_
-- Add :py:meth:`core.esm_datastore.serialize` method to serialize collection/catalog
+- Add :py:meth:`~intake_esm.core.esm_datastore.serialize` method to serialize collection/catalog
   (:pr:`179`) `Anderson Banihirwe`_
 - Allow passing extra storage options to the backend file system via
-  :py:meth:`core.esm_datastore.to_dataset_dict` (:pr:`180`) `Brian Bonnlander`_
+  :py:meth:`~intake_esm.core.esm_datastore.to_dataset_dict` (:pr:`180`) `Brian Bonnlander`_
 - Provide informational messages to the user via Logging module
   (:pr:`186`) `Anderson Banihirwe`_
 
 Bug Fixes
 ---------
 
-- Remove the caching option (:pr: `155`) `Matthew Long`_
-- Preserve encoding when aggregating datasets (:pr: `161`) `Matthew Long`_
-- Sort aggregations to make sure :py:meth:`merge_util.join_existing` is always done before
-  :py:meth:`merge_util.join_new` (:pr:`171`) `Anderson Banihirwe`_
+- Remove the caching option (:pr:`158`) `Matthew Long`_
+- Preserve encoding when aggregating datasets (:pr:`161`) `Matthew Long`_
+- Sort aggregations to make sure :py:func:`~intake_esm.merge_util.join_existing`
+  is always done before :py:func:`~intake_esm.merge_util.join_new`
+  (:pr:`171`) `Anderson Banihirwe`_
 
 Documentation
 -------------
@@ -42,7 +44,7 @@ Documentation
 Internal Changes
 ----------------
 
-- Simplify group loading by using `concurrent.futures` (:pr:`185`) `Anderson Banihirwe`_
+- Simplify group loading by using ``concurrent.futures`` (:pr:`185`) `Anderson Banihirwe`_
 
 
 
@@ -62,7 +64,7 @@ Features
 Breaking changes
 ----------------
 
-- Replaced `intake.open_esm_metadatastore()` with `intake.open_esm_datastore()`, see the API reference for more details.
+- Replaced `intake.open_esm_metadatastore()` with `intake.open_~intake_esm.core.esm_datastore()`, see the API reference for more details.
 - `intake-esm` won't build collection catalogs anymore. `intake-esm` now expects an ESM collection JSON file
   as input. This JSON should conform to the `(esm-collection-spec)`_ Earth System Model Collection specification.
 
