@@ -2,6 +2,51 @@
 Changelog History
 =================
 
+Intake-esm v2019.12.13
+=======================
+
+
+Features
+--------
+
+- Add optional `preprocess` argument to :py:meth:`~intake_esm.core.esm_datastore.to_dataset_dict`
+  (:pr:`155`) `Matthew Long`_
+- Allow users to disable dataset aggregations by passing ``aggregate=False``
+  to :py:meth:`~intake_esm.core.esm_datastore.to_dataset_dict` (:pr:`164`) `Matthew Long`_
+- Avoid manipulating dataset coordinates by using ``data_vars=varname``
+  when concatenating datasets via xarray :py:func:`~xarray.concat()`
+  (:pr:`174`) `Anderson Banihirwe`_
+- Support loading netCDF assets from openDAP endpoints
+  (:pr:`176`) `Anderson Banihirwe`_
+- Add :py:meth:`~intake_esm.core.esm_datastore.serialize` method to serialize collection/catalog
+  (:pr:`179`) `Anderson Banihirwe`_
+- Allow passing extra storage options to the backend file system via
+  :py:meth:`~intake_esm.core.esm_datastore.to_dataset_dict` (:pr:`180`) `Brian Bonnlander`_
+- Provide informational messages to the user via Logging module
+  (:pr:`186`) `Anderson Banihirwe`_
+
+Bug Fixes
+---------
+
+- Remove the caching option (:pr:`158`) `Matthew Long`_
+- Preserve encoding when aggregating datasets (:pr:`161`) `Matthew Long`_
+- Sort aggregations to make sure :py:func:`~intake_esm.merge_util.join_existing`
+  is always done before :py:func:`~intake_esm.merge_util.join_new`
+  (:pr:`171`) `Anderson Banihirwe`_
+
+Documentation
+-------------
+
+- Add example for preprocessing function (:pr:`168`) `Julius Busecke`_
+- Add FAQ style document to documentation (:pr:`182`) &  (:issue:`177`)
+  `Anderson Banihirwe`_ & `Joe Hamman`_
+
+Internal Changes
+----------------
+
+- Simplify group loading by using ``concurrent.futures`` (:pr:`185`) `Anderson Banihirwe`_
+
+
 
 Intake-esm v2019.10.15
 =======================
@@ -19,8 +64,9 @@ Features
 Breaking changes
 ----------------
 
-- Replaced `intake.open_esm_metadatastore()` with `intake.open_esm_datastore()`, see the API reference for more details.
-- `intake-esm` won't build collection catalogs anymore. `intake-esm` now expects an ESM collection JSON file
+- Replaced :py:class:`~intake_esm.core.esm_metadatastore` with :py:class:`~intake_esm.core.esm_datastore`,
+  see the API reference for more details.
+- ``intake-esm`` won't build collection catalogs anymore. ``intake-esm`` now expects an ESM collection JSON file
   as input. This JSON should conform to the `(esm-collection-spec)`_ Earth System Model Collection specification.
 
 
@@ -172,9 +218,6 @@ Bug Fixes
 -  For CMIP6, extract ``grid_label`` from directory path instead of file name. (:pr:`127`) `Anderson Banihirwe`_
 
 
-Internal Changes
-----------------
-
 
 
 
@@ -285,10 +328,7 @@ Trivial/Internal Changes
 - Update CircleCI workflow (:pr:`32`) `Anderson Banihirwe`_
 - Rename package from `intake-cesm` to `intake-esm` (:pr:`34`) `Anderson Banihirwe`_
 
-Documentation
--------------
 
-- Add example for preprocessing function (:pr:`168`) `Julius Busecke`_
 
 .. _`Aaron Spring`: https://github.com/aaronspring
 .. _`Anderson Banihirwe`: https://github.com/andersy005
@@ -298,3 +338,5 @@ Documentation
 .. _`Paul Branson`: https://github.com/pbranson
 .. _`Ryan Abernathey`: https://github.com/rabernat
 .. _`Julius Busecke`: https://github.com/jbusecke
+.. _`Brian Bonnlander`: https://github.com/bonnland
+.. _`Joe Hamman`: https://github.com/jhamman
