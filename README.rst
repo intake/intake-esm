@@ -1,3 +1,7 @@
+.. image:: https://img.shields.io/github/workflow/status/NCAR/intake-esm/code-style?label=Code%20Style&style=for-the-badge
+    :target: https://github.com/NCAR/intake-esm/actions
+    :alt: GitHub Workflow Status
+
 .. image:: https://img.shields.io/circleci/project/github/NCAR/intake-esm/master.svg?style=for-the-badge&logo=circleci
     :target: https://circleci.com/gh/NCAR/intake-esm/tree/master
 

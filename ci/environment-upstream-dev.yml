@@ -2,23 +2,16 @@ name: intake-esm-dev
 channels:
   - conda-forge
 dependencies:
-  - autopep8
-  - black
   - codecov
-  - flake8
-  - git
   - intake-xarray>=0.3.1
-  - ipykernel
-  - isort
-  - make
   - pip
-  - pre_commit
   - pytest
   - pytest-cov
   - pytest-icdiff
   - pytest-xdist
-  - python=3.7
   - pyyaml
+  - toolz
+  - zarr
   - pip:
     - git+https://github.com/pydata/xarray.git
     - git+https://github.com/intake/filesystem_spec.git
