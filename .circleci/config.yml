@@ -39,7 +39,7 @@ shared: &shared
     - run:
         name: Running Tests
         command: |
-          pytest -n 2 --junitxml=test-reports/junit.xml --cov=./ --verbose
+          pytest -n 8 --junitxml=test-reports/junit.xml --cov=./ --verbose
     - run:
         name: Uploading code coverage report
         command: |
