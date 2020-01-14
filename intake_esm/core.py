@@ -7,16 +7,16 @@ from urllib.parse import urlparse
 
 import fsspec
 import intake
-import intake_xarray
 import numpy as np
 import pandas as pd
 import requests
 
 from ._util import logger, print_progressbar
+from .data_source import DataSource
 from .merge_util import _aggregate, _create_asset_info_lookup, _to_nested_dict
 
 
-class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
+class esm_datastore(intake.catalog.Catalog, DataSource):
     """ An intake plugin for parsing an ESM (Earth System Model) Collection/catalog and loading assets
     (netCDF files and/or Zarr stores) into xarray datasets.
 
@@ -77,8 +77,9 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         logger.setLevel(numeric_log_level)
         self.esmcol_path = esmcol_path
         self.progressbar = progressbar
-        self._col_data = _fetch_and_parse_file(esmcol_path)
+        self._col_data = self._fetch_and_parse_file(esmcol_path)
         self.df = self._fetch_catalog()
+
         self._entries = {}
         self.urlpath = ''
         self._ds = None
@@ -88,6 +89,45 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         self.aggregate = None
         self.metadata = {}
         super().__init__(**kwargs)
+
+    def _fetch_and_parse_file(self, input_path):
+        """ Fetch and parse ESMCol file.
+
+        Parameters
+        ----------
+        input_path : str
+                ESMCol file to get and read
+
+        Returns
+        -------
+        data : dict
+        """
+
+        def _is_valid_url(url):
+            """ Check if path is URL or not
+            """
+            try:
+                result = urlparse(url)
+                return result.scheme and result.netloc and result.path
+            except Exception:
+                return False
+
+        data = None
+
+        try:
+            if _is_valid_url(input_path):
+                logger.info(f'Loading ESMCol from URL: {input_path}')
+                resp = requests.get(input_path)
+                data = resp.json()
+            else:
+                with open(input_path) as f:
+                    logger.info(f'Loading ESMCol from filesystem: {input_path}')
+                    data = json.load(f)
+
+        except Exception as e:
+            raise e
+
+        return data
 
     def search(self, **query):
         """Search for entries in the catalog.
@@ -337,10 +377,6 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
             time_bnds  (time, bnds) object dask.array<chunksize=(1980, 2), meta=np.ndarray>
             pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
         """
-
-        # set _schema to None to remove any previously cached dataset
-        self._schema = None
-
         if (
             'chunks' in cdf_kwargs
             and not cdf_kwargs['chunks']
@@ -364,32 +400,25 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
 
         return self.to_dask()
 
-    def _get_schema(self):
-        from intake.source.base import Schema
-
-        self._open_dataset()
-        self._schema = Schema(
-            datashape=None, dtype=None, shape=None, npartitions=None, extra_metadata={}
-        )
-        return self._schema
-
-    def _open_dataset(self):
-
+    def _get_aggregation_control_info(self):
         path_column_name = self._col_data['assets']['column_name']
         if 'format' in self._col_data['assets']:
             use_format_column = False
         else:
             use_format_column = True
 
-        mapper_dict = {
-            path: _path_to_mapper(path, self.storage_options) for path in self.df[path_column_name]
-        }  # replace path column with mapper (dependent on filesystem type)
+        if use_format_column:
+            format_column_name = self._col_data['assets']['format_column_name']
+
+        else:
+            format_column_name = None
 
         groupby_attrs = []
         variable_column_name = None
         aggregations = []
         aggregation_dict = {}
         agg_columns = []
+
         if self.aggregate:
             if 'aggregation_control' in self._col_data:
                 variable_column_name = self._col_data['aggregation_control']['variable_column_name']
@@ -403,7 +432,7 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
                     del rest['attribute_name']
                     aggregation_dict[key] = rest
 
-            agg_columns = list(aggregation_dict.keys())
+                agg_columns = list(aggregation_dict.keys())
 
         if not groupby_attrs:
             groupby_attrs = self.df.columns.tolist()
@@ -421,18 +450,52 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
 
         groupby_attrs = list(filter(_allnan_or_nonan, groupby_attrs))
 
-        groups = self.df.groupby(groupby_attrs)
+        agg_info = {
+            'groupby_attrs': groupby_attrs,
+            'variable_column_name': variable_column_name,
+            'aggregations': aggregations,
+            'aggregation_dict': aggregation_dict,
+            'agg_columns': agg_columns,
+            'path_column_name': path_column_name,
+            'use_format_column': use_format_column,
+            'format_column_name': format_column_name,
+        }
 
-        if agg_columns:
-            keys = '.'.join(groupby_attrs)
+        return agg_info
+
+    def _open_dataset(self):
+
+        asset_agg_info = self._get_aggregation_control_info()
+        path_column_name = asset_agg_info['path_column_name']
+        mapper_dict = {
+            path: fsspec.get_mapper(path, **self.storage_options)
+            for path in self.df[path_column_name]
+        }  # replace path column with mapper (dependent on filesystem type)
+
+        groups = self.df.groupby(asset_agg_info['groupby_attrs'])
+
+        if asset_agg_info['agg_columns']:
+            keys = '.'.join(asset_agg_info['groupby_attrs'])
         else:
-            keys = groupby_attrs.copy()
+            keys = asset_agg_info['groupby_attrs'].copy()
             keys.remove(path_column_name)
             keys = '.'.join(keys)
 
         dsets = []
         total = len(groups)
         logger.info(f'Using {total} threads for loading dataset groups')
+        additional_load_group_args = {
+            k: v
+            for k, v in asset_agg_info.items()
+            if k
+            in (
+                'agg_columns',
+                'aggregation_dict',
+                'path_column_name',
+                'variable_column_name',
+                'use_format_column',
+            )
+        }
         with futures.ThreadPoolExecutor(max_workers=total) as executor:
             future_tasks = [
                 executor.submit(
@@ -440,15 +503,11 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
                     key,
                     df,
                     self._col_data,
-                    agg_columns,
-                    aggregation_dict,
-                    path_column_name,
-                    variable_column_name,
-                    use_format_column,
-                    mapper_dict,
-                    self.zarr_kwargs,
-                    self.cdf_kwargs,
-                    self.preprocess,
+                    mapper_dict=mapper_dict,
+                    zarr_kwargs=self.zarr_kwargs,
+                    cdf_kwargs=self.cdf_kwargs,
+                    preprocess=self.preprocess,
+                    **additional_load_group_args,
                 )
                 for key, df in groups
             ]
@@ -487,15 +546,15 @@ def _load_group_dataset(
     key,
     df,
     col_data,
-    agg_columns,
-    aggregation_dict,
-    path_column_name,
-    variable_column_name,
-    use_format_column,
-    mapper_dict,
-    zarr_kwargs,
-    cdf_kwargs,
-    preprocess,
+    agg_columns=None,
+    aggregation_dict=None,
+    path_column_name=None,
+    variable_column_name=None,
+    use_format_column=None,
+    mapper_dict={},
+    zarr_kwargs={},
+    cdf_kwargs={},
+    preprocess=None,
 ):
 
     aggregation_dict = copy.deepcopy(aggregation_dict)
@@ -549,59 +608,3 @@ def _load_group_dataset(
     )
 
     return group_id, ds
-
-
-def _is_valid_url(url):
-    """ Check if path is URL or not
-
-    Parameters
-    ----------
-    url : str
-        path to check
-
-    Returns
-    -------
-    bool
-    """
-    try:
-        result = urlparse(url)
-        return result.scheme and result.netloc and result.path
-    except Exception:
-        return False
-
-
-@lru_cache(maxsize=None)
-def _fetch_and_parse_file(input_path):
-    """ Fetch and parse ESMCol file.
-
-    Parameters
-    ----------
-    input_path : str
-            ESMCol file to get and read
-
-    Returns
-    -------
-    data : dict
-    """
-
-    data = None
-
-    try:
-        if _is_valid_url(input_path):
-            logger.info(f'Loading ESMCol from URL: {input_path}')
-            resp = requests.get(input_path)
-            data = resp.json()
-        else:
-            with open(input_path) as f:
-                logger.info(f'Loading ESMCol from filesystem: {input_path}')
-                data = json.load(f)
-
-    except Exception as e:
-        raise e
-
-    return data
-
-
-def _path_to_mapper(path, storage_options):
-    """Convert path to mapper"""
-    return fsspec.get_mapper(path, **storage_options)
