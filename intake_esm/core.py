@@ -7,7 +7,6 @@ from urllib.parse import urlparse
 
 import fsspec
 import intake
-import intake_xarray
 import numpy as np
 import pandas as pd
 import requests
@@ -16,7 +15,7 @@ from ._util import logger, print_progressbar
 from .merge_util import _aggregate, _create_asset_info_lookup, _to_nested_dict
 
 
-class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
+class esm_datastore(intake.catalog.Catalog):
     """ An intake plugin for parsing an ESM (Earth System Model) Collection/catalog and loading assets
     (netCDF files and/or Zarr stores) into xarray datasets.
 
@@ -80,7 +79,6 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
         self._col_data = _fetch_and_parse_file(esmcol_path)
         self.df = self._fetch_catalog()
         self._entries = {}
-        self.urlpath = ''
         self._ds = None
         self.zarr_kwargs = None
         self.cdf_kwargs = None
@@ -362,16 +360,7 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
 
         self.preprocess = preprocess
 
-        return self.to_dask()
-
-    def _get_schema(self):
-        from intake.source.base import Schema
-
-        self._open_dataset()
-        self._schema = Schema(
-            datashape=None, dtype=None, shape=None, npartitions=None, extra_metadata={}
-        )
-        return self._schema
+        return self._open_dataset()
 
     def _open_dataset(self):
 
@@ -468,6 +457,7 @@ class esm_datastore(intake.catalog.Catalog, intake_xarray.base.DataSourceMixin):
              \n--> There are {len(groups)} group(s)"""
         )
         self._ds = {group_id: ds for (group_id, ds) in dsets}
+        return self._ds
 
 
 def _unique(df, columns):
