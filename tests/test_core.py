@@ -6,6 +6,8 @@ import pandas as pd
 import pytest
 import xarray as xr
 
+from intake_esm.entry import AbstractESMEntry
+
 here = os.path.abspath(os.path.dirname(__file__))
 zarr_col_pangeo_cmip6 = os.path.join(here, 'pangeo-cmip6-zarr.json')
 cdf_col_sample_cmip6 = os.path.join(here, 'cmip6-netcdf.json')
@@ -193,3 +195,18 @@ def test_to_dataset_dict_chunking_2(chunks, expected_chunks):
     dset = cat.to_dataset_dict(cdf_kwargs=dict(chunks=chunks))
     _, ds = dset.popitem()
     assert ds['SHF'].data.chunksize == expected_chunks
+
+
+keys = [
+    'CMIP.CCCma.CanESM5.historical.*.Ofx.*.gn.*',
+    'CMIP.CCCma.CanESM5.historical.r1i1p1f1.Ofx.deptho.gn.*',
+    'CMIP.CCCma.CanESM5.historical',
+    'CMIP.CCCma.CanESM5.historical.r1i1p1f1.Ofx.deptho.gn',
+    'DCPP',
+]
+
+
+@pytest.mark.parametrize('key', keys)
+def test_get_item(key):
+    col = intake.open_esm_datastore(zarr_col_pangeo_cmip6)
+    assert isinstance(col[key], AbstractESMEntry)

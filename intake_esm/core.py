@@ -12,6 +12,7 @@ import pandas as pd
 import requests
 
 from ._util import logger, print_progressbar
+from .entry import AggregateEntry, SingleEntry
 from .merge_util import _aggregate, _create_asset_info_lookup, _to_nested_dict
 
 
@@ -78,7 +79,6 @@ class esm_datastore(intake.catalog.Catalog):
         self.progressbar = progressbar
         self._col_data = _fetch_and_parse_file(esmcol_path)
         self.df = self._fetch_catalog()
-        self._entries = {}
         self._ds = None
         self.zarr_kwargs = None
         self.cdf_kwargs = None
@@ -86,6 +86,7 @@ class esm_datastore(intake.catalog.Catalog):
         self.aggregate = None
         self.metadata = {}
         super().__init__(**kwargs)
+        self._entries = self._make_entries_container()
 
     def search(self, **query):
         """Search for entries in the catalog.
@@ -119,6 +120,39 @@ class esm_datastore(intake.catalog.Catalog):
         ret = copy.copy(self)
         ret.df = self._get_subset(**query)
         return ret
+
+    def __getitem__(self, key):
+        if isinstance(key, str) and key in self._get_entries():
+            return self._entries[key]
+
+        path_column_name = self._col_data['assets']['column_name']
+        columns = self.df.columns.tolist()
+        columns.remove(path_column_name)
+
+        if isinstance(key, str) and '.' in key:
+            key_parts = key.split('.')
+        else:
+            key_parts = [key]
+        N = len(columns)
+        # Pad key list for missing values so that len(key) == len(columns)
+        key_parts += ['*'] * (N - len(key_parts))
+        query = dict(zip(columns, key_parts))
+        # Filter out the query for valid entries
+        filtered_query = {k: v for k, v in query.items() if v != '*'}
+        subset = self._get_subset(**filtered_query)
+        if len(subset) > 1:
+            entry = AggregateEntry(subset)
+        else:
+            entry = SingleEntry(subset)
+
+        self._entries[key] = entry
+        return entry
+
+    def __len__(self):
+        return len(self.df)
+
+    def __keys__(self):
+        ...
 
     @lru_cache(maxsize=None)
     def _fetch_catalog(self):
