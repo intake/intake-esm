@@ -141,9 +141,9 @@ class esm_datastore(intake.catalog.Catalog):
         filtered_query = {k: v for k, v in query.items() if v != '*'}
         subset = self._get_subset(**filtered_query)
         if len(subset) > 1:
-            entry = AggregateEntry(subset)
+            entry = AggregateEntry(subset, keys=[], col_data=self._col_data.copy())
         else:
-            entry = SingleEntry(subset)
+            entry = SingleEntry(subset, keys=[key], col_data=self._col_data.copy())
 
         self._entries[key] = entry
         return entry
