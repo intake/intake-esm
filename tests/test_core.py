@@ -12,6 +12,7 @@ cdf_col_sample_cmip6 = os.path.join(here, 'cmip6-netcdf.json')
 cdf_col_sample_cmip5 = os.path.join(here, 'cmip5-netcdf.json')
 zarr_col_aws_cesmle = os.path.join(here, 'cesm1-lens-zarr.json')
 cdf_col_sample_cesmle = os.path.join(here, 'cesm1-lens-netcdf.json')
+catalog_dict_records = os.path.join(here, 'catalog-dict-records.json')
 
 
 zarr_query = dict(
@@ -193,3 +194,8 @@ def test_to_dataset_dict_chunking_2(chunks, expected_chunks):
     dset = cat.to_dataset_dict(cdf_kwargs=dict(chunks=chunks))
     _, ds = dset.popitem()
     assert ds['SHF'].data.chunksize == expected_chunks
+
+
+def test_read_catalog_dict():
+    col = intake.open_esm_datastore(catalog_dict_records)
+    assert isinstance(col.df, pd.DataFrame)
