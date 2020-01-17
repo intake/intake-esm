@@ -124,7 +124,10 @@ class esm_datastore(intake.catalog.Catalog):
     def _fetch_catalog(self):
         """Get the catalog file and cache it.
         """
-        return pd.read_csv(self._col_data['catalog_file'])
+        if 'catalog_file' in self._col_data:
+            return pd.read_csv(self._col_data['catalog_file'])
+        else:
+            return pd.DataFrame(self._col_data['catalog_dict'])
 
     def serialize(self, name, directory=None):
         """Serialize collection/catalog to corresponding json and csv files.
