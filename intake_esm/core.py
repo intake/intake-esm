@@ -151,6 +151,13 @@ class esm_datastore(intake.catalog.Catalog):
         Writing csv catalog to: cmip6_bcc_esm1.csv.gz
         Writing ESM collection json file to: cmip6_bcc_esm1.json
         """
+
+        def _clear_old_catalog(catalog_data):
+            """ Remove any old references to the catalog."""
+            for key in {'catalog_dict', 'catalog_file'}:
+                _ = catalog_data.pop(key, None)
+            return catalog_data
+
         from pathlib import Path
 
         csv_file_name = Path(f'{name}.csv.gz')
@@ -162,7 +169,7 @@ class esm_datastore(intake.catalog.Catalog):
             json_file_name = directory / json_file_name
 
         collection_data = self._col_data.copy()
-        collection_data = self._clear_old_catalog(collection_data)
+        collection_data = _clear_old_catalog(collection_data)
         collection_data['id'] = name
 
         if catalog_type == 'file':
@@ -291,12 +298,6 @@ class esm_datastore(intake.catalog.Catalog):
                 condition = condition & (self.df[key] == val)
         query_results = self.df.loc[condition]
         return query_results.reset_index(drop=True)
-
-    def _clear_old_catalog(self, catalog_data):
-        """ Remove any old references to the catalog."""
-        for key in {'catalog_dict', 'catalog_file'}:
-            _ = catalog_data.pop(key, None)
-        return catalog_data
 
     def to_dataset_dict(
         self,
