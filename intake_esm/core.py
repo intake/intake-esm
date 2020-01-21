@@ -139,7 +139,7 @@ class esm_datastore(intake.catalog.Catalog):
         directory : str, PathLike, default None
             The path to the local directory. If None, use the current directory
         catalog_type: str, default 'dict'
-            Whether to save the catalog table as a dictionary or a separate CSV file.
+            Whether to save the catalog table as a dictionary in the JSON file or as a separate CSV file.
 
         Examples
         --------
@@ -162,6 +162,7 @@ class esm_datastore(intake.catalog.Catalog):
             json_file_name = directory / json_file_name
 
         collection_data = self._col_data.copy()
+        collection_data = self._clear_old_catalog(collection_data)
         collection_data['id'] = name
 
         if catalog_type == 'file':
@@ -290,6 +291,12 @@ class esm_datastore(intake.catalog.Catalog):
                 condition = condition & (self.df[key] == val)
         query_results = self.df.loc[condition]
         return query_results.reset_index(drop=True)
+
+    def _clear_old_catalog(self, catalog_data):
+        """ Remove any old references to the catalog."""
+        for key in {'catalog_dict', 'catalog_file'}:
+            _ = catalog_data.pop(key, None)
+        return catalog_data
 
     def to_dataset_dict(
         self,
