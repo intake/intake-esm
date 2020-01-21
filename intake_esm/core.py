@@ -129,7 +129,7 @@ class esm_datastore(intake.catalog.Catalog):
         else:
             return pd.DataFrame(self._col_data['catalog_dict'])
 
-    def serialize(self, name, directory=None):
+    def serialize(self, name, directory=None, catalog_type='dict'):
         """Serialize collection/catalog to corresponding json and csv files.
 
         Parameters
@@ -160,11 +160,19 @@ class esm_datastore(intake.catalog.Catalog):
             json_file_name = directory / json_file_name
 
         collection_data = self._col_data.copy()
-        collection_data['catalog_file'] = csv_file_name.as_posix()
         collection_data['id'] = name
 
-        print(f'Writing csv catalog to: {csv_file_name}')
-        self.df.to_csv(csv_file_name, compression='gzip', index=False)
+        if catalog_type == 'file':
+            collection_data['catalog_file'] = csv_file_name.as_posix()
+            print(f'Writing csv catalog to: {csv_file_name}')
+            self.df.to_csv(csv_file_name, compression='gzip', index=False)
+        else:
+            catalog_length = len(self.df)
+            print(f'Writing catalog with {catalog_length} records into: {json_file_name}')
+            if catalog_length > 100:
+                print("  (call serialize() with catalog_type='file' to save a large catalog as a separate CSV file)")
+            collection_data['catalog_dict'] = self.df.to_dict(orient='records')
+
         print(f'Writing ESM collection json file to: {json_file_name}')
         with open(json_file_name, 'w') as outfile:
             json.dump(collection_data, outfile)

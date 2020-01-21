@@ -46,20 +46,15 @@ def test_load_esmcol_remote():
 
 def test_serialize_to_json():
     with TemporaryDirectory() as local_store:
-        col = intake.open_esm_datastore(
-            'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
-        )
-        col_subset = col.search(
-            source_id='BCC-ESM1', grid_label='gn', table_id='Amon', experiment_id='historical'
-        )
+        col = intake.open_esm_datastore(catalog_dict_records)
 
-        name = 'cmip6_bcc_esm1'
-        col_subset.serialize(name=name, directory=local_store, catalog_type='dict')
+        name = 'test_serialize_dict'
+        col.serialize(name=name,  directory=local_store, catalog_type='dict')
 
-        col = intake.open_esm_datastore(f'{local_store}/cmip6_bcc_esm1.json')
-        pd.testing.assert_frame_equal(col_subset.df, col.df)
+        output_catalog = os.path.join(local_store, name + '.json')
 
-        assert col._col_data['id'] == name
+        col2 = intake.open_esm_datastore(output_catalog)
+        pd.testing.assert_frame_equal(col.df, col2.df)
 
 
 def test_serialize_to_csv():
