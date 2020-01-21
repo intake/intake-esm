@@ -49,7 +49,7 @@ def test_serialize_to_json():
         col = intake.open_esm_datastore(catalog_dict_records)
 
         name = 'test_serialize_dict'
-        col.serialize(name=name,  directory=local_store, catalog_type='dict')
+        col.serialize(name=name, directory=local_store, catalog_type='dict')
 
         output_catalog = os.path.join(local_store, name + '.json')
 
