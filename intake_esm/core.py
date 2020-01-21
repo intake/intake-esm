@@ -137,7 +137,9 @@ class esm_datastore(intake.catalog.Catalog):
         name : str
             name to use when creating ESM collection json file and csv catalog.
         directory : str, PathLike, default None
-               The path to the local directory. If None, use the current directory
+            The path to the local directory. If None, use the current directory
+        catalog_type: str, default 'dict'
+            Whether to save the catalog table as a dictionary or a separate CSV file.
 
         Examples
         --------
@@ -145,7 +147,7 @@ class esm_datastore(intake.catalog.Catalog):
         >>> col = intake.open_esm_datastore("pangeo-cmip6.json")
         >>> col_subset = col.search(source_id="BCC-ESM1", grid_label="gn",
         ...                      table_id="Amon", experiment_id="historical")
-        >>> col_subset.serialize(name="cmip6_bcc_esm1")
+        >>> col_subset.serialize(name="cmip6_bcc_esm1", catalog_type='file')
         Writing csv catalog to: cmip6_bcc_esm1.csv.gz
         Writing ESM collection json file to: cmip6_bcc_esm1.json
         """
@@ -168,9 +170,9 @@ class esm_datastore(intake.catalog.Catalog):
             self.df.to_csv(csv_file_name, compression='gzip', index=False)
         else:
             catalog_length = len(self.df)
-            print(f'Writing catalog with {catalog_length} records into: {json_file_name}')
+            print(f'Writing catalog with {catalog_length} entries into: {json_file_name}')
             if catalog_length > 100:
-                print("  (call serialize() with catalog_type='file' to save a large catalog as a separate CSV file)")
+                print("  (call with catalog_type='file' to save catalog as a separate CSV file)")
             collection_data['catalog_dict'] = self.df.to_dict(orient='records')
 
         print(f'Writing ESM collection json file to: {json_file_name}')
