@@ -141,6 +141,11 @@ class esm_datastore(intake.catalog.Catalog):
         catalog_type: str, default 'dict'
             Whether to save the catalog table as a dictionary in the JSON file or as a separate CSV file.
 
+        Notes
+        -----
+        Large catalogs can result in large JSON files.   To keep the JSON file size manageable, call with
+            catalog_type='file' to save catalog as a separate CSV file.
+
         Examples
         --------
         >>> import intake
@@ -179,8 +184,6 @@ class esm_datastore(intake.catalog.Catalog):
         else:
             catalog_length = len(self.df)
             print(f'Writing catalog with {catalog_length} entries into: {json_file_name}')
-            if catalog_length > 100:
-                print("  (call with catalog_type='file' to save catalog as a separate CSV file)")
             collection_data['catalog_dict'] = self.df.to_dict(orient='records')
 
         print(f'Writing ESM collection json file to: {json_file_name}')
