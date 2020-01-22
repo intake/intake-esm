@@ -177,12 +177,12 @@ class esm_datastore(intake.catalog.Catalog):
         collection_data = _clear_old_catalog(collection_data)
         collection_data['id'] = name
 
+        catalog_length = len(self.df)
         if catalog_type == 'file':
             collection_data['catalog_file'] = csv_file_name.as_posix()
-            print(f'Writing csv catalog to: {csv_file_name}')
+            print(f'Writing csv catalog with {catalog_length} entries to: {csv_file_name}')
             self.df.to_csv(csv_file_name, compression='gzip', index=False)
         else:
-            catalog_length = len(self.df)
             print(f'Writing catalog with {catalog_length} entries into: {json_file_name}')
             collection_data['catalog_dict'] = self.df.to_dict(orient='records')
 
