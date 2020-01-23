@@ -12,6 +12,7 @@ cdf_col_sample_cmip6 = os.path.join(here, 'cmip6-netcdf.json')
 cdf_col_sample_cmip5 = os.path.join(here, 'cmip5-netcdf.json')
 zarr_col_aws_cesmle = os.path.join(here, 'cesm1-lens-zarr.json')
 cdf_col_sample_cesmle = os.path.join(here, 'cesm1-lens-netcdf.json')
+catalog_dict_records = os.path.join(here, 'catalog-dict-records.json')
 
 
 zarr_query = dict(
@@ -43,7 +44,20 @@ def test_load_esmcol_remote():
     assert isinstance(col.df, pd.DataFrame)
 
 
-def test_serialize():
+def test_serialize_to_json():
+    with TemporaryDirectory() as local_store:
+        col = intake.open_esm_datastore(catalog_dict_records)
+
+        name = 'test_serialize_dict'
+        col.serialize(name=name, directory=local_store, catalog_type='dict')
+
+        output_catalog = os.path.join(local_store, name + '.json')
+
+        col2 = intake.open_esm_datastore(output_catalog)
+        pd.testing.assert_frame_equal(col.df, col2.df)
+
+
+def test_serialize_to_csv():
     with TemporaryDirectory() as local_store:
         col = intake.open_esm_datastore(
             'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
@@ -53,7 +67,7 @@ def test_serialize():
         )
 
         name = 'cmip6_bcc_esm1'
-        col_subset.serialize(name=name, directory=local_store)
+        col_subset.serialize(name=name, directory=local_store, catalog_type='file')
 
         col = intake.open_esm_datastore(f'{local_store}/cmip6_bcc_esm1.json')
         pd.testing.assert_frame_equal(col_subset.df, col.df)
@@ -193,3 +207,8 @@ def test_to_dataset_dict_chunking_2(chunks, expected_chunks):
     dset = cat.to_dataset_dict(cdf_kwargs=dict(chunks=chunks))
     _, ds = dset.popitem()
     assert ds['SHF'].data.chunksize == expected_chunks
+
+
+def test_read_catalog_dict():
+    col = intake.open_esm_datastore(catalog_dict_records)
+    assert isinstance(col.df, pd.DataFrame)
