@@ -158,9 +158,12 @@ class esm_datastore(intake.catalog.Catalog):
     def _fetch_catalog(self):
         """Get the catalog file and cache it.
         """
-        return pd.read_csv(self._col_data['catalog_file'])
+        if 'catalog_file' in self._col_data:
+            return pd.read_csv(self._col_data['catalog_file'])
+        else:
+            return pd.DataFrame(self._col_data['catalog_dict'])
 
-    def serialize(self, name, directory=None):
+    def serialize(self, name, directory=None, catalog_type='dict'):
         """Serialize collection/catalog to corresponding json and csv files.
 
         Parameters
@@ -168,7 +171,14 @@ class esm_datastore(intake.catalog.Catalog):
         name : str
             name to use when creating ESM collection json file and csv catalog.
         directory : str, PathLike, default None
-               The path to the local directory. If None, use the current directory
+            The path to the local directory. If None, use the current directory
+        catalog_type: str, default 'dict'
+            Whether to save the catalog table as a dictionary in the JSON file or as a separate CSV file.
+
+        Notes
+        -----
+        Large catalogs can result in large JSON files.   To keep the JSON file size manageable, call with
+            catalog_type='file' to save catalog as a separate CSV file.
 
         Examples
         --------
@@ -176,10 +186,17 @@ class esm_datastore(intake.catalog.Catalog):
         >>> col = intake.open_esm_datastore("pangeo-cmip6.json")
         >>> col_subset = col.search(source_id="BCC-ESM1", grid_label="gn",
         ...                      table_id="Amon", experiment_id="historical")
-        >>> col_subset.serialize(name="cmip6_bcc_esm1")
+        >>> col_subset.serialize(name="cmip6_bcc_esm1", catalog_type='file')
         Writing csv catalog to: cmip6_bcc_esm1.csv.gz
         Writing ESM collection json file to: cmip6_bcc_esm1.json
         """
+
+        def _clear_old_catalog(catalog_data):
+            """ Remove any old references to the catalog."""
+            for key in {'catalog_dict', 'catalog_file'}:
+                _ = catalog_data.pop(key, None)
+            return catalog_data
+
         from pathlib import Path
 
         csv_file_name = Path(f'{name}.csv.gz')
@@ -191,11 +208,18 @@ class esm_datastore(intake.catalog.Catalog):
             json_file_name = directory / json_file_name
 
         collection_data = self._col_data.copy()
-        collection_data['catalog_file'] = csv_file_name.as_posix()
+        collection_data = _clear_old_catalog(collection_data)
         collection_data['id'] = name
 
-        print(f'Writing csv catalog to: {csv_file_name}')
-        self.df.to_csv(csv_file_name, compression='gzip', index=False)
+        catalog_length = len(self.df)
+        if catalog_type == 'file':
+            collection_data['catalog_file'] = csv_file_name.as_posix()
+            print(f'Writing csv catalog with {catalog_length} entries to: {csv_file_name}')
+            self.df.to_csv(csv_file_name, compression='gzip', index=False)
+        else:
+            print(f'Writing catalog with {catalog_length} entries into: {json_file_name}')
+            collection_data['catalog_dict'] = self.df.to_dict(orient='records')
+
         print(f'Writing ESM collection json file to: {json_file_name}')
         with open(json_file_name, 'w') as outfile:
             json.dump(collection_data, outfile)
