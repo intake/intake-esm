@@ -12,7 +12,6 @@ import pandas as pd
 import requests
 
 from ._util import logger, print_progressbar
-from .entry import AggregateEntry, SingleEntry
 from .merge_util import _aggregate, _create_asset_info_lookup, _to_nested_dict
 
 
@@ -86,7 +85,7 @@ class esm_datastore(intake.catalog.Catalog):
         self.aggregate = None
         self.metadata = {}
         super().__init__(**kwargs)
-        self._entries = self._make_entries_container()
+        self._entries = {}
 
     def search(self, **query):
         """Search for entries in the catalog.
@@ -122,9 +121,6 @@ class esm_datastore(intake.catalog.Catalog):
         return ret
 
     def __getitem__(self, key):
-        if isinstance(key, str) and key in self._get_entries():
-            return self._entries[key]
-
         path_column_name = self._col_data['assets']['column_name']
         columns = self.df.columns.tolist()
         columns.remove(path_column_name)
@@ -139,14 +135,7 @@ class esm_datastore(intake.catalog.Catalog):
         query = dict(zip(columns, key_parts))
         # Filter out the query for valid entries
         filtered_query = {k: v for k, v in query.items() if v != '*'}
-        subset = self._get_subset(**filtered_query)
-        if len(subset) > 1:
-            entry = AggregateEntry(subset, keys=[], col_data=self._col_data.copy())
-        else:
-            entry = SingleEntry(subset, keys=[key], col_data=self._col_data.copy())
-
-        self._entries[key] = entry
-        return entry
+        return self.search(**filtered_query)
 
     def __len__(self):
         return len(self.df)

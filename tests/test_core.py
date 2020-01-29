@@ -6,8 +6,6 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from intake_esm.entry import AbstractESMEntry
-
 here = os.path.abspath(os.path.dirname(__file__))
 zarr_col_pangeo_cmip6 = os.path.join(here, 'pangeo-cmip6-zarr.json')
 cdf_col_sample_cmip6 = os.path.join(here, 'cmip6-netcdf.json')
@@ -223,7 +221,8 @@ keys = [
 @pytest.mark.parametrize('key', keys)
 def test_get_item(key):
     col = intake.open_esm_datastore(zarr_col_pangeo_cmip6)
-    assert isinstance(col[key], AbstractESMEntry)
+    assert isinstance(col.df, pd.DataFrame)
+    assert len(col) >= 1
 
 
 def test_read_catalog_dict():
