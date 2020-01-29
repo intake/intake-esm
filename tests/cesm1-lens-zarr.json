@@ -30,7 +30,7 @@
       ],
         "aggregations": [
           {
-            "type": "union",
+            "agg_type": "union",
             "attribute_name": "variable"
           }
         ]

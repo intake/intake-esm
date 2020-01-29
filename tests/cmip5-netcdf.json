@@ -44,17 +44,17 @@
       ],
         "aggregations": [
           {
-            "type": "join_new",
+            "agg_type": "join_new",
             "attribute_name": "ensemble_member",
             "options": { "coords": "minimal", "compat": "override"}
           },
           {
-            "type": "join_existing",
+            "agg_type": "join_existing",
             "attribute_name": "time_range",
             "options": { "dim": "time" }
           },
           {
-            "type": "union",
+            "agg_type": "union",
             "attribute_name": "variable"
           }
         ]

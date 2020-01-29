@@ -99,7 +99,7 @@ def _aggregate(
             agg_column = agg_columns[level]
 
             agg_info = aggregation_dict[agg_column]
-            agg_type = agg_info['type']
+            agg_type = agg_info['agg_type']
 
             if 'options' in agg_info:
                 agg_options = agg_info['options']

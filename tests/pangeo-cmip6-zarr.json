@@ -55,17 +55,17 @@
     ],
     "aggregations": [
       {
-        "type": "join_new",
+        "agg_type": "join_new",
         "attribute_name": "member_id",
         "options": { "coords": "minimal", "compat": "override" }
       },
       {
-        "type": "join_new",
+        "agg_type": "join_new",
         "attribute_name": "dcpp_init_year",
         "options": { "coords": "minimal", "compat": "override" }
       },
       {
-        "type": "union",
+        "agg_type": "union",
         "attribute_name": "variable_id"
       }
     ]

@@ -1,4 +1,5 @@
 import os
+import sys
 from tempfile import TemporaryDirectory
 
 import intake
@@ -212,3 +213,19 @@ def test_to_dataset_dict_chunking_2(chunks, expected_chunks):
 def test_read_catalog_dict():
     col = intake.open_esm_datastore(catalog_dict_records)
     assert isinstance(col.df, pd.DataFrame)
+
+
+def test_validation():
+    col = intake.open_esm_datastore(cdf_col_sample_cesmle)
+    _, message = col.validate()
+    assert message[0]['valid_esmcol']
+    assert message[0]['valid_esmcat']
+
+
+def test_validation_missing_validator():
+    from unittest import mock
+
+    col = intake.open_esm_datastore(cdf_col_sample_cesmle)
+    with pytest.raises(ImportError):
+        with mock.patch.dict(sys.modules, {'esmcol_validator': None}):
+            _ = col.validate()

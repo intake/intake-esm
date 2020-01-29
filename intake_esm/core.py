@@ -70,10 +70,10 @@ class esm_datastore(intake.catalog.Catalog):
         """Main entry point.
         """
 
-        numeric_log_level = getattr(logging, log_level.upper(), None)
-        if not isinstance(numeric_log_level, int):
+        self._numeric_log_level = getattr(logging, log_level.upper(), None)
+        if not isinstance(self._numeric_log_level, int):
             raise ValueError(f'Invalid log level: {log_level}')
-        logger.setLevel(numeric_log_level)
+        logger.setLevel(self._numeric_log_level)
         self.esmcol_path = esmcol_path
         self.progressbar = progressbar
         self._col_data = _fetch_and_parse_file(esmcol_path)
@@ -359,10 +359,6 @@ class esm_datastore(intake.catalog.Catalog):
             time_bnds  (time, bnds) object dask.array<chunksize=(1980, 2), meta=np.ndarray>
             pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
         """
-
-        # set _schema to None to remove any previously cached dataset
-        self._schema = None
-
         if (
             'chunks' in cdf_kwargs
             and not cdf_kwargs['chunks']
@@ -409,7 +405,13 @@ class esm_datastore(intake.catalog.Catalog):
                 groupby_attrs = self._col_data['aggregation_control'].get('groupby_attrs', [])
                 aggregations = self._col_data['aggregation_control'].get('aggregations', [])
                 # Sort aggregations to make sure join_existing is always done before join_new
-                aggregations = sorted(aggregations, key=lambda i: i['type'], reverse=True)
+                for aggregation in aggregations:
+                    # Backward compatibility: Check for `type`.
+                    # According to the esm collection spec, this should be `agg_type`instead.
+                    if 'type' in aggregation.keys():
+                        message = f"""`type` is a reserved keyword for JSON. Please replace `type` in {aggregations} in {self.esmcol_path} with `agg_type` instead."""
+                        raise KeyError(message)
+                aggregations = sorted(aggregations, key=lambda i: i['agg_type'], reverse=True)
                 for agg in aggregations:
                     key = agg['attribute_name']
                     rest = agg.copy()
@@ -482,6 +484,38 @@ class esm_datastore(intake.catalog.Catalog):
         )
         self._ds = {group_id: ds for (group_id, ds) in dsets}
         return self._ds
+
+    def validate(self, esmcol_spec_dirs=None, version='master'):
+        """Validate ESM collection JSON file against the esm-collection-spec
+
+        Parameters
+        ----------
+        esmcol_spec_dirs: list, defaults to `None`
+          List of local specification directories to check for JSON schema files.
+        version : str, defaults to `master`
+            ESM Collection Specification version to validate against.
+            Uses github tags from the esm-collection-spec repository (https://github.com/NCAR/esm-collection-spec)
+            e.g.: v0.1.0
+
+        Returns
+        -------
+        status: dict
+           Dictionary of validation status
+        message: list
+           list of dictionaries containing validation messages
+
+        """
+        try:
+            from esmcol_validator.validator import EsmcolValidate
+        except ImportError:
+            raise ImportError(
+                """Using validate() method requires the `esmcol-validator` package. \nYou can install it via PyPI or Conda"""
+            )
+
+        log_level = logging.getLevelName(self._numeric_log_level)
+        esmcol = EsmcolValidate(self.esmcol_path, esmcol_spec_dirs, version, log_level)
+        esmcol.run()
+        return esmcol.status, esmcol.message
 
 
 def _unique(df, columns):
