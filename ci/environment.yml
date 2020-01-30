@@ -16,3 +16,5 @@ dependencies:
   - s3fs
   - xarray
   - zarr
+  - pip:
+      - esmcol-validator

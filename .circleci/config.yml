@@ -31,6 +31,8 @@ shared: &shared
         name: Install dependencies in (base environment)
         command: |
           conda env update -n base -f ${ENV_FILE}
+          conda activate base
+          python -m pip install -e .
 
     - run:
         name: List packages in the current environment (base)
