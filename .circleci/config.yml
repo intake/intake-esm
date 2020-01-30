@@ -31,7 +31,7 @@ shared: &shared
         name: Install dependencies in (base environment)
         command: |
           conda env update -n base -f ${ENV_FILE}
-          conda activate base
+          source activate base
           python -m pip install -e .
 
     - run:
@@ -41,6 +41,7 @@ shared: &shared
     - run:
         name: Running Tests
         command: |
+          source activate base
           pytest -n 8 --junitxml=test-reports/junit.xml --cov=./ --verbose
     - run:
         name: Uploading code coverage report
