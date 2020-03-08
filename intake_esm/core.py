@@ -2,7 +2,6 @@ import copy
 import json
 import logging
 from concurrent import futures
-from functools import lru_cache
 from urllib.parse import urlparse
 
 import fsspec
@@ -70,6 +69,8 @@ class esm_datastore(intake.catalog.Catalog):
         """Main entry point.
         """
 
+        super().__init__(**kwargs)
+
         numeric_log_level = getattr(logging, log_level.upper(), None)
         if not isinstance(numeric_log_level, int):
             raise ValueError(f'Invalid log level: {log_level}')
@@ -84,8 +85,6 @@ class esm_datastore(intake.catalog.Catalog):
         self.cdf_kwargs = None
         self.preprocess = None
         self.aggregate = None
-        self.metadata = {}
-        super().__init__(**kwargs)
 
     def search(self, **query):
         """Search for entries in the catalog.
@@ -120,7 +119,6 @@ class esm_datastore(intake.catalog.Catalog):
         ret.df = self._get_subset(**query)
         return ret
 
-    @lru_cache(maxsize=None)
     def _fetch_catalog(self):
         """Get the catalog file and cache it.
         """
@@ -309,6 +307,7 @@ class esm_datastore(intake.catalog.Catalog):
         preprocess=None,
         aggregate=True,
         storage_options={},
+        progressbar=None,
     ):
         """Load catalog entries into a dictionary of xarray datasets.
 
@@ -325,6 +324,10 @@ class esm_datastore(intake.catalog.Catalog):
         storage_options : dict, optional
             Parameters passed to the backend file-system such as Google Cloud Storage,
             Amazon Web Service S3.
+            progressbar : bool
+        progressbar : bool
+            If True, will print a progress bar to standard error (stderr)
+            when loading datasets into :py:class:`~xarray.Dataset`.
 
         Returns
         -------
@@ -383,6 +386,8 @@ class esm_datastore(intake.catalog.Catalog):
             raise ValueError('preprocess argument must be callable')
 
         self.preprocess = preprocess
+        if progressbar is not None:
+            self.progressbar = progressbar
 
         return self._open_dataset()
 
@@ -467,6 +472,10 @@ class esm_datastore(intake.catalog.Catalog):
             ]
 
             if self.progressbar:
+                print(
+                    f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{keys}'
+             \n--> There are {len(groups)} group(s)"""
+                )
                 print_progressbar(0, total, prefix='Progress:', suffix='', bar_length=79)
 
             for i, task in enumerate(futures.as_completed(future_tasks)):
@@ -476,10 +485,6 @@ class esm_datastore(intake.catalog.Catalog):
                     # Update Progress Bar
                     print_progressbar(i + 1, total, prefix='Progress:', suffix='', bar_length=79)
 
-        print(
-            f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{keys}'
-             \n--> There are {len(groups)} group(s)"""
-        )
         self._ds = {group_id: ds for (group_id, ds) in dsets}
         return self._ds
 
@@ -584,7 +589,6 @@ def _is_valid_url(url):
         return False
 
 
-@lru_cache(maxsize=None)
 def _fetch_and_parse_file(input_path):
     """ Fetch and parse ESMCol file.
 
