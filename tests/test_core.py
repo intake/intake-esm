@@ -189,6 +189,14 @@ def test_to_dataset_dict_chunking(chunks, expected_chunks):
     assert ds['hfls'].data.chunksize == expected_chunks
 
 
+@pytest.mark.parametrize('progressbar', [False, True])
+def test_progressbar(progressbar):
+    c = intake.open_esm_datastore(cdf_col_sample_cmip5)
+    cat = c.search(variable=['hfls'], frequency='mon', modeling_realm='atmos', model=['CNRM-CM5'])
+
+    _ = cat.to_dataset_dict(cdf_kwargs=dict(chunks={}), progressbar=progressbar)
+
+
 def test_to_dataset_dict_s3():
     col = intake.open_esm_datastore(zarr_col_aws_cesmle)
     cat = col.search(variable='RAIN', experiment='20C')
@@ -211,3 +219,21 @@ def test_to_dataset_dict_w_dask_cluster():
         dsets = cat.to_dataset_dict(storage_options={'anon': True})
         _, ds = dsets.popitem()
         assert isinstance(ds, xr.Dataset)
+
+
+def test_get_dask_client():
+    from unittest import mock
+    from distributed import Client
+    import sys
+    from intake_esm.core import _get_dask_client
+
+    with Client() as client:
+        c = _get_dask_client()
+        assert c is client
+
+    with mock.patch.dict(sys.modules, {'distributed.client': None}):
+        c = _get_dask_client()
+        assert c is None
+
+    c = _get_dask_client()
+    assert c is None

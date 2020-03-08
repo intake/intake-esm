@@ -474,28 +474,30 @@ class esm_datastore(intake.catalog.Catalog):
         if self.progressbar:
             print(
                 f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{keys}'
-                \n--> There are {len(groups)} group(s)"""
+                \n--> There is/are {total} group(s)"""
             )
 
         if client is None:
             from multiprocessing.pool import ThreadPool
 
-            if self.progressbar:
-                from dask.diagnostics import ProgressBar
-
-                ProgressBar().register()
             with dask.config.set(pool=ThreadPool(total)):
                 logger.info(f'Using {total} threads for loading dataset groups')
+                if self.progressbar:
+                    from dask.diagnostics import ProgressBar
+
+                    p = ProgressBar()
+                    p.register()
                 dsets = dask.compute(*tasks)
+                if self.progressbar:
+                    p.unregister()
 
         else:
-            if self.progressbar:
-                from distributed import progress
-
             logger.info(f'Using dask cluster: {client} for loading dataset groups')
             futures = client.compute(tasks)
 
             if self.progressbar:
+                from distributed import progress
+
                 progress(futures)
 
             dsets = client.gather(futures)
@@ -643,11 +645,11 @@ def _path_to_mapper(path, storage_options):
 def _get_dask_client():
     # Detect local default cluster already running
     # and use it for dataset group loading.
+    client = None
     try:
         from distributed.client import _get_global_client
 
         client = _get_global_client()
+        return client
     except ImportError:
-        client = None
-
-    return client
+        return client
