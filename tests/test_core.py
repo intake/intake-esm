@@ -7,10 +7,14 @@ import pytest
 import xarray as xr
 
 here = os.path.abspath(os.path.dirname(__file__))
-zarr_col_pangeo_cmip6 = os.path.join(here, 'pangeo-cmip6-zarr.json')
+zarr_col_pangeo_cmip6 = (
+    'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
+)
 cdf_col_sample_cmip6 = os.path.join(here, 'cmip6-netcdf.json')
 cdf_col_sample_cmip5 = os.path.join(here, 'cmip5-netcdf.json')
-zarr_col_aws_cesmle = os.path.join(here, 'cesm1-lens-zarr.json')
+zarr_col_aws_cesmle = (
+    'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json'
+)
 cdf_col_sample_cesmle = os.path.join(here, 'cesm1-lens-netcdf.json')
 catalog_dict_records = os.path.join(here, 'catalog-dict-records.json')
 
@@ -193,22 +197,17 @@ def test_to_dataset_dict_s3():
     assert isinstance(ds, xr.Dataset)
 
 
-@pytest.mark.parametrize(
-    'chunks, expected_chunks',
-    [
-        ({'time': 100, 'nlat': 2, 'nlon': 2}, (1, 100, 2, 2)),
-        ({'time': 200, 'nlat': 1, 'nlon': 1}, (1, 200, 1, 1)),
-    ],
-)
-def test_to_dataset_dict_chunking_2(chunks, expected_chunks):
-    c = intake.open_esm_datastore(cdf_col_sample_cesmle)
-    query = {'variable': ['SHF'], 'member_id': [1, 3, 9], 'experiment': ['20C', 'RCP85']}
-    cat = c.search(**query)
-    dset = cat.to_dataset_dict(cdf_kwargs=dict(chunks=chunks))
-    _, ds = dset.popitem()
-    assert ds['SHF'].data.chunksize == expected_chunks
-
-
 def test_read_catalog_dict():
     col = intake.open_esm_datastore(catalog_dict_records)
     assert isinstance(col.df, pd.DataFrame)
+
+
+def test_to_dataset_dict_w_dask_cluster():
+    from distributed import Client
+
+    with Client():
+        col = intake.open_esm_datastore(zarr_col_aws_cesmle)
+        cat = col.search(variable='RAIN', experiment='20C')
+        dsets = cat.to_dataset_dict(storage_options={'anon': True})
+        _, ds = dsets.popitem()
+        assert isinstance(ds, xr.Dataset)
