@@ -7,10 +7,14 @@ import pytest
 import xarray as xr
 
 here = os.path.abspath(os.path.dirname(__file__))
-zarr_col_pangeo_cmip6 = os.path.join(here, 'pangeo-cmip6-zarr.json')
+zarr_col_pangeo_cmip6 = (
+    'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
+)
 cdf_col_sample_cmip6 = os.path.join(here, 'cmip6-netcdf.json')
 cdf_col_sample_cmip5 = os.path.join(here, 'cmip5-netcdf.json')
-zarr_col_aws_cesmle = os.path.join(here, 'cesm1-lens-zarr.json')
+zarr_col_aws_cesmle = (
+    'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json'
+)
 cdf_col_sample_cesmle = os.path.join(here, 'cesm1-lens-netcdf.json')
 catalog_dict_records = os.path.join(here, 'catalog-dict-records.json')
 
@@ -185,6 +189,14 @@ def test_to_dataset_dict_chunking(chunks, expected_chunks):
     assert ds['hfls'].data.chunksize == expected_chunks
 
 
+@pytest.mark.parametrize('progressbar', [False, True])
+def test_progressbar(progressbar):
+    c = intake.open_esm_datastore(cdf_col_sample_cmip5)
+    cat = c.search(variable=['hfls'], frequency='mon', modeling_realm='atmos', model=['CNRM-CM5'])
+
+    _ = cat.to_dataset_dict(cdf_kwargs=dict(chunks={}), progressbar=progressbar)
+
+
 def test_to_dataset_dict_s3():
     col = intake.open_esm_datastore(zarr_col_aws_cesmle)
     cat = col.search(variable='RAIN', experiment='20C')
@@ -193,22 +205,35 @@ def test_to_dataset_dict_s3():
     assert isinstance(ds, xr.Dataset)
 
 
-@pytest.mark.parametrize(
-    'chunks, expected_chunks',
-    [
-        ({'time': 100, 'nlat': 2, 'nlon': 2}, (1, 100, 2, 2)),
-        ({'time': 200, 'nlat': 1, 'nlon': 1}, (1, 200, 1, 1)),
-    ],
-)
-def test_to_dataset_dict_chunking_2(chunks, expected_chunks):
-    c = intake.open_esm_datastore(cdf_col_sample_cesmle)
-    query = {'variable': ['SHF'], 'member_id': [1, 3, 9], 'experiment': ['20C', 'RCP85']}
-    cat = c.search(**query)
-    dset = cat.to_dataset_dict(cdf_kwargs=dict(chunks=chunks))
-    _, ds = dset.popitem()
-    assert ds['SHF'].data.chunksize == expected_chunks
-
-
 def test_read_catalog_dict():
     col = intake.open_esm_datastore(catalog_dict_records)
     assert isinstance(col.df, pd.DataFrame)
+
+
+def test_to_dataset_dict_w_dask_cluster():
+    from distributed import Client
+
+    with Client():
+        col = intake.open_esm_datastore(zarr_col_aws_cesmle)
+        cat = col.search(variable='RAIN', experiment='20C')
+        dsets = cat.to_dataset_dict(storage_options={'anon': True})
+        _, ds = dsets.popitem()
+        assert isinstance(ds, xr.Dataset)
+
+
+def test_get_dask_client():
+    from unittest import mock
+    from distributed import Client
+    import sys
+    from intake_esm.core import _get_dask_client
+
+    with Client() as client:
+        c = _get_dask_client()
+        assert c is client
+
+    with mock.patch.dict(sys.modules, {'distributed.client': None}):
+        c = _get_dask_client()
+        assert c is None
+
+    c = _get_dask_client()
+    assert c is None

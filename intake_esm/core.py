@@ -1,16 +1,16 @@
 import copy
 import json
 import logging
-from concurrent import futures
 from urllib.parse import urlparse
 
+import dask
 import fsspec
 import intake
 import numpy as np
 import pandas as pd
 import requests
 
-from ._util import logger, print_progressbar
+from ._util import logger
 from .merge_util import _aggregate, _create_asset_info_lookup, _to_nested_dict
 
 
@@ -450,40 +450,57 @@ class esm_datastore(intake.catalog.Catalog):
 
         dsets = []
         total = len(groups)
-        logger.info(f'Using {total} threads for loading dataset groups')
-        with futures.ThreadPoolExecutor(max_workers=total) as executor:
-            future_tasks = [
-                executor.submit(
-                    _load_group_dataset,
-                    key,
-                    df,
-                    self._col_data,
-                    agg_columns,
-                    aggregation_dict,
-                    path_column_name,
-                    variable_column_name,
-                    use_format_column,
-                    mapper_dict,
-                    self.zarr_kwargs,
-                    self.cdf_kwargs,
-                    self.preprocess,
-                )
-                for key, df in groups
-            ]
+        load_group_dataset_delayed = dask.delayed(_load_group_dataset)
+        tasks = [
+            load_group_dataset_delayed(
+                key,
+                df,
+                self._col_data,
+                agg_columns,
+                aggregation_dict,
+                path_column_name,
+                variable_column_name,
+                use_format_column,
+                mapper_dict,
+                self.zarr_kwargs,
+                self.cdf_kwargs,
+                self.preprocess,
+            )
+            for key, df in groups
+        ]
+
+        client = _get_dask_client()
+
+        if self.progressbar:
+            print(
+                f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{keys}'
+                \n--> There is/are {total} group(s)"""
+            )
+
+        if client is None:
+            from multiprocessing.pool import ThreadPool
+
+            with dask.config.set(pool=ThreadPool(total)):
+                logger.info(f'Using {total} threads for loading dataset groups')
+                if self.progressbar:
+                    from dask.diagnostics import ProgressBar
+
+                    p = ProgressBar()
+                    p.register()
+                dsets = dask.compute(*tasks)
+                if self.progressbar:
+                    p.unregister()
+
+        else:
+            logger.info(f'Using dask cluster: {client} for loading dataset groups')
+            futures = client.compute(tasks)
 
             if self.progressbar:
-                print(
-                    f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{keys}'
-             \n--> There are {len(groups)} group(s)"""
-                )
-                print_progressbar(0, total, prefix='Progress:', suffix='', bar_length=79)
+                from distributed import progress
 
-            for i, task in enumerate(futures.as_completed(future_tasks)):
-                result = task.result()
-                dsets.append(result)
-                if self.progressbar:
-                    # Update Progress Bar
-                    print_progressbar(i + 1, total, prefix='Progress:', suffix='', bar_length=79)
+                progress(futures)
+
+            dsets = client.gather(futures)
 
         self._ds = {group_id: ds for (group_id, ds) in dsets}
         return self._ds
@@ -623,3 +640,16 @@ def _fetch_and_parse_file(input_path):
 def _path_to_mapper(path, storage_options):
     """Convert path to mapper"""
     return fsspec.get_mapper(path, **storage_options)
+
+
+def _get_dask_client():
+    # Detect local default cluster already running
+    # and use it for dataset group loading.
+    client = None
+    try:
+        from distributed.client import _get_global_client
+
+        client = _get_global_client()
+        return client
+    except ImportError:
+        return client
