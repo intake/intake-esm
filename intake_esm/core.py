@@ -84,8 +84,16 @@ class esm_datastore(intake.catalog.Catalog):
         self.preprocess = None
         self.aggregate = None
 
-    def search(self, **query):
+    def search(self, force_all_on=None, **query):
         """Search for entries in the catalog.
+
+        Parameters
+        ----------
+        force_all_on : str, list
+           name of columns to use when enforcing the query criteria.
+           For example: `col.search(experiment_id=['piControl', 'historical'], force_all_on='source_id')`
+           returns all assets with `source_id` that has both `piControl` and `historical`
+           experiments.
 
         Returns
         -------
@@ -114,7 +122,7 @@ class esm_datastore(intake.catalog.Catalog):
         """
 
         ret = copy.copy(self)
-        ret.df = self._get_subset(**query)
+        ret.df = _get_subset(self.df, force_all_on=force_all_on, **query)
         return ret
 
     def _fetch_catalog(self):
@@ -282,21 +290,6 @@ class esm_datastore(intake.catalog.Catalog):
         output = '\n\t> '.join(output)
         items = len(self.df.index)
         return f'{self._col_data["id"]}-ESM Collection with {items} entries:\n\t> {output}'
-
-    def _get_subset(self, **query):
-        if not query:
-            return pd.DataFrame(columns=self.df.columns)
-        condition = np.ones(len(self.df), dtype=bool)
-        for key, val in query.items():
-            if isinstance(val, list):
-                condition_i = np.zeros(len(self.df), dtype=bool)
-                for val_i in val:
-                    condition_i = condition_i | (self.df[key] == val_i)
-                condition = condition & condition_i
-            elif val is not None:
-                condition = condition & (self.df[key] == val)
-        query_results = self.df.loc[condition]
-        return query_results.reset_index(drop=True)
 
     def to_dataset_dict(
         self,
@@ -585,3 +578,48 @@ def _load_group_dataset(
     )
 
     return group_id, ds
+
+
+def _build_lambda_queries(query, keys):
+    lambdas = []
+    for key in keys:
+        cond = lambda x: set(x[key].unique()) == set(query[key])
+        lambdas.append(cond)
+    return lambdas
+
+
+def _get_subset(df, force_all_on=None, **query):
+    if not query:
+        return pd.DataFrame(columns=df.columns)
+    condition = np.ones(len(df), dtype=bool)
+    keys = []
+    for key, val in query.items():
+        if isinstance(val, (tuple, list)):
+            if len(val) > 1:
+                keys.append(key)
+            condition_i = np.zeros(len(df), dtype=bool)
+            for val_i in val:
+                condition_i = condition_i | (df[key] == val_i)
+            condition = condition & condition_i
+        elif val is not None:
+            condition = condition & (df[key] == val)
+    query_results = df.loc[condition]
+
+    if force_all_on:
+        conditions = _build_lambda_queries(query, keys)
+        grouped = query_results.groupby(force_all_on)
+        flags = np.ones(len(grouped), dtype='bool')
+        for condition in conditions:
+            f = list(grouped.apply(condition).to_dict().values())
+            flags = flags & f
+
+        condition = dict(zip(grouped.groups.keys(), flags))
+
+        query_results = []
+        for key, g in grouped:
+            if condition[key]:
+                query_results.append(g)
+        return pd.concat(query_results).reset_index(drop=True)
+
+    else:
+        return query_results.reset_index(drop=True)
