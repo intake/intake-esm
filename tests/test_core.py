@@ -12,13 +12,13 @@ here = os.path.abspath(os.path.dirname(__file__))
 zarr_col_pangeo_cmip6 = (
     'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
 )
-cdf_col_sample_cmip6 = os.path.join(here, 'cmip6-netcdf.json')
-cdf_col_sample_cmip5 = os.path.join(here, 'cmip5-netcdf.json')
+cdf_col_sample_cmip6 = os.path.join(here, 'sample-collections/cmip6-netcdf.json')
+cdf_col_sample_cmip5 = os.path.join(here, 'sample-collections/cmip5-netcdf.json')
 zarr_col_aws_cesmle = (
     'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json'
 )
-cdf_col_sample_cesmle = os.path.join(here, 'cesm1-lens-netcdf.json')
-catalog_dict_records = os.path.join(here, 'catalog-dict-records.json')
+cdf_col_sample_cesmle = os.path.join(here, 'sample-collections/cesm1-lens-netcdf.json')
+catalog_dict_records = os.path.join(here, 'sample-collections/catalog-dict-records.json')
 
 
 zarr_query = dict(
