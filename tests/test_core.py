@@ -6,6 +6,8 @@ import pandas as pd
 import pytest
 import xarray as xr
 
+from intake_esm.core import _get_dask_client, _get_subset
+
 here = os.path.abspath(os.path.dirname(__file__))
 zarr_col_pangeo_cmip6 = (
     'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
@@ -225,7 +227,6 @@ def test_get_dask_client():
     from unittest import mock
     from distributed import Client
     import sys
-    from intake_esm.core import _get_dask_client
 
     with Client() as client:
         c = _get_dask_client()
@@ -237,3 +238,26 @@ def test_get_dask_client():
 
     c = _get_dask_client()
     assert c is None
+
+
+def test_get_subset():
+    df = pd.DataFrame(
+        {
+            'A': ['NCAR', 'IPSL', 'IPSL', 'CSIRO', 'IPSL', 'NCAR', 'NOAA', 'NCAR'],
+            'B': ['CESM', 'FOO', 'FOO', 'BAR', 'FOO', 'CESM', 'GCM', 'WACM'],
+            'C': ['hist', 'control', 'hist', 'control', 'hist', 'control', 'hist', 'hist'],
+            'D': ['O2', 'O2', 'O2', 'O2', 'NO2', 'O2', 'O2', 'TA'],
+        }
+    )
+
+    sub = _get_subset(df, C=['control', 'hist'], require_all_on='B')
+    x = sub.groupby('B')['C'].nunique().to_dict()
+
+    assert set(x.keys()) == set(['CESM', 'FOO'])
+    assert list(x.values()) == [2, 2]
+
+    x = _get_subset(df, C=['control', 'hist'], D=['NO2'], require_all_on='B')
+    assert x.empty
+
+    x = _get_subset(df)
+    assert x.empty

@@ -1,16 +1,14 @@
 import copy
 import json
 import logging
-from urllib.parse import urlparse
 
 import dask
 import fsspec
 import intake
 import numpy as np
 import pandas as pd
-import requests
 
-from ._util import logger
+from ._util import _fetch_and_parse_file, _get_dask_client, logger
 from .merge_util import _aggregate, _create_asset_info_lookup, _to_nested_dict
 
 
@@ -86,8 +84,16 @@ class esm_datastore(intake.catalog.Catalog):
         self.preprocess = None
         self.aggregate = None
 
-    def search(self, **query):
+    def search(self, require_all_on=None, **query):
         """Search for entries in the catalog.
+
+        Parameters
+        ----------
+        require_all_on : str, list
+           name of columns to use when enforcing the query criteria.
+           For example: `col.search(experiment_id=['piControl', 'historical'], require_all_on='source_id')`
+           returns all assets with `source_id` that has both `piControl` and `historical`
+           experiments.
 
         Returns
         -------
@@ -116,7 +122,7 @@ class esm_datastore(intake.catalog.Catalog):
         """
 
         ret = copy.copy(self)
-        ret.df = self._get_subset(**query)
+        ret.df = _get_subset(self.df, require_all_on=require_all_on, **query)
         return ret
 
     def _fetch_catalog(self):
@@ -285,21 +291,6 @@ class esm_datastore(intake.catalog.Catalog):
         items = len(self.df.index)
         return f'{self._col_data["id"]}-ESM Collection with {items} entries:\n\t> {output}'
 
-    def _get_subset(self, **query):
-        if not query:
-            return pd.DataFrame(columns=self.df.columns)
-        condition = np.ones(len(self.df), dtype=bool)
-        for key, val in query.items():
-            if isinstance(val, list):
-                condition_i = np.zeros(len(self.df), dtype=bool)
-                for val_i in val:
-                    condition_i = condition_i | (self.df[key] == val_i)
-                condition = condition & condition_i
-            elif val is not None:
-                condition = condition & (self.df[key] == val)
-        query_results = self.df.loc[condition]
-        return query_results.reset_index(drop=True)
-
     def to_dataset_dict(
         self,
         zarr_kwargs={},
@@ -399,9 +390,11 @@ class esm_datastore(intake.catalog.Catalog):
         else:
             use_format_column = True
 
+        # replace path column with mapper (dependent on filesystem type)
         mapper_dict = {
-            path: _path_to_mapper(path, self.storage_options) for path in self.df[path_column_name]
-        }  # replace path column with mapper (dependent on filesystem type)
+            path: fsspec.get_mapper(path, **self.storage_options)
+            for path in self.df[path_column_name]
+        }
 
         groupby_attrs = []
         variable_column_name = None
@@ -587,69 +580,51 @@ def _load_group_dataset(
     return group_id, ds
 
 
-def _is_valid_url(url):
-    """ Check if path is URL or not
-
-    Parameters
-    ----------
-    url : str
-        path to check
-
-    Returns
-    -------
-    bool
-    """
-    try:
-        result = urlparse(url)
-        return result.scheme and result.netloc and result.path
-    except Exception:
-        return False
+def _build_lambda_queries(query, keys):
+    lambdas = []
+    for key in keys:
+        cond = lambda x: set(x[key].unique()) == set(query[key])
+        lambdas.append(cond)
+    return lambdas
 
 
-def _fetch_and_parse_file(input_path):
-    """ Fetch and parse ESMCol file.
+def _get_subset(df, require_all_on=None, **query):
+    if not query:
+        return pd.DataFrame(columns=df.columns)
+    condition = np.ones(len(df), dtype=bool)
+    keys = []
+    for key, val in query.items():
+        if isinstance(val, (tuple, list)):
+            if len(val) > 1:
+                keys.append(key)
+            condition_i = np.zeros(len(df), dtype=bool)
+            for val_i in val:
+                condition_i = condition_i | (df[key] == val_i)
+            condition = condition & condition_i
+        elif val is not None:
+            condition = condition & (df[key] == val)
+    query_results = df.loc[condition]
 
-    Parameters
-    ----------
-    input_path : str
-            ESMCol file to get and read
+    if require_all_on:
+        conditions = _build_lambda_queries(query, keys)
+        grouped = query_results.groupby(require_all_on)
+        flags = np.ones(len(grouped), dtype='bool')
+        for condition in conditions:
+            f = list(grouped.apply(condition).to_dict().values())
+            flags = flags & f
 
-    Returns
-    -------
-    data : dict
-    """
+        condition = dict(zip(grouped.groups.keys(), flags))
 
-    data = None
+        results = []
+        for key, g in grouped:
+            if condition[key]:
+                results.append(g)
 
-    try:
-        if _is_valid_url(input_path):
-            logger.info(f'Loading ESMCol from URL: {input_path}')
-            resp = requests.get(input_path)
-            data = resp.json()
+        if len(results) >= 1:
+            return pd.concat(results).reset_index(drop=True)
+
         else:
-            with open(input_path) as f:
-                logger.info(f'Loading ESMCol from filesystem: {input_path}')
-                data = json.load(f)
+            return pd.DataFrame(columns=df.columns)
 
-    except Exception as e:
-        raise e
-
-    return data
-
-
-def _path_to_mapper(path, storage_options):
-    """Convert path to mapper"""
-    return fsspec.get_mapper(path, **storage_options)
-
-
-def _get_dask_client():
-    # Detect local default cluster already running
-    # and use it for dataset group loading.
-    client = None
-    try:
-        from distributed.client import _get_global_client
-
-        client = _get_global_client()
-        return client
-    except ImportError:
-        return client
+    else:
+        return query_results.reset_index(drop=True)
