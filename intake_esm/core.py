@@ -83,14 +83,14 @@ class esm_datastore(intake.catalog.Catalog):
         self.preprocess = None
         self.aggregate = None
 
-    def search(self, force_all_on=None, **query):
+    def search(self, require_all_on=None, **query):
         """Search for entries in the catalog.
 
         Parameters
         ----------
-        force_all_on : str, list
+        require_all_on : str, list
            name of columns to use when enforcing the query criteria.
-           For example: `col.search(experiment_id=['piControl', 'historical'], force_all_on='source_id')`
+           For example: `col.search(experiment_id=['piControl', 'historical'], require_all_on='source_id')`
            returns all assets with `source_id` that has both `piControl` and `historical`
            experiments.
 
@@ -121,7 +121,7 @@ class esm_datastore(intake.catalog.Catalog):
         """
 
         ret = copy.copy(self)
-        ret.df = _get_subset(self.df, force_all_on=force_all_on, **query)
+        ret.df = _get_subset(self.df, require_all_on=require_all_on, **query)
         return ret
 
     def serialize(self, name, directory=None, catalog_type='dict'):
@@ -579,7 +579,7 @@ def _build_lambda_queries(query, keys):
     return lambdas
 
 
-def _get_subset(df, force_all_on=None, **query):
+def _get_subset(df, require_all_on=None, **query):
     if not query:
         return pd.DataFrame(columns=df.columns)
     condition = np.ones(len(df), dtype=bool)
@@ -596,9 +596,9 @@ def _get_subset(df, force_all_on=None, **query):
             condition = condition & (df[key] == val)
     query_results = df.loc[condition]
 
-    if force_all_on:
+    if require_all_on:
         conditions = _build_lambda_queries(query, keys)
-        grouped = query_results.groupby(force_all_on)
+        grouped = query_results.groupby(require_all_on)
         flags = np.ones(len(grouped), dtype='bool')
         for condition in conditions:
             f = list(grouped.apply(condition).to_dict().values())
