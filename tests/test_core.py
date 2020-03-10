@@ -255,3 +255,9 @@ def test_get_subset():
 
     assert set(x.keys()) == set(['CESM', 'FOO'])
     assert list(x.values()) == [2, 2]
+
+    x = _get_subset(df, C=['control', 'hist'], D=['NO2'], force_all_on='B')
+    assert x.empty
+
+    x = _get_subset(df)
+    assert x.empty

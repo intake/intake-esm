@@ -615,11 +615,16 @@ def _get_subset(df, force_all_on=None, **query):
 
         condition = dict(zip(grouped.groups.keys(), flags))
 
-        query_results = []
+        results = []
         for key, g in grouped:
             if condition[key]:
-                query_results.append(g)
-        return pd.concat(query_results).reset_index(drop=True)
+                results.append(g)
+
+        if len(results) >= 1:
+            return pd.concat(results).reset_index(drop=True)
+
+        else:
+            return pd.DataFrame(columns=df.columns)
 
     else:
         return query_results.reset_index(drop=True)
