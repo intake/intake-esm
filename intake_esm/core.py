@@ -8,8 +8,8 @@ import intake
 import numpy as np
 import pandas as pd
 
-from ._util import _fetch_and_parse_file, _get_dask_client, logger
 from .merge_util import _aggregate, _create_asset_info_lookup, _to_nested_dict
+from .utils import _fetch_and_parse_json, _fetch_catalog, _get_dask_client, logger
 
 
 class esm_datastore(intake.catalog.Catalog):
@@ -73,10 +73,9 @@ class esm_datastore(intake.catalog.Catalog):
         if not isinstance(numeric_log_level, int):
             raise ValueError(f'Invalid log level: {log_level}')
         logger.setLevel(numeric_log_level)
-        self.esmcol_path = esmcol_path
         self.progressbar = progressbar
-        self._col_data = _fetch_and_parse_file(esmcol_path)
-        self.df = self._fetch_catalog()
+        self._col_data, self.esmcol_path = _fetch_and_parse_json(esmcol_path)
+        self.df = _fetch_catalog(self._col_data, self.esmcol_path)
         self._entries = {}
         self._ds = None
         self.zarr_kwargs = None
@@ -124,14 +123,6 @@ class esm_datastore(intake.catalog.Catalog):
         ret = copy.copy(self)
         ret.df = _get_subset(self.df, force_all_on=force_all_on, **query)
         return ret
-
-    def _fetch_catalog(self):
-        """Get the catalog file and cache it.
-        """
-        if 'catalog_file' in self._col_data:
-            return pd.read_csv(self._col_data['catalog_file'])
-        else:
-            return pd.DataFrame(self._col_data['catalog_dict'])
 
     def serialize(self, name, directory=None, catalog_type='dict'):
         """Serialize collection/catalog to corresponding json and csv files.

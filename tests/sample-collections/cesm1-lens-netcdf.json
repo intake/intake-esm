@@ -2,7 +2,7 @@
     "esmcat_version": "0.1.0",
     "id": "sample-cesm1-lens",
     "description": "This is a sample ESM collection for CESM1-LENS data in netcdf format",
-    "catalog_file": "./tests/cesm1-lens-netcdf.csv",
+    "catalog_file": "cesm1-lens-netcdf.csv",
     "attributes": [
       {
         "column_name": "experiment",
