@@ -250,13 +250,13 @@ def test_get_subset():
         }
     )
 
-    sub = _get_subset(df, C=['control', 'hist'], force_all_on='B')
+    sub = _get_subset(df, C=['control', 'hist'], require_all_on='B')
     x = sub.groupby('B')['C'].nunique().to_dict()
 
     assert set(x.keys()) == set(['CESM', 'FOO'])
     assert list(x.values()) == [2, 2]
 
-    x = _get_subset(df, C=['control', 'hist'], D=['NO2'], force_all_on='B')
+    x = _get_subset(df, C=['control', 'hist'], D=['NO2'], require_all_on='B')
     assert x.empty
 
     x = _get_subset(df)
