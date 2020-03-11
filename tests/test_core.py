@@ -69,7 +69,7 @@ def test_serialize_to_csv():
             'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
         )
         col_subset = col.search(
-            source_id='BCC-ESM1', grid_label='gn', table_id='Amon', experiment_id='historical'
+            source_id='BCC-ESM1', grid_label='gn', table_id='Amon', experiment_id='historical',
         )
 
         name = 'cmip6_bcc_esm1'
@@ -82,7 +82,7 @@ def test_serialize_to_csv():
 
 
 @pytest.mark.parametrize(
-    'esmcol_path, query', [(zarr_col_pangeo_cmip6, zarr_query), (cdf_col_sample_cmip6, cdf_query)]
+    'esmcol_path, query', [(zarr_col_pangeo_cmip6, zarr_query), (cdf_col_sample_cmip6, cdf_query)],
 )
 def test_search(esmcol_path, query):
     col = intake.open_esm_datastore(esmcol_path)
@@ -143,7 +143,7 @@ def test_to_dataset_dict_w_preprocess(esmcol_path, query, kwargs):
 
 
 @pytest.mark.parametrize(
-    'esmcol_path, query', [(zarr_col_pangeo_cmip6, zarr_query), (cdf_col_sample_cmip6, cdf_query)]
+    'esmcol_path, query', [(zarr_col_pangeo_cmip6, zarr_query), (cdf_col_sample_cmip6, cdf_query)],
 )
 def test_to_dataset_dict_nocache(esmcol_path, query):
     col = intake.open_esm_datastore(esmcol_path)
@@ -240,7 +240,50 @@ def test_get_dask_client():
     assert c is None
 
 
-def test_get_subset():
+params = [
+    (
+        {'C': ['control', 'hist']},
+        ['B', 'D'],
+        [
+            {'A': 'NCAR', 'B': 'CESM', 'C': 'hist', 'D': 'O2'},
+            {'A': 'NCAR', 'B': 'CESM', 'C': 'control', 'D': 'O2'},
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'control', 'D': 'O2'},
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'hist', 'D': 'O2'},
+        ],
+    ),
+    ({'C': ['control', 'hist'], 'D': ['NO2']}, 'B', []),
+    (
+        {'C': ['control', 'hist'], 'D': ['O2']},
+        'B',
+        [
+            {'A': 'NCAR', 'B': 'CESM', 'C': 'hist', 'D': 'O2'},
+            {'A': 'NCAR', 'B': 'CESM', 'C': 'control', 'D': 'O2'},
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'control', 'D': 'O2'},
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'hist', 'D': 'O2'},
+        ],
+    ),
+    (
+        {'C': ['hist'], 'D': ['NO2', 'O2']},
+        'B',
+        [
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'hist', 'D': 'O2'},
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'hist', 'D': 'NO2'},
+        ],
+    ),
+    (
+        {'C': ['control']},
+        None,
+        [
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'control', 'D': 'O2'},
+            {'A': 'CSIRO', 'B': 'BAR', 'C': 'control', 'D': 'O2'},
+            {'A': 'NCAR', 'B': 'CESM', 'C': 'control', 'D': 'O2'},
+        ],
+    ),
+]
+
+
+@pytest.mark.parametrize('query, require_all_on, expected', params)
+def test_get_subset(query, require_all_on, expected):
     df = pd.DataFrame(
         {
             'A': ['NCAR', 'IPSL', 'IPSL', 'CSIRO', 'IPSL', 'NCAR', 'NOAA', 'NCAR'],
@@ -250,27 +293,5 @@ def test_get_subset():
         }
     )
 
-    sub = _get_subset(df, C=['control', 'hist'], require_all_on='B')
-    x = sub.groupby('B')['C'].nunique().to_dict()
-
-    assert set(x.keys()) == set(['CESM', 'FOO'])
-    assert list(x.values()) == [2, 2]
-
-    x = _get_subset(df, C=['control', 'hist'], D=['NO2'], require_all_on='B')
-    assert x.empty
-
-    x = _get_subset(df, C=['control', 'hist'], D=['O2', 'NO2'], require_all_on='B')
-    assert x.empty
-
-    x = _get_subset(df)
-    assert x.empty
-
-    x = _get_subset(df, C=['control', 'hist'], D=['O2'], require_all_on='B')
-    expected = [
-        {'A': 'NCAR', 'B': 'CESM', 'C': 'hist', 'D': 'O2'},
-        {'A': 'NCAR', 'B': 'CESM', 'C': 'control', 'D': 'O2'},
-        {'A': 'IPSL', 'B': 'FOO', 'C': 'control', 'D': 'O2'},
-        {'A': 'IPSL', 'B': 'FOO', 'C': 'hist', 'D': 'O2'},
-    ]
-
-    assert x.to_dict(orient='records') == expected
+    x = _get_subset(df, require_all_on=require_all_on, **query).to_dict(orient='records')
+    assert x == expected
