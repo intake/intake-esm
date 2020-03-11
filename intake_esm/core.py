@@ -1,4 +1,5 @@
 import copy
+import itertools
 import json
 import logging
 
@@ -571,23 +572,12 @@ def _load_group_dataset(
     return group_id, ds
 
 
-def _build_lambda_queries(query, keys):
-    lambdas = []
-    for key in keys:
-        cond = lambda x: set(x[key].unique()) == set(query[key])
-        lambdas.append(cond)
-    return lambdas
-
-
 def _get_subset(df, require_all_on=None, **query):
     if not query:
         return pd.DataFrame(columns=df.columns)
     condition = np.ones(len(df), dtype=bool)
-    keys = []
     for key, val in query.items():
         if isinstance(val, (tuple, list)):
-            if len(val) > 1:
-                keys.append(key)
             condition_i = np.zeros(len(df), dtype=bool)
             for val_i in val:
                 condition_i = condition_i | (df[key] == val_i)
@@ -597,18 +587,23 @@ def _get_subset(df, require_all_on=None, **query):
     query_results = df.loc[condition]
 
     if require_all_on:
-        conditions = _build_lambda_queries(query, keys)
-        grouped = query_results.groupby(require_all_on)
-        flags = np.ones(len(grouped), dtype='bool')
-        for condition in conditions:
-            f = list(grouped.apply(condition).to_dict().values())
-            flags = flags & f
 
-        condition = dict(zip(grouped.groups.keys(), flags))
+        keys = list(query.keys())
+
+        grouped = query_results.groupby(require_all_on)
+        values = [tuple(v) for v in query.values()]
+
+        condition = set(itertools.product(*values))
 
         results = []
         for key, g in grouped:
-            if condition[key]:
+            index = g.set_index(keys).index
+            if not isinstance(index, pd.MultiIndex):
+                index = set([(element,) for element in index.to_list()])
+            else:
+                index = set(index.to_list())
+
+            if index == condition:
                 results.append(g)
 
         if len(results) >= 1:

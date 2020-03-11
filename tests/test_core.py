@@ -259,5 +259,18 @@ def test_get_subset():
     x = _get_subset(df, C=['control', 'hist'], D=['NO2'], require_all_on='B')
     assert x.empty
 
+    x = _get_subset(df, C=['control', 'hist'], D=['O2', 'NO2'], require_all_on='B')
+    assert x.empty
+
     x = _get_subset(df)
     assert x.empty
+
+    x = _get_subset(df, C=['control', 'hist'], D=['O2'], require_all_on='B')
+    expected = [
+        {'A': 'NCAR', 'B': 'CESM', 'C': 'hist', 'D': 'O2'},
+        {'A': 'NCAR', 'B': 'CESM', 'C': 'control', 'D': 'O2'},
+        {'A': 'IPSL', 'B': 'FOO', 'C': 'control', 'D': 'O2'},
+        {'A': 'IPSL', 'B': 'FOO', 'C': 'hist', 'D': 'O2'},
+    ]
+
+    assert x.to_dict(orient='records') == expected
