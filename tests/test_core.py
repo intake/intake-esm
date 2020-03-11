@@ -241,6 +241,7 @@ def test_get_dask_client():
 
 
 params = [
+    ({}, None, []),
     (
         {'C': ['control', 'hist']},
         ['B', 'D'],
