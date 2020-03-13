@@ -6,6 +6,14 @@ import xarray as xr
 logger = logging.getLogger('intake-esm')
 
 
+def _path_to_mapper(path, storage_options):
+    """Convert path to mapper if necessary."""
+    if fsspec.core.split_protocol(path)[0] is not None:
+        return fsspec.get_mapper(path, **storage_options)
+    else:
+        return path
+
+
 def join_new(dsets, dim_name, coord_value, varname, options={}):
     if isinstance(varname, str):
         varname = [varname]

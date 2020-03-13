@@ -4,12 +4,11 @@ import json
 import logging
 
 import dask
-import fsspec
 import intake
 import numpy as np
 import pandas as pd
 
-from .merge_util import _aggregate, _create_asset_info_lookup, _to_nested_dict
+from .merge_util import _aggregate, _create_asset_info_lookup, _path_to_mapper, _to_nested_dict
 from .utils import _fetch_and_parse_json, _fetch_catalog, _get_dask_client, logger
 
 
@@ -384,8 +383,7 @@ class esm_datastore(intake.catalog.Catalog):
 
         # replace path column with mapper (dependent on filesystem type)
         mapper_dict = {
-            path: fsspec.get_mapper(path, **self.storage_options)
-            for path in self.df[path_column_name]
+            path: _path_to_mapper(path, self.storage_options) for path in self.df[path_column_name]
         }
 
         groupby_attrs = []
