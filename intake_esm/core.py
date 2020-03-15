@@ -25,7 +25,7 @@ class esm_datastore(intake.catalog.Catalog):
         Path or URL to an ESM collection JSON file
     progressbar : bool
          If True, will print a progress bar to standard error (stderr)
-         when loading datasets into :py:class:`~xarray.Dataset`.
+         when loading assets into :py:class:`~xarray.Dataset`.
     log_level: str
         Level of logging to report. Accepted values include:
 
@@ -138,8 +138,8 @@ class esm_datastore(intake.catalog.Catalog):
 
         Notes
         -----
-        Large catalogs can result in large JSON files.   To keep the JSON file size manageable, call with
-            catalog_type='file' to save catalog as a separate CSV file.
+        Large catalogs can result in large JSON files. To keep the JSON file size manageable, call with
+        `catalog_type='file'` to save catalog as a separate CSV file.
 
         Examples
         --------
@@ -309,12 +309,12 @@ class esm_datastore(intake.catalog.Catalog):
             progressbar : bool
         progressbar : bool
             If True, will print a progress bar to standard error (stderr)
-            when loading datasets into :py:class:`~xarray.Dataset`.
+            when loading assets into :py:class:`~xarray.Dataset`.
 
         Returns
         -------
         dsets : dict
-           A dictionary of xarray :py:class:`~xarray.Dataset` s.
+           A dictionary of xarray :py:class:`~xarray.Dataset`s.
 
         Examples
         --------
