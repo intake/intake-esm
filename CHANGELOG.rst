@@ -12,12 +12,12 @@ Features
 
 - Support single file catalogs. (:pr:`195`) `Brian Bonnlander`_
 
-- Add `progressbar` argument to `:py:meth:~intake_esm.core.esm_datastore.to_dataset_dict`.
+- Add `progressbar` argument to :py:meth:`~intake_esm.core.esm_datastore.to_dataset_dict`.
   This allows the user to override the default `progressbar` value used
   during the class instantiation. (:pr:`204`) `Anderson Banihirwe`_
 
 - Enhanced search: enforce query criteria via `require_all_on` argument via
-  `:py:meth:~intake_esm.core.esm_datastore.search` method.
+  :py:meth:`~intake_esm.core.esm_datastore.search` method.
   (:issue:`202`) & (:pr:`207`) & (:pr:`209`) `Anderson Banihirwe`_ & `Julius Busecke`_
 
 - Support relative paths for catalog files. (:pr:`208`) `Anderson Banihirwe`_
@@ -26,7 +26,7 @@ Features
 Bug Fixes
 ---------
 
-- Use raw path if protocol is `None`. (:pr:`210`) `Anderson Banihirwe`
+- Use raw path if protocol is `None`. (:pr:`210`) `Anderson Banihirwe`_
 
 
 Internal Changes
