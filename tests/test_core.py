@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from intake_esm.core import _get_dask_client, _get_subset
+from intake_esm.core import _get_dask_client, _get_subset, _normalize_query
 
 here = os.path.abspath(os.path.dirname(__file__))
 zarr_col_pangeo_cmip6 = (
@@ -272,6 +272,14 @@ params = [
         ],
     ),
     (
+        {'C': 'hist', 'D': ['NO2', 'O2']},
+        'B',
+        [
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'hist', 'D': 'O2'},
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'hist', 'D': 'NO2'},
+        ],
+    ),
+    (
         {'C': ['control']},
         None,
         [
@@ -296,3 +304,17 @@ def test_get_subset(query, require_all_on, expected):
 
     x = _get_subset(df, require_all_on=require_all_on, **query).to_dict(orient='records')
     assert x == expected
+
+
+def test_normalize_query():
+    query = {'experiment_id': ['historical', 'piControl'], 'variable_id': 'tas', 'table_id': 'Amon'}
+
+    expected = {
+        'experiment_id': ['historical', 'piControl'],
+        'variable_id': ['tas'],
+        'table_id': ['Amon'],
+    }
+
+    actual = _normalize_query(query)
+
+    assert actual == expected

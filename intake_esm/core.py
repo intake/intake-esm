@@ -574,6 +574,9 @@ def _get_subset(df, require_all_on=None, **query):
     if not query:
         return pd.DataFrame(columns=df.columns)
     condition = np.ones(len(df), dtype=bool)
+
+    query = _normalize_query(query)
+
     for key, val in query.items():
         if isinstance(val, (tuple, list)):
             condition_i = np.zeros(len(df), dtype=bool)
@@ -612,3 +615,11 @@ def _get_subset(df, require_all_on=None, **query):
 
     else:
         return query_results.reset_index(drop=True)
+
+
+def _normalize_query(query):
+    q = query.copy()
+    for key, val in q.items():
+        if isinstance(val, str):
+            q[key] = [val]
+    return q
