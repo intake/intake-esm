@@ -589,23 +589,36 @@ def _get_subset(df, require_all_on=None, **query):
 
     if require_all_on:
 
-        keys = list(query.keys())
+        if isinstance(require_all_on, str):
+            require_all_on = [require_all_on]
+
+        _query = query.copy()
+
+        # Make sure to remove columns that were already
+        # specified in the query when specified in `require_all_on`. For example,
+        # if query = dict(variable_id=["A", "B"], source_id=["FOO", "BAR"])
+        # and require_all_on = ["source_id"], we need to make sure `source_id` key is
+        # not present in _query for the logic below to work
+        for key in require_all_on:
+            _query.pop(key, None)
+
+        keys = list(_query.keys())
 
         grouped = query_results.groupby(require_all_on)
-        values = [tuple(v) for v in query.values()]
+        values = [tuple(v) for v in _query.values()]
 
         condition = set(itertools.product(*values))
 
         results = []
-        for key, g in grouped:
-            index = g.set_index(keys).index
+        for key, group in grouped:
+            index = group.set_index(keys).index
             if not isinstance(index, pd.MultiIndex):
                 index = set([(element,) for element in index.to_list()])
             else:
                 index = set(index.to_list())
 
             if index == condition:
-                results.append(g)
+                results.append(group)
 
         if len(results) >= 1:
             return pd.concat(results).reset_index(drop=True)
