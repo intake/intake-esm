@@ -280,6 +280,14 @@ params = [
         ],
     ),
     (
+        {'C': 'hist', 'D': ['NO2', 'O2'], 'B': 'FOO'},
+        ['B'],
+        [
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'hist', 'D': 'O2'},
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'hist', 'D': 'NO2'},
+        ],
+    ),
+    (
         {'C': ['control']},
         None,
         [
