@@ -1,6 +1,4 @@
 xarray>=0.13.0
 fsspec
-s3fs
-gcsfs
 requests
 dask
