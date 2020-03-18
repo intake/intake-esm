@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 
+import intake_esm
 from intake_esm.core import _get_dask_client, _get_subset, _normalize_query
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -48,6 +49,32 @@ def test_load_esmcol_remote():
         'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
     )
     assert isinstance(col.df, pd.DataFrame)
+
+
+params = [
+    ('CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.*.Amon.*.gr.*', intake_esm.core.esm_datastore),
+    ('CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.r4i1p1f2.Amon.tasmax.gr.*', dict),
+    ('CMIP.IPSL.IPSL-CM6A-LR.piControl', intake_esm.core.esm_datastore),
+    ('CMIP', intake_esm.core.esm_datastore),
+    (
+        './tests/sample_data/cmip/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r23i1p1f1/Omon/prsn/gr/v20180803/prsn/prsn_Omon_IPSL-CM6A-LR_historical_r23i1p1f1_gr_185001-201412.nc',
+        dict,
+    ),
+]
+
+
+@pytest.mark.parametrize('key, object_type', params)
+def test_getitem(key, object_type):
+    col = intake.open_esm_datastore(cdf_col_sample_cmip6)
+    x = col[key]
+    assert isinstance(x, object_type)
+
+
+def test_getitem_error():
+    col = intake.open_esm_datastore(cdf_col_sample_cmip6)
+    with pytest.raises(KeyError):
+        key = 'DOES.NOT.EXIST'
+        col[key]
 
 
 def test_serialize_to_json():

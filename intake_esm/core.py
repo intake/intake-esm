@@ -83,6 +83,38 @@ class esm_datastore(intake.catalog.Catalog):
         self.preprocess = None
         self.aggregate = None
 
+    def __len__(self):
+        return len(self.df)
+
+    def __getitem__(self, key):
+        # The canonical unique key is the path of an asset
+        # We also accept other aliases here
+        path_column_name = self._col_data['assets']['column_name']
+
+        # First, try the canonical unique key. This is faster than searching
+        results = self.df.loc[self.df[path_column_name] == key]
+
+        # Next, try aliases when the canonical key returned nothing
+        if results.empty:
+            columns = self.df.columns.tolist()
+            columns.remove(path_column_name)
+            key_parts = key.split('.')
+            query = {k: v for k, v in zip(columns, key_parts) if v != '*'}
+            results = self.search(**query)
+
+        if len(results) == 1:
+
+            if isinstance(results, pd.DataFrame):
+                return results.to_dict(orient='records')[0]
+            else:
+                return results.df.to_dict(orient='records')[0]
+
+        elif len(results) > 1:
+            return results
+
+        else:
+            raise KeyError(key)
+
     def search(self, require_all_on=None, **query):
         """Search for entries in the catalog.
 
