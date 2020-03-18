@@ -6,13 +6,19 @@ import pandas as pd
 import pytest
 import xarray as xr
 
+from intake_esm.core import _get_dask_client, _get_subset, _normalize_query
+
 here = os.path.abspath(os.path.dirname(__file__))
-zarr_col_pangeo_cmip6 = os.path.join(here, 'pangeo-cmip6-zarr.json')
-cdf_col_sample_cmip6 = os.path.join(here, 'cmip6-netcdf.json')
-cdf_col_sample_cmip5 = os.path.join(here, 'cmip5-netcdf.json')
-zarr_col_aws_cesmle = os.path.join(here, 'cesm1-lens-zarr.json')
-cdf_col_sample_cesmle = os.path.join(here, 'cesm1-lens-netcdf.json')
-catalog_dict_records = os.path.join(here, 'catalog-dict-records.json')
+zarr_col_pangeo_cmip6 = (
+    'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
+)
+cdf_col_sample_cmip6 = os.path.join(here, 'sample-collections/cmip6-netcdf.json')
+cdf_col_sample_cmip5 = os.path.join(here, 'sample-collections/cmip5-netcdf.json')
+zarr_col_aws_cesmle = (
+    'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json'
+)
+cdf_col_sample_cesmle = os.path.join(here, 'sample-collections/cesm1-lens-netcdf.json')
+catalog_dict_records = os.path.join(here, 'sample-collections/catalog-dict-records.json')
 
 
 zarr_query = dict(
@@ -63,7 +69,7 @@ def test_serialize_to_csv():
             'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
         )
         col_subset = col.search(
-            source_id='BCC-ESM1', grid_label='gn', table_id='Amon', experiment_id='historical'
+            source_id='BCC-ESM1', grid_label='gn', table_id='Amon', experiment_id='historical',
         )
 
         name = 'cmip6_bcc_esm1'
@@ -76,7 +82,7 @@ def test_serialize_to_csv():
 
 
 @pytest.mark.parametrize(
-    'esmcol_path, query', [(zarr_col_pangeo_cmip6, zarr_query), (cdf_col_sample_cmip6, cdf_query)]
+    'esmcol_path, query', [(zarr_col_pangeo_cmip6, zarr_query), (cdf_col_sample_cmip6, cdf_query)],
 )
 def test_search(esmcol_path, query):
     col = intake.open_esm_datastore(esmcol_path)
@@ -137,7 +143,7 @@ def test_to_dataset_dict_w_preprocess(esmcol_path, query, kwargs):
 
 
 @pytest.mark.parametrize(
-    'esmcol_path, query', [(zarr_col_pangeo_cmip6, zarr_query), (cdf_col_sample_cmip6, cdf_query)]
+    'esmcol_path, query', [(zarr_col_pangeo_cmip6, zarr_query), (cdf_col_sample_cmip6, cdf_query)],
 )
 def test_to_dataset_dict_nocache(esmcol_path, query):
     col = intake.open_esm_datastore(esmcol_path)
@@ -185,6 +191,14 @@ def test_to_dataset_dict_chunking(chunks, expected_chunks):
     assert ds['hfls'].data.chunksize == expected_chunks
 
 
+@pytest.mark.parametrize('progressbar', [False, True])
+def test_progressbar(progressbar):
+    c = intake.open_esm_datastore(cdf_col_sample_cmip5)
+    cat = c.search(variable=['hfls'], frequency='mon', modeling_realm='atmos', model=['CNRM-CM5'])
+
+    _ = cat.to_dataset_dict(cdf_kwargs=dict(chunks={}), progressbar=progressbar)
+
+
 def test_to_dataset_dict_s3():
     col = intake.open_esm_datastore(zarr_col_aws_cesmle)
     cat = col.search(variable='RAIN', experiment='20C')
@@ -193,38 +207,122 @@ def test_to_dataset_dict_s3():
     assert isinstance(ds, xr.Dataset)
 
 
-@pytest.mark.parametrize(
-    'chunks, expected_chunks',
-    [
-        ({'time': 100, 'nlat': 2, 'nlon': 2}, (1, 100, 2, 2)),
-        ({'time': 200, 'nlat': 1, 'nlon': 1}, (1, 200, 1, 1)),
-    ],
-)
-def test_to_dataset_dict_chunking_2(chunks, expected_chunks):
-    c = intake.open_esm_datastore(cdf_col_sample_cesmle)
-    query = {'variable': ['SHF'], 'member_id': [1, 3, 9], 'experiment': ['20C', 'RCP85']}
-    cat = c.search(**query)
-    dset = cat.to_dataset_dict(cdf_kwargs=dict(chunks=chunks))
-    _, ds = dset.popitem()
-    assert ds['SHF'].data.chunksize == expected_chunks
-
-
-keys = [
-    'CMIP.CCCma.CanESM5.historical.*.Ofx.*.gn.*',
-    'CMIP.CCCma.CanESM5.historical.r1i1p1f1.Ofx.deptho.gn.*',
-    'CMIP.CCCma.CanESM5.historical',
-    'CMIP.CCCma.CanESM5.historical.r1i1p1f1.Ofx.deptho.gn',
-    'DCPP',
-]
-
-
-@pytest.mark.parametrize('key', keys)
-def test_get_item(key):
-    col = intake.open_esm_datastore(zarr_col_pangeo_cmip6)
-    assert isinstance(col.df, pd.DataFrame)
-    assert len(col) >= 1
-
-
 def test_read_catalog_dict():
     col = intake.open_esm_datastore(catalog_dict_records)
     assert isinstance(col.df, pd.DataFrame)
+
+
+def test_to_dataset_dict_w_dask_cluster():
+    from distributed import Client
+
+    with Client():
+        col = intake.open_esm_datastore(zarr_col_aws_cesmle)
+        cat = col.search(variable='RAIN', experiment='20C')
+        dsets = cat.to_dataset_dict(storage_options={'anon': True})
+        _, ds = dsets.popitem()
+        assert isinstance(ds, xr.Dataset)
+
+
+def test_get_dask_client():
+    from unittest import mock
+    from distributed import Client
+    import sys
+
+    with Client() as client:
+        c = _get_dask_client()
+        assert c is client
+
+    with mock.patch.dict(sys.modules, {'distributed.client': None}):
+        c = _get_dask_client()
+        assert c is None
+
+    c = _get_dask_client()
+    assert c is None
+
+
+params = [
+    ({}, None, []),
+    (
+        {'C': ['control', 'hist']},
+        ['B', 'D'],
+        [
+            {'A': 'NCAR', 'B': 'CESM', 'C': 'hist', 'D': 'O2'},
+            {'A': 'NCAR', 'B': 'CESM', 'C': 'control', 'D': 'O2'},
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'control', 'D': 'O2'},
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'hist', 'D': 'O2'},
+        ],
+    ),
+    ({'C': ['control', 'hist'], 'D': ['NO2']}, 'B', []),
+    (
+        {'C': ['control', 'hist'], 'D': ['O2']},
+        'B',
+        [
+            {'A': 'NCAR', 'B': 'CESM', 'C': 'hist', 'D': 'O2'},
+            {'A': 'NCAR', 'B': 'CESM', 'C': 'control', 'D': 'O2'},
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'control', 'D': 'O2'},
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'hist', 'D': 'O2'},
+        ],
+    ),
+    (
+        {'C': ['hist'], 'D': ['NO2', 'O2']},
+        'B',
+        [
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'hist', 'D': 'O2'},
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'hist', 'D': 'NO2'},
+        ],
+    ),
+    (
+        {'C': 'hist', 'D': ['NO2', 'O2']},
+        'B',
+        [
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'hist', 'D': 'O2'},
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'hist', 'D': 'NO2'},
+        ],
+    ),
+    (
+        {'C': 'hist', 'D': ['NO2', 'O2'], 'B': 'FOO'},
+        ['B'],
+        [
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'hist', 'D': 'O2'},
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'hist', 'D': 'NO2'},
+        ],
+    ),
+    (
+        {'C': ['control']},
+        None,
+        [
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'control', 'D': 'O2'},
+            {'A': 'CSIRO', 'B': 'BAR', 'C': 'control', 'D': 'O2'},
+            {'A': 'NCAR', 'B': 'CESM', 'C': 'control', 'D': 'O2'},
+        ],
+    ),
+]
+
+
+@pytest.mark.parametrize('query, require_all_on, expected', params)
+def test_get_subset(query, require_all_on, expected):
+    df = pd.DataFrame(
+        {
+            'A': ['NCAR', 'IPSL', 'IPSL', 'CSIRO', 'IPSL', 'NCAR', 'NOAA', 'NCAR'],
+            'B': ['CESM', 'FOO', 'FOO', 'BAR', 'FOO', 'CESM', 'GCM', 'WACM'],
+            'C': ['hist', 'control', 'hist', 'control', 'hist', 'control', 'hist', 'hist'],
+            'D': ['O2', 'O2', 'O2', 'O2', 'NO2', 'O2', 'O2', 'TA'],
+        }
+    )
+
+    x = _get_subset(df, require_all_on=require_all_on, **query).to_dict(orient='records')
+    assert x == expected
+
+
+def test_normalize_query():
+    query = {'experiment_id': ['historical', 'piControl'], 'variable_id': 'tas', 'table_id': 'Amon'}
+
+    expected = {
+        'experiment_id': ['historical', 'piControl'],
+        'variable_id': ['tas'],
+        'table_id': ['Amon'],
+    }
+
+    actual = _normalize_query(query)
+
+    assert actual == expected

@@ -1,18 +1,15 @@
 import copy
+import itertools
 import json
 import logging
-from concurrent import futures
-from functools import lru_cache
-from urllib.parse import urlparse
 
-import fsspec
+import dask
 import intake
 import numpy as np
 import pandas as pd
-import requests
 
-from ._util import logger, print_progressbar
-from .merge_util import _aggregate, _create_asset_info_lookup, _to_nested_dict
+from .merge_util import _aggregate, _create_asset_info_lookup, _path_to_mapper, _to_nested_dict
+from .utils import _fetch_and_parse_json, _fetch_catalog, _get_dask_client, logger
 
 
 class esm_datastore(intake.catalog.Catalog):
@@ -28,7 +25,7 @@ class esm_datastore(intake.catalog.Catalog):
         Path or URL to an ESM collection JSON file
     progressbar : bool
          If True, will print a progress bar to standard error (stderr)
-         when loading datasets into :py:class:`~xarray.Dataset`.
+         when loading assets into :py:class:`~xarray.Dataset`.
     log_level: str
         Level of logging to report. Accepted values include:
 
@@ -70,25 +67,32 @@ class esm_datastore(intake.catalog.Catalog):
         """Main entry point.
         """
 
+        super().__init__(**kwargs)
+
         numeric_log_level = getattr(logging, log_level.upper(), None)
         if not isinstance(numeric_log_level, int):
             raise ValueError(f'Invalid log level: {log_level}')
         logger.setLevel(numeric_log_level)
-        self.esmcol_path = esmcol_path
         self.progressbar = progressbar
-        self._col_data = _fetch_and_parse_file(esmcol_path)
-        self.df = self._fetch_catalog()
+        self._col_data, self.esmcol_path = _fetch_and_parse_json(esmcol_path)
+        self.df = _fetch_catalog(self._col_data, self.esmcol_path)
+        self._entries = {}
         self._ds = None
         self.zarr_kwargs = None
         self.cdf_kwargs = None
         self.preprocess = None
         self.aggregate = None
-        self.metadata = {}
-        super().__init__(**kwargs)
-        self._entries = {}
 
-    def search(self, **query):
+    def search(self, require_all_on=None, **query):
         """Search for entries in the catalog.
+
+        Parameters
+        ----------
+        require_all_on : str, list
+           name of columns to use when enforcing the query criteria.
+           For example: `col.search(experiment_id=['piControl', 'historical'], require_all_on='source_id')`
+           returns all assets with `source_id` that has both `piControl` and `historical`
+           experiments.
 
         Returns
         -------
@@ -117,40 +121,8 @@ class esm_datastore(intake.catalog.Catalog):
         """
 
         ret = copy.copy(self)
-        ret.df = self._get_subset(**query)
+        ret.df = _get_subset(self.df, require_all_on=require_all_on, **query)
         return ret
-
-    def __getitem__(self, key):
-        path_column_name = self._col_data['assets']['column_name']
-        columns = self.df.columns.tolist()
-        columns.remove(path_column_name)
-
-        if isinstance(key, str) and '.' in key:
-            key_parts = key.split('.')
-        else:
-            key_parts = [key]
-        N = len(columns)
-        # Pad key list for missing values so that len(key) == len(columns)
-        key_parts += ['*'] * (N - len(key_parts))
-        query = dict(zip(columns, key_parts))
-        # Filter out the query for valid entries
-        filtered_query = {k: v for k, v in query.items() if v != '*'}
-        return self.search(**filtered_query)
-
-    def __len__(self):
-        return len(self.df)
-
-    def __keys__(self):
-        ...
-
-    @lru_cache(maxsize=None)
-    def _fetch_catalog(self):
-        """Get the catalog file and cache it.
-        """
-        if 'catalog_file' in self._col_data:
-            return pd.read_csv(self._col_data['catalog_file'])
-        else:
-            return pd.DataFrame(self._col_data['catalog_dict'])
 
     def serialize(self, name, directory=None, catalog_type='dict'):
         """Serialize collection/catalog to corresponding json and csv files.
@@ -166,8 +138,8 @@ class esm_datastore(intake.catalog.Catalog):
 
         Notes
         -----
-        Large catalogs can result in large JSON files.   To keep the JSON file size manageable, call with
-            catalog_type='file' to save catalog as a separate CSV file.
+        Large catalogs can result in large JSON files. To keep the JSON file size manageable, call with
+        `catalog_type='file'` to save catalog as a separate CSV file.
 
         Examples
         --------
@@ -310,21 +282,6 @@ class esm_datastore(intake.catalog.Catalog):
         items = len(self.df.index)
         return f'{self._col_data["id"]}-ESM Collection with {items} entries:\n\t> {output}'
 
-    def _get_subset(self, **query):
-        if not query:
-            return pd.DataFrame(columns=self.df.columns)
-        condition = np.ones(len(self.df), dtype=bool)
-        for key, val in query.items():
-            if isinstance(val, list):
-                condition_i = np.zeros(len(self.df), dtype=bool)
-                for val_i in val:
-                    condition_i = condition_i | (self.df[key] == val_i)
-                condition = condition & condition_i
-            elif val is not None:
-                condition = condition & (self.df[key] == val)
-        query_results = self.df.loc[condition]
-        return query_results.reset_index(drop=True)
-
     def to_dataset_dict(
         self,
         zarr_kwargs={},
@@ -332,6 +289,7 @@ class esm_datastore(intake.catalog.Catalog):
         preprocess=None,
         aggregate=True,
         storage_options={},
+        progressbar=None,
     ):
         """Load catalog entries into a dictionary of xarray datasets.
 
@@ -348,11 +306,15 @@ class esm_datastore(intake.catalog.Catalog):
         storage_options : dict, optional
             Parameters passed to the backend file-system such as Google Cloud Storage,
             Amazon Web Service S3.
+            progressbar : bool
+        progressbar : bool
+            If True, will print a progress bar to standard error (stderr)
+            when loading assets into :py:class:`~xarray.Dataset`.
 
         Returns
         -------
         dsets : dict
-           A dictionary of xarray :py:class:`~xarray.Dataset` s.
+           A dictionary of xarray :py:class:`~xarray.Dataset`s.
 
         Examples
         --------
@@ -406,6 +368,8 @@ class esm_datastore(intake.catalog.Catalog):
             raise ValueError('preprocess argument must be callable')
 
         self.preprocess = preprocess
+        if progressbar is not None:
+            self.progressbar = progressbar
 
         return self._open_dataset()
 
@@ -417,9 +381,10 @@ class esm_datastore(intake.catalog.Catalog):
         else:
             use_format_column = True
 
+        # replace path column with mapper (dependent on filesystem type)
         mapper_dict = {
             path: _path_to_mapper(path, self.storage_options) for path in self.df[path_column_name]
-        }  # replace path column with mapper (dependent on filesystem type)
+        }
 
         groupby_attrs = []
         variable_column_name = None
@@ -468,41 +433,58 @@ class esm_datastore(intake.catalog.Catalog):
 
         dsets = []
         total = len(groups)
-        logger.info(f'Using {total} threads for loading dataset groups')
-        with futures.ThreadPoolExecutor(max_workers=total) as executor:
-            future_tasks = [
-                executor.submit(
-                    _load_group_dataset,
-                    key,
-                    df,
-                    self._col_data,
-                    agg_columns,
-                    aggregation_dict,
-                    path_column_name,
-                    variable_column_name,
-                    use_format_column,
-                    mapper_dict,
-                    self.zarr_kwargs,
-                    self.cdf_kwargs,
-                    self.preprocess,
-                )
-                for key, df in groups
-            ]
+        load_group_dataset_delayed = dask.delayed(_load_group_dataset)
+        tasks = [
+            load_group_dataset_delayed(
+                key,
+                df,
+                self._col_data,
+                agg_columns,
+                aggregation_dict,
+                path_column_name,
+                variable_column_name,
+                use_format_column,
+                mapper_dict,
+                self.zarr_kwargs,
+                self.cdf_kwargs,
+                self.preprocess,
+            )
+            for key, df in groups
+        ]
+
+        client = _get_dask_client()
+
+        if self.progressbar:
+            print(
+                f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{keys}'
+                \n--> There is/are {total} group(s)"""
+            )
+
+        if client is None:
+            from multiprocessing.pool import ThreadPool
+
+            with dask.config.set(pool=ThreadPool(total)):
+                logger.info(f'Using {total} threads for loading dataset groups')
+                if self.progressbar:
+                    from dask.diagnostics import ProgressBar
+
+                    p = ProgressBar()
+                    p.register()
+                dsets = dask.compute(*tasks)
+                if self.progressbar:
+                    p.unregister()
+
+        else:
+            logger.info(f'Using dask cluster: {client} for loading dataset groups')
+            futures = client.compute(tasks)
 
             if self.progressbar:
-                print_progressbar(0, total, prefix='Progress:', suffix='', bar_length=79)
+                from distributed import progress
 
-            for i, task in enumerate(futures.as_completed(future_tasks)):
-                result = task.result()
-                dsets.append(result)
-                if self.progressbar:
-                    # Update Progress Bar
-                    print_progressbar(i + 1, total, prefix='Progress:', suffix='', bar_length=79)
+                progress(futures)
 
-        print(
-            f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{keys}'
-             \n--> There are {len(groups)} group(s)"""
-        )
+            dsets = client.gather(futures)
+
         self._ds = {group_id: ds for (group_id, ds) in dsets}
         return self._ds
 
@@ -588,57 +570,69 @@ def _load_group_dataset(
     return group_id, ds
 
 
-def _is_valid_url(url):
-    """ Check if path is URL or not
+def _get_subset(df, require_all_on=None, **query):
+    if not query:
+        return pd.DataFrame(columns=df.columns)
+    condition = np.ones(len(df), dtype=bool)
 
-    Parameters
-    ----------
-    url : str
-        path to check
+    query = _normalize_query(query)
 
-    Returns
-    -------
-    bool
-    """
-    try:
-        result = urlparse(url)
-        return result.scheme and result.netloc and result.path
-    except Exception:
-        return False
+    for key, val in query.items():
+        if isinstance(val, (tuple, list)):
+            condition_i = np.zeros(len(df), dtype=bool)
+            for val_i in val:
+                condition_i = condition_i | (df[key] == val_i)
+            condition = condition & condition_i
+        elif val is not None:
+            condition = condition & (df[key] == val)
+    query_results = df.loc[condition]
 
+    if require_all_on:
 
-@lru_cache(maxsize=None)
-def _fetch_and_parse_file(input_path):
-    """ Fetch and parse ESMCol file.
+        if isinstance(require_all_on, str):
+            require_all_on = [require_all_on]
 
-    Parameters
-    ----------
-    input_path : str
-            ESMCol file to get and read
+        _query = query.copy()
 
-    Returns
-    -------
-    data : dict
-    """
+        # Make sure to remove columns that were already
+        # specified in the query when specified in `require_all_on`. For example,
+        # if query = dict(variable_id=["A", "B"], source_id=["FOO", "BAR"])
+        # and require_all_on = ["source_id"], we need to make sure `source_id` key is
+        # not present in _query for the logic below to work
+        for key in require_all_on:
+            _query.pop(key, None)
 
-    data = None
+        keys = list(_query.keys())
 
-    try:
-        if _is_valid_url(input_path):
-            logger.info(f'Loading ESMCol from URL: {input_path}')
-            resp = requests.get(input_path)
-            data = resp.json()
+        grouped = query_results.groupby(require_all_on)
+        values = [tuple(v) for v in _query.values()]
+
+        condition = set(itertools.product(*values))
+
+        results = []
+        for key, group in grouped:
+            index = group.set_index(keys).index
+            if not isinstance(index, pd.MultiIndex):
+                index = set([(element,) for element in index.to_list()])
+            else:
+                index = set(index.to_list())
+
+            if index == condition:
+                results.append(group)
+
+        if len(results) >= 1:
+            return pd.concat(results).reset_index(drop=True)
+
         else:
-            with open(input_path) as f:
-                logger.info(f'Loading ESMCol from filesystem: {input_path}')
-                data = json.load(f)
+            return pd.DataFrame(columns=df.columns)
 
-    except Exception as e:
-        raise e
-
-    return data
+    else:
+        return query_results.reset_index(drop=True)
 
 
-def _path_to_mapper(path, storage_options):
-    """Convert path to mapper"""
-    return fsspec.get_mapper(path, **storage_options)
+def _normalize_query(query):
+    q = query.copy()
+    for key, val in q.items():
+        if isinstance(val, str):
+            q[key] = [val]
+    return q

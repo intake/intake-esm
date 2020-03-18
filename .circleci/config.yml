@@ -31,6 +31,7 @@ shared: &shared
         name: Install dependencies in (base environment)
         command: |
           conda env update -n base -f ${ENV_FILE}
+          python -m pip install .
 
     - run:
         name: List packages in the current environment (base)
@@ -39,7 +40,8 @@ shared: &shared
     - run:
         name: Running Tests
         command: |
-          pytest -n 8 --junitxml=test-reports/junit.xml --cov=./ --verbose
+          pytest -n 4 --junitxml=test-reports/junit.xml --cov=./ --verbose -p no:sugar
+        no_output_timeout: 30m
     - run:
         name: Uploading code coverage report
         command: |

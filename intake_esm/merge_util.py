@@ -6,6 +6,14 @@ import xarray as xr
 logger = logging.getLogger('intake-esm')
 
 
+def _path_to_mapper(path, storage_options):
+    """Convert path to mapper if necessary."""
+    if fsspec.core.split_protocol(path)[0] is not None:
+        return fsspec.get_mapper(path, **storage_options)
+    else:
+        return path
+
+
 def join_new(dsets, dim_name, coord_value, varname, options={}):
     if isinstance(varname, str):
         varname = [varname]
@@ -91,8 +99,9 @@ def _aggregate(
                 zarr_kwargs=zarr_kwargs,
                 cdf_kwargs=cdf_kwargs,
                 preprocess=preprocess,
+                varname=varname,
             )
-            ds.attrs['intake_esm_varname'] = varname
+
             return ds
 
         else:
@@ -130,8 +139,8 @@ def _aggregate(
                                     del encoding[v][enc_attrs]
 
             if agg_type == 'join_new':
-                logger.info(
-                    f'Joining {len(dsets)} dataset(s) along new {agg_column} dimension with options={agg_options}'
+                logger.debug(
+                    f'Joining {len(dsets)} dataset(s) along new {agg_column} dimension with options={agg_options}.\ndsets={dsets}'
                 )
                 varname = dsets[0].attrs['intake_esm_varname']
                 ds = join_new(
@@ -143,14 +152,14 @@ def _aggregate(
                 )
 
             elif agg_type == 'join_existing':
-                logger.info(
-                    f'Joining {len(dsets)} dataset(s) along existing dimension with options={agg_options}'
+                logger.debug(
+                    f'Joining {len(dsets)} dataset(s) along existing dimension with options={agg_options}.\ndsets={dsets}'
                 )
                 ds = join_existing(dsets, options=agg_options)
 
             elif agg_type == 'union':
-                logger.info(
-                    f'Merging {len(dsets)} dataset(s) into a single Dataset with options={agg_options}'
+                logger.debug(
+                    f'Merging {len(dsets)} dataset(s) into a single Dataset with options={agg_options}.\ndsets={dsets}'
                 )
                 ds = union(dsets, options=agg_options)
 
@@ -164,7 +173,7 @@ def _aggregate(
     return apply_aggregation(v)
 
 
-def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess):
+def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess, varname):
     protocol = None
     root = path
     if isinstance(path, fsspec.mapping.FSMap):
@@ -180,25 +189,27 @@ def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess):
             root = path.root
 
     if data_format == 'zarr':
-        logger.info(f'Opening zarr store: {root} - protocol: {protocol}')
+        logger.debug(f'Opening zarr store: {root} - protocol: {protocol}')
         try:
             ds = xr.open_zarr(path, **zarr_kwargs)
         except Exception as e:
-            logger.error(f'Failed to open zarr store.')
+            logger.error(f'Failed to open zarr store with zarr_kwargs={zarr_kwargs}')
             raise e
 
     else:
-        logger.info(f'Opening netCDF/HDF dataset: {root} - protocol: {protocol}')
+        logger.debug(f'Opening netCDF/HDF dataset: {root} - protocol: {protocol}')
         try:
             ds = xr.open_dataset(path, **cdf_kwargs)
         except Exception as e:
-            logger.error(f'Failed to open netCDF/HDF dataset.')
+            logger.error(f'Failed to open netCDF/HDF dataset with cdf_kwargs={cdf_kwargs}')
             raise e
+
+    ds.attrs['intake_esm_varname'] = varname
 
     if preprocess is None:
         return ds
     else:
-        logger.info(f'Applying pre-processing with {preprocess.__name__} function')
+        logger.debug(f'Applying pre-processing with {preprocess.__name__} function')
         return preprocess(ds)
 
 

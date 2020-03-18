@@ -2,6 +2,46 @@
 Changelog History
 =================
 
+
+Intake-esm v2020.03.16
+=======================
+
+
+Features
+--------
+
+- Support single file catalogs. (:pr:`195`) `Brian Bonnlander`_
+
+- Add `progressbar` argument to :py:meth:`~intake_esm.core.esm_datastore.to_dataset_dict`.
+  This allows the user to override the default `progressbar` value used
+  during the class instantiation. (:pr:`204`) `Anderson Banihirwe`_
+
+- Enhanced search: enforce query criteria via `require_all_on` argument via
+  :py:meth:`~intake_esm.core.esm_datastore.search` method.
+  (:issue:`202`) & (:pr:`207`) & (:pr:`209`) `Anderson Banihirwe`_ & `Julius Busecke`_
+
+- Support relative paths for catalog files. (:pr:`208`) `Anderson Banihirwe`_
+
+
+Bug Fixes
+---------
+
+- Use raw path if protocol is `None`. (:pr:`210`) `Anderson Banihirwe`_
+
+
+Internal Changes
+----------------
+
+- Github Action to publish package to PyPI on release.
+  (:pr:`190`) `Anderson Banihirwe`_
+
+- Remove unnecessary inheritance. (:pr:`193`) `Anderson Banihirwe`_
+
+- Update linting GitHub action to run on all pull requests.
+  (:pr:`196`) `Anderson Banihirwe`_
+
+
+
 Intake-esm v2019.12.13
 =======================
 
@@ -332,11 +372,11 @@ Trivial/Internal Changes
 
 .. _`Aaron Spring`: https://github.com/aaronspring
 .. _`Anderson Banihirwe`: https://github.com/andersy005
+.. _`Brian Bonnlander`: https://github.com/bonnland
 .. _`Julia Kent`: https://github.com/jukent
 .. _`Matthew Long`: https://github.com/matt-long
 .. _`Naomi Henderson`: https://github.com/naomi-henderson
 .. _`Paul Branson`: https://github.com/pbranson
 .. _`Ryan Abernathey`: https://github.com/rabernat
 .. _`Julius Busecke`: https://github.com/jbusecke
-.. _`Brian Bonnlander`: https://github.com/bonnland
 .. _`Joe Hamman`: https://github.com/jhamman
