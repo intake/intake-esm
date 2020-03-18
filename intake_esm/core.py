@@ -594,15 +594,7 @@ def _load_group_dataset(
         key.remove(nd)
         group_id = '.'.join(key)
 
-    if use_format_column:
-        format_column_name = col_data['assets']['format_column_name']
-        lookup = _create_asset_info_lookup(
-            df, path_column_name, variable_column_name, format_column_name=format_column_name
-        )
-    else:
-        lookup = _create_asset_info_lookup(
-            df, path_column_name, variable_column_name, data_format=col_data['assets']['format']
-        )
+    lookup = _get_asset_info(col_data, df, variable_column_name=variable_column_name)
 
     ds = _aggregate(
         aggregation_dict,
@@ -687,7 +679,7 @@ def _normalize_query(query):
     return q
 
 
-def _get_asset_info(col_data, df):
+def _get_asset_info(col_data, df, variable_column_name=None):
 
     path_column_name = col_data['assets']['column_name']
     if 'format' in col_data['assets']:
@@ -696,14 +688,13 @@ def _get_asset_info(col_data, df):
         use_format_column = True
 
     if use_format_column:
-
         format_column_name = col_data['assets']['format_column_name']
         lookup = _create_asset_info_lookup(
-            df, path_column_name, format_column_name=format_column_name
+            df, path_column_name, variable_column_name, format_column_name=format_column_name
         )
     else:
         lookup = _create_asset_info_lookup(
-            df, path_column_name, data_format=col_data['assets']['format']
+            df, path_column_name, variable_column_name, data_format=col_data['assets']['format']
         )
 
     return lookup
