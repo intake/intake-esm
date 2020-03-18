@@ -53,12 +53,15 @@ def test_load_esmcol_remote():
 
 params = [
     ('CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.*.Amon.*.gr.*', intake_esm.core.esm_datastore),
-    ('CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.r4i1p1f2.Amon.tasmax.gr.*', dict),
+    (
+        'CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.r4i1p1f2.Amon.tasmax.gr.*',
+        intake.catalog.local.LocalCatalogEntry,
+    ),
     ('CMIP.IPSL.IPSL-CM6A-LR.piControl', intake_esm.core.esm_datastore),
     ('CMIP', intake_esm.core.esm_datastore),
     (
         './tests/sample_data/cmip/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r23i1p1f1/Omon/prsn/gr/v20180803/prsn/prsn_Omon_IPSL-CM6A-LR_historical_r23i1p1f1_gr_185001-201412.nc',
-        dict,
+        intake.catalog.local.LocalCatalogEntry,
     ),
 ]
 

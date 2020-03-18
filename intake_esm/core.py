@@ -7,6 +7,7 @@ import dask
 import intake
 import numpy as np
 import pandas as pd
+from intake.catalog.local import LocalCatalogEntry
 
 from .merge_util import _aggregate, _create_asset_info_lookup, _path_to_mapper, _to_nested_dict
 from .utils import _fetch_and_parse_json, _fetch_catalog, _get_dask_client, logger
@@ -105,9 +106,25 @@ class esm_datastore(intake.catalog.Catalog):
         if len(results) == 1:
 
             if isinstance(results, pd.DataFrame):
-                return results.to_dict(orient='records')[0]
+                asset = _get_asset_info(self._col_data, results)
             else:
-                return results.df.to_dict(orient='records')[0]
+                asset = _get_asset_info(self._col_data, results.df)
+
+            asset = asset.popitem()
+            asset_path = asset[0]
+            data_format = asset[1][1]
+
+            if data_format == 'zarr':
+                driver = 'zarr'
+
+            else:
+                driver = 'netcdf'
+
+            # TODO: figure out how to pass other args such as storage_options, chunks, etc
+            entry = LocalCatalogEntry(
+                name=key, description='', driver=driver, args={'urlpath': asset_path}
+            )
+            return entry
 
         elif len(results) > 1:
             return results
@@ -668,3 +685,25 @@ def _normalize_query(query):
         if isinstance(val, str):
             q[key] = [val]
     return q
+
+
+def _get_asset_info(col_data, df):
+
+    path_column_name = col_data['assets']['column_name']
+    if 'format' in col_data['assets']:
+        use_format_column = False
+    else:
+        use_format_column = True
+
+    if use_format_column:
+
+        format_column_name = col_data['assets']['format_column_name']
+        lookup = _create_asset_info_lookup(
+            df, path_column_name, format_column_name=format_column_name
+        )
+    else:
+        lookup = _create_asset_info_lookup(
+            df, path_column_name, data_format=col_data['assets']['format']
+        )
+
+    return lookup
