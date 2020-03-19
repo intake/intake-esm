@@ -25,8 +25,10 @@ class esm_datastore(intake.catalog.Catalog):
     esmcol_path : str
         Path or URL to an ESM collection JSON file
     progressbar : bool
-         If True, will print a progress bar to standard error (stderr)
-         when loading assets into :py:class:`~xarray.Dataset`.
+        If True, will print a progress bar to standard error (stderr)
+        when loading assets into :py:class:`~xarray.Dataset`.
+    sep : str, default '.'
+        Delimiter to use when constructing a key for a query.
     log_level: str
         Level of logging to report. Accepted values include:
 
@@ -39,8 +41,6 @@ class esm_datastore(intake.catalog.Catalog):
     **kwargs :
         Additional keyword arguments are passed through to the
         :py:class:`~intake.catalog.Catalog` base class.
-
-
 
     Examples
     --------
@@ -58,13 +58,12 @@ class esm_datastore(intake.catalog.Catalog):
     2  AerChemMIP            BCC  BCC-ESM1        ssp370  ...         tas         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
     3  AerChemMIP            BCC  BCC-ESM1        ssp370  ...      tasmax         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
     4  AerChemMIP            BCC  BCC-ESM1        ssp370  ...      tasmin         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
-
     """
 
     name = 'esm_datastore'
     container = 'xarray'
 
-    def __init__(self, esmcol_path, progressbar=True, log_level='CRITICAL', **kwargs):
+    def __init__(self, esmcol_path, progressbar=True, sep='.', log_level='CRITICAL', **kwargs):
         """Main entry point.
         """
 
@@ -83,6 +82,7 @@ class esm_datastore(intake.catalog.Catalog):
         self.cdf_kwargs = None
         self.preprocess = None
         self.aggregate = None
+        self.sep = sep
 
     def __len__(self):
         return len(self.df)
@@ -99,7 +99,7 @@ class esm_datastore(intake.catalog.Catalog):
         if results.empty:
             columns = self.df.columns.tolist()
             columns.remove(path_column_name)
-            key_parts = key.split('.')
+            key_parts = key.split(self.sep)
             query = {k: v for k, v in zip(columns, key_parts) if v != '*'}
             results = self.search(**query)
 
@@ -166,7 +166,6 @@ class esm_datastore(intake.catalog.Catalog):
         260        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r1i...            NaN
         346        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r2i...            NaN
         401        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r3i...            NaN
-
         """
 
         ret = copy.copy(self)
@@ -425,10 +424,6 @@ class esm_datastore(intake.catalog.Catalog):
     def _open_dataset(self):
 
         path_column_name = self._col_data['assets']['column_name']
-        if 'format' in self._col_data['assets']:
-            use_format_column = False
-        else:
-            use_format_column = True
 
         # replace path column with mapper (dependent on filesystem type)
         mapper_dict = {
@@ -474,11 +469,11 @@ class esm_datastore(intake.catalog.Catalog):
         groups = self.df.groupby(groupby_attrs)
 
         if agg_columns:
-            keys = '.'.join(groupby_attrs)
+            keys = self.sep.join(groupby_attrs)
         else:
             keys = groupby_attrs.copy()
             keys.remove(path_column_name)
-            keys = '.'.join(keys)
+            keys = self.sep.join(keys)
 
         dsets = []
         total = len(groups)
@@ -492,7 +487,7 @@ class esm_datastore(intake.catalog.Catalog):
                 aggregation_dict,
                 path_column_name,
                 variable_column_name,
-                use_format_column,
+                self.sep,
                 mapper_dict,
                 self.zarr_kwargs,
                 self.cdf_kwargs,
@@ -559,7 +554,7 @@ def _load_group_dataset(
     aggregation_dict,
     path_column_name,
     variable_column_name,
-    use_format_column,
+    sep,
     mapper_dict,
     zarr_kwargs,
     cdf_kwargs,
@@ -585,14 +580,14 @@ def _load_group_dataset(
     if agg_columns:
         mi = df.set_index(agg_columns)
         nd = _to_nested_dict(mi[path_column_name])
-        group_id = '.'.join(key)
+        group_id = sep.join(key)
     else:
         nd = df.iloc[0][path_column_name]
         # Cast key from tuple to list
         key = list(key)
         # Remove path from the list
         key.remove(nd)
-        group_id = '.'.join(key)
+        group_id = sep.join(key)
 
     lookup = _get_asset_info(col_data, df, variable_column_name=variable_column_name)
 
