@@ -132,6 +132,17 @@ class esm_datastore(intake.catalog.Catalog):
         else:
             raise KeyError(key)
 
+    def __contains__(self, key):
+        # Python falls back to iterating over the entire catalog
+        # if this method is not defined. To avoid this, we implement it differently
+
+        try:
+            self[key]
+        except KeyError:
+            return False
+        else:
+            return True
+
     def search(self, require_all_on=None, **query):
         """Search for entries in the catalog.
 

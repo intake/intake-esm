@@ -80,6 +80,25 @@ def test_getitem_error():
         col[key]
 
 
+@pytest.mark.parametrize(
+    'key, expected',
+    [
+        ('CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.*.Amon.*.gr.*', True),
+        (
+            './tests/sample_data/cmip/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r23i1p1f1/Omon/prsn/gr/v20180803/prsn/prsn_Omon_IPSL-CM6A-LR_historical_r23i1p1f1_gr_185001-201412.nc',
+            True,
+        ),
+        ('DOES_NOT_EXIST', False),
+    ],
+)
+def test_contains(key, expected):
+    col = intake.open_esm_datastore(cdf_col_sample_cmip6)
+
+    actual = key in col
+
+    assert actual == expected
+
+
 def test_serialize_to_json():
     with TemporaryDirectory() as local_store:
         col = intake.open_esm_datastore(catalog_dict_records)
