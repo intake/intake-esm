@@ -2,7 +2,7 @@
 import json
 import logging
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import ParseResult, urlparse, urlunparse
 
 import pandas as pd
 import requests
@@ -28,7 +28,12 @@ def _is_valid_url(url):
     """
     try:
         result = urlparse(url)
-        return result.scheme and result.netloc and result.path
+        return (
+            result.scheme
+            and result.netloc
+            and result.path
+            and (requests.get(url).status_code == 200)
+        )
     except Exception:
         return False
 
@@ -51,13 +56,13 @@ def _fetch_and_parse_json(input_path):
 
     try:
         if _is_valid_url(input_path):
-            logger.info(f'Loading ESMCol from URL: {input_path}')
+            logger.debug(f'Loading ESMCol from URL: {input_path}')
             resp = requests.get(input_path)
             data = resp.json()
         else:
             input_path = Path(input_path).absolute().as_posix()
             with open(input_path) as f:
-                logger.info(f'Loading ESMCol from filesystem: {input_path}')
+                logger.debug(f'Loading ESMCol from filesystem: {input_path}')
                 data = json.load(f)
 
     except Exception as e:
@@ -74,10 +79,19 @@ def _fetch_catalog(collection_data, esmcol_path):
         if _is_valid_url(esmcol_path):
             catalog_path = collection_data['catalog_file']
             if not _is_valid_url(catalog_path):
-                # Use pathlib. It's not explicitly for URLs, but it happens to work on them
-                catalog = (Path(esmcol_path).parent / collection_data['catalog_file']).as_posix()
+                split_url = urlparse(esmcol_path)
+                path = (Path(split_url.path).parent / collection_data['catalog_file']).as_posix()
+                components = ParseResult(
+                    scheme=split_url.scheme,
+                    netloc=split_url.netloc,
+                    path=path,
+                    params=split_url.params,
+                    query=split_url.query,
+                    fragment=split_url.fragment,
+                )
+                catalog = urlunparse(components)
                 if not _is_valid_url(catalog):
-                    raise FileNotFoundError(f'Unable to find: {catalog_path}')
+                    raise FileNotFoundError(f'Unable to find: {catalog}')
                 else:
                     return pd.read_csv(catalog)
             return pd.read_csv(catalog_path)
@@ -90,7 +104,7 @@ def _fetch_catalog(collection_data, esmcol_path):
                 esmcol_path = Path(esmcol_path).absolute()
                 catalog = esmcol_path.parent / collection_data['catalog_file']
                 if not catalog.exists():
-                    raise FileNotFoundError(f'Unable to find: {catalog_path}')
+                    raise FileNotFoundError(f'Unable to find: {catalog}')
                 else:
                     return pd.read_csv(catalog)
 
