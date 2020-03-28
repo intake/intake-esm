@@ -125,10 +125,10 @@ def _get_dask_client():
         # In case workers have not been provisioned yet, launch a temporary scheduler
         if client:
             if not client.cluster.workers:
-                client = Client(processes=False, dashboard_address=63462)
+                client = Client(processes=False, dashboard_address=8999)
                 _is_client_local = True
         else:
-            client = Client(processes=False, dashboard_address=63462)
+            client = Client(processes=False, dashboard_address=8999)
             _is_client_local = True
         return client, _is_client_local
     except Exception as exc:
