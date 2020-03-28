@@ -5,7 +5,7 @@ dependencies:
   - codecov
   - fsspec
   - gcsfs
-  - intake-xarray>=0.3.1
+  - intake
   - pip
   - pytest
   - pytest-cov
