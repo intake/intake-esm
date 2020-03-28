@@ -2,3 +2,4 @@ xarray>=0.13.0
 fsspec
 requests
 dask
+distributed

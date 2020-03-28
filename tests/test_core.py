@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from intake_esm.core import _get_dask_client, _get_subset, _normalize_query
+from intake_esm.core import _get_subset, _normalize_query
 
 here = os.path.abspath(os.path.dirname(__file__))
 zarr_col_pangeo_cmip6 = (
@@ -221,23 +221,6 @@ def test_to_dataset_dict_w_dask_cluster():
         dsets = cat.to_dataset_dict(storage_options={'anon': True})
         _, ds = dsets.popitem()
         assert isinstance(ds, xr.Dataset)
-
-
-def test_get_dask_client():
-    from unittest import mock
-    from distributed import Client
-    import sys
-
-    with Client() as client:
-        c = _get_dask_client()
-        assert c is client
-
-    with mock.patch.dict(sys.modules, {'distributed.client': None}):
-        c = _get_dask_client()
-        assert c is None
-
-    c = _get_dask_client()
-    assert c is None
 
 
 params = [

@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 import requests
 
-from intake_esm.utils import _fetch_and_parse_json, _fetch_catalog
+from intake_esm.utils import _fetch_and_parse_json, _fetch_catalog, _get_dask_client
 
 
 def test_fetch_and_parse_json_url():
@@ -28,3 +28,21 @@ def test_catalog_url_construction_from_relative_url():
     data, path = _fetch_and_parse_json(url)
     df = _fetch_catalog(data, path)
     assert isinstance(df, pd.DataFrame)
+
+
+def test_get_dask_client():
+    from unittest import mock
+    from distributed import Client
+    import sys
+
+    with Client() as client:
+        c, _is_client_local = _get_dask_client()
+        assert c is client
+
+    with mock.patch.dict(sys.modules, {'distributed.client': None}):
+        with pytest.raises(Exception):
+            _get_dask_client()
+
+    c, _is_client_local = _get_dask_client()
+    assert isinstance(c, Client)
+    assert _is_client_local
