@@ -70,3 +70,8 @@ def test_get_dask_client():
     c, _is_client_local = _get_dask_client()
     assert isinstance(c, Client)
     assert _is_client_local
+
+    with Client() as client:
+        client.cluster.close()
+        c, _is_client_local = _get_dask_client()
+        assert c is not client
