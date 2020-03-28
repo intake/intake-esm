@@ -10,7 +10,7 @@ dask
 toolz
 zarr
 numcodecs
-intake-xarray
 fsspec
 gcsfs
 watermark
+setuptools>=41.2
