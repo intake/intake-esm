@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
+import warnings
 from pathlib import Path
 from urllib.parse import ParseResult, urlparse, urlunparse
 
@@ -122,14 +123,17 @@ def _get_dask_client():
 
         client = _get_global_client()
         _is_client_local = False
-        # In case workers have not been provisioned yet, launch a temporary scheduler
-        if client:
-            if not client.cluster.workers:
-                client = Client(processes=False, dashboard_address=8999)
+        with warnings.catch_warnings():
+            # Suppress dask dashboard "Port XXXX is already in use" warning
+            warnings.filterwarnings('ignore')
+            # In case workers have not been provisioned yet, launch a temporary scheduler
+            if client:
+                if not client.cluster.workers:
+                    client = Client(processes=False)
+                    _is_client_local = True
+            else:
+                client = Client(processes=False)
                 _is_client_local = True
-        else:
-            client = Client(processes=False, dashboard_address=8999)
-            _is_client_local = True
-        return client, _is_client_local
+            return client, _is_client_local
     except Exception as exc:
         raise exc

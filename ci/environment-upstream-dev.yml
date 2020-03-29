@@ -3,17 +3,15 @@ channels:
   - conda-forge
 dependencies:
   - codecov
-  - intake-xarray>=0.3.1
   - pip
   - pytest
   - pytest-cov
   - pytest-icdiff
   - pytest-xdist
-  - pytest-sugar
-  - pyyaml
   - toolz
   - zarr
   - pip:
+    - git+https://github.com/intake/intake.git
     - git+https://github.com/pydata/xarray.git
     - git+https://github.com/intake/filesystem_spec.git
     - git+https://github.com/dask/gcsfs.git

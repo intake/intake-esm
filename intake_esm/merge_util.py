@@ -56,10 +56,13 @@ def _create_asset_info_lookup(
     df, path_column_name, variable_column_name=None, data_format=None, format_column_name=None
 ):
 
-    if data_format:
-        data_format_list = [data_format] * len(df)
-    elif format_column_name is not None:
+    if format_column_name is not None:
         data_format_list = df[format_column_name]
+    else:
+        if data_format is None:
+            raise ValueError(f'Please specify either `data_format` or `format_column_name`')
+        else:
+            data_format_list = [data_format] * len(df)
 
     if variable_column_name is None:
         varname_list = [None] * len(df)

@@ -40,7 +40,7 @@ shared: &shared
     - run:
         name: Running Tests
         command: |
-          pytest -n 4 --junitxml=test-reports/junit.xml --cov=./ --verbose -p no:sugar
+          pytest -n 4 --junitxml=test-reports/junit.xml --cov=./ --verbose
         no_output_timeout: 30m
     - run:
         name: Uploading code coverage report

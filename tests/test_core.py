@@ -39,6 +39,11 @@ def test_repr(pangeo_cmip6_col):
     assert 'ESM Collection' in repr(pangeo_cmip6_col)
 
 
+def test_log_level_error():
+    with pytest.raises(ValueError):
+        intake.open_esm_datastore(cdf_col_sample_cmip6, log_level='VERBOSE')
+
+
 def test_unique(pangeo_cmip6_col):
     uniques = pangeo_cmip6_col.unique(columns=['activity_id', 'experiment_id'])
     assert isinstance(uniques, dict)
