@@ -486,8 +486,8 @@ class esm_datastore(intake.catalog.Catalog):
             keys.remove(path_column_name)
             keys = self.sep.join(keys)
 
-        dsets = []
         total = len(groups)
+        dsets = []
         load_group_dataset_delayed = dask.delayed(_load_group_dataset)
         tasks = [
             load_group_dataset_delayed(
@@ -507,40 +507,26 @@ class esm_datastore(intake.catalog.Catalog):
             for key, df in groups
         ]
 
-        client = _get_dask_client()
+        client, _is_client_local = _get_dask_client()
+        logger.info(f'Using dask client: {client} --- dask dashboard url: {client.dashboard_link}')
+        futures = client.compute(tasks)
 
         if self.progressbar:
+            from distributed import progress
+
+            progress(futures)
             print(
                 f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{keys}'
                 \n--> There is/are {total} group(s)"""
             )
 
-        if client is None:
-            from multiprocessing.pool import ThreadPool
-
-            with dask.config.set(pool=ThreadPool(total)):
-                logger.info(f'Using {total} threads for loading dataset groups')
-                if self.progressbar:
-                    from dask.diagnostics import ProgressBar
-
-                    p = ProgressBar()
-                    p.register()
-                dsets = dask.compute(*tasks)
-                if self.progressbar:
-                    p.unregister()
-
-        else:
-            logger.info(f'Using dask cluster: {client} for loading dataset groups')
-            futures = client.compute(tasks)
-
-            if self.progressbar:
-                from distributed import progress
-
-                progress(futures)
-
-            dsets = client.gather(futures)
-
+        dsets = client.gather(futures)
         self._ds = {group_id: ds for (group_id, ds) in dsets}
+
+        if _is_client_local:
+            client.close()
+            del client
+
         return self._ds
 
 

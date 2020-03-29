@@ -5,14 +5,12 @@ dependencies:
   - codecov
   - fsspec
   - gcsfs
-  - intake-xarray>=0.3.1
+  - intake
   - pip
   - pytest
   - pytest-cov
   - pytest-icdiff
   - pytest-xdist
-  - pytest-sugar
-  - pyyaml
   - s3fs
   - xarray
   - zarr

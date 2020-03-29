@@ -1,4 +1,6 @@
-xarray>=0.13.0
+xarray>=0.15.1
+intake
 fsspec
 requests
 dask
+distributed

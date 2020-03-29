@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
+import warnings
 from pathlib import Path
 from urllib.parse import ParseResult, urlparse, urlunparse
 
@@ -117,11 +118,22 @@ def _fetch_catalog(collection_data, esmcol_path):
 def _get_dask_client():
     # Detect local default cluster already running
     # and use it for dataset group loading.
-    client = None
     try:
-        from distributed.client import _get_global_client
+        from distributed.client import _get_global_client, Client
 
         client = _get_global_client()
-        return client
-    except ImportError:
-        return client
+        _is_client_local = False
+        with warnings.catch_warnings():
+            # Suppress dask dashboard "Port XXXX is already in use" warning
+            warnings.filterwarnings('ignore')
+            # In case workers have not been provisioned yet, launch a temporary scheduler
+            if client:
+                if not client.cluster.workers:
+                    client = Client(processes=False)
+                    _is_client_local = True
+            else:
+                client = Client(processes=False)
+                _is_client_local = True
+            return client, _is_client_local
+    except Exception as exc:
+        raise exc

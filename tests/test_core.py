@@ -7,7 +7,7 @@ import pytest
 import xarray as xr
 
 import intake_esm
-from intake_esm.core import _get_dask_client, _get_subset, _normalize_query
+from intake_esm.core import _get_subset, _normalize_query
 
 here = os.path.abspath(os.path.dirname(__file__))
 zarr_col_pangeo_cmip6 = (
@@ -15,11 +15,14 @@ zarr_col_pangeo_cmip6 = (
 )
 cdf_col_sample_cmip6 = os.path.join(here, 'sample-collections/cmip6-netcdf.json')
 cdf_col_sample_cmip5 = os.path.join(here, 'sample-collections/cmip5-netcdf.json')
-zarr_col_aws_cesmle = (
-    'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json'
-)
 cdf_col_sample_cesmle = os.path.join(here, 'sample-collections/cesm1-lens-netcdf.json')
 catalog_dict_records = os.path.join(here, 'sample-collections/catalog-dict-records.json')
+
+
+@pytest.fixture(scope='module')
+def pangeo_cmip6_col():
+    url = 'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
+    return intake.open_esm_datastore(url)
 
 
 zarr_query = dict(
@@ -33,22 +36,22 @@ zarr_query = dict(
 cdf_query = dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_id=['tasmax'])
 
 
-def test_repr():
-    col = intake.open_esm_datastore(zarr_col_pangeo_cmip6)
-    assert 'ESM Collection' in repr(col)
+def test_repr(pangeo_cmip6_col):
+    assert 'ESM Collection' in repr(pangeo_cmip6_col)
 
 
-def test_unique():
-    col = intake.open_esm_datastore(zarr_col_pangeo_cmip6)
-    uniques = col.unique(columns=['activity_id', 'experiment_id'])
+def test_log_level_error():
+    with pytest.raises(ValueError):
+        intake.open_esm_datastore(cdf_col_sample_cmip6, log_level='VERBOSE')
+
+
+def test_unique(pangeo_cmip6_col):
+    uniques = pangeo_cmip6_col.unique(columns=['activity_id', 'experiment_id'])
     assert isinstance(uniques, dict)
 
 
-def test_load_esmcol_remote():
-    col = intake.open_esm_datastore(
-        'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
-    )
-    assert isinstance(col.df, pd.DataFrame)
+def test_load_esmcol_remote(pangeo_cmip6_col):
+    assert isinstance(pangeo_cmip6_col.df, pd.DataFrame)
 
 
 params = [
@@ -112,21 +115,15 @@ def test_serialize_to_json():
         pd.testing.assert_frame_equal(col.df, col2.df)
 
 
-def test_serialize_to_csv():
+def test_serialize_to_csv(pangeo_cmip6_col):
     with TemporaryDirectory() as local_store:
-        col = intake.open_esm_datastore(
-            'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
-        )
-        col_subset = col.search(
+        col_subset = pangeo_cmip6_col.search(
             source_id='BCC-ESM1', grid_label='gn', table_id='Amon', experiment_id='historical',
         )
-
         name = 'cmip6_bcc_esm1'
         col_subset.serialize(name=name, directory=local_store, catalog_type='file')
-
         col = intake.open_esm_datastore(f'{local_store}/cmip6_bcc_esm1.json')
         pd.testing.assert_frame_equal(col_subset.df, col.df)
-
         assert col._col_data['id'] == name
 
 
@@ -164,7 +161,6 @@ def test_to_dataset_dict_aggfalse(esmcol_path, query):
     col = intake.open_esm_datastore(esmcol_path)
     cat = col.search(**query)
     nds = len(cat.df)
-
     dsets = cat.to_dataset_dict(zarr_kwargs={'consolidated': True}, aggregate=False)
     assert len(dsets.keys()) == nds
     key, ds = dsets.popitem()
@@ -184,11 +180,27 @@ def test_to_dataset_dict_w_preprocess(esmcol_path, query, kwargs):
 
     col = intake.open_esm_datastore(esmcol_path)
     col_sub = col.search(**query)
-
     dsets = col_sub.to_dataset_dict(zarr_kwargs={'consolidated': True}, preprocess=rename_coords)
     _, ds = dsets.popitem()
     assert 'latitude' in ds.dims
     assert 'longitude' in ds.dims
+
+
+def test_to_dataset_dict_w_cmip6preprocessing(pangeo_cmip6_col):
+    pytest.importorskip('cmip6_preprocessing')
+    from cmip6_preprocessing.preprocessing import combined_preprocessing
+
+    cat = pangeo_cmip6_col.search(
+        source_id='BCC-CSM2-MR',
+        experiment_id='historical',
+        table_id='Omon',
+        variable_id='thetao',
+        member_id='r1i1p1f1',
+    )
+    _, ds = cat.to_dataset_dict(
+        zarr_kwargs={'consolidated': True, 'decode_times': False}, preprocess=combined_preprocessing
+    ).popitem()
+    assert isinstance(ds, xr.Dataset)
 
 
 @pytest.mark.parametrize(
@@ -196,15 +208,11 @@ def test_to_dataset_dict_w_preprocess(esmcol_path, query, kwargs):
 )
 def test_to_dataset_dict_nocache(esmcol_path, query):
     col = intake.open_esm_datastore(esmcol_path)
-
     cat = col.search(**query)
     _, ds = cat.to_dataset_dict(zarr_kwargs={'consolidated': True}).popitem()
-
     id1 = id(ds)
-
     cat = col.search(**query)
     _, ds = cat.to_dataset_dict(zarr_kwargs={'consolidated': True}).popitem()
-
     assert id1 != id(ds)
 
 
@@ -244,11 +252,12 @@ def test_to_dataset_dict_chunking(chunks, expected_chunks):
 def test_progressbar(progressbar):
     c = intake.open_esm_datastore(cdf_col_sample_cmip5)
     cat = c.search(variable=['hfls'], frequency='mon', modeling_realm='atmos', model=['CNRM-CM5'])
-
     _ = cat.to_dataset_dict(cdf_kwargs=dict(chunks={}), progressbar=progressbar)
 
 
 def test_to_dataset_dict_s3():
+    pytest.importorskip('s3fs')
+    zarr_col_aws_cesmle = 'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json'
     col = intake.open_esm_datastore(zarr_col_aws_cesmle)
     cat = col.search(variable='RAIN', experiment='20C')
     dsets = cat.to_dataset_dict(storage_options={'anon': True})
@@ -259,34 +268,6 @@ def test_to_dataset_dict_s3():
 def test_read_catalog_dict():
     col = intake.open_esm_datastore(catalog_dict_records)
     assert isinstance(col.df, pd.DataFrame)
-
-
-def test_to_dataset_dict_w_dask_cluster():
-    from distributed import Client
-
-    with Client():
-        col = intake.open_esm_datastore(zarr_col_aws_cesmle)
-        cat = col.search(variable='RAIN', experiment='20C')
-        dsets = cat.to_dataset_dict(storage_options={'anon': True})
-        _, ds = dsets.popitem()
-        assert isinstance(ds, xr.Dataset)
-
-
-def test_get_dask_client():
-    from unittest import mock
-    from distributed import Client
-    import sys
-
-    with Client() as client:
-        c = _get_dask_client()
-        assert c is client
-
-    with mock.patch.dict(sys.modules, {'distributed.client': None}):
-        c = _get_dask_client()
-        assert c is None
-
-    c = _get_dask_client()
-    assert c is None
 
 
 params = [
@@ -365,13 +346,10 @@ def test_get_subset(query, require_all_on, expected):
 
 def test_normalize_query():
     query = {'experiment_id': ['historical', 'piControl'], 'variable_id': 'tas', 'table_id': 'Amon'}
-
     expected = {
         'experiment_id': ['historical', 'piControl'],
         'variable_id': ['tas'],
         'table_id': ['Amon'],
     }
-
     actual = _normalize_query(query)
-
     assert actual == expected
