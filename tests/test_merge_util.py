@@ -46,7 +46,7 @@ def test_union(datasets):
 
 
 def test_union_error():
-    ds = xr.tutorial.open_dataset('air_temperature')
+    ds = xr.tutorial.open_dataset('rasm', decode_times=False)
     datasets = [ds, ds]
     with pytest.raises(xr.MergeError):
         datasets[0] = datasets[0].rename({'time': 'times'})
