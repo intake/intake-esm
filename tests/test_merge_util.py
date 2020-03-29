@@ -1,7 +1,14 @@
+import pandas as pd
 import pytest
 import xarray as xr
 
-from intake_esm.merge_util import _open_asset, join_existing, join_new, union
+from intake_esm.merge_util import (
+    _create_asset_info_lookup,
+    _open_asset,
+    join_existing,
+    join_new,
+    union,
+)
 
 
 @pytest.fixture(scope='module')
@@ -60,3 +67,16 @@ def test_union_error():
 def test_open_asset_error(path, data_format, error):
     with pytest.raises(error):
         _open_asset(path, data_format, {}, {}, None, 'Tair')
+
+
+def test_create_asset_info_lookup():
+    df = pd.DataFrame({'A': ['x', 'y'], 'path': ['path_a', 'path_b']})
+    lookup = _create_asset_info_lookup(df, path_column_name='path', data_format='zarr')
+    assert lookup == {'path_a': (None, 'zarr'), 'path_b': (None, 'zarr')}
+
+    df['format'] = ['netcdf', 'zarr']
+    lookup = _create_asset_info_lookup(df, path_column_name='path', format_column_name='format')
+    assert lookup == {'path_a': (None, 'netcdf'), 'path_b': (None, 'zarr')}
+
+    with pytest.raises(ValueError):
+        _create_asset_info_lookup(df, path_column_name='path')
