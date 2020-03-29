@@ -8,8 +8,6 @@ dependencies:
   - pytest-cov
   - pytest-icdiff
   - pytest-xdist
-  - pytest-sugar
-  - pyyaml
   - toolz
   - zarr
   - pip:
