@@ -55,25 +55,19 @@ def test_load_esmcol_remote(pangeo_cmip6_col):
 
 
 params = [
-    ('CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.*.Amon.*.gr.*', intake_esm.core.esm_datastore),
-    (
-        'CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.r4i1p1f2.Amon.tasmax.gr.*',
-        intake.catalog.local.LocalCatalogEntry,
-    ),
-    ('CMIP.IPSL.IPSL-CM6A-LR.piControl', intake_esm.core.esm_datastore),
-    ('CMIP', intake_esm.core.esm_datastore),
-    (
-        './tests/sample_data/cmip/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r23i1p1f1/Omon/prsn/gr/v20180803/prsn/prsn_Omon_IPSL-CM6A-LR_historical_r23i1p1f1_gr_185001-201412.nc',
-        intake.catalog.local.LocalCatalogEntry,
-    ),
+    'CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.*.Amon.*.gr.*',
+    'CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.r4i1p1f2.Amon.tasmax.gr.*',
+    'CMIP.IPSL.IPSL-CM6A-LR.piControl',
+    'CMIP',
+    './tests/sample_data/cmip/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r23i1p1f1/Omon/prsn/gr/v20180803/prsn/prsn_Omon_IPSL-CM6A-LR_historical_r23i1p1f1_gr_185001-201412.nc',
 ]
 
 
-@pytest.mark.parametrize('key, object_type', params)
-def test_getitem(key, object_type):
+@pytest.mark.parametrize('key', params)
+def test_getitem(key):
     col = intake.open_esm_datastore(cdf_col_sample_cmip6)
     x = col[key]
-    assert isinstance(x, object_type)
+    assert isinstance(x, intake_esm.esm_datastore)
 
 
 def test_getitem_error():
@@ -105,12 +99,9 @@ def test_contains(key, expected):
 def test_serialize_to_json():
     with TemporaryDirectory() as local_store:
         col = intake.open_esm_datastore(catalog_dict_records)
-
         name = 'test_serialize_dict'
         col.serialize(name=name, directory=local_store, catalog_type='dict')
-
         output_catalog = os.path.join(local_store, name + '.json')
-
         col2 = intake.open_esm_datastore(output_catalog)
         pd.testing.assert_frame_equal(col.df, col2.df)
 
@@ -124,7 +115,7 @@ def test_serialize_to_csv(pangeo_cmip6_col):
         col_subset.serialize(name=name, directory=local_store, catalog_type='file')
         col = intake.open_esm_datastore(f'{local_store}/cmip6_bcc_esm1.json')
         pd.testing.assert_frame_equal(col_subset.df, col.df)
-        assert col._col_data['id'] == name
+        assert col.esmcol_data['id'] == name
 
 
 @pytest.mark.parametrize(

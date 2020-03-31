@@ -7,7 +7,6 @@ import dask
 import intake
 import numpy as np
 import pandas as pd
-from intake.catalog.local import LocalCatalogEntry
 
 from .merge_util import _aggregate, _create_asset_info_lookup, _path_to_mapper, _to_nested_dict
 from .utils import _fetch_and_parse_json, _fetch_catalog, _get_dask_client, logger
@@ -63,71 +62,94 @@ class esm_datastore(intake.catalog.Catalog):
     name = 'esm_datastore'
     container = 'xarray'
 
-    def __init__(self, esmcol_path, progressbar=True, sep='.', log_level='CRITICAL', **kwargs):
-        """Main entry point.
+    def __init__(
+        self,
+        esmcol_obj,
+        esmcol_data=None,
+        progressbar=True,
+        sep='.',
+        log_level='CRITICAL',
+        **kwargs,
+    ):
+
+        """Intake Catalog representing an ESM Collection.
         """
 
         super().__init__(**kwargs)
-
         numeric_log_level = getattr(logging, log_level.upper(), None)
         if not isinstance(numeric_log_level, int):
             raise ValueError(f'Invalid log level: {log_level}')
         logger.setLevel(numeric_log_level)
+
+        if isinstance(esmcol_obj, str):
+            self.esmcol_data, self.esmcol_path = _fetch_and_parse_json(esmcol_obj)
+            self.df = _fetch_catalog(self.esmcol_data, esmcol_obj)
+
+        elif isinstance(esmcol_obj, pd.DataFrame):
+            if esmcol_data is None:
+                raise ValueError(f"Missing required argument: 'esmcol_data'")
+            self.df = esmcol_obj
+            self.esmcol_data = esmcol_data
+            self.esmcol_path = None
+        else:
+            raise ValueError(f'{self.name} constructor not properly called!')
+
         self.progressbar = progressbar
-        self._col_data, self.esmcol_path = _fetch_and_parse_json(esmcol_path)
-        self.df = _fetch_catalog(self._col_data, self.esmcol_path)
         self._entries = {}
+        self._kwargs = kwargs
+        self._log_level = log_level
         self._ds = None
         self.zarr_kwargs = None
         self.cdf_kwargs = None
         self.preprocess = None
         self.aggregate = None
         self.sep = sep
+        self.aggregation_info = self.get_aggregation_info()
+        self._grouped = self.df.groupby(self.aggregation_info['groupby_attrs'])
+        self._keys = list(self._grouped.groups.keys())
+
+    def keys(self):
+        keys = list(map(lambda x: self.sep.join(x), self._keys))
+        return keys
+
+    @property
+    def key_template(self):
+        return self.sep.join(self.aggregation_info['groupby_attrs'])
 
     def __len__(self):
-        return len(self.df)
+        return len(self.keys())
 
     def __getitem__(self, key):
-        # The canonical unique key is the path of an asset
+
+        # The canonical unique key is the key of a compatible group of assets
         # We also accept other aliases here
-        path_column_name = self._col_data['assets']['column_name']
 
         # First, try the canonical unique key. This is faster than searching
-        results = self.df.loc[self.df[path_column_name] == key]
+        _key = tuple(key.split(self.sep))
+        try:
+            results = self._grouped.get_group(_key)
+        except Exception:
+            # Next, try the path of a single asset if previous results is empty
+            path_column_name = self.esmcol_data['assets']['column_name']
+            results = self.df.loc[self.df[path_column_name] == key]
 
-        # Next, try aliases when the canonical key returned nothing
-        if results.empty:
-            columns = self.df.columns.tolist()
-            columns.remove(path_column_name)
-            key_parts = key.split(self.sep)
-            query = {k: v for k, v in zip(columns, key_parts) if v != '*'}
-            results = self.search(**query)
+            # Finally, try aliases via `_get_subset()` function when the canonical key returned nothing
+            if results.empty:
+                columns = self.df.columns.tolist()
+                columns.remove(path_column_name)
+                key_parts = key.split(self.sep)
+                query = {k: v for k, v in zip(columns, key_parts) if v != '*'}
+                results = _get_subset(self.df, **query)
 
-        if len(results) == 1:
-
-            if isinstance(results, pd.DataFrame):
-                asset = _get_asset_info(self._col_data, results)
-            else:
-                asset = _get_asset_info(self._col_data, results.df)
-
-            asset = asset.popitem()
-            asset_path = asset[0]
-            data_format = asset[1][1]
-
-            if data_format == 'zarr':
-                driver = 'zarr'
-
-            else:
-                driver = 'netcdf'
-
-            # TODO: figure out how to pass other args such as storage_options, chunks, etc
-            entry = LocalCatalogEntry(
-                name=key, description='', driver=driver, args={'urlpath': asset_path}
+        if len(results) >= 1:
+            return esm_datastore.from_df(
+                results,
+                esmcol_data=self.esmcol_data,
+                progressbar=self.progressbar,
+                sep=self.sep,
+                log_level=self._log_level,
+                **self._kwargs,
             )
-            return entry
-
-        elif len(results) > 1:
-            return results
 
         else:
             raise KeyError(key)
@@ -142,6 +164,19 @@ class esm_datastore(intake.catalog.Catalog):
             return False
         else:
             return True
+
+    @classmethod
+    def from_df(
+        cls, df, esmcol_data=None, progressbar=True, sep='.', log_level='CRITICAL', **kwargs
+    ):
+        return cls(
+            df,
+            esmcol_data=esmcol_data,
+            progressbar=progressbar,
+            sep=sep,
+            log_level=log_level,
+            **kwargs,
+        )
 
     def search(self, require_all_on=None, **query):
         """Search for entries in the catalog.
@@ -179,8 +214,15 @@ class esm_datastore(intake.catalog.Catalog):
         401        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r3i...            NaN
         """
 
-        ret = copy.copy(self)
-        ret.df = _get_subset(self.df, require_all_on=require_all_on, **query)
+        results = _get_subset(self.df, require_all_on=require_all_on, **query)
+        ret = esm_datastore.from_df(
+            results,
+            esmcol_data=self.esmcol_data,
+            progressbar=self.progressbar,
+            sep=self.sep,
+            log_level=self._log_level,
+            **self._kwargs,
+        )
         return ret
 
     def serialize(self, name, directory=None, catalog_type='dict'):
@@ -227,7 +269,7 @@ class esm_datastore(intake.catalog.Catalog):
             csv_file_name = directory / csv_file_name
             json_file_name = directory / json_file_name
 
-        collection_data = self._col_data.copy()
+        collection_data = self.esmcol_data.copy()
         collection_data = _clear_old_catalog(collection_data)
         collection_data['id'] = name
 
@@ -339,7 +381,41 @@ class esm_datastore(intake.catalog.Catalog):
             output.append(f'{values} {key}(s)\n')
         output = '\n\t> '.join(output)
         items = len(self.df.index)
-        return f'{self._col_data["id"]}-ESM Collection with {items} entries:\n\t> {output}'
+        return f'{self.esmcol_data["id"]}-ESM Collection with {items} entries:\n\t> {output}'
+
+    def get_aggregation_info(self):
+
+        groupby_attrs = []
+        variable_column_name = None
+        aggregations = []
+        aggregation_dict = {}
+        agg_columns = []
+
+        if 'aggregation_control' in self.esmcol_data:
+            aggregation_dict = {}
+            variable_column_name = self.esmcol_data['aggregation_control']['variable_column_name']
+            groupby_attrs = self.esmcol_data['aggregation_control'].get('groupby_attrs', [])
+            aggregations = self.esmcol_data['aggregation_control'].get('aggregations', [])
+            # Sort aggregations to make sure join_existing is always done before join_new
+            aggregations = sorted(aggregations, key=lambda i: i['type'], reverse=True)
+            for agg in aggregations:
+                key = agg['attribute_name']
+                rest = agg.copy()
+                del rest['attribute_name']
+                aggregation_dict[key] = rest
+            agg_columns = list(aggregation_dict.keys())
+
+        if not groupby_attrs:
+            groupby_attrs = self.df.columns.tolist()
+
+        info = {
+            'groupby_attrs': groupby_attrs,
+            'variable_column_name': variable_column_name,
+            'aggregations': aggregations,
+            'agg_columns': agg_columns,
+            'aggregation_dict': aggregation_dict,
+        }
+        return info
 
     def to_dataset_dict(
         self,
@@ -410,7 +486,7 @@ class esm_datastore(intake.catalog.Catalog):
         if (
             'chunks' in cdf_kwargs
             and not cdf_kwargs['chunks']
-            and self._col_data['assets'].get('format') != 'zarr'
+            and self.esmcol_data['assets'].get('format') != 'zarr'
         ):
             print(
                 '\nxarray will load netCDF datasets with dask using a single chunk for all arrays.'
@@ -434,7 +510,7 @@ class esm_datastore(intake.catalog.Catalog):
 
     def _open_dataset(self):
 
-        path_column_name = self._col_data['assets']['column_name']
+        path_column_name = self.esmcol_data['assets']['column_name']
 
         # replace path column with mapper (dependent on filesystem type)
         mapper_dict = {
@@ -447,10 +523,12 @@ class esm_datastore(intake.catalog.Catalog):
         aggregation_dict = {}
         agg_columns = []
         if self.aggregate:
-            if 'aggregation_control' in self._col_data:
-                variable_column_name = self._col_data['aggregation_control']['variable_column_name']
-                groupby_attrs = self._col_data['aggregation_control'].get('groupby_attrs', [])
-                aggregations = self._col_data['aggregation_control'].get('aggregations', [])
+            if 'aggregation_control' in self.esmcol_data:
+                variable_column_name = self.esmcol_data['aggregation_control'][
+                    'variable_column_name'
+                ]
+                groupby_attrs = self.esmcol_data['aggregation_control'].get('groupby_attrs', [])
+                aggregations = self.esmcol_data['aggregation_control'].get('aggregations', [])
                 # Sort aggregations to make sure join_existing is always done before join_new
                 aggregations = sorted(aggregations, key=lambda i: i['type'], reverse=True)
                 for agg in aggregations:
@@ -493,7 +571,7 @@ class esm_datastore(intake.catalog.Catalog):
             load_group_dataset_delayed(
                 key,
                 df,
-                self._col_data,
+                self.esmcol_data,
                 agg_columns,
                 aggregation_dict,
                 path_column_name,
