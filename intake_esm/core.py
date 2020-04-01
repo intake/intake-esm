@@ -2,6 +2,7 @@ import copy
 import itertools
 import json
 import logging
+from collections.abc import Iterable
 
 import dask
 import intake
@@ -211,7 +212,12 @@ class esm_datastore(intake.catalog.Catalog):
         dcpp_init_year       59
         dtype: int64
         """
-        return self.df.nunique()
+
+        uniques = self.unique(self.df.columns.tolist())
+        nuniques = {}
+        for key, val in uniques.items():
+            nuniques[key] = val['count']
+        return pd.Series(nuniques)
 
     def unique(self, columns=None):
         """Return unique values for given columns in the
@@ -483,7 +489,7 @@ def _unique(df, columns):
 
     info = {}
     for col in columns:
-        uniques = df[col].unique().tolist()
+        uniques = np.unique(list(_flatten_list(df[col].values))).tolist()
         info[col] = {'count': len(uniques), 'values': uniques}
     return info
 
@@ -622,3 +628,12 @@ def _normalize_query(query):
         if isinstance(val, str):
             q[key] = [val]
     return q
+
+
+def _flatten_list(data):
+    for item in data:
+        if isinstance(item, Iterable) and not isinstance(item, str):
+            for x in _flatten_list(item):
+                yield x
+        else:
+            yield item

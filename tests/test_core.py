@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from intake_esm.core import _get_subset, _normalize_query
+from intake_esm.core import _get_subset, _normalize_query, _unique
 
 here = os.path.abspath(os.path.dirname(__file__))
 zarr_col_pangeo_cmip6 = (
@@ -44,9 +44,29 @@ def test_log_level_error():
         intake.open_esm_datastore(cdf_col_sample_cmip6, log_level='VERBOSE')
 
 
-def test_unique(pangeo_cmip6_col):
+def test_col_unique(pangeo_cmip6_col):
     uniques = pangeo_cmip6_col.unique(columns=['activity_id', 'experiment_id'])
     assert isinstance(uniques, dict)
+    assert isinstance(pangeo_cmip6_col.nunique(), pd.Series)
+
+
+def test_unique():
+    df = pd.DataFrame(
+        {
+            'path': ['file1', 'file2', 'file3'],
+            'variable': [['A', 'B'], ['A', 'B', 'C'], ['C', 'D', 'A']],
+            'attr': [1, 2, 3],
+            'random': [set(['bx', 'by']), set(['bx', 'bz']), set(['bx', 'by'])],
+        }
+    )
+    expected = {
+        'path': {'count': 3, 'values': ['file1', 'file2', 'file3']},
+        'variable': {'count': 4, 'values': ['A', 'B', 'C', 'D']},
+        'attr': {'count': 3, 'values': [1, 2, 3]},
+        'random': {'count': 3, 'values': ['bx', 'by', 'bz']},
+    }
+    actual = _unique(df, df.columns.tolist())
+    assert actual == expected
 
 
 def test_load_esmcol_remote(pangeo_cmip6_col):
