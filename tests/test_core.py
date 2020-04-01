@@ -2,6 +2,7 @@ import os
 from tempfile import TemporaryDirectory
 
 import intake
+import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
@@ -53,19 +54,26 @@ def test_col_unique(pangeo_cmip6_col):
 def test_unique():
     df = pd.DataFrame(
         {
-            'path': ['file1', 'file2', 'file3'],
-            'variable': [['A', 'B'], ['A', 'B', 'C'], ['C', 'D', 'A']],
-            'attr': [1, 2, 3],
-            'random': [set(['bx', 'by']), set(['bx', 'bz']), set(['bx', 'by'])],
+            'path': ['file1', 'file2', 'file3', 'file4'],
+            'variable': [['A', 'B'], ['A', 'B', 'C'], ['C', 'D', 'A'], 'C'],
+            'attr': [1, 2, 3, np.nan],
+            'random': [set(['bx', 'by']), set(['bx', 'bz']), set(['bx', 'by']), None],
         }
     )
     expected = {
-        'path': {'count': 3, 'values': ['file1', 'file2', 'file3']},
+        'path': {'count': 4, 'values': ['file1', 'file2', 'file3', 'file4']},
         'variable': {'count': 4, 'values': ['A', 'B', 'C', 'D']},
-        'attr': {'count': 3, 'values': [1, 2, 3]},
+        'attr': {'count': 3, 'values': [1.0, 2.0, 3.0]},
         'random': {'count': 3, 'values': ['bx', 'by', 'bz']},
     }
     actual = _unique(df, df.columns.tolist())
+    assert actual == expected
+
+    actual = _unique(df)
+    assert actual == expected
+
+    actual = _unique(df, columns='random')
+    expected = {'random': {'count': 3, 'values': ['bx', 'by', 'bz']}}
     assert actual == expected
 
 

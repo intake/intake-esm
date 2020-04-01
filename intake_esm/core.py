@@ -481,15 +481,16 @@ class esm_datastore(intake.catalog.Catalog):
         return self._ds
 
 
-def _unique(df, columns):
+def _unique(df, columns=None):
     if isinstance(columns, str):
         columns = [columns]
     if not columns:
-        columns = df.columns
+        columns = df.columns.tolist()
 
     info = {}
     for col in columns:
-        uniques = np.unique(list(_flatten_list(df[col].values))).tolist()
+        values = df[col].dropna().values
+        uniques = np.unique(list(_flatten_list(values))).tolist()
         info[col] = {'count': len(uniques), 'values': uniques}
     return info
 
