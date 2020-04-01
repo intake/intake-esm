@@ -2,7 +2,9 @@ name: intake-esm-dev
 channels:
   - conda-forge
 dependencies:
+  - cftime
   - codecov
+  - netcdf4
   - pip
   - pytest
   - pytest-cov
