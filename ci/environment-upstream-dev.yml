@@ -2,7 +2,9 @@ name: intake-esm-dev
 channels:
   - conda-forge
 dependencies:
+  - cftime
   - codecov
+  - netcdf4
   - pip
   - pytest
   - pytest-cov
@@ -10,6 +12,7 @@ dependencies:
   - pytest-xdist
   - toolz
   - zarr
+  - psutil
   - pip:
     - git+https://github.com/intake/intake.git
     - git+https://github.com/pydata/xarray.git
