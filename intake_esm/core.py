@@ -2,6 +2,7 @@ import copy
 import itertools
 import json
 import logging
+from collections.abc import Iterable
 
 import dask
 import intake
@@ -312,7 +313,12 @@ class esm_datastore(intake.catalog.Catalog):
         dcpp_init_year       59
         dtype: int64
         """
-        return self.df.nunique()
+
+        uniques = self.unique(self.df.columns.tolist())
+        nuniques = {}
+        for key, val in uniques.items():
+            nuniques[key] = val['count']
+        return pd.Series(nuniques)
 
     def unique(self, columns=None):
         """Return unique values for given columns in the
@@ -390,6 +396,7 @@ class esm_datastore(intake.catalog.Catalog):
         aggregations = []
         aggregation_dict = {}
         agg_columns = []
+        path_column_name = self.esmcol_data['assets']['column_name']
 
         if 'aggregation_control' in self.esmcol_data:
             aggregation_dict = {}
@@ -408,12 +415,26 @@ class esm_datastore(intake.catalog.Catalog):
         if not groupby_attrs:
             groupby_attrs = self.df.columns.tolist()
 
+        # filter groupby_attrs to ensure no columns with all nans
+        def _allnan_or_nonan(column):
+            if self.df[column].isnull().all():
+                return False
+            elif self.df[column].isnull().any():
+                raise ValueError(
+                    f'The data in the {column} column should either be all NaN or there should be no NaNs'
+                )
+            else:
+                return True
+
+        groupby_attrs = list(filter(_allnan_or_nonan, groupby_attrs))
+
         info = {
             'groupby_attrs': groupby_attrs,
             'variable_column_name': variable_column_name,
             'aggregations': aggregations,
             'agg_columns': agg_columns,
             'aggregation_dict': aggregation_dict,
+            'path_column_name': path_column_name,
         }
         return info
 
@@ -608,15 +629,16 @@ class esm_datastore(intake.catalog.Catalog):
         return self._ds
 
 
-def _unique(df, columns):
+def _unique(df, columns=None):
     if isinstance(columns, str):
         columns = [columns]
     if not columns:
-        columns = df.columns
+        columns = df.columns.tolist()
 
     info = {}
     for col in columns:
-        uniques = df[col].unique().tolist()
+        values = df[col].dropna().values
+        uniques = np.unique(list(_flatten_list(values))).tolist()
         info[col] = {'count': len(uniques), 'values': uniques}
     return info
 
@@ -768,3 +790,12 @@ def _get_asset_info(col_data, df, variable_column_name=None):
         )
 
     return lookup
+
+
+def _flatten_list(data):
+    for item in data:
+        if isinstance(item, Iterable) and not isinstance(item, str):
+            for x in _flatten_list(item):
+                yield x
+        else:
+            yield item
