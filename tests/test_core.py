@@ -118,9 +118,7 @@ def test_getitem_error():
 )
 def test_contains(key, expected):
     col = intake.open_esm_datastore(cdf_col_sample_cmip6)
-
     actual = key in col
-
     assert actual == expected
 
 
@@ -175,6 +173,7 @@ def test_to_dataset_dict(esmcol_path, query, kwargs):
     assert ds.time.encoding
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize('esmcol_path, query', [(cdf_col_sample_cmip6, cdf_query)])
 def test_to_dataset_dict_aggfalse(esmcol_path, query):
     col = intake.open_esm_datastore(esmcol_path)
@@ -267,6 +266,7 @@ def test_to_dataset_dict_chunking(chunks, expected_chunks):
     assert ds['hfls'].data.chunksize == expected_chunks
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize('progressbar', [False, True])
 def test_progressbar(progressbar):
     c = intake.open_esm_datastore(cdf_col_sample_cmip5)

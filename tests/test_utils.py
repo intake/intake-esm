@@ -64,6 +64,7 @@ def test_catalog_url_construction_from_relative_url_error():
         _fetch_catalog(data, path)
 
 
+@pytest.mark.skip
 def test_get_dask_client():
     from distributed import Client
 
