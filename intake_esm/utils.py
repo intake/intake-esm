@@ -2,6 +2,7 @@
 import json
 import logging
 import warnings
+from functools import lru_cache
 from pathlib import Path
 from urllib.parse import ParseResult, urlparse, urlunparse
 
@@ -94,8 +95,8 @@ def _fetch_catalog(collection_data, esmcol_path):
                 if not _is_valid_url(catalog):
                     raise FileNotFoundError(f'Unable to find: {catalog}')
                 else:
-                    return pd.read_csv(catalog)
-            return pd.read_csv(catalog_path)
+                    return _load_csv(catalog)
+            return _load_csv(catalog_path)
 
         else:
             catalog_path = Path(collection_data['catalog_file'])
@@ -107,12 +108,17 @@ def _fetch_catalog(collection_data, esmcol_path):
                 if not catalog.exists():
                     raise FileNotFoundError(f'Unable to find: {catalog}')
                 else:
-                    return pd.read_csv(catalog)
+                    return _load_csv(catalog)
 
-            return pd.read_csv(catalog_path)
+            return _load_csv(catalog_path)
 
     else:
         return pd.DataFrame(collection_data['catalog_dict'])
+
+
+@lru_cache(maxsize=None)
+def _load_csv(path, **kwargs):
+    return pd.read_csv(path, **kwargs)
 
 
 def _get_dask_client():
