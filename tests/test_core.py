@@ -274,7 +274,6 @@ def test_to_dataset_dict_chunking(chunks, expected_chunks):
     assert ds['hfls'].data.chunksize == expected_chunks
 
 
-@pytest.mark.skip
 @pytest.mark.parametrize('progressbar', [False, True])
 def test_progressbar(progressbar):
     c = intake.open_esm_datastore(cdf_col_sample_cmip5)
