@@ -3,3 +3,4 @@ intake
 fsspec
 requests
 tqdm
+dask

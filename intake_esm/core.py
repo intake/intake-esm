@@ -95,6 +95,7 @@ class esm_datastore(intake.catalog.Catalog):
 
         self.progressbar = progressbar
         self._kwargs = kwargs
+        self._to_dataset_args_token = None
         self._log_level = log_level
         self._datasets = {}
         self.sep = sep
@@ -502,45 +503,63 @@ class esm_datastore(intake.catalog.Catalog):
         """
 
         import concurrent.futures
+        import sys
+        import dask
+        from collections import OrderedDict
 
+        source_kwargs = OrderedDict(
+            zarr_kwargs=zarr_kwargs,
+            cdf_kwargs=cdf_kwargs,
+            preprocess=preprocess,
+            storage_options=storage_options,
+        )
+        token = dask.base.tokenize(source_kwargs)
         if progressbar is not None:
             self.progressbar = progressbar
 
         if preprocess is not None and not callable(preprocess):
             raise ValueError('preprocess argument must be callable')
 
-        if self.progressbar:
-            print(
-                f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{self.key_template}'
-                \n--> There is/are {len(self.items())} dataset(s)"""
-            )
-
-        if self._datasets and (len(self._datasets) == len(self.items())):
+        # Avoid re-loading data if nothing has changed since the last call
+        if self._datasets and (token == self._to_dataset_args_token):
             return self._datasets
         else:
-            sources = [
-                source(
-                    zarr_kwargs=zarr_kwargs,
-                    cdf_kwargs=cdf_kwargs,
-                    storage_options=storage_options,
-                    preprocess=preprocess,
+            self._to_dataset_args_token = token
+            if self.progressbar:
+                print(
+                    f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{self.key_template}'"""
                 )
-                for _, source in self.items()
-            ]
+
+            def _load_source(source):
+                return source.to_dask()
+
+            sources = [source(**source_kwargs) for _, source in self.items()]
+
+            if self.progressbar:
+                total = len(sources)
+                # Need to use ascii characters on Windows because there isn't
+                # always full unicode support
+                # (see https://github.com/tqdm/tqdm/issues/454)
+                use_ascii = bool(sys.platform == 'win32')
+                progress = tqdm(
+                    total=total, ncols=79, ascii=use_ascii, leave=True, desc='Dataset(s)'
+                )
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=len(sources)) as executor:
-                out = list(
-                    tqdm(
-                        executor.map(lambda x: x.to_dask(), sources),
-                        total=len(sources),
-                        disable=not self.progressbar,
-                        leave=True,
-                    )
-                )
-            self._datasets = {ds.attrs['intake_esm_dataset_key']: ds for ds in out}
-            return self._datasets
+                future_tasks = [executor.submit(_load_source, source) for source in sources]
 
-    to_xarray = to_dataset_dict
+                for i, task in enumerate(concurrent.futures.as_completed(future_tasks)):
+                    ds = task.result()
+                    self._datasets[ds.attrs['intake_esm_dataset_key']] = ds
+                    if self.progressbar:
+                        progress.update(1)
+
+                if self.progressbar:
+                    progress.close()
+
+                return self._datasets
+
+    to_xarray = to_dask = to_dataset_dict
 
 
 def _unique(df, columns=None):

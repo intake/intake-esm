@@ -63,7 +63,6 @@ def _create_asset_info_lookup(
             raise ValueError(f'Please specify either `data_format` or `format_column_name`')
         else:
             data_format_list = [data_format] * len(df)
-
     if variable_column_name is None:
         varname_list = [None] * len(df)
     else:
@@ -104,12 +103,10 @@ def _aggregate(
                 preprocess=preprocess,
                 varname=varname,
             )
-
             return ds
 
         else:
             agg_column = agg_columns[level]
-
             agg_info = aggregation_dict[agg_column]
             agg_type = agg_info['type']
 
@@ -123,12 +120,9 @@ def _aggregate(
                 for key, value in v.items()
             ]
             keys = list(v.keys())
-
             attrs = dict_union(*[ds.attrs for ds in dsets])
-
             # copy encoding for each variable from first encounter
             variables = set([v for ds in dsets for v in ds.variables])
-
             encoding = {}
             for ds in dsets:
                 for v in variables:
