@@ -1,11 +1,10 @@
-import sys
 from unittest import mock
 
 import pandas as pd
 import pytest
 import requests
 
-from intake_esm.utils import _fetch_and_parse_json, _fetch_catalog, _get_dask_client, _is_valid_url
+from intake_esm.utils import _fetch_and_parse_json, _fetch_catalog, _is_valid_url
 
 
 def test_invalid_url():
@@ -62,25 +61,3 @@ def test_catalog_url_construction_from_relative_url_error():
     data['catalog_file'] = 'DONT_EXIST'
     with pytest.raises(FileNotFoundError):
         _fetch_catalog(data, path)
-
-
-@pytest.mark.skip
-def test_get_dask_client():
-    from distributed import Client
-
-    with Client() as client:
-        c, _is_client_local = _get_dask_client()
-        assert c is client
-
-    with mock.patch.dict(sys.modules, {'distributed.client': None}):
-        with pytest.raises(Exception):
-            _get_dask_client()
-
-    c, _is_client_local = _get_dask_client()
-    assert isinstance(c, Client)
-    assert _is_client_local
-
-    with Client() as client:
-        client.cluster.close()
-        c, _is_client_local = _get_dask_client()
-        assert c is not client

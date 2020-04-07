@@ -7,6 +7,7 @@ import intake
 import numpy as np
 import pandas as pd
 from intake.catalog.local import LocalCatalogEntry
+from tqdm import tqdm
 
 from .utils import _fetch_and_parse_json, _fetch_catalog, logger
 
@@ -236,7 +237,7 @@ class esm_datastore(intake.catalog.Catalog):
 
     def __repr__(self):
         """Make string representation of object."""
-        return f'<Intake-esm catalog with {len(self)} entries, {len(self.df)} assets >'
+        return f'<Intake-esm catalog with {len(self)} dataset(s) from {len(self.df)} asset(s)>'
 
     @classmethod
     def from_df(
@@ -442,7 +443,12 @@ class esm_datastore(intake.catalog.Catalog):
         return _unique(self.df, columns)
 
     def to_dataset_dict(
-        self, zarr_kwargs={}, cdf_kwargs={'chunks': {}}, preprocess=None, storage_options={}
+        self,
+        zarr_kwargs={},
+        cdf_kwargs={'chunks': {}},
+        preprocess=None,
+        storage_options={},
+        progressbar=None,
     ):
         """Load catalog entries into a dictionary of xarray datasets.
 
@@ -495,20 +501,43 @@ class esm_datastore(intake.catalog.Catalog):
             pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
         """
 
+        import concurrent.futures
+
+        if progressbar is not None:
+            self.progressbar = progressbar
+
         if preprocess is not None and not callable(preprocess):
             raise ValueError('preprocess argument must be callable')
+
+        if self.progressbar:
+            print(
+                f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{self.key_template}'
+                \n--> There is/are {len(self.items())} dataset(s)"""
+            )
 
         if self._datasets and (len(self._datasets) == len(self.items())):
             return self._datasets
         else:
-            for key, source in self.items():
-                self._datasets[key] = source(
+            sources = [
+                source(
                     zarr_kwargs=zarr_kwargs,
                     cdf_kwargs=cdf_kwargs,
                     storage_options=storage_options,
                     preprocess=preprocess,
-                ).to_dask()
+                )
+                for _, source in self.items()
+            ]
 
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(sources)) as executor:
+                out = list(
+                    tqdm(
+                        executor.map(lambda x: x.to_dask(), sources),
+                        total=len(sources),
+                        disable=not self.progressbar,
+                        leave=True,
+                    )
+                )
+            self._datasets = {ds.attrs['intake_esm_dataset_key']: ds for ds in out}
             return self._datasets
 
     to_xarray = to_dataset_dict
