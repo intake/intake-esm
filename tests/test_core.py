@@ -7,7 +7,6 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-import intake_esm
 from intake_esm.core import _get_subset, _normalize_query, _unique
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -93,20 +92,11 @@ def test_load_esmcol_remote(zarr_aws_cesmle_col):
     assert isinstance(zarr_aws_cesmle_col.df, pd.DataFrame)
 
 
-params = [
-    'CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.*.Amon.*.gr.*',
-    'CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.r4i1p1f2.Amon.tasmax.gr.*',
-    'CMIP.IPSL.IPSL-CM6A-LR.piControl',
-    'CMIP',
-    './tests/sample_data/cmip/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r23i1p1f1/Omon/prsn/gr/v20180803/prsn/prsn_Omon_IPSL-CM6A-LR_historical_r23i1p1f1_gr_185001-201412.nc',
-]
-
-
-@pytest.mark.parametrize('key', params)
-def test_getitem(key):
+def test_getitem():
+    key = 'CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.Amon.gr'
     col = intake.open_esm_datastore(cdf_col_sample_cmip6)
     x = col[key]
-    assert isinstance(x, intake_esm.esm_datastore)
+    assert isinstance(x, intake.catalog.local.LocalCatalogEntry)
 
 
 def test_getitem_error(sample_cmip6_col):
@@ -118,10 +108,10 @@ def test_getitem_error(sample_cmip6_col):
 @pytest.mark.parametrize(
     'key, expected',
     [
-        ('CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.*.Amon.*.gr.*', True),
+        ('CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.Amon.gr', True),
         (
             './tests/sample_data/cmip/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r23i1p1f1/Omon/prsn/gr/v20180803/prsn/prsn_Omon_IPSL-CM6A-LR_historical_r23i1p1f1_gr_185001-201412.nc',
-            True,
+            False,
         ),
         ('DOES_NOT_EXIST', False),
     ],

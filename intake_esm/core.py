@@ -162,79 +162,38 @@ class esm_datastore(intake.catalog.Catalog):
         }
         return info
 
-    @property
     def keys(self):
         keys = list(map(lambda x: self.sep.join(x), self._keys))
         return keys
-
-    def _load(self):
-        @dask.delayed
-        def load_entry(key, col):
-            _key = tuple(key.split(col.sep))
-            df = col._grouped.get_group(_key)
-            args = dict(
-                df=df,
-                aggregation_dict=col.aggregation_info['aggregation_dict'],
-                path_column=col.aggregation_info['path_column_name'],
-                variable_column=col.aggregation_info['variable_column_name'],
-                data_format=col.aggregation_info['data_format'],
-                format_column=col.aggregation_info['format_column_name'],
-            )
-            entry = intake.catalog.local.LocalCatalogEntry(
-                name=key, description='', driver='esm_group', args=args, metadata={}
-            )
-            return entry
-
-        self._entries = {key: load_entry(key, self) for key in self.keys}
 
     @property
     def key_template(self):
         return self.sep.join(self.aggregation_info['groupby_attrs'])
 
     def __len__(self):
-        return len(self.keys)
-
-    def __getitem__(self, key):
-
-        # The canonical unique key is the key of a compatible group of assets
-        # We also accept other aliases here
-
-        # First, try the canonical unique key. This is faster than searching
-        _key = tuple(key.split(self.sep))
-        try:
-            results = self._grouped.get_group(_key)
-        except Exception:
-            # Next, try the path of a single asset if previous results is empty
-            path_column_name = self.esmcol_data['assets']['column_name']
-            results = self.df.loc[self.df[path_column_name] == key]
-
-            # Finally, try aliases via `_get_subset()` function when the canonical key returned nothing
-            if results.empty:
-                columns = self.df.columns.tolist()
-                columns.remove(path_column_name)
-                key_parts = key.split(self.sep)
-                query = {k: v for k, v in zip(columns, key_parts) if v != '*'}
-                results = _get_subset(self.df, **query)
-
-        if len(results) >= 1:
-            return esm_datastore.from_df(
-                results,
-                esmcol_data=self.esmcol_data,
-                progressbar=self.progressbar,
-                sep=self.sep,
-                log_level=self._log_level,
-                **self._kwargs,
-            )
-
-        else:
-            raise KeyError(key)
+        return len(self.keys())
 
     def _get_entries(self):
-        """Eager evaluation of the delayed entries dictionary.
-           This is needed for enabling functionality provided by the base class
-           which expects a regular dictionary."""
-        entries = dask.compute(self._entries)[0]
-        return entries
+        # Due to just-in-time entry creation, we may not have all entries loaded
+        # We need to make sure to create entries missing from self._entries
+        if len(self._entries) != len(self.keys()):
+            for key in self.keys():
+                if key not in self._entries:
+                    self[key]
+        return self._entries
+
+    def __getitem__(self, key):
+        # The canonical unique key is the key of a compatible group of assets
+        try:
+            return self._entries[key]
+        except KeyError:
+            if key in self.keys():
+                _key = tuple(key.split(self.sep))
+                df = self._grouped.get_group(_key)
+                self._entries[key] = _make_entry(key, df, self.aggregation_info)
+                return self._entries[key]
+            else:
+                raise KeyError(key)
 
     def __contains__(self, key):
         # Python falls back to iterating over the entire catalog
@@ -651,3 +610,18 @@ def _flatten_list(data):
                 yield x
         else:
             yield item
+
+
+def _make_entry(key, df, aggregation_info):
+    args = dict(
+        df=df,
+        aggregation_dict=aggregation_info['aggregation_dict'],
+        path_column=aggregation_info['path_column_name'],
+        variable_column=aggregation_info['variable_column_name'],
+        data_format=aggregation_info['data_format'],
+        format_column=aggregation_info['format_column_name'],
+    )
+    entry = intake.catalog.local.LocalCatalogEntry(
+        name=key, description='', driver='esm_group', args=args, metadata={}
+    )
+    return entry
