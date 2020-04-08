@@ -3,10 +3,10 @@ import json
 import logging
 from collections.abc import Iterable
 
+import dask
 import intake
 import numpy as np
 import pandas as pd
-from intake.catalog.local import LocalCatalogEntry
 from tqdm import tqdm
 
 from .utils import _fetch_and_parse_json, _fetch_catalog, logger
@@ -168,20 +168,24 @@ class esm_datastore(intake.catalog.Catalog):
         return keys
 
     def _load(self):
-        for key in self.keys:
-            _key = tuple(key.split(self.sep))
-            df = self._grouped.get_group(_key)
+        @dask.delayed
+        def load_entry(key, col):
+            _key = tuple(key.split(col.sep))
+            df = col._grouped.get_group(_key)
             args = dict(
                 df=df,
-                aggregation_dict=self.aggregation_info['aggregation_dict'],
-                path_column=self.aggregation_info['path_column_name'],
-                variable_column=self.aggregation_info['variable_column_name'],
-                data_format=self.aggregation_info['data_format'],
-                format_column=self.aggregation_info['format_column_name'],
+                aggregation_dict=col.aggregation_info['aggregation_dict'],
+                path_column=col.aggregation_info['path_column_name'],
+                variable_column=col.aggregation_info['variable_column_name'],
+                data_format=col.aggregation_info['data_format'],
+                format_column=col.aggregation_info['format_column_name'],
             )
-            self._entries[key] = LocalCatalogEntry(
+            entry = intake.catalog.local.LocalCatalogEntry(
                 name=key, description='', driver='esm_group', args=args, metadata={}
             )
+            return entry
+
+        self._entries = {key: load_entry(key, self) for key in self.keys}
 
     @property
     def key_template(self):
@@ -224,6 +228,13 @@ class esm_datastore(intake.catalog.Catalog):
 
         else:
             raise KeyError(key)
+
+    def _get_entries(self):
+        """Eager evaluation of the delayed entries dictionary.
+           This is needed for enabling functionality provided by the base class
+           which expects a regular dictionary."""
+        entries = dask.compute(self._entries)[0]
+        return entries
 
     def __contains__(self, key):
         # Python falls back to iterating over the entire catalog
@@ -504,7 +515,6 @@ class esm_datastore(intake.catalog.Catalog):
 
         import concurrent.futures
         import sys
-        import dask
         from collections import OrderedDict
 
         source_kwargs = OrderedDict(
