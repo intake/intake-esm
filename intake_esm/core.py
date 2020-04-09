@@ -527,8 +527,6 @@ class esm_datastore(intake.catalog.Catalog):
 
                 return self._datasets
 
-    to_xarray = to_dask = to_dataset_dict
-
 
 def _unique(df, columns=None):
     if isinstance(columns, str):
