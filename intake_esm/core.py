@@ -176,10 +176,9 @@ class esm_datastore(intake.catalog.Catalog):
     def _get_entries(self):
         # Due to just-in-time entry creation, we may not have all entries loaded
         # We need to make sure to create entries missing from self._entries
-        if len(self._entries) != len(self.keys()):
-            for key in self.keys():
-                if key not in self._entries:
-                    self[key]
+        missing = set(self.keys()) - set(self._entries.keys())
+        for key in missing:
+            _ = self[key]
         return self._entries
 
     def __getitem__(self, key):
