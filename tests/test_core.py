@@ -92,11 +92,21 @@ def test_load_esmcol_remote(zarr_aws_cesmle_col):
     assert isinstance(zarr_aws_cesmle_col.df, pd.DataFrame)
 
 
-def test_getitem():
-    key = 'CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.Amon.gr'
-    col = intake.open_esm_datastore(cdf_col_sample_cmip6)
-    x = col[key]
+@pytest.mark.parametrize(
+    'key',
+    [
+        'CFMIP.IPSL.IPSL-CM6A-LR.abrupt-0p5xCO2.Lmon.gr',
+        'ScenarioMIP.UA.MCM-UA-1-0.ssp585.SImon.gn',
+        'CMIP.CNRM-CERFACS.CNRM-CM6-1-HR.amip.Amon.gr',
+    ],
+)
+@pytest.mark.parametrize('decode_times', [True, False])
+def test_getitem(pangeo_cmip6_col, key, decode_times):
+    x = pangeo_cmip6_col[key]
     assert isinstance(x, intake.catalog.local.LocalCatalogEntry)
+    ds = x(zarr_kwargs={'consolidated': True, 'decode_times': decode_times}).to_dask()
+    assert isinstance(ds, xr.Dataset)
+    assert set(x.df['member_id']) == set(ds['member_id'].values)
 
 
 def test_getitem_error(sample_cmip6_col):
