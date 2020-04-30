@@ -207,7 +207,17 @@ class esm_datastore(intake.catalog.Catalog):
 
     def __repr__(self):
         """Make string representation of object."""
-        return f'<Intake-esm catalog with {len(self)} dataset(s) from {len(self.df)} asset(s)>'
+        return f'<{self.esmcol_data["id"]} catalog with {len(self)} dataset(s) from {len(self.df)} asset(s)>'
+
+    def _repr_html_(self):
+        """
+        Return an html representation for the catalog object.
+        Main for IPython notebook
+        """
+        uniques = pd.DataFrame(self.nunique(), columns=['unique'])
+        text = uniques._repr_html_()
+        output = f'<p><strong>{self.esmcol_data["id"]} catalog with {len(self)} dataset(s) from {len(self.df)} asset(s)</strong>:</p> {text}'
+        return output
 
     @classmethod
     def from_df(
