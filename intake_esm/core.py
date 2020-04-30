@@ -212,7 +212,7 @@ class esm_datastore(intake.catalog.Catalog):
     def _repr_html_(self):
         """
         Return an html representation for the catalog object.
-        Main for IPython notebook
+        Mainly for IPython notebook
         """
         uniques = pd.DataFrame(self.nunique(), columns=['unique'])
         text = uniques._repr_html_()
