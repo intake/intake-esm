@@ -2,5 +2,5 @@ xarray>=0.15.1
 intake
 fsspec
 requests
+tqdm
 dask
-distributed

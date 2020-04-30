@@ -25,6 +25,17 @@ def pangeo_cmip6_col():
     return intake.open_esm_datastore(url)
 
 
+@pytest.fixture(scope='module')
+def sample_cmip6_col():
+    return intake.open_esm_datastore(cdf_col_sample_cmip6)
+
+
+@pytest.fixture(scope='module')
+def zarr_aws_cesmle_col():
+    url = 'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json'
+    return intake.open_esm_datastore(url)
+
+
 zarr_query = dict(
     variable_id=['pr'],
     experiment_id='ssp370',
@@ -36,8 +47,8 @@ zarr_query = dict(
 cdf_query = dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_id=['tasmax'])
 
 
-def test_repr(pangeo_cmip6_col):
-    assert 'ESM Collection' in repr(pangeo_cmip6_col)
+def test_repr(sample_cmip6_col):
+    assert 'Intake-esm catalog with' in repr(sample_cmip6_col)
 
 
 def test_log_level_error():
@@ -45,10 +56,10 @@ def test_log_level_error():
         intake.open_esm_datastore(cdf_col_sample_cmip6, log_level='VERBOSE')
 
 
-def test_col_unique(pangeo_cmip6_col):
-    uniques = pangeo_cmip6_col.unique(columns=['activity_id', 'experiment_id'])
+def test_col_unique(sample_cmip6_col):
+    uniques = sample_cmip6_col.unique(columns=['activity_id', 'experiment_id'])
     assert isinstance(uniques, dict)
-    assert isinstance(pangeo_cmip6_col.nunique(), pd.Series)
+    assert isinstance(sample_cmip6_col.nunique(), pd.Series)
 
 
 def test_unique():
@@ -77,33 +88,68 @@ def test_unique():
     assert actual == expected
 
 
-def test_load_esmcol_remote(pangeo_cmip6_col):
-    assert isinstance(pangeo_cmip6_col.df, pd.DataFrame)
+def test_load_esmcol_remote(zarr_aws_cesmle_col):
+    assert isinstance(zarr_aws_cesmle_col.df, pd.DataFrame)
+
+
+@pytest.mark.parametrize(
+    'key',
+    [
+        'CFMIP.IPSL.IPSL-CM6A-LR.abrupt-0p5xCO2.Lmon.gr',
+        'ScenarioMIP.UA.MCM-UA-1-0.ssp585.SImon.gn',
+        'CMIP.CNRM-CERFACS.CNRM-CM6-1-HR.amip.Amon.gr',
+    ],
+)
+@pytest.mark.parametrize('decode_times', [True, False])
+def test_getitem(pangeo_cmip6_col, key, decode_times):
+    x = pangeo_cmip6_col[key]
+    assert isinstance(x, intake.catalog.local.LocalCatalogEntry)
+    ds = x(zarr_kwargs={'consolidated': True, 'decode_times': decode_times}).to_dask()
+    assert isinstance(ds, xr.Dataset)
+    assert set(x.df['member_id']) == set(ds['member_id'].values)
+
+
+def test_getitem_error(sample_cmip6_col):
+    with pytest.raises(KeyError):
+        key = 'DOES.NOT.EXIST'
+        sample_cmip6_col[key]
+
+
+@pytest.mark.parametrize(
+    'key, expected',
+    [
+        ('CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.Amon.gr', True),
+        (
+            './tests/sample_data/cmip/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r23i1p1f1/Omon/prsn/gr/v20180803/prsn/prsn_Omon_IPSL-CM6A-LR_historical_r23i1p1f1_gr_185001-201412.nc',
+            False,
+        ),
+        ('DOES_NOT_EXIST', False),
+    ],
+)
+def test_contains(key, expected):
+    col = intake.open_esm_datastore(cdf_col_sample_cmip6)
+    actual = key in col
+    assert actual == expected
 
 
 def test_serialize_to_json():
     with TemporaryDirectory() as local_store:
         col = intake.open_esm_datastore(catalog_dict_records)
-
         name = 'test_serialize_dict'
         col.serialize(name=name, directory=local_store, catalog_type='dict')
-
         output_catalog = os.path.join(local_store, name + '.json')
-
         col2 = intake.open_esm_datastore(output_catalog)
         pd.testing.assert_frame_equal(col.df, col2.df)
 
 
-def test_serialize_to_csv(pangeo_cmip6_col):
+def test_serialize_to_csv(sample_cmip6_col):
     with TemporaryDirectory() as local_store:
-        col_subset = pangeo_cmip6_col.search(
-            source_id='BCC-ESM1', grid_label='gn', table_id='Amon', experiment_id='historical',
-        )
-        name = 'cmip6_bcc_esm1'
+        col_subset = sample_cmip6_col.search(source_id='MRI-ESM2-0',)
+        name = 'CMIP6-MRI-ESM2-0'
         col_subset.serialize(name=name, directory=local_store, catalog_type='file')
-        col = intake.open_esm_datastore(f'{local_store}/cmip6_bcc_esm1.json')
+        col = intake.open_esm_datastore(f'{local_store}/{name}.json')
         pd.testing.assert_frame_equal(col_subset.df, col.df)
-        assert col._col_data['id'] == name
+        assert col.esmcol_data['id'] == name
 
 
 @pytest.mark.parametrize(
@@ -135,6 +181,7 @@ def test_to_dataset_dict(esmcol_path, query, kwargs):
     assert ds.time.encoding
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize('esmcol_path, query', [(cdf_col_sample_cmip6, cdf_query)])
 def test_to_dataset_dict_aggfalse(esmcol_path, query):
     col = intake.open_esm_datastore(esmcol_path)
@@ -234,11 +281,9 @@ def test_progressbar(progressbar):
     _ = cat.to_dataset_dict(cdf_kwargs=dict(chunks={}), progressbar=progressbar)
 
 
-def test_to_dataset_dict_s3():
+def test_to_dataset_dict_s3(zarr_aws_cesmle_col):
     pytest.importorskip('s3fs')
-    zarr_col_aws_cesmle = 'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json'
-    col = intake.open_esm_datastore(zarr_col_aws_cesmle)
-    cat = col.search(variable='RAIN', experiment='20C')
+    cat = zarr_aws_cesmle_col.search(variable='RAIN', experiment='20C')
     dsets = cat.to_dataset_dict(storage_options={'anon': True})
     _, ds = dsets.popitem()
     assert isinstance(ds, xr.Dataset)

@@ -1,4 +1,3 @@
-import copy
 import itertools
 import json
 import logging
@@ -8,9 +7,9 @@ import dask
 import intake
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
-from .merge_util import _aggregate, _create_asset_info_lookup, _path_to_mapper, _to_nested_dict
-from .utils import _fetch_and_parse_json, _fetch_catalog, _get_dask_client, logger
+from .utils import _fetch_and_parse_json, _fetch_catalog, logger
 
 
 class esm_datastore(intake.catalog.Catalog):
@@ -25,8 +24,10 @@ class esm_datastore(intake.catalog.Catalog):
     esmcol_path : str
         Path or URL to an ESM collection JSON file
     progressbar : bool
-         If True, will print a progress bar to standard error (stderr)
-         when loading assets into :py:class:`~xarray.Dataset`.
+        If True, will print a progress bar to standard error (stderr)
+        when loading assets into :py:class:`~xarray.Dataset`.
+    sep : str, default '.'
+        Delimiter to use when constructing a key for a query.
     log_level: str
         Level of logging to report. Accepted values include:
 
@@ -39,8 +40,6 @@ class esm_datastore(intake.catalog.Catalog):
     **kwargs :
         Additional keyword arguments are passed through to the
         :py:class:`~intake.catalog.Catalog` base class.
-
-
 
     Examples
     --------
@@ -58,31 +57,170 @@ class esm_datastore(intake.catalog.Catalog):
     2  AerChemMIP            BCC  BCC-ESM1        ssp370  ...         tas         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
     3  AerChemMIP            BCC  BCC-ESM1        ssp370  ...      tasmax         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
     4  AerChemMIP            BCC  BCC-ESM1        ssp370  ...      tasmin         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
-
     """
 
     name = 'esm_datastore'
     container = 'xarray'
 
-    def __init__(self, esmcol_path, progressbar=True, log_level='CRITICAL', **kwargs):
-        """Main entry point.
-        """
+    def __init__(
+        self,
+        esmcol_obj,
+        esmcol_data=None,
+        progressbar=True,
+        sep='.',
+        log_level='CRITICAL',
+        **kwargs,
+    ):
 
-        super().__init__(**kwargs)
+        """Intake Catalog representing an ESM Collection.
+        """
 
         numeric_log_level = getattr(logging, log_level.upper(), None)
         if not isinstance(numeric_log_level, int):
             raise ValueError(f'Invalid log level: {log_level}')
         logger.setLevel(numeric_log_level)
+
+        if isinstance(esmcol_obj, str):
+            self.esmcol_data, self.esmcol_path = _fetch_and_parse_json(esmcol_obj)
+            self.df = _fetch_catalog(self.esmcol_data, esmcol_obj)
+
+        elif isinstance(esmcol_obj, pd.DataFrame):
+            if esmcol_data is None:
+                raise ValueError(f"Missing required argument: 'esmcol_data'")
+            self.df = esmcol_obj
+            self.esmcol_data = esmcol_data
+            self.esmcol_path = None
+        else:
+            raise ValueError(f'{self.name} constructor not properly called!')
+
         self.progressbar = progressbar
-        self._col_data, self.esmcol_path = _fetch_and_parse_json(esmcol_path)
-        self.df = _fetch_catalog(self._col_data, self.esmcol_path)
+        self._kwargs = kwargs
+        self._to_dataset_args_token = None
+        self._log_level = log_level
+        self._datasets = {}
+        self.sep = sep
+        self.aggregation_info = self._get_aggregation_info()
         self._entries = {}
-        self._ds = None
-        self.zarr_kwargs = None
-        self.cdf_kwargs = None
-        self.preprocess = None
-        self.aggregate = None
+        self._grouped = self.df.groupby(self.aggregation_info['groupby_attrs'])
+        self._keys = list(self._grouped.groups.keys())
+        super(esm_datastore, self).__init__(**kwargs)
+
+    def _get_aggregation_info(self):
+        groupby_attrs = []
+        data_format = None
+        format_column_name = None
+        variable_column_name = None
+        aggregations = []
+        aggregation_dict = {}
+        agg_columns = []
+        path_column_name = self.esmcol_data['assets']['column_name']
+
+        if 'format' in self.esmcol_data['assets']:
+            data_format = self.esmcol_data['assets']['format']
+        else:
+            format_column_name = self.esmcol_data['assets']['format_column_name']
+
+        if 'aggregation_control' in self.esmcol_data:
+            aggregation_dict = {}
+            variable_column_name = self.esmcol_data['aggregation_control']['variable_column_name']
+            groupby_attrs = self.esmcol_data['aggregation_control'].get('groupby_attrs', [])
+            aggregations = self.esmcol_data['aggregation_control'].get('aggregations', [])
+            # Sort aggregations to make sure join_existing is always done before join_new
+            aggregations = sorted(aggregations, key=lambda i: i['type'], reverse=True)
+            for agg in aggregations:
+                key = agg['attribute_name']
+                rest = agg.copy()
+                del rest['attribute_name']
+                aggregation_dict[key] = rest
+            agg_columns = list(aggregation_dict.keys())
+
+        if not groupby_attrs:
+            groupby_attrs = self.df.columns.tolist()
+
+        # filter groupby_attrs to ensure no columns with all nans
+        def _allnan_or_nonan(column):
+            if self.df[column].isnull().all():
+                return False
+            elif self.df[column].isnull().any():
+                raise ValueError(
+                    f'The data in the {column} column should either be all NaN or there should be no NaNs'
+                )
+            else:
+                return True
+
+        groupby_attrs = list(filter(_allnan_or_nonan, groupby_attrs))
+
+        info = {
+            'groupby_attrs': groupby_attrs,
+            'variable_column_name': variable_column_name,
+            'aggregations': aggregations,
+            'agg_columns': agg_columns,
+            'aggregation_dict': aggregation_dict,
+            'path_column_name': path_column_name,
+            'data_format': data_format,
+            'format_column_name': format_column_name,
+        }
+        return info
+
+    def keys(self):
+        keys = list(map(lambda x: self.sep.join(x), self._keys))
+        return keys
+
+    @property
+    def key_template(self):
+        return self.sep.join(self.aggregation_info['groupby_attrs'])
+
+    def __len__(self):
+        return len(self.keys())
+
+    def _get_entries(self):
+        # Due to just-in-time entry creation, we may not have all entries loaded
+        # We need to make sure to create entries missing from self._entries
+        missing = set(self.keys()) - set(self._entries.keys())
+        for key in missing:
+            _ = self[key]
+        return self._entries
+
+    def __getitem__(self, key):
+        # The canonical unique key is the key of a compatible group of assets
+        try:
+            return self._entries[key]
+        except KeyError:
+            if key in self.keys():
+                _key = tuple(key.split(self.sep))
+                df = self._grouped.get_group(_key)
+                self._entries[key] = _make_entry(key, df, self.aggregation_info)
+                return self._entries[key]
+            else:
+                raise KeyError(key)
+
+    def __contains__(self, key):
+        # Python falls back to iterating over the entire catalog
+        # if this method is not defined. To avoid this, we implement it differently
+
+        try:
+            self[key]
+        except KeyError:
+            return False
+        else:
+            return True
+
+    def __repr__(self):
+        """Make string representation of object."""
+        return f'<Intake-esm catalog with {len(self)} dataset(s) from {len(self.df)} asset(s)>'
+
+    @classmethod
+    def from_df(
+        cls, df, esmcol_data=None, progressbar=True, sep='.', log_level='CRITICAL', **kwargs
+    ):
+        return cls(
+            df,
+            esmcol_data=esmcol_data,
+            progressbar=progressbar,
+            sep=sep,
+            log_level=log_level,
+            **kwargs,
+        )
 
     def search(self, require_all_on=None, **query):
         """Search for entries in the catalog.
@@ -118,11 +256,17 @@ class esm_datastore(intake.catalog.Catalog):
         260        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r1i...            NaN
         346        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r2i...            NaN
         401        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r3i...            NaN
-
         """
 
-        ret = copy.copy(self)
-        ret.df = _get_subset(self.df, require_all_on=require_all_on, **query)
+        results = _get_subset(self.df, require_all_on=require_all_on, **query)
+        ret = esm_datastore.from_df(
+            results,
+            esmcol_data=self.esmcol_data,
+            progressbar=self.progressbar,
+            sep=self.sep,
+            log_level=self._log_level,
+            **self._kwargs,
+        )
         return ret
 
     def serialize(self, name, directory=None, catalog_type='dict'):
@@ -169,7 +313,7 @@ class esm_datastore(intake.catalog.Catalog):
             csv_file_name = directory / csv_file_name
             json_file_name = directory / json_file_name
 
-        collection_data = self._col_data.copy()
+        collection_data = self.esmcol_data.copy()
         collection_data = _clear_old_catalog(collection_data)
         collection_data['id'] = name
 
@@ -194,11 +338,6 @@ class esm_datastore(intake.catalog.Catalog):
         --------
         >>> import intake
         >>> col = intake.open_esm_datastore("pangeo-cmip6.json")
-        >>> col.df.head(3)
-        activity_id institution_id source_id  ... grid_label                                             zstore dcpp_init_year
-        0  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
-        1  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
-        2  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
         >>> col.nunique()
         activity_id          10
         institution_id       23
@@ -238,11 +377,6 @@ class esm_datastore(intake.catalog.Catalog):
         >>> import intake
         >>> import pprint
         >>> col = intake.open_esm_datastore("pangeo-cmip6.json")
-        >>> col.df.head(3)
-        activity_id institution_id source_id  ... grid_label                                             zstore dcpp_init_year
-        0  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
-        1  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
-        2  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
         >>> uniques = col.unique(columns=["activity_id", "source_id"])
         >>> pprint.pprint(uniques)
         {'activity_id': {'count': 10,
@@ -278,22 +412,11 @@ class esm_datastore(intake.catalog.Catalog):
         """
         return _unique(self.df, columns)
 
-    def __repr__(self):
-        """Make string representation of object."""
-        info = self.nunique().to_dict()
-        output = []
-        for key, values in info.items():
-            output.append(f'{values} {key}(s)\n')
-        output = '\n\t> '.join(output)
-        items = len(self.df.index)
-        return f'{self._col_data["id"]}-ESM Collection with {items} entries:\n\t> {output}'
-
     def to_dataset_dict(
         self,
         zarr_kwargs={},
         cdf_kwargs={'chunks': {}},
         preprocess=None,
-        aggregate=True,
         storage_options={},
         progressbar=None,
     ):
@@ -330,9 +453,6 @@ class esm_datastore(intake.catalog.Catalog):
         ...                       experiment_id=['historical', 'ssp585'], variable_id='pr',
         ...                       table_id='Amon', grid_label='gn')
         >>> dsets = cat.to_dataset_dict()
-        --> The keys in the returned dictionary of datasets are constructed as follows:
-        'activity_id.institution_id.source_id.experiment_id.table_id.grid_label'
-        --> There will be 2 group(s)
         >>> dsets.keys()
         dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
         >>> dsets['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn']
@@ -351,134 +471,61 @@ class esm_datastore(intake.catalog.Catalog):
             pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
         """
 
-        # set _schema to None to remove any previously cached dataset
-        self._schema = None
+        import concurrent.futures
+        import sys
+        from collections import OrderedDict
 
-        if (
-            'chunks' in cdf_kwargs
-            and not cdf_kwargs['chunks']
-            and self._col_data['assets'].get('format') != 'zarr'
-        ):
-            print(
-                '\nxarray will load netCDF datasets with dask using a single chunk for all arrays.'
-            )
-            print('For effective chunking, please provide chunks in cdf_kwargs.')
-            print("For example: cdf_kwargs={'chunks': {'time': 36}}\n")
-
-        self.zarr_kwargs = zarr_kwargs
-        self.cdf_kwargs = cdf_kwargs
-        self.aggregate = aggregate
-
-        self.storage_options = storage_options
-        if preprocess is not None and not callable(preprocess):
-            raise ValueError('preprocess argument must be callable')
-
-        self.preprocess = preprocess
+        source_kwargs = OrderedDict(
+            zarr_kwargs=zarr_kwargs,
+            cdf_kwargs=cdf_kwargs,
+            preprocess=preprocess,
+            storage_options=storage_options,
+        )
+        token = dask.base.tokenize(source_kwargs)
         if progressbar is not None:
             self.progressbar = progressbar
 
-        return self._open_dataset()
+        if preprocess is not None and not callable(preprocess):
+            raise ValueError('preprocess argument must be callable')
 
-    def _open_dataset(self):
-
-        path_column_name = self._col_data['assets']['column_name']
-        if 'format' in self._col_data['assets']:
-            use_format_column = False
+        # Avoid re-loading data if nothing has changed since the last call
+        if self._datasets and (token == self._to_dataset_args_token):
+            return self._datasets
         else:
-            use_format_column = True
-
-        # replace path column with mapper (dependent on filesystem type)
-        mapper_dict = {
-            path: _path_to_mapper(path, self.storage_options) for path in self.df[path_column_name]
-        }
-
-        groupby_attrs = []
-        variable_column_name = None
-        aggregations = []
-        aggregation_dict = {}
-        agg_columns = []
-        if self.aggregate:
-            if 'aggregation_control' in self._col_data:
-                variable_column_name = self._col_data['aggregation_control']['variable_column_name']
-                groupby_attrs = self._col_data['aggregation_control'].get('groupby_attrs', [])
-                aggregations = self._col_data['aggregation_control'].get('aggregations', [])
-                # Sort aggregations to make sure join_existing is always done before join_new
-                aggregations = sorted(aggregations, key=lambda i: i['type'], reverse=True)
-                for agg in aggregations:
-                    key = agg['attribute_name']
-                    rest = agg.copy()
-                    del rest['attribute_name']
-                    aggregation_dict[key] = rest
-
-            agg_columns = list(aggregation_dict.keys())
-
-        if not groupby_attrs:
-            groupby_attrs = self.df.columns.tolist()
-
-        # filter groupby_attrs to ensure no columns with all nans
-        def _allnan_or_nonan(column):
-            if self.df[column].isnull().all():
-                return False
-            elif self.df[column].isnull().any():
-                raise ValueError(
-                    f'The data in the {column} column should either be all NaN or there should be no NaNs'
+            self._to_dataset_args_token = token
+            if self.progressbar:
+                print(
+                    f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{self.key_template}'"""
                 )
-            else:
-                return True
 
-        groupby_attrs = list(filter(_allnan_or_nonan, groupby_attrs))
+            def _load_source(source):
+                return source.to_dask()
 
-        groups = self.df.groupby(groupby_attrs)
+            sources = [source(**source_kwargs) for _, source in self.items()]
 
-        if agg_columns:
-            keys = '.'.join(groupby_attrs)
-        else:
-            keys = groupby_attrs.copy()
-            keys.remove(path_column_name)
-            keys = '.'.join(keys)
+            if self.progressbar:
+                total = len(sources)
+                # Need to use ascii characters on Windows because there isn't
+                # always full unicode support
+                # (see https://github.com/tqdm/tqdm/issues/454)
+                use_ascii = bool(sys.platform == 'win32')
+                progress = tqdm(
+                    total=total, ncols=79, ascii=use_ascii, leave=True, desc='Dataset(s)'
+                )
 
-        total = len(groups)
-        dsets = []
-        load_group_dataset_delayed = dask.delayed(_load_group_dataset)
-        tasks = [
-            load_group_dataset_delayed(
-                key,
-                df,
-                self._col_data,
-                agg_columns,
-                aggregation_dict,
-                path_column_name,
-                variable_column_name,
-                use_format_column,
-                mapper_dict,
-                self.zarr_kwargs,
-                self.cdf_kwargs,
-                self.preprocess,
-            )
-            for key, df in groups
-        ]
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(sources)) as executor:
+                future_tasks = [executor.submit(_load_source, source) for source in sources]
 
-        client, _is_client_local = _get_dask_client()
-        logger.info(f'Using dask client: {client} --- dask dashboard url: {client.dashboard_link}')
-        futures = client.compute(tasks)
+                for i, task in enumerate(concurrent.futures.as_completed(future_tasks)):
+                    ds = task.result()
+                    self._datasets[ds.attrs['intake_esm_dataset_key']] = ds
+                    if self.progressbar:
+                        progress.update(1)
 
-        if self.progressbar:
-            from distributed import progress
+                if self.progressbar:
+                    progress.close()
 
-            progress(futures)
-            print(
-                f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{keys}'
-                \n--> There is/are {total} group(s)"""
-            )
-
-        dsets = client.gather(futures)
-        self._ds = {group_id: ds for (group_id, ds) in dsets}
-
-        if _is_client_local:
-            client.close()
-            del client
-
-        return self._ds
+                return self._datasets
 
 
 def _unique(df, columns=None):
@@ -486,7 +533,6 @@ def _unique(df, columns=None):
         columns = [columns]
     if not columns:
         columns = df.columns.tolist()
-
     info = {}
     for col in columns:
         values = df[col].dropna().values
@@ -495,81 +541,12 @@ def _unique(df, columns=None):
     return info
 
 
-def _load_group_dataset(
-    key,
-    df,
-    col_data,
-    agg_columns,
-    aggregation_dict,
-    path_column_name,
-    variable_column_name,
-    use_format_column,
-    mapper_dict,
-    zarr_kwargs,
-    cdf_kwargs,
-    preprocess,
-):
-
-    aggregation_dict = copy.deepcopy(aggregation_dict)
-    agg_columns = agg_columns.copy()
-    drop_cols = []
-    for col in agg_columns:
-        if df[col].isnull().all():
-            drop_cols.append(col)
-            del aggregation_dict[col]
-        elif df[col].isnull().any():
-            raise ValueError(
-                f'The data in the {col} column for {key} group should either be all NaN or there should be no NaNs'
-            )
-
-    agg_columns = list(filter(lambda x: x not in drop_cols, agg_columns))
-    # the number of aggregation columns determines the level of recursion
-    n_agg = len(agg_columns)
-
-    if agg_columns:
-        mi = df.set_index(agg_columns)
-        nd = _to_nested_dict(mi[path_column_name])
-        group_id = '.'.join(key)
-    else:
-        nd = df.iloc[0][path_column_name]
-        # Cast key from tuple to list
-        key = list(key)
-        # Remove path from the list
-        key.remove(nd)
-        group_id = '.'.join(key)
-
-    if use_format_column:
-        format_column_name = col_data['assets']['format_column_name']
-        lookup = _create_asset_info_lookup(
-            df, path_column_name, variable_column_name, format_column_name=format_column_name
-        )
-    else:
-        lookup = _create_asset_info_lookup(
-            df, path_column_name, variable_column_name, data_format=col_data['assets']['format']
-        )
-
-    ds = _aggregate(
-        aggregation_dict,
-        agg_columns,
-        n_agg,
-        nd,
-        lookup,
-        mapper_dict,
-        zarr_kwargs,
-        cdf_kwargs,
-        preprocess,
-    )
-
-    return group_id, ds
-
-
 def _get_subset(df, require_all_on=None, **query):
     if not query:
         return pd.DataFrame(columns=df.columns)
     condition = np.ones(len(df), dtype=bool)
 
     query = _normalize_query(query)
-
     for key, val in query.items():
         if isinstance(val, (tuple, list)):
             condition_i = np.zeros(len(df), dtype=bool)
@@ -581,10 +558,8 @@ def _get_subset(df, require_all_on=None, **query):
     query_results = df.loc[condition]
 
     if require_all_on:
-
         if isinstance(require_all_on, str):
             require_all_on = [require_all_on]
-
         _query = query.copy()
 
         # Make sure to remove columns that were already
@@ -596,12 +571,9 @@ def _get_subset(df, require_all_on=None, **query):
             _query.pop(key, None)
 
         keys = list(_query.keys())
-
         grouped = query_results.groupby(require_all_on)
         values = [tuple(v) for v in _query.values()]
-
         condition = set(itertools.product(*values))
-
         results = []
         for key, group in grouped:
             index = group.set_index(keys).index
@@ -609,16 +581,13 @@ def _get_subset(df, require_all_on=None, **query):
                 index = set([(element,) for element in index.to_list()])
             else:
                 index = set(index.to_list())
-
             if index == condition:
                 results.append(group)
 
         if len(results) >= 1:
             return pd.concat(results).reset_index(drop=True)
-
         else:
             return pd.DataFrame(columns=df.columns)
-
     else:
         return query_results.reset_index(drop=True)
 
@@ -638,3 +607,18 @@ def _flatten_list(data):
                 yield x
         else:
             yield item
+
+
+def _make_entry(key, df, aggregation_info):
+    args = dict(
+        df=df,
+        aggregation_dict=aggregation_info['aggregation_dict'],
+        path_column=aggregation_info['path_column_name'],
+        variable_column=aggregation_info['variable_column_name'],
+        data_format=aggregation_info['data_format'],
+        format_column=aggregation_info['format_column_name'],
+    )
+    entry = intake.catalog.local.LocalCatalogEntry(
+        name=key, description='', driver='esm_group', args=args, metadata={}
+    )
+    return entry
