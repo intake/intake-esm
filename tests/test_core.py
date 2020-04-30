@@ -48,7 +48,15 @@ cdf_query = dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_i
 
 
 def test_repr(sample_cmip6_col):
-    assert 'Intake-esm catalog with' in repr(sample_cmip6_col)
+    assert 'catalog with' in repr(sample_cmip6_col)
+
+
+def test_repr_html(sample_cmip6_col):
+    text = sample_cmip6_col._repr_html_()
+    assert 'unique' in text
+    columns = sample_cmip6_col.df.columns.tolist()
+    for column in columns:
+        assert column in text
 
 
 def test_log_level_error():
