@@ -3,8 +3,37 @@ Changelog History
 =================
 
 
+Intake-esm v2020.05.01
+======================
+
+Features
+--------
+
+- Add html representation for the catalog object. (:pr:`229`) `Anderson Banihirwe`_
+
+- Move logic for assets aggregation into :py:meth:`~intake_esm.source.ESMGroupDataSource`
+  and add few basic dict-like methods (keys(), __len__(), __getitem()__, __contains__())
+  to the catalog object. (:pr:`194`) `Anderson Banihirwe`_ & `Joe Hamman`_ & `Kevin Paul`_
+
+- Support columns with iterables in :py:meth:`~intake_esm.core.esm_datastore.unique` and
+  :py:meth:`~intake_esm.core.esm_datastore.nunique`. (:pr:`223`) `Anderson Banihirwe`_
+
+
+Bug Fixes
+---------
+
+- Revert back to using `concurrent.futures` to address failures due
+  to dask's distributed scheduler. (:issue:`225`) & (:issue:`226`)
+
+Internal
+--------
+
+- Increase test coverage. (:pr:`222`) `Anderson Banihirwe`_
+
+
+
 Intake-esm v2020.03.16
-=======================
+======================
 
 
 Features
@@ -380,3 +409,4 @@ Trivial/Internal Changes
 .. _`Ryan Abernathey`: https://github.com/rabernat
 .. _`Julius Busecke`: https://github.com/jbusecke
 .. _`Joe Hamman`: https://github.com/jhamman
+.. _`Kevin Paul`: https://github.com/kmpaul
