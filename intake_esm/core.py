@@ -13,23 +13,28 @@ from .utils import _fetch_and_parse_json, _fetch_catalog, logger
 
 
 class esm_datastore(intake.catalog.Catalog):
-    """ An intake plugin for parsing an ESM (Earth System Model) Collection/catalog and loading assets
-    (netCDF files and/or Zarr stores) into xarray datasets.
-
+    """
+    An intake plugin for parsing an ESM (Earth System Model) Collection/catalog
+    and loading assets (netCDF files and/or Zarr stores) into xarray datasets.
     The in-memory representation for the catalog is a Pandas DataFrame.
 
     Parameters
     ----------
-
-    esmcol_path : str
-        Path or URL to an ESM collection JSON file
-    progressbar : bool
-        If True, will print a progress bar to standard error (stderr)
-        when loading assets into :py:class:`~xarray.Dataset`.
-    sep : str, default '.'
-        Delimiter to use when constructing a key for a query.
-    log_level: str
-        Level of logging to report. Accepted values include:
+    esmcol_obj : str, pandas.DataFrame
+        If string, this must be a path or URL to an ESM collection JSON file.
+        If pandas.DataFrame, this must be the catalog content that would otherwise
+        be in a CSV file.
+    esmcol_data : dict, optional
+            ESM collection spec information, by default None
+    progressbar : bool, optional
+        Will print a progress bar to standard error (stderr)
+        when loading assets into :py:class:`~xarray.Dataset`,
+        by default True
+    sep : str, optional
+        Delimiter to use when constructing a key for a query, by default '.'
+    log_level: str, optional
+        Level of logging to report, by default 'CRITICAL'
+        Accepted values include:
 
         - CRITICAL
         - ERROR
@@ -163,11 +168,27 @@ class esm_datastore(intake.catalog.Catalog):
         return info
 
     def keys(self):
+        """
+        Get keys for the catalog entries
+
+        Returns
+        -------
+        list
+            keys for the catalog entries
+        """
         keys = list(map(lambda x: self.sep.join(x), self._keys))
         return keys
 
     @property
     def key_template(self):
+        """
+        Return string template used to create catalog entry keys
+
+        Returns
+        -------
+        str
+          string template used to create catalog entry keys
+        """
         return self.sep.join(self.aggregation_info['groupby_attrs'])
 
     def __len__(self):
@@ -182,6 +203,31 @@ class esm_datastore(intake.catalog.Catalog):
         return self._entries
 
     def __getitem__(self, key):
+        """
+        This method takes a key argument and return a catalog entry
+        corresponding to assets (files) that will be aggregated into a
+        single xarray dataset.
+
+        Parameters
+        ----------
+        key : str
+          key to use for catalog entry lookup
+
+        Returns
+        -------
+        intake.catalog.local.LocalCatalogEntry
+             A catalog entry by name (key)
+
+        Raises
+        ------
+        KeyError
+            if key is not found.
+
+        Examples
+        --------
+        >>> col = intake.open_esm_datastore("mycatalog.json")
+        >>> entry = col["AerChemMIP.BCC.BCC-ESM1.piClim-control.AERmon.gn"]
+        """
         # The canonical unique key is the key of a compatible group of assets
         try:
             return self._entries[key]
@@ -223,6 +269,29 @@ class esm_datastore(intake.catalog.Catalog):
     def from_df(
         cls, df, esmcol_data=None, progressbar=True, sep='.', log_level='CRITICAL', **kwargs
     ):
+        """
+        Create catalog from the given dataframe
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            catalog content that would otherwise be in a CSV file.
+        esmcol_data : dict, optional
+            ESM collection spec information, by default None
+        progressbar : bool, optional
+            Will print a progress bar to standard error (stderr)
+            when loading assets into :py:class:`~xarray.Dataset`,
+            by default True
+        sep : str, optional
+            Delimiter to use when constructing a key for a query, by default '.'
+        log_level : str, optional
+            Level of logging to report, by default 'CRITICAL'
+
+        Returns
+        -------
+        intake_esm.core.esm_datastore
+            Catalog object
+        """
         return cls(
             df,
             esmcol_data=esmcol_data,
