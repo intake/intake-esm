@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: ''
-labels: bug
+labels: ''
 assignees: ''
 
 ---
@@ -18,9 +18,8 @@ Here's a quick checklist in what to include:
 - [ ] Include a detailed description of the bug or suggestion
 - [ ] `conda list` of the conda environment you are using
 - [ ] Minimal, self-contained copy-pastable example that generates the issue if possible. Please be concise with code posted. See guidelines below on how to provide a good bug report:
-
-     -  [Minimal Complete Verifiable Examples](https://stackoverflow.com/help/mcve)
-    -  [Craft Minimal Bug Reports](http://matthewrocklin.com/blog/work/2018/02/28/minimal-bug-reports)
+  - [Minimal Complete Verifiable Examples](https://stackoverflow.com/help/mcve)
+  - [Craft Minimal Bug Reports](http://matthewrocklin.com/blog/work/2018/02/28/minimal-bug-reports)
 
     Bug reports that follow these guidelines are easier to diagnose,
     and so are often handled much more quickly.
@@ -45,6 +44,7 @@ If there was a crash, please include the traceback here.
 
 <details>
 
-#Paste the output of intake_esm.__version__ here
-
+```
+Paste the output of `intake_esm.__version__` here
+```
 </details>

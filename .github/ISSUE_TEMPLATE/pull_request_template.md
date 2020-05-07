@@ -14,9 +14,8 @@ Below are a few things we ask you kindly to self-check before getting a review. 
 
 Checklist
 
-- [ ] Enable and install [pre-commit](https://pre-commit.com/) to ensure style-guides and code checks are followed.
-- [ ] Include documentation when adding new features.
-- [ ] Include new tests or update existing tests when applicable.
+- [ ] Passes `pre-commit run --all-files`
+- [ ] Tests added / passed
 
 <!--
 Please note any issues this fixes using [closing keywords]( https://help.github.com/articles/closing-issues-using-keywords/ ):
