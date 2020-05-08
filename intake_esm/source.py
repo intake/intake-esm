@@ -33,6 +33,8 @@ class ESMGroupDataSource(DataSource):
         self.storage_options = storage_options
         self.preprocess = preprocess
         self._ds = None
+        if df.empty:
+            raise ValueError('`df` must be a non-empty pandas.DataFrame')
         self.df = df.copy()
         self.aggregation_columns, self.aggregation_dict = _sanitize_aggregations(
             df, aggregation_dict

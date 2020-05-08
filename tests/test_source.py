@@ -51,3 +51,19 @@ def test_esm_group(df, aggregation_dict):
     assert set(subset_df['member_id']) == set(ds['member_id'].values)
     source.close()
     assert source._ds is None
+
+
+def test_esm_group_empty_df(df, aggregation_dict):
+    empty_df = _get_subset(df)
+    args = dict(
+        df=empty_df,
+        aggregation_dict=aggregation_dict,
+        path_column='path',
+        variable_column='variable_id',
+        data_format='netcdf',
+        format_column=None,
+        cdf_kwargs={'chunks': {'time': 2}},
+    )
+
+    with pytest.raises(ValueError, match=r'`df` must be a non-empty pandas.DataFrame'):
+        _ = ESMGroupDataSource(**args)
