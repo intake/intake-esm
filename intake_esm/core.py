@@ -646,26 +646,6 @@ def _unique(df, columns=None):
 
 
 def _get_subset(df, require_all_on=None, **query):
-    """
-    Utility search function.
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        A pandas dataframe to perform a query on.
-    require_all_on : list, str, optional
-        A dataframe column or a list of dataframe columns across
-        which all entries must satisfy the query criteria.
-        If None, return entries that fulfill any of the criteria specified
-        in the query, by default None.
-    **query:
-        keyword arguments corresponding to user's query to execute against the dataframe.
-
-    Returns
-    -------
-    pandas.DataFrame
-        A pandas dataframe containing found results.
-    """
     message = 'Query returned zero results.'
     if not query:
         warn(message)
