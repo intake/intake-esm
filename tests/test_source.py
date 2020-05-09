@@ -54,7 +54,7 @@ def test_esm_group(df, aggregation_dict):
 
 
 def test_esm_group_empty_df(df, aggregation_dict):
-    empty_df = _get_subset(df)
+    empty_df = pd.DataFrame(columns=df.columns)
     args = dict(
         df=empty_df,
         aggregation_dict=aggregation_dict,
