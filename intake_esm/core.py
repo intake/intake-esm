@@ -1,8 +1,8 @@
 import itertools
 import json
 import logging
-import re
 from collections.abc import Iterable
+from typing import Pattern
 from warnings import warn
 
 import dask
@@ -677,7 +677,7 @@ def _get_subset(df, require_all_on=None, **query):
         condition_i = np.zeros(len(df), dtype=bool)
         for val_i in val:
             if isinstance(df[key].dtype, (np.object, pd.core.arrays.string_.StringDtype)):
-                if isinstance(val_i, re.Pattern):
+                if isinstance(val_i, Pattern):
                     condition_i = condition_i | (df[key].str.contains(val_i, regex=True))
                 else:
                     condition_i = condition_i | (df[key] == val_i)
