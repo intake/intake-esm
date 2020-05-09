@@ -2,6 +2,7 @@ import itertools
 import json
 import logging
 from collections.abc import Iterable
+from warnings import warn
 
 import dask
 import intake
@@ -554,6 +555,11 @@ class esm_datastore(intake.catalog.Catalog):
         import sys
         from collections import OrderedDict
 
+        # Return fast
+        if not self.items():
+            warn('There are no datasets to load! Returning an empty dictionary.')
+            return {}
+
         source_kwargs = OrderedDict(
             zarr_kwargs=zarr_kwargs,
             cdf_kwargs=cdf_kwargs,
@@ -621,7 +627,9 @@ def _unique(df, columns=None):
 
 
 def _get_subset(df, require_all_on=None, **query):
+    message = 'Query returned zero results.'
     if not query:
+        warn(message)
         return pd.DataFrame(columns=df.columns)
     condition = np.ones(len(df), dtype=bool)
 
@@ -666,8 +674,12 @@ def _get_subset(df, require_all_on=None, **query):
         if len(results) >= 1:
             return pd.concat(results).reset_index(drop=True)
         else:
+            warn(message)
             return pd.DataFrame(columns=df.columns)
     else:
+        if query_results.empty:
+            warn(message)
+
         return query_results.reset_index(drop=True)
 
 

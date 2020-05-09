@@ -172,6 +172,22 @@ def test_search(esmcol_path, query):
     assert len(col.df.columns) == len(cat.df.columns)
 
 
+def test_empty_queries(sample_cmip6_col):
+    msg = r'Query returned zero results.'
+    with pytest.warns(UserWarning, match=msg):
+        _ = sample_cmip6_col.search()
+
+    with pytest.warns(UserWarning, match=msg):
+        _ = sample_cmip6_col.search(variable_id='DONT_EXIST')
+
+    cat = sample_cmip6_col.search()
+    with pytest.warns(
+        UserWarning, match=r'There are no datasets to load! Returning an empty dictionary.'
+    ):
+        dsets = cat.to_dataset_dict()
+        assert not dsets
+
+
 @pytest.mark.parametrize(
     'esmcol_path, query, kwargs',
     [
