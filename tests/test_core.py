@@ -1,4 +1,5 @@
 import os
+import re
 from tempfile import TemporaryDirectory
 
 import intake
@@ -372,6 +373,15 @@ params = [
         None,
         [
             {'A': 'IPSL', 'B': 'FOO', 'C': 'control', 'D': 'O2'},
+            {'A': 'CSIRO', 'B': 'BAR', 'C': 'control', 'D': 'O2'},
+            {'A': 'NCAR', 'B': 'CESM', 'C': 'control', 'D': 'O2'},
+        ],
+    ),
+    (
+        {'D': [re.compile(r'^O2$'), 'NO2'], 'B': ['CESM', 'BAR']},
+        None,
+        [
+            {'A': 'NCAR', 'B': 'CESM', 'C': 'hist', 'D': 'O2'},
             {'A': 'CSIRO', 'B': 'BAR', 'C': 'control', 'D': 'O2'},
             {'A': 'NCAR', 'B': 'CESM', 'C': 'control', 'D': 'O2'},
         ],
