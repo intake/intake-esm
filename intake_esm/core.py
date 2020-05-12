@@ -589,7 +589,7 @@ class esm_datastore(intake.catalog.Catalog):
 
             if self.progressbar:
                 total = len(sources)
-                progress = progress_bar(range(total), comment='Dataset(s)')
+                progress = progress_bar(range(total))
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=len(sources)) as executor:
                 future_tasks = [executor.submit(_load_source, source) for source in sources]
