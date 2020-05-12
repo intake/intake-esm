@@ -21,7 +21,7 @@ def join_new(dsets, dim_name, coord_value, varname, options={}):
         concat_dim = xr.DataArray(coord_value, dims=(dim_name), name=dim_name)
         return xr.concat(dsets, dim=concat_dim, data_vars=varname, **options)
     except Exception as e:
-        logger.error(f'Failed to join datasets along new dimension.')
+        logger.error('Failed to join datasets along new dimension.')
         raise e
 
 
@@ -29,7 +29,7 @@ def join_existing(dsets, options={}):
     try:
         return xr.concat(dsets, **options)
     except Exception as e:
-        logger.error(f'Failed to join datasets along existing dimension.')
+        logger.error('Failed to join datasets along existing dimension.')
         raise e
 
 
@@ -37,7 +37,7 @@ def union(dsets, options={}):
     try:
         return xr.merge(dsets, **options)
     except Exception as e:
-        logger.error(f'Failed to merge datasets.')
+        logger.error('Failed to merge datasets.')
         raise e
 
 
@@ -60,7 +60,7 @@ def _create_asset_info_lookup(
         data_format_list = df[format_column_name]
     else:
         if data_format is None:
-            raise ValueError(f'Please specify either `data_format` or `format_column_name`')
+            raise ValueError('Please specify either `data_format` or `format_column_name`')
         else:
             data_format_list = [data_format] * len(df)
     if variable_column_name is None:

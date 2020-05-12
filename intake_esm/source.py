@@ -45,7 +45,7 @@ class ESMGroupDataSource(DataSource):
             self.df[_DATA_FORMAT_KEY] = df[format_column]
         else:
             if data_format is None:
-                raise ValueError(f'Please specify either `data_format` or `format_column`')
+                raise ValueError('Please specify either `data_format` or `format_column`')
             else:
                 self.df[_DATA_FORMAT_KEY] = [data_format] * len(df)
 

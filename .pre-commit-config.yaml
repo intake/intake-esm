@@ -17,12 +17,12 @@ repos:
       args: ["--line-length", "100", "--skip-string-normalization"]
 
 -   repo: https://gitlab.com/pycqa/flake8
-    rev: 3.7.9
+    rev: 3.8.1
     hooks:
     - id: flake8
 
 -   repo: https://github.com/asottile/seed-isort-config
-    rev: v2.1.0
+    rev: v2.1.1
     hooks:
     -   id: seed-isort-config
 -   repo: https://github.com/pre-commit/mirrors-isort
