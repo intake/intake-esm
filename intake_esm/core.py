@@ -92,7 +92,7 @@ class esm_datastore(intake.catalog.Catalog):
 
         elif isinstance(esmcol_obj, pd.DataFrame):
             if esmcol_data is None:
-                raise ValueError(f"Missing required argument: 'esmcol_data'")
+                raise ValueError("Missing required argument: 'esmcol_data'")
             self.df = esmcol_obj
             self.esmcol_data = esmcol_data
             self.esmcol_path = None
