@@ -8,7 +8,7 @@ import dask
 import intake
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from .utils import _fetch_and_parse_json, _fetch_catalog, logger
 
