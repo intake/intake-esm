@@ -50,9 +50,11 @@ def test_fetch_catalog_local_error(sample_bad_input):
 
 def test_catalog_url_construction_from_relative_url():
     url = 'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json'
+    catalog_file = 'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.csv'
     data, path = _fetch_and_parse_json(url)
-    df = _fetch_catalog(data, path)
+    df, cat_file = _fetch_catalog(data, path)
     assert isinstance(df, pd.DataFrame)
+    assert catalog_file == cat_file
 
 
 def test_catalog_url_construction_from_relative_url_error():

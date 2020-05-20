@@ -89,8 +89,8 @@ def _fetch_catalog(collection_data, esmcol_path):
                 if not _is_valid_url(catalog):
                     raise FileNotFoundError(f'Unable to find: {catalog}')
                 else:
-                    return pd.read_csv(catalog)
-            return pd.read_csv(catalog_path)
+                    return pd.read_csv(catalog), catalog
+            return pd.read_csv(catalog_path), catalog_path
 
         else:
             catalog_path = Path(collection_data['catalog_file'])
@@ -102,9 +102,9 @@ def _fetch_catalog(collection_data, esmcol_path):
                 if not catalog.exists():
                     raise FileNotFoundError(f'Unable to find: {catalog}')
                 else:
-                    return pd.read_csv(catalog)
+                    return pd.read_csv(catalog), catalog
 
-            return pd.read_csv(catalog_path)
+            return pd.read_csv(catalog_path), catalog_path
 
     else:
-        return pd.DataFrame(collection_data['catalog_dict'])
+        return pd.DataFrame(collection_data['catalog_dict']), None
