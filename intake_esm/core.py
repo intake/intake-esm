@@ -88,7 +88,7 @@ class esm_datastore(intake.catalog.Catalog):
 
         if isinstance(esmcol_obj, str):
             self.esmcol_data, self.esmcol_path = _fetch_and_parse_json(esmcol_obj)
-            self.df = _fetch_catalog(self.esmcol_data, esmcol_obj)
+            self.df, self.catalog_file = _fetch_catalog(self.esmcol_data, esmcol_obj)
 
         elif isinstance(esmcol_obj, pd.DataFrame):
             if esmcol_data is None:
@@ -96,6 +96,7 @@ class esm_datastore(intake.catalog.Catalog):
             self.df = esmcol_obj
             self.esmcol_data = esmcol_data
             self.esmcol_path = None
+            self.catalog_file = None
         else:
             raise ValueError(f'{self.name} constructor not properly called!')
 

@@ -318,6 +318,7 @@ def test_to_dataset_dict_s3(zarr_aws_cesmle_col):
 def test_read_catalog_dict():
     col = intake.open_esm_datastore(catalog_dict_records)
     assert isinstance(col.df, pd.DataFrame)
+    assert col.catalog_file is None
 
 
 params = [
