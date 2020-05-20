@@ -8,7 +8,7 @@ import dask
 import intake
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
+from fastprogress.fastprogress import progress_bar
 
 from .utils import _fetch_and_parse_json, _fetch_catalog, logger
 
@@ -552,7 +552,6 @@ class esm_datastore(intake.catalog.Catalog):
         """
 
         import concurrent.futures
-        import sys
         from collections import OrderedDict
 
         # Return fast
@@ -590,13 +589,7 @@ class esm_datastore(intake.catalog.Catalog):
 
             if self.progressbar:
                 total = len(sources)
-                # Need to use ascii characters on Windows because there isn't
-                # always full unicode support
-                # (see https://github.com/tqdm/tqdm/issues/454)
-                use_ascii = bool(sys.platform == 'win32')
-                progress = tqdm(
-                    total=total, ncols=79, ascii=use_ascii, leave=True, desc='Dataset(s)'
-                )
+                progress = progress_bar(range(total))
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=len(sources)) as executor:
                 future_tasks = [executor.submit(_load_source, source) for source in sources]
@@ -605,10 +598,10 @@ class esm_datastore(intake.catalog.Catalog):
                     ds = task.result()
                     self._datasets[ds.attrs['intake_esm_dataset_key']] = ds
                     if self.progressbar:
-                        progress.update(1)
+                        progress.update(i)
 
                 if self.progressbar:
-                    progress.close()
+                    progress.update(total)
 
                 return self._datasets
 

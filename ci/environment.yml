@@ -4,6 +4,7 @@ channels:
 dependencies:
   - cftime
   - codecov
+  - fastprogress
   - fsspec
   - gcsfs
   - intake
