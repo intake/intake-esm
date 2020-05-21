@@ -2,6 +2,15 @@
 Changelog History
 =================
 
+Intake-esm v2020.05.21
+======================
+
+Features
+--------
+
+- Provide informative message/warnings from empty queries. (:pr:`235`) `Anderson Banihirwe`_
+- Replace tqdm progressbar with fastprogress. (:pr:`238`) `Anderson Banihirwe`_
+- Add `catalog_file` attribute to `esm_datastore` class. (:pr:`240`) `Anderson Banihirwe`_
 
 Intake-esm v2020.05.01
 ======================
