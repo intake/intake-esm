@@ -37,7 +37,7 @@ Motivation
 
 Computer simulations of the Earth’s climate and weather generate huge amounts of data.
 These data are often persisted on HPC systems or in the cloud across multiple data
-assets of a variety of formats (netCDF, zarr, etc...). Finding, investigating,
+assets of a variety of formats (netCDF, `Zarr`_, etc...). Finding, investigating,
 loading these data assets into compute-ready data containers costs time and effort.
 The data user needs to know what data sets are available, the attributes describing
 each data set, before loading a specific data set and analyzing it.
