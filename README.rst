@@ -34,11 +34,14 @@ Intake-esm
 Motivation
 ----------
 
-Project efforts such as the `Coupled Model Intercomparison Project (CMIP)`_
-and the `Community Earth System Model (CESM) Large Ensemble Project`_
-produce a huge of amount climate data persisted on tape, disk storage, object storage
-components across multiple (in the order of ~ 300,000) data assets.
-These data assets are stored in netCDF and more recently `Zarr`_ formats.
+
+Computer simulations of the Earth’s climate and weather generate huge amounts of data.
+These data are often persisted on HPC systems or in the cloud across multiple data
+assets of a variety of formats (netCDF, zarr, etc...). Finding, investigating,
+loading these data assets into compute-ready data containers costs time and effort.
+The data user needs to know what data sets are available, the attributes describing
+each data set, before loading a specific data set and analyzing it.
+
 Finding, investigating, loading these assets into data array containers
 such as xarray can be a daunting task due to the large number of files
 a user may be interested in. Intake-esm aims to address these issues by
