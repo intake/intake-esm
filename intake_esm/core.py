@@ -309,7 +309,7 @@ class esm_datastore(intake.catalog.Catalog):
     @df.setter
     def df(self, value):
         self._df = value
-        self._grouped, self._keys = _get_groups_and_keys(self._df, self.aggregation_info)
+        self._grouped, self._keys = _get_groups_and_keys(self.df, self.aggregation_info)
 
     def search(self, require_all_on=None, **query):
         """Search for entries in the catalog.
