@@ -108,8 +108,12 @@ class esm_datastore(intake.catalog.Catalog):
         self.sep = sep
         self.aggregation_info = self._get_aggregation_info()
         self._entries = {}
-        self._grouped, self._keys = _get_groups_and_keys(self.df, self.aggregation_info)
+        self._set_groups_and_keys()
         super(esm_datastore, self).__init__(**kwargs)
+
+    def _set_groups_and_keys(self):
+        self._grouped = self.df.groupby(self.aggregation_info['groupby_attrs'])
+        self._keys = list(self._grouped.groups.keys())
 
     def _get_aggregation_info(self):
         groupby_attrs = []
@@ -309,7 +313,7 @@ class esm_datastore(intake.catalog.Catalog):
     @df.setter
     def df(self, value):
         self._df = value
-        self._grouped, self._keys = _get_groups_and_keys(self.df, self.aggregation_info)
+        self._set_groups_and_keys()
 
     def search(self, require_all_on=None, **query):
         """Search for entries in the catalog.
@@ -715,9 +719,3 @@ def _make_entry(key, df, aggregation_info):
         name=key, description='', driver='esm_group', args=args, metadata={}
     )
     return entry
-
-
-def _get_groups_and_keys(df, aggregation_info):
-    grouped = df.groupby(aggregation_info['groupby_attrs'])
-    keys = list(grouped.groups.keys())
-    return grouped, keys
