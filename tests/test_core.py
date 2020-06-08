@@ -142,6 +142,15 @@ def test_contains(key, expected):
     assert actual == expected
 
 
+def test_df_property():
+    col = intake.open_esm_datastore(catalog_dict_records)
+    assert len(col.df) == 5
+    col.df = col.df.iloc[0:2, :]
+    assert isinstance(col.df, pd.DataFrame)
+    assert len(col) == 1
+    assert len(col.df) == 2
+
+
 def test_serialize_to_json():
     with TemporaryDirectory() as local_store:
         col = intake.open_esm_datastore(catalog_dict_records)
