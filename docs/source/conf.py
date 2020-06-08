@@ -317,7 +317,7 @@ intersphinx_mapping = {
 # https://www.ericholscher.com/blog/2016/jul/25/integrating-jinja-rst-sphinx/
 
 
-def rstjinja(app, docname, source):
+def rstjinja(app, _docname, source):
     """
     Render our pages as a jinja template for fancy templating goodness.
     """

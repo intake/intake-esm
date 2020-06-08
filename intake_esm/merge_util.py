@@ -82,7 +82,7 @@ def _aggregate(
     cdf_kwargs,
     preprocess,
 ):
-    def apply_aggregation(v, agg_column=None, key=None, level=0):
+    def apply_aggregation(v, agg_column=None, _key=None, level=0):
         """Recursively descend into nested dictionary and aggregate items.
         level tells how deep we are."""
 
@@ -116,7 +116,7 @@ def _aggregate(
                 agg_options = {}
 
             dsets = [
-                apply_aggregation(value, agg_column, key=key, level=level + 1)
+                apply_aggregation(value, agg_column, _key=key, level=level + 1)
                 for key, value in v.items()
             ]
             keys = list(v.keys())
