@@ -706,4 +706,4 @@ def _make_entry(key, df, aggregation_info):
     entry = intake.catalog.local.LocalCatalogEntry(
         name=key, description='', driver='esm_group', args=args, metadata={}
     )
-    return entry
+    return entry.get()

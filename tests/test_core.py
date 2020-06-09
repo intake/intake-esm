@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 
+import intake_esm
 from intake_esm.core import _get_subset, _normalize_query, _unique
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -113,7 +114,7 @@ def test_load_esmcol_remote(zarr_aws_cesmle_col):
 @pytest.mark.parametrize('decode_times', [True, False])
 def test_getitem(sample_cmip6_col, key, decode_times):
     x = sample_cmip6_col[key]
-    assert isinstance(x, intake.catalog.local.LocalCatalogEntry)
+    assert isinstance(x, intake_esm.source.ESMGroupDataSource)
     ds = x(cdf_kwargs={'chunks': {}, 'decode_times': decode_times}).to_dask()
     assert isinstance(ds, xr.Dataset)
     assert set(x.df['member_id']) == set(ds['member_id'].values)
