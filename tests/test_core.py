@@ -190,19 +190,16 @@ def test_empty_queries(sample_cmip6_col):
 
 
 @pytest.mark.parametrize(
-    'esmcol_path, query, kwargs',
-    [
-        (zarr_col_pangeo_cmip6, zarr_query, {}),
-        (cdf_col_sample_cmip6, cdf_query, {'chunks': {'time': 1}}),
-    ],
+    'esmcol_path, query', [(zarr_col_pangeo_cmip6, zarr_query), (cdf_col_sample_cmip6, cdf_query)]
 )
-def test_to_dataset_dict(esmcol_path, query, kwargs):
+def test_to_dataset_dict(esmcol_path, query):
     col = intake.open_esm_datastore(esmcol_path)
     cat = col.search(**query)
-    if kwargs:
-        _, ds = cat.to_dataset_dict(zarr_kwargs={'consolidated': True}, cdf_kwargs=kwargs).popitem()
-    else:
-        _, ds = cat.to_dataset_dict().popitem()
+    _, ds = cat.to_dataset_dict(
+        zarr_kwargs={'consolidated': True},
+        cdf_kwargs={'chunks': {'time': 1}},
+        storage_options={'token': 'anon'},
+    ).popitem()
     assert 'member_id' in ds.dims
     assert len(ds.__dask_keys__()) > 0
     assert ds.time.encoding
@@ -222,18 +219,20 @@ def test_to_dataset_dict_aggfalse(esmcol_path, query):
 
 @pytest.mark.parametrize(
     'esmcol_path, query, kwargs',
-    [
-        (zarr_col_pangeo_cmip6, zarr_query, {}),
-        (cdf_col_sample_cmip6, cdf_query, {'chunks': {'time': 1}}),
-    ],
+    [(zarr_col_pangeo_cmip6, zarr_query), (cdf_col_sample_cmip6, cdf_query)],
 )
-def test_to_dataset_dict_w_preprocess(esmcol_path, query, kwargs):
+def test_to_dataset_dict_w_preprocess(esmcol_path, query):
     def rename_coords(ds):
         return ds.rename({'lon': 'longitude', 'lat': 'latitude'})
 
     col = intake.open_esm_datastore(esmcol_path)
     col_sub = col.search(**query)
-    dsets = col_sub.to_dataset_dict(zarr_kwargs={'consolidated': True}, preprocess=rename_coords)
+    dsets = col_sub.to_dataset_dict(
+        zarr_kwargs={'consolidated': True},
+        cdf_kwargs={'chunks': {'time': 1}},
+        preprocess=rename_coords,
+        storage_options={'token': 'anon'},
+    )
     _, ds = dsets.popitem()
     assert 'latitude' in ds.dims
     assert 'longitude' in ds.dims
@@ -251,7 +250,9 @@ def test_to_dataset_dict_w_cmip6preprocessing(pangeo_cmip6_col):
         member_id='r1i1p1f1',
     )
     _, ds = cat.to_dataset_dict(
-        zarr_kwargs={'consolidated': True, 'decode_times': False}, preprocess=combined_preprocessing
+        zarr_kwargs={'consolidated': True, 'decode_times': False},
+        preprocess=combined_preprocessing,
+        storage_options={'token': 'anon'},
     ).popitem()
     assert isinstance(ds, xr.Dataset)
 
