@@ -263,10 +263,14 @@ def test_to_dataset_dict_w_cmip6preprocessing(pangeo_cmip6_col):
 def test_to_dataset_dict_nocache(esmcol_path, query):
     col = intake.open_esm_datastore(esmcol_path)
     cat = col.search(**query)
-    _, ds = cat.to_dataset_dict(zarr_kwargs={'consolidated': True}).popitem()
+    _, ds = cat.to_dataset_dict(
+        zarr_kwargs={'consolidated': True}, storage_options={'token': 'anon'}
+    ).popitem()
     id1 = id(ds)
     cat = col.search(**query)
-    _, ds = cat.to_dataset_dict(zarr_kwargs={'consolidated': True}).popitem()
+    _, ds = cat.to_dataset_dict(
+        zarr_kwargs={'consolidated': True}, storage_options={'token': 'anon'}
+    ).popitem()
     assert id1 != id(ds)
 
 
