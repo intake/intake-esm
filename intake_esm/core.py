@@ -556,7 +556,7 @@ class esm_datastore(intake.catalog.Catalog):
         from collections import OrderedDict
 
         # Return fast
-        if not self.items():
+        if not self.keys():
             warn('There are no datasets to load! Returning an empty dictionary.')
             return {}
 
