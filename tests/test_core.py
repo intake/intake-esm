@@ -218,8 +218,7 @@ def test_to_dataset_dict_aggfalse(esmcol_path, query):
 
 
 @pytest.mark.parametrize(
-    'esmcol_path, query, kwargs',
-    [(zarr_col_pangeo_cmip6, zarr_query), (cdf_col_sample_cmip6, cdf_query)],
+    'esmcol_path, query', [(zarr_col_pangeo_cmip6, zarr_query), (cdf_col_sample_cmip6, cdf_query)],
 )
 def test_to_dataset_dict_w_preprocess(esmcol_path, query):
     def rename_coords(ds):
