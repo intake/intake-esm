@@ -68,10 +68,10 @@ class ESMGroupDataSource(DataSource):
         contents = f"""
         <p>
             <ul>
-                <li><strong>Name         </strong>: {self.name}</li>
+                <li><strong>Name</strong>                 : {self.name}</li>
                 <li><strong>Num of xarray.Dataset</strong>: 1</li>
-                <li><strong>Num of assets</strong>: {len(self.df)}</li>
-                <li><strong>Aggregation columns</strong>: {str(self.aggregation_columns)}</li>
+                <li><strong>Num of assets</strong>        : {len(self.df)}</li>
+                <li><strong>Aggregation columns</strong>  : {str(self.aggregation_columns)}</li>
             </ul>
         </p>
         {text}
