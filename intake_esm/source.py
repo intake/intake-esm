@@ -52,6 +52,32 @@ class ESMGroupDataSource(DataSource):
         self.data_format = data_format
         self.format_column = format_column
 
+    def __repr__(self):
+        """Make string representation of object."""
+        contents = f'<name: {self.name}, assets: {len(self.df)}'
+        return contents
+
+    def _ipython_display_(self):
+        """
+        Display the entry as a rich object in an IPython session
+        """
+        from IPython.display import display, HTML
+
+        columns = list(set([self.path_column, self.variable_column] + self.aggregation_columns))
+        text = self.df[columns].to_html()
+        contents = f"""
+        <p>
+            <ul>
+                <li><strong>Name         </strong>: {self.name}</li>
+                <li><strong>Num of xarray.Dataset</strong>: 1</li>
+                <li><strong>Num of assets</strong>: {len(self.df)}</li>
+                <li><strong>Aggregation columns</strong>: {str(self.aggregation_columns)}</li>
+            </ul>
+        </p>
+        {text}
+        """
+        display(HTML(contents))
+
     def _get_schema(self):
 
         if self._ds is None:
