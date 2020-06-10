@@ -267,6 +267,15 @@ class esm_datastore(intake.catalog.Catalog):
         output = f'<p><strong>{self.esmcol_data["id"]} catalog with {len(self)} dataset(s) from {len(self.df)} asset(s)</strong>:</p> {text}'
         return output
 
+    def _ipython_display_(self):
+        """
+        Display the entry as a rich object in an IPython session
+        """
+        from IPython.display import display, HTML
+
+        contents = self._repr_html_()
+        display(HTML(contents))
+
     @classmethod
     def from_df(
         cls, df, esmcol_data=None, progressbar=True, sep='.', log_level='CRITICAL', **kwargs
@@ -556,7 +565,7 @@ class esm_datastore(intake.catalog.Catalog):
         from collections import OrderedDict
 
         # Return fast
-        if not self.items():
+        if not self.keys():
             warn('There are no datasets to load! Returning an empty dictionary.')
             return {}
 
@@ -706,4 +715,4 @@ def _make_entry(key, df, aggregation_info):
     entry = intake.catalog.local.LocalCatalogEntry(
         name=key, description='', driver='esm_group', args=args, metadata={}
     )
-    return entry
+    return entry.get()
