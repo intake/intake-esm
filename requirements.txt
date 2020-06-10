@@ -1,5 +1,5 @@
 xarray>=0.15.1
-intake
+intake>=0.6.0
 fsspec
 requests
 fastprogress>=0.2.3
