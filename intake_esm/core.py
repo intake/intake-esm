@@ -531,7 +531,8 @@ class esm_datastore(intake.catalog.Catalog):
         storage_options: Dict[str, Any] = None,
         progressbar: bool = None,
     ) -> Dict[str, xr.Dataset]:
-        """Load catalog entries into a dictionary of xarray datasets.
+        """
+        Load catalog entries into a dictionary of xarray datasets.
 
         Parameters
         ----------
