@@ -1,4 +1,6 @@
+""" Functions for aggregating multiple xarray datasets into a single xarray dataset"""
 import logging
+from typing import Any, Dict, List, Union
 
 import fsspec
 import xarray as xr
@@ -10,35 +12,99 @@ def _path_to_mapper(path, storage_options):
     """Convert path to mapper if necessary."""
     if fsspec.core.split_protocol(path)[0] is not None:
         return fsspec.get_mapper(path, **storage_options)
-    else:
-        return path
+    return path
 
 
-def join_new(dsets, dim_name, coord_value, varname, options={}):
+def join_new(
+    dsets: List[xr.Dataset],
+    dim_name: str,
+    coord_value: Any,
+    varname: Union[str, List],
+    options: Dict = None,
+) -> xr.Dataset:
+    """
+    Concatenate a list of datasets along a new dimension.
+
+    Parameters
+    ----------
+    dsets : List[xr.Dataset]
+        A list of xarray.Dataset(s) to concatenate along a new dimension
+    dim_name : str
+        Name of the new dimension
+    coord_value : Any
+        Value corresponding to the new dimension coordinate
+    varname : Union[str, List]
+        Name of data variables
+    options : Dict, optional
+        Additional keyword arguments passed through to the
+        :py:class:`~xarray.concat`, by default None
+
+    Returns
+    -------
+    xr.Dataset
+        xarray Dataset
+    """
+    options = options or {}
     if isinstance(varname, str):
         varname = [varname]
     try:
         concat_dim = xr.DataArray(coord_value, dims=(dim_name), name=dim_name)
         return xr.concat(dsets, dim=concat_dim, data_vars=varname, **options)
-    except Exception as e:
+    except Exception as exc:
         logger.error('Failed to join datasets along new dimension.')
-        raise e
+        raise exc
 
 
-def join_existing(dsets, options={}):
+def join_existing(dsets: List[xr.Dataset], options: Dict = None) -> xr.Dataset:
+    """
+    Concatenate a list of datasets along an existing dimension.
+
+    Parameters
+    ----------
+    dsets : List[xr.Dataset]
+        A list of xarray.Dataset(s) to concatenate along an existing dimension.
+    options : Dict, optional
+        Additional keyword arguments passed through to the
+        :py:class:`~xarray.concat`, by default None
+
+    Returns
+    -------
+    xr.Dataset
+        xarray Dataset
+    """
+
+    options = options or {}
     try:
         return xr.concat(dsets, **options)
-    except Exception as e:
+    except Exception as exc:
         logger.error('Failed to join datasets along existing dimension.')
-        raise e
+        raise exc
 
 
-def union(dsets, options={}):
+def union(dsets: List[xr.Dataset], options: Dict = None) -> xr.Dataset:
+    """
+    Merge a list of datasets into a single dataset.
+
+    Parameters
+    ----------
+    dsets : List[xr.Dataset]
+        A list of xarray.Dataset(s) to merge.
+    options : Dict, optional
+        Additional keyword arguments passed through to the
+        :py:class:`~xarray.concat`, by default None
+
+    Returns
+    -------
+    xr.Dataset
+        xarray Dataset
+    """
+
+    options = options or {}
     try:
         return xr.merge(dsets, **options)
-    except Exception as e:
+    except Exception as exc:
         logger.error('Failed to merge datasets.')
-        raise e
+        raise exc
 
 
 def _to_nested_dict(df):
@@ -48,8 +114,7 @@ def _to_nested_dict(df):
         for k, v in df.groupby(level=0):
             ret[k] = _to_nested_dict(v.droplevel(0))
         return ret
-    else:
-        return df.to_dict()
+    return df.to_dict()
 
 
 def _create_asset_info_lookup(
@@ -61,8 +126,7 @@ def _create_asset_info_lookup(
     else:
         if data_format is None:
             raise ValueError('Please specify either `data_format` or `format_column_name`')
-        else:
-            data_format_list = [data_format] * len(df)
+        data_format_list = [data_format] * len(df)
     if variable_column_name is None:
         varname_list = [None] * len(df)
     else:
@@ -105,67 +169,62 @@ def _aggregate(
             )
             return ds
 
+        agg_column = agg_columns[level]
+        agg_info = aggregation_dict[agg_column]
+        agg_type = agg_info['type']
+
+        if 'options' in agg_info:
+            agg_options = agg_info['options']
         else:
-            agg_column = agg_columns[level]
-            agg_info = aggregation_dict[agg_column]
-            agg_type = agg_info['type']
+            agg_options = {}
 
-            if 'options' in agg_info:
-                agg_options = agg_info['options']
-            else:
-                agg_options = {}
+        dsets = [
+            apply_aggregation(value, agg_column, key=key, level=level + 1)
+            for key, value in v.items()
+        ]
+        keys = list(v.keys())
+        attrs = dict_union(*[ds.attrs for ds in dsets])
+        # copy encoding for each variable from first encounter
+        variables = {v for ds in dsets for v in ds.variables}
+        encoding = {}
+        for ds in dsets:
+            for v in variables:
+                if v in ds.variables and v not in encoding:
+                    if ds[v].encoding:
+                        encoding[v] = ds[v].encoding
+                        # get rid of the misleading file-specific attributes
+                        # github.com/pydata/xarray/issues/2550
+                        for enc_attrs in ['source', 'original_shape']:
+                            if enc_attrs in encoding[v]:
+                                del encoding[v][enc_attrs]
 
-            dsets = [
-                apply_aggregation(value, agg_column, key=key, level=level + 1)
-                for key, value in v.items()
-            ]
-            keys = list(v.keys())
-            attrs = dict_union(*[ds.attrs for ds in dsets])
-            # copy encoding for each variable from first encounter
-            variables = set([v for ds in dsets for v in ds.variables])
-            encoding = {}
-            for ds in dsets:
-                for v in variables:
-                    if v in ds.variables and v not in encoding:
-                        if ds[v].encoding:
-                            encoding[v] = ds[v].encoding
-                            # get rid of the misleading file-specific attributes
-                            # github.com/pydata/xarray/issues/2550
-                            for enc_attrs in ['source', 'original_shape']:
-                                if enc_attrs in encoding[v]:
-                                    del encoding[v][enc_attrs]
+        if agg_type == 'join_new':
+            logger.debug(
+                f'Joining {len(dsets)} dataset(s) along new {agg_column} dimension with options={agg_options}.\ndsets={dsets}'
+            )
+            varname = dsets[0].attrs['intake_esm_varname']
+            ds = join_new(
+                dsets, dim_name=agg_column, coord_value=keys, varname=varname, options=agg_options,
+            )
 
-            if agg_type == 'join_new':
-                logger.debug(
-                    f'Joining {len(dsets)} dataset(s) along new {agg_column} dimension with options={agg_options}.\ndsets={dsets}'
-                )
-                varname = dsets[0].attrs['intake_esm_varname']
-                ds = join_new(
-                    dsets,
-                    dim_name=agg_column,
-                    coord_value=keys,
-                    varname=varname,
-                    options=agg_options,
-                )
+        elif agg_type == 'join_existing':
+            logger.debug(
+                f'Joining {len(dsets)} dataset(s) along existing dimension with options={agg_options}.\ndsets={dsets}'
+            )
+            ds = join_existing(dsets, options=agg_options)
 
-            elif agg_type == 'join_existing':
-                logger.debug(
-                    f'Joining {len(dsets)} dataset(s) along existing dimension with options={agg_options}.\ndsets={dsets}'
-                )
-                ds = join_existing(dsets, options=agg_options)
+        elif agg_type == 'union':
+            logger.debug(
+                f'Merging {len(dsets)} dataset(s) into a single Dataset with options={agg_options}.\ndsets={dsets}'
+            )
+            ds = union(dsets, options=agg_options)
 
-            elif agg_type == 'union':
-                logger.debug(
-                    f'Merging {len(dsets)} dataset(s) into a single Dataset with options={agg_options}.\ndsets={dsets}'
-                )
-                ds = union(dsets, options=agg_options)
+        ds.attrs = attrs
+        for v in ds.variables:
+            if v in encoding and not ds[v].encoding:
+                ds[v].encoding = encoding[v]
 
-            ds.attrs = attrs
-            for v in ds.variables:
-                if v in encoding and not ds[v].encoding:
-                    ds[v].encoding = encoding[v]
-
-            return ds
+        return ds
 
     return apply_aggregation(v)
 
@@ -205,14 +264,16 @@ def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess, varname)
 
     if preprocess is None:
         return ds
-    else:
-        logger.debug(f'Applying pre-processing with {preprocess.__name__} function')
-        return preprocess(ds)
+    logger.debug(f'Applying pre-processing with {preprocess.__name__} function')
+    return preprocess(ds)
 
 
-def dict_union(*dicts, merge_keys=['history', 'tracking_id'], drop_keys=[]):
+def dict_union(*dicts, merge_keys=None, drop_keys=None):
     """Return the union of two or more dictionaries."""
     from functools import reduce
+
+    merge_keys = merge_keys or ['history', 'tracking_id']
+    drop_keys = drop_keys or []
 
     if len(dicts) > 2:
         return reduce(dict_union, dicts)

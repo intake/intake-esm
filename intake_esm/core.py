@@ -151,12 +151,11 @@ class esm_datastore(intake.catalog.Catalog):
         def _allnan_or_nonan(column):
             if self.df[column].isnull().all():
                 return False
-            elif self.df[column].isnull().any():
+            if self.df[column].isnull().any():
                 raise ValueError(
                     f'The data in the {column} column should either be all NaN or there should be no NaNs'
                 )
-            else:
-                return True
+            return True
 
         groupby_attrs = list(filter(_allnan_or_nonan, groupby_attrs))
 
@@ -181,7 +180,7 @@ class esm_datastore(intake.catalog.Catalog):
         list
             keys for the catalog entries
         """
-        keys = list(map(lambda x: self.sep.join(x), self._keys))
+        keys = [self.sep.join(x) for x in self._keys]
         return keys
 
     @property
@@ -242,8 +241,7 @@ class esm_datastore(intake.catalog.Catalog):
                 df = self._grouped.get_group(_key)
                 self._entries[key] = _make_entry(key, df, self.aggregation_info)
                 return self._entries[key]
-            else:
-                raise KeyError(key)
+            raise KeyError(key)
 
     def __contains__(self, key):
         # Python falls back to iterating over the entire catalog
@@ -317,6 +315,9 @@ class esm_datastore(intake.catalog.Catalog):
 
     @property
     def df(self):
+        """
+        Return pandas dataframe.
+        """
         return self._df
 
     @df.setter
@@ -516,10 +517,10 @@ class esm_datastore(intake.catalog.Catalog):
 
     def to_dataset_dict(
         self,
-        zarr_kwargs={},
-        cdf_kwargs={'chunks': {}},
+        zarr_kwargs=None,
+        cdf_kwargs=None,
         preprocess=None,
-        storage_options={},
+        storage_options=None,
         progressbar=None,
     ):
         """Load catalog entries into a dictionary of xarray datasets.
@@ -597,35 +598,35 @@ class esm_datastore(intake.catalog.Catalog):
         # Avoid re-loading data if nothing has changed since the last call
         if self._datasets and (token == self._to_dataset_args_token):
             return self._datasets
-        else:
-            self._to_dataset_args_token = token
-            if self.progressbar:
-                print(
-                    f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{self.key_template}'"""
-                )
 
-            def _load_source(source):
-                return source.to_dask()
+        self._to_dataset_args_token = token
+        if self.progressbar:
+            print(
+                f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{self.key_template}'"""
+            )
 
-            sources = [source(**source_kwargs) for _, source in self.items()]
+        def _load_source(source):
+            return source.to_dask()
 
-            if self.progressbar:
-                total = len(sources)
-                progress = progress_bar(range(total))
+        sources = [source(**source_kwargs) for _, source in self.items()]
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(sources)) as executor:
-                future_tasks = [executor.submit(_load_source, source) for source in sources]
+        if self.progressbar:
+            total = len(sources)
+            progress = progress_bar(range(total))
 
-                for i, task in enumerate(concurrent.futures.as_completed(future_tasks)):
-                    ds = task.result()
-                    self._datasets[ds.attrs['intake_esm_dataset_key']] = ds
-                    if self.progressbar:
-                        progress.update(i)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(sources)) as executor:
+            future_tasks = [executor.submit(_load_source, source) for source in sources]
 
+            for i, task in enumerate(concurrent.futures.as_completed(future_tasks)):
+                ds = task.result()
+                self._datasets[ds.attrs['intake_esm_dataset_key']] = ds
                 if self.progressbar:
-                    progress.update(total)
+                    progress.update(i)
 
-                return self._datasets
+            if self.progressbar:
+                progress.update(total)
+
+            return self._datasets
 
 
 def _unique(df, columns=None):
@@ -680,7 +681,7 @@ def _get_subset(df, require_all_on=None, **query):
         for key, group in grouped:
             index = group.set_index(keys).index
             if not isinstance(index, pd.MultiIndex):
-                index = set([(element,) for element in index.to_list()])
+                index = {(element,) for element in index.to_list()}
             else:
                 index = set(index.to_list())
             if index == condition:
@@ -688,14 +689,13 @@ def _get_subset(df, require_all_on=None, **query):
 
         if len(results) >= 1:
             return pd.concat(results).reset_index(drop=True)
-        else:
-            warn(message)
-            return pd.DataFrame(columns=df.columns)
-    else:
-        if query_results.empty:
-            warn(message)
 
-        return query_results.reset_index(drop=True)
+        warn(message)
+        return pd.DataFrame(columns=df.columns)
+    if query_results.empty:
+        warn(message)
+
+    return query_results.reset_index(drop=True)
 
 
 def _normalize_query(query):
