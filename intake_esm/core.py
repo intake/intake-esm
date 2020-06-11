@@ -2,12 +2,14 @@ import itertools
 import json
 import logging
 from collections.abc import Iterable
+from typing import Any, Dict, List, Union
 from warnings import warn
 
 import dask
 import intake
 import numpy as np
 import pandas as pd
+import xarray as xr
 from fastprogress.fastprogress import progress_bar
 
 from .utils import _fetch_and_parse_json, _fetch_catalog, logger
@@ -70,11 +72,11 @@ class esm_datastore(intake.catalog.Catalog):
 
     def __init__(
         self,
-        esmcol_obj,
-        esmcol_data=None,
-        progressbar=True,
-        sep='.',
-        log_level='CRITICAL',
+        esmcol_obj: Union[str, pd.DataFrame],
+        esmcol_data: Dict[str, Any] = None,
+        progressbar: bool = True,
+        sep: str = '.',
+        log_level: str = 'CRITICAL',
         **kwargs,
     ):
 
@@ -151,12 +153,11 @@ class esm_datastore(intake.catalog.Catalog):
         def _allnan_or_nonan(column):
             if self.df[column].isnull().all():
                 return False
-            elif self.df[column].isnull().any():
+            if self.df[column].isnull().any():
                 raise ValueError(
                     f'The data in the {column} column should either be all NaN or there should be no NaNs'
                 )
-            else:
-                return True
+            return True
 
         groupby_attrs = list(filter(_allnan_or_nonan, groupby_attrs))
 
@@ -172,7 +173,7 @@ class esm_datastore(intake.catalog.Catalog):
         }
         return info
 
-    def keys(self):
+    def keys(self) -> List:
         """
         Get keys for the catalog entries
 
@@ -181,11 +182,11 @@ class esm_datastore(intake.catalog.Catalog):
         list
             keys for the catalog entries
         """
-        keys = list(map(lambda x: self.sep.join(x), self._keys))
+        keys = [self.sep.join(x) for x in self._keys]
         return keys
 
     @property
-    def key_template(self):
+    def key_template(self) -> str:
         """
         Return string template used to create catalog entry keys
 
@@ -207,9 +208,9 @@ class esm_datastore(intake.catalog.Catalog):
             _ = self[key]
         return self._entries
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         """
-        This method takes a key argument and return a catalog entry
+        This method takes a key argument and return a data source
         corresponding to assets (files) that will be aggregated into a
         single xarray dataset.
 
@@ -220,8 +221,8 @@ class esm_datastore(intake.catalog.Catalog):
 
         Returns
         -------
-        intake.catalog.local.LocalCatalogEntry
-             A catalog entry by name (key)
+        intake_esm.source.ESMGroupDataSource
+             A data source by name (key)
 
         Raises
         ------
@@ -231,7 +232,7 @@ class esm_datastore(intake.catalog.Catalog):
         Examples
         --------
         >>> col = intake.open_esm_datastore("mycatalog.json")
-        >>> entry = col["AerChemMIP.BCC.BCC-ESM1.piClim-control.AERmon.gn"]
+        >>> data_source = col["AerChemMIP.BCC.BCC-ESM1.piClim-control.AERmon.gn"]
         """
         # The canonical unique key is the key of a compatible group of assets
         try:
@@ -242,8 +243,7 @@ class esm_datastore(intake.catalog.Catalog):
                 df = self._grouped.get_group(_key)
                 self._entries[key] = _make_entry(key, df, self.aggregation_info)
                 return self._entries[key]
-            else:
-                raise KeyError(key)
+            raise KeyError(key)
 
     def __contains__(self, key):
         # Python falls back to iterating over the entire catalog
@@ -281,8 +281,14 @@ class esm_datastore(intake.catalog.Catalog):
 
     @classmethod
     def from_df(
-        cls, df, esmcol_data=None, progressbar=True, sep='.', log_level='CRITICAL', **kwargs
-    ):
+        cls,
+        df: pd.DataFrame,
+        esmcol_data: Dict[str, Any] = None,
+        progressbar: bool = True,
+        sep: str = '.',
+        log_level: str = 'CRITICAL',
+        **kwargs,
+    ) -> 'esm_datastore':
         """
         Create catalog from the given dataframe
 
@@ -316,15 +322,18 @@ class esm_datastore(intake.catalog.Catalog):
         )
 
     @property
-    def df(self):
+    def df(self) -> pd.DataFrame:
+        """
+        Return pandas dataframe.
+        """
         return self._df
 
     @df.setter
-    def df(self, value):
+    def df(self, value: pd.DataFrame):
         self._df = value
         self._set_groups_and_keys()
 
-    def search(self, require_all_on=None, **query):
+    def search(self, require_all_on: Union[str, List] = None, **query):
         """Search for entries in the catalog.
 
         Parameters
@@ -371,7 +380,7 @@ class esm_datastore(intake.catalog.Catalog):
         )
         return ret
 
-    def serialize(self, name, directory=None, catalog_type='dict'):
+    def serialize(self, name: str, directory: str = None, catalog_type: str = 'dict') -> None:
         """Serialize collection/catalog to corresponding json and csv files.
 
         Parameters
@@ -432,7 +441,7 @@ class esm_datastore(intake.catalog.Catalog):
         with open(json_file_name, 'w') as outfile:
             json.dump(collection_data, outfile)
 
-    def nunique(self):
+    def nunique(self) -> pd.Series:
         """Count distinct observations across dataframe columns
         in the catalog.
 
@@ -460,7 +469,7 @@ class esm_datastore(intake.catalog.Catalog):
             nuniques[key] = val['count']
         return pd.Series(nuniques)
 
-    def unique(self, columns=None):
+    def unique(self, columns: Union[str, List] = None) -> Dict[str, Any]:
         """Return unique values for given columns in the
         catalog.
 
@@ -516,12 +525,12 @@ class esm_datastore(intake.catalog.Catalog):
 
     def to_dataset_dict(
         self,
-        zarr_kwargs={},
-        cdf_kwargs={'chunks': {}},
-        preprocess=None,
-        storage_options={},
-        progressbar=None,
-    ):
+        zarr_kwargs: Dict[str, Any] = None,
+        cdf_kwargs: Dict[str, Any] = None,
+        preprocess: Dict[str, Any] = None,
+        storage_options: Dict[str, Any] = None,
+        progressbar: bool = None,
+    ) -> Dict[str, xr.Dataset]:
         """Load catalog entries into a dictionary of xarray datasets.
 
         Parameters
@@ -597,35 +606,35 @@ class esm_datastore(intake.catalog.Catalog):
         # Avoid re-loading data if nothing has changed since the last call
         if self._datasets and (token == self._to_dataset_args_token):
             return self._datasets
-        else:
-            self._to_dataset_args_token = token
-            if self.progressbar:
-                print(
-                    f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{self.key_template}'"""
-                )
 
-            def _load_source(source):
-                return source.to_dask()
+        self._to_dataset_args_token = token
+        if self.progressbar:
+            print(
+                f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{self.key_template}'"""
+            )
 
-            sources = [source(**source_kwargs) for _, source in self.items()]
+        def _load_source(source):
+            return source.to_dask()
 
-            if self.progressbar:
-                total = len(sources)
-                progress = progress_bar(range(total))
+        sources = [source(**source_kwargs) for _, source in self.items()]
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(sources)) as executor:
-                future_tasks = [executor.submit(_load_source, source) for source in sources]
+        if self.progressbar:
+            total = len(sources)
+            progress = progress_bar(range(total))
 
-                for i, task in enumerate(concurrent.futures.as_completed(future_tasks)):
-                    ds = task.result()
-                    self._datasets[ds.attrs['intake_esm_dataset_key']] = ds
-                    if self.progressbar:
-                        progress.update(i)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(sources)) as executor:
+            future_tasks = [executor.submit(_load_source, source) for source in sources]
 
+            for i, task in enumerate(concurrent.futures.as_completed(future_tasks)):
+                ds = task.result()
+                self._datasets[ds.attrs['intake_esm_dataset_key']] = ds
                 if self.progressbar:
-                    progress.update(total)
+                    progress.update(i)
 
-                return self._datasets
+            if self.progressbar:
+                progress.update(total)
+
+            return self._datasets
 
 
 def _unique(df, columns=None):
@@ -680,7 +689,7 @@ def _get_subset(df, require_all_on=None, **query):
         for key, group in grouped:
             index = group.set_index(keys).index
             if not isinstance(index, pd.MultiIndex):
-                index = set([(element,) for element in index.to_list()])
+                index = {(element,) for element in index.to_list()}
             else:
                 index = set(index.to_list())
             if index == condition:
@@ -688,14 +697,13 @@ def _get_subset(df, require_all_on=None, **query):
 
         if len(results) >= 1:
             return pd.concat(results).reset_index(drop=True)
-        else:
-            warn(message)
-            return pd.DataFrame(columns=df.columns)
-    else:
-        if query_results.empty:
-            warn(message)
 
-        return query_results.reset_index(drop=True)
+        warn(message)
+        return pd.DataFrame(columns=df.columns)
+    if query_results.empty:
+        warn(message)
+
+    return query_results.reset_index(drop=True)
 
 
 def _normalize_query(query):
