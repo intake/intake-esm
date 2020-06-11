@@ -91,7 +91,7 @@ def union(dsets: List[xr.Dataset], options: Dict = None) -> xr.Dataset:
         A list of xarray.Dataset(s) to merge.
     options : Dict, optional
         Additional keyword arguments passed through to the
-        :py:class:`~xarray.concat`, by default None
+        :py:class:`~xarray.merge`, by default None
 
     Returns
     -------
