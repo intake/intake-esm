@@ -2,14 +2,17 @@ import itertools
 import json
 import logging
 from collections.abc import Iterable
+from typing import Dict, List, Union
 from warnings import warn
 
 import dask
 import intake
 import numpy as np
 import pandas as pd
+import xarray as xr
 from fastprogress.fastprogress import progress_bar
 
+from .source import ESMGroupDataSource
 from .utils import _fetch_and_parse_json, _fetch_catalog, logger
 
 
@@ -70,11 +73,11 @@ class esm_datastore(intake.catalog.Catalog):
 
     def __init__(
         self,
-        esmcol_obj,
-        esmcol_data=None,
-        progressbar=True,
-        sep='.',
-        log_level='CRITICAL',
+        esmcol_obj: Union[str, pd.DataFrame],
+        esmcol_data: Dict = None,
+        progressbar: bool = True,
+        sep: str = '.',
+        log_level: str = 'CRITICAL',
         **kwargs,
     ):
 
@@ -171,7 +174,7 @@ class esm_datastore(intake.catalog.Catalog):
         }
         return info
 
-    def keys(self):
+    def keys(self) -> List:
         """
         Get keys for the catalog entries
 
@@ -184,7 +187,7 @@ class esm_datastore(intake.catalog.Catalog):
         return keys
 
     @property
-    def key_template(self):
+    def key_template(self) -> str:
         """
         Return string template used to create catalog entry keys
 
@@ -206,7 +209,7 @@ class esm_datastore(intake.catalog.Catalog):
             _ = self[key]
         return self._entries
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> ESMGroupDataSource:
         """
         This method takes a key argument and return a catalog entry
         corresponding to assets (files) that will be aggregated into a
@@ -219,8 +222,8 @@ class esm_datastore(intake.catalog.Catalog):
 
         Returns
         -------
-        intake.catalog.local.LocalCatalogEntry
-             A catalog entry by name (key)
+        intake_esm.source.ESMGroupDataSource
+             A data source by name (key)
 
         Raises
         ------
@@ -230,7 +233,7 @@ class esm_datastore(intake.catalog.Catalog):
         Examples
         --------
         >>> col = intake.open_esm_datastore("mycatalog.json")
-        >>> entry = col["AerChemMIP.BCC.BCC-ESM1.piClim-control.AERmon.gn"]
+        >>> data_source = col["AerChemMIP.BCC.BCC-ESM1.piClim-control.AERmon.gn"]
         """
         # The canonical unique key is the key of a compatible group of assets
         try:
@@ -279,8 +282,14 @@ class esm_datastore(intake.catalog.Catalog):
 
     @classmethod
     def from_df(
-        cls, df, esmcol_data=None, progressbar=True, sep='.', log_level='CRITICAL', **kwargs
-    ):
+        cls,
+        df: pd.DataFrame,
+        esmcol_data: Dict = None,
+        progressbar: bool = True,
+        sep: str = '.',
+        log_level: str = 'CRITICAL',
+        **kwargs,
+    ) -> 'esm_datastore':
         """
         Create catalog from the given dataframe
 
@@ -314,18 +323,18 @@ class esm_datastore(intake.catalog.Catalog):
         )
 
     @property
-    def df(self):
+    def df(self) -> pd.DataFrame:
         """
         Return pandas dataframe.
         """
         return self._df
 
     @df.setter
-    def df(self, value):
+    def df(self, value: pd.DataFrame):
         self._df = value
         self._set_groups_and_keys()
 
-    def search(self, require_all_on=None, **query):
+    def search(self, require_all_on: Union[str, List] = None, **query) -> 'esm_datastore':
         """Search for entries in the catalog.
 
         Parameters
@@ -372,7 +381,7 @@ class esm_datastore(intake.catalog.Catalog):
         )
         return ret
 
-    def serialize(self, name, directory=None, catalog_type='dict'):
+    def serialize(self, name: str, directory: str = None, catalog_type: str = 'dict') -> None:
         """Serialize collection/catalog to corresponding json and csv files.
 
         Parameters
@@ -433,7 +442,7 @@ class esm_datastore(intake.catalog.Catalog):
         with open(json_file_name, 'w') as outfile:
             json.dump(collection_data, outfile)
 
-    def nunique(self):
+    def nunique(self) -> pd.Series:
         """Count distinct observations across dataframe columns
         in the catalog.
 
@@ -461,7 +470,7 @@ class esm_datastore(intake.catalog.Catalog):
             nuniques[key] = val['count']
         return pd.Series(nuniques)
 
-    def unique(self, columns=None):
+    def unique(self, columns: Union[str, List] = None) -> Dict:
         """Return unique values for given columns in the
         catalog.
 
@@ -517,12 +526,12 @@ class esm_datastore(intake.catalog.Catalog):
 
     def to_dataset_dict(
         self,
-        zarr_kwargs=None,
-        cdf_kwargs=None,
-        preprocess=None,
-        storage_options=None,
-        progressbar=None,
-    ):
+        zarr_kwargs: Dict = None,
+        cdf_kwargs: Dict = None,
+        preprocess: Dict = None,
+        storage_options: Dict = None,
+        progressbar: bool = None,
+    ) -> Dict[xr.Dataset]:
         """Load catalog entries into a dictionary of xarray datasets.
 
         Parameters
