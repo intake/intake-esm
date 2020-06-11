@@ -88,12 +88,12 @@ class esm_datastore(intake.catalog.Catalog):
 
         if isinstance(esmcol_obj, str):
             self.esmcol_data, self.esmcol_path = _fetch_and_parse_json(esmcol_obj)
-            self.df, self.catalog_file = _fetch_catalog(self.esmcol_data, esmcol_obj)
+            self._df, self.catalog_file = _fetch_catalog(self.esmcol_data, esmcol_obj)
 
         elif isinstance(esmcol_obj, pd.DataFrame):
             if esmcol_data is None:
                 raise ValueError("Missing required argument: 'esmcol_data'")
-            self.df = esmcol_obj
+            self._df = esmcol_obj
             self.esmcol_data = esmcol_data
             self.esmcol_path = None
             self.catalog_file = None
@@ -108,9 +108,12 @@ class esm_datastore(intake.catalog.Catalog):
         self.sep = sep
         self.aggregation_info = self._get_aggregation_info()
         self._entries = {}
+        self._set_groups_and_keys()
+        super(esm_datastore, self).__init__(**kwargs)
+
+    def _set_groups_and_keys(self):
         self._grouped = self.df.groupby(self.aggregation_info['groupby_attrs'])
         self._keys = list(self._grouped.groups.keys())
-        super(esm_datastore, self).__init__(**kwargs)
 
     def _get_aggregation_info(self):
         groupby_attrs = []
@@ -311,6 +314,15 @@ class esm_datastore(intake.catalog.Catalog):
             log_level=log_level,
             **kwargs,
         )
+
+    @property
+    def df(self):
+        return self._df
+
+    @df.setter
+    def df(self, value):
+        self._df = value
+        self._set_groups_and_keys()
 
     def search(self, require_all_on=None, **query):
         """Search for entries in the catalog.
