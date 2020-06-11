@@ -2,7 +2,7 @@ import itertools
 import json
 import logging
 from collections.abc import Iterable
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Union
 from warnings import warn
 
 import dask
@@ -12,7 +12,6 @@ import pandas as pd
 import xarray as xr
 from fastprogress.fastprogress import progress_bar
 
-from .source import ESMGroupDataSource
 from .utils import _fetch_and_parse_json, _fetch_catalog, logger
 
 
@@ -74,7 +73,7 @@ class esm_datastore(intake.catalog.Catalog):
     def __init__(
         self,
         esmcol_obj: Union[str, pd.DataFrame],
-        esmcol_data: Dict = None,
+        esmcol_data: Dict[str, Any] = None,
         progressbar: bool = True,
         sep: str = '.',
         log_level: str = 'CRITICAL',
@@ -209,9 +208,9 @@ class esm_datastore(intake.catalog.Catalog):
             _ = self[key]
         return self._entries
 
-    def __getitem__(self, key: str) -> ESMGroupDataSource:
+    def __getitem__(self, key: str):
         """
-        This method takes a key argument and return a catalog entry
+        This method takes a key argument and return a data source
         corresponding to assets (files) that will be aggregated into a
         single xarray dataset.
 
@@ -284,7 +283,7 @@ class esm_datastore(intake.catalog.Catalog):
     def from_df(
         cls,
         df: pd.DataFrame,
-        esmcol_data: Dict = None,
+        esmcol_data: Dict[str, Any] = None,
         progressbar: bool = True,
         sep: str = '.',
         log_level: str = 'CRITICAL',
@@ -334,7 +333,7 @@ class esm_datastore(intake.catalog.Catalog):
         self._df = value
         self._set_groups_and_keys()
 
-    def search(self, require_all_on: Union[str, List] = None, **query) -> 'esm_datastore':
+    def search(self, require_all_on: Union[str, List] = None, **query):
         """Search for entries in the catalog.
 
         Parameters
@@ -470,7 +469,7 @@ class esm_datastore(intake.catalog.Catalog):
             nuniques[key] = val['count']
         return pd.Series(nuniques)
 
-    def unique(self, columns: Union[str, List] = None) -> Dict:
+    def unique(self, columns: Union[str, List] = None) -> Dict[str, Any]:
         """Return unique values for given columns in the
         catalog.
 
@@ -526,12 +525,12 @@ class esm_datastore(intake.catalog.Catalog):
 
     def to_dataset_dict(
         self,
-        zarr_kwargs: Dict = None,
-        cdf_kwargs: Dict = None,
-        preprocess: Dict = None,
-        storage_options: Dict = None,
+        zarr_kwargs: Dict[str, Any] = None,
+        cdf_kwargs: Dict[str, Any] = None,
+        preprocess: Dict[str, Any] = None,
+        storage_options: Dict[str, Any] = None,
         progressbar: bool = None,
-    ) -> Dict[xr.Dataset]:
+    ) -> Dict[str, xr.Dataset]:
         """Load catalog entries into a dictionary of xarray datasets.
 
         Parameters

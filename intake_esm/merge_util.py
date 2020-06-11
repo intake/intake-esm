@@ -20,7 +20,7 @@ def join_new(
     dim_name: str,
     coord_value: Any,
     varname: Union[str, List],
-    options: Dict = None,
+    options: Dict[str, Any] = None,
 ) -> xr.Dataset:
     """
     Concatenate a list of datasets along a new dimension.
@@ -55,7 +55,7 @@ def join_new(
         raise exc
 
 
-def join_existing(dsets: List[xr.Dataset], options: Dict = None) -> xr.Dataset:
+def join_existing(dsets: List[xr.Dataset], options: Dict[str, Any] = None) -> xr.Dataset:
     """
     Concatenate a list of datasets along an existing dimension.
 
@@ -81,7 +81,7 @@ def join_existing(dsets: List[xr.Dataset], options: Dict = None) -> xr.Dataset:
         raise exc
 
 
-def union(dsets: List[xr.Dataset], options: Dict = None) -> xr.Dataset:
+def union(dsets: List[xr.Dataset], options: Dict[str, Any] = None) -> xr.Dataset:
     """
     Merge a list of datasets into a single dataset.
 
