@@ -723,6 +723,7 @@ def _make_entry(key, df, aggregation_info):
         variable_column=aggregation_info['variable_column_name'],
         data_format=aggregation_info['data_format'],
         format_column=aggregation_info['format_column_name'],
+        key=key,
     )
     entry = intake.catalog.local.LocalCatalogEntry(
         name=key, description='', driver='esm_group', args=args, metadata={}
