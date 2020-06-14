@@ -4,15 +4,16 @@ channels:
 dependencies:
   - cftime
   - codecov
+  - fastprogress
   - netcdf4
   - pip
+  - psutil
   - pytest
   - pytest-cov
   - pytest-icdiff
   - pytest-xdist
   - toolz
   - zarr
-  - psutil
   - pip:
     - git+https://github.com/intake/intake.git
     - git+https://github.com/pydata/xarray.git

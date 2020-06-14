@@ -15,22 +15,24 @@ class ESMGroupDataSource(DataSource):
 
     def __init__(
         self,
+        key,
         df,
         aggregation_dict,
         path_column,
         variable_column,
         data_format=None,
         format_column=None,
-        cdf_kwargs={'chunks': {}},
-        zarr_kwargs={},
-        storage_options={},
+        cdf_kwargs=None,
+        zarr_kwargs=None,
+        storage_options=None,
         preprocess=None,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.cdf_kwargs = cdf_kwargs
-        self.zarr_kwargs = zarr_kwargs
-        self.storage_options = storage_options
+        self.key = key
+        self.cdf_kwargs = cdf_kwargs or {'chunks': {}}
+        self.zarr_kwargs = zarr_kwargs or {}
+        self.storage_options = storage_options or {}
         self.preprocess = preprocess
         self._ds = None
         if df.empty:
@@ -45,12 +47,37 @@ class ESMGroupDataSource(DataSource):
             self.df[_DATA_FORMAT_KEY] = df[format_column]
         else:
             if data_format is None:
-                raise ValueError(f'Please specify either `data_format` or `format_column`')
-            else:
-                self.df[_DATA_FORMAT_KEY] = [data_format] * len(df)
+                raise ValueError('Please specify either `data_format` or `format_column`')
+            self.df[_DATA_FORMAT_KEY] = [data_format] * len(df)
 
         self.data_format = data_format
         self.format_column = format_column
+
+    def __repr__(self):
+        """Make string representation of object."""
+        contents = f'<name: {self.name}, assets: {len(self.df)}'
+        return contents
+
+    def _ipython_display_(self):
+        """
+        Display the entry as a rich object in an IPython session
+        """
+        from IPython.display import display, HTML
+
+        columns = list(set([self.path_column, self.variable_column] + self.aggregation_columns))
+        text = self.df[columns].to_html()
+        contents = f"""
+        <p>
+            <ul>
+                <li><strong>Name</strong>                 : {self.name}</li>
+                <li><strong>Num of xarray.Dataset</strong>: 1</li>
+                <li><strong>Num of assets</strong>        : {len(self.df)}</li>
+                <li><strong>Aggregation columns</strong>  : {str(self.aggregation_columns)}</li>
+            </ul>
+        </p>
+        {text}
+        """
+        display(HTML(contents))
 
     def _get_schema(self):
 
@@ -86,7 +113,7 @@ class ESMGroupDataSource(DataSource):
             self.cdf_kwargs,
             self.preprocess,
         )
-        ds.attrs['intake_esm_dataset_key'] = self.name
+        ds.attrs['intake_esm_dataset_key'] = self.key
         self._ds = ds
         return ds
 

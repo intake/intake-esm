@@ -36,6 +36,7 @@ def test_esm_group(df, aggregation_dict):
         grid_label='gr',
     )
     args = dict(
+        key='foo',
         df=subset_df,
         aggregation_dict=aggregation_dict,
         path_column='path',
@@ -47,6 +48,7 @@ def test_esm_group(df, aggregation_dict):
     source = ESMGroupDataSource(**args)
     assert source._ds is None
     ds = source.to_dask()
+    assert ds.attrs['intake_esm_dataset_key'] == 'foo'
     assert isinstance(ds, xr.Dataset)
     assert set(subset_df['member_id']) == set(ds['member_id'].values)
     source.close()
@@ -56,6 +58,7 @@ def test_esm_group(df, aggregation_dict):
 def test_esm_group_empty_df(df, aggregation_dict):
     empty_df = pd.DataFrame(columns=df.columns)
     args = dict(
+        key='foo',
         df=empty_df,
         aggregation_dict=aggregation_dict,
         path_column='path',

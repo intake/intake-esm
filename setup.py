@@ -37,7 +37,12 @@ setup(
     maintainer='NCAR XDev Team',
     maintainer_email='xdev@ucar.edu',
     classifiers=CLASSIFIERS,
-    url='https://github.com/NCAR/intake-esm',
+    url='https://intake-esm.readthedocs.io',
+    project_urls={
+        'Documentation': 'https://intake-esm.readthedocs.io',
+        'Source': 'https://github.com/NCAR/intake-esm',
+        'Tracker': 'https://github.com/NCAR/intake-esm/issues',
+    },
     packages=find_packages(exclude=('tests',)),
     package_dir={'intake-esm': 'intake-esm'},
     include_package_data=True,

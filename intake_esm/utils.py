@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+""" Helper functions for fetching and loading catalog"""
 import json
 import logging
 from pathlib import Path
@@ -57,12 +58,12 @@ def _fetch_and_parse_json(input_path):
             data = resp.json()
         else:
             input_path = Path(input_path).absolute().as_posix()
-            with open(input_path) as f:
+            with open(input_path) as filein:
                 logger.debug(f'Loading ESMCol from filesystem: {input_path}')
-                data = json.load(f)
+                data = json.load(filein)
 
-    except Exception as e:
-        raise e
+    except Exception as exc:
+        raise exc
 
     return data, input_path
 
@@ -71,7 +72,6 @@ def _fetch_catalog(collection_data, esmcol_path):
     """Get the catalog file content, and load it into a pandas dataframe"""
 
     if 'catalog_file' in collection_data:
-
         if _is_valid_url(esmcol_path):
             catalog_path = collection_data['catalog_file']
             if not _is_valid_url(catalog_path):
@@ -88,23 +88,19 @@ def _fetch_catalog(collection_data, esmcol_path):
                 catalog = urlunparse(components)
                 if not _is_valid_url(catalog):
                     raise FileNotFoundError(f'Unable to find: {catalog}')
-                else:
-                    return pd.read_csv(catalog)
-            return pd.read_csv(catalog_path)
+                return pd.read_csv(catalog), catalog
+            return pd.read_csv(catalog_path), catalog_path
 
-        else:
-            catalog_path = Path(collection_data['catalog_file'])
-            # If the catalog_path does not exist,
-            # try constructing a path using the relative path
-            if not catalog_path.exists():
-                esmcol_path = Path(esmcol_path).absolute()
-                catalog = esmcol_path.parent / collection_data['catalog_file']
-                if not catalog.exists():
-                    raise FileNotFoundError(f'Unable to find: {catalog}')
-                else:
-                    return pd.read_csv(catalog)
+        catalog_path = Path(collection_data['catalog_file'])
+        # If the catalog_path does not exist,
+        # try constructing a path using the relative path
+        if not catalog_path.exists():
+            esmcol_path = Path(esmcol_path).absolute()
+            catalog = esmcol_path.parent / collection_data['catalog_file']
+            if not catalog.exists():
+                raise FileNotFoundError(f'Unable to find: {catalog}')
+            return pd.read_csv(catalog), catalog
 
-            return pd.read_csv(catalog_path)
+        return pd.read_csv(catalog_path), catalog_path
 
-    else:
-        return pd.DataFrame(collection_data['catalog_dict'])
+    return pd.DataFrame(collection_data['catalog_dict']), None

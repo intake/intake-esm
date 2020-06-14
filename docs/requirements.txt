@@ -1,16 +1,12 @@
-dask
-distributed
-fsspec
 gcsfs
-intake
 jupyterlab
 matplotlib
 nbsphinx
 netcdf4
 numcodecs
+pydata-sphinx-theme
 setuptools>=41.2
 sphinx
-sphinx_rtd_theme
 watermark
-xarray
 zarr
+-r ../requirements.txt

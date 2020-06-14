@@ -2,6 +2,39 @@
 Changelog History
 =================
 
+Intake-esm v2020.06.11
+======================
+
+Features
+--------
+
+- Add `df` property setter (:pr:`247`) `Anderson Banihirwe`_
+
+Documentation
+-------------
+
+- Use Pandas sphinx theme (:pr:`244`) `Anderson Banihirwe`_
+- Update documentation tutorial (:pr:`252`) `Anderson Banihirwe`_ & `Charles Blackmon-Luca`_
+
+Internal
+--------
+
+- Fix anti-patterns and other bug risks (:pr:`251`) `Anderson Banihirwe`_
+- Sync with intake's Entry unification (:pr:`249`) `Anderson Banihirwe`_
+
+
+
+
+
+Intake-esm v2020.05.21
+======================
+
+Features
+--------
+
+- Provide informative message/warnings from empty queries. (:pr:`235`) `Anderson Banihirwe`_
+- Replace tqdm progressbar with fastprogress. (:pr:`238`) `Anderson Banihirwe`_
+- Add `catalog_file` attribute to `esm_datastore` class. (:pr:`240`) `Anderson Banihirwe`_
 
 Intake-esm v2020.05.01
 ======================
@@ -402,6 +435,7 @@ Trivial/Internal Changes
 .. _`Aaron Spring`: https://github.com/aaronspring
 .. _`Anderson Banihirwe`: https://github.com/andersy005
 .. _`Brian Bonnlander`: https://github.com/bonnland
+.. _`Charles Blackmon-Luca`: https://github.com/charlesbluca
 .. _`Julia Kent`: https://github.com/jukent
 .. _`Matthew Long`: https://github.com/matt-long
 .. _`Naomi Henderson`: https://github.com/naomi-henderson
