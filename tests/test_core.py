@@ -401,6 +401,18 @@ params = [
             {'A': 'NCAR', 'B': 'CESM', 'C': 'control', 'D': 'O2'},
         ],
     ),
+    ({'C': ['hist'], 'D': ['TA']}, None, [{'A': 'NCAR', 'B': 'WACM', 'C': 'hist', 'D': 'TA'}],),
+    (
+        {
+            'C': [re.compile('hist.*', flags=re.IGNORECASE)],
+            'D': [re.compile('TA.*', flags=re.IGNORECASE)],
+        },
+        None,
+        [
+            {'A': 'NCAR', 'B': 'WACM', 'C': 'hist', 'D': 'TA'},
+            {'A': 'NASA', 'B': 'foo', 'C': 'HiSt', 'D': 'tAs'},
+        ],
+    ),
 ]
 
 
@@ -408,10 +420,10 @@ params = [
 def test_get_subset(query, require_all_on, expected):
     df = pd.DataFrame(
         {
-            'A': ['NCAR', 'IPSL', 'IPSL', 'CSIRO', 'IPSL', 'NCAR', 'NOAA', 'NCAR'],
-            'B': ['CESM', 'FOO', 'FOO', 'BAR', 'FOO', 'CESM', 'GCM', 'WACM'],
-            'C': ['hist', 'control', 'hist', 'control', 'hist', 'control', 'hist', 'hist'],
-            'D': ['O2', 'O2', 'O2', 'O2', 'NO2', 'O2', 'O2', 'TA'],
+            'A': ['NCAR', 'IPSL', 'IPSL', 'CSIRO', 'IPSL', 'NCAR', 'NOAA', 'NCAR', 'NASA'],
+            'B': ['CESM', 'FOO', 'FOO', 'BAR', 'FOO', 'CESM', 'GCM', 'WACM', 'foo'],
+            'C': ['hist', 'control', 'hist', 'control', 'hist', 'control', 'hist', 'hist', 'HiSt'],
+            'D': ['O2', 'O2', 'O2', 'O2', 'NO2', 'O2', 'O2', 'TA', 'tAs'],
         }
     )
 
