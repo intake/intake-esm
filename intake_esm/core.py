@@ -673,19 +673,20 @@ def _get_subset(df, require_all_on=None, **query):
         warn(message)
         return pd.DataFrame(columns=df.columns)
     condition = np.ones(len(df), dtype=bool)
-
     query = _normalize_query(query)
     for key, val in query.items():
         condition_i = np.zeros(len(df), dtype=bool)
+        column_is_stringtype = isinstance(
+            df[key].dtype, (np.object, pd.core.arrays.string_.StringDtype)
+        )
         for val_i in val:
-            if isinstance(df[key].dtype, (np.object, pd.core.arrays.string_.StringDtype)):
-                if isinstance(val_i, Pattern):
-                    condition_i = condition_i | (df[key].str.contains(val_i, regex=True))
-                else:
-                    condition_i = condition_i | (df[key] == val_i)
+            value_is_repattern = isinstance(val_i, Pattern)
+            if column_is_stringtype and value_is_repattern:
+                cond = df[key].str.contains(val_i, regex=True)
             else:
-                condition_i = condition_i | (df[key] == val_i)
-        condition = condition & condition_i
+                cond = df[key] == val_i
+            condition_i |= cond
+        condition &= condition_i
     query_results = df.loc[condition]
 
     if require_all_on:
