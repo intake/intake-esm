@@ -2,7 +2,7 @@ import itertools
 import json
 import logging
 from collections.abc import Iterable
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Pattern, Union
 from warnings import warn
 
 import dask
@@ -355,11 +355,13 @@ class esm_datastore(intake.catalog.Catalog):
 
         Parameters
         ----------
-        require_all_on : str, list
-           name of columns to use when enforcing the query criteria.
-           For example: `col.search(experiment_id=['piControl', 'historical'], require_all_on='source_id')`
-           returns all assets with `source_id` that has both `piControl` and `historical`
-           experiments.
+        require_all_on : list, str, optional
+            A dataframe column or a list of dataframe columns across
+            which all entries must satisfy the query criteria.
+            If None, return entries that fulfill any of the criteria specified
+            in the query, by default None.
+        **query:
+            keyword arguments corresponding to user's query to execute against the dataframe.
 
         Returns
         -------
@@ -384,6 +386,20 @@ class esm_datastore(intake.catalog.Catalog):
         260        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r1i...            NaN
         346        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r2i...            NaN
         401        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r3i...            NaN
+
+        The search method also accepts compiled regular expression objects
+        from :py:method:`~re.compile` as patterns.
+
+        >>> import re
+        >>> # Let's search for variables containing "Frac" in their name
+        >>> pat = re.compile(r'Frac') # Define a regular expression
+        >>> cat.search(variable_id=pat)
+        >>> cat.df.head().variable_id
+        0     residualFrac
+        1    landCoverFrac
+        2    landCoverFrac
+        3     residualFrac
+        4    landCoverFrac
         """
 
         results = _get_subset(self.df, require_all_on=require_all_on, **query)
@@ -673,16 +689,20 @@ def _get_subset(df, require_all_on=None, **query):
         warn(message)
         return pd.DataFrame(columns=df.columns)
     condition = np.ones(len(df), dtype=bool)
-
     query = _normalize_query(query)
     for key, val in query.items():
-        if isinstance(val, (tuple, list)):
-            condition_i = np.zeros(len(df), dtype=bool)
-            for val_i in val:
-                condition_i = condition_i | (df[key] == val_i)
-            condition = condition & condition_i
-        elif val is not None:
-            condition = condition & (df[key] == val)
+        condition_i = np.zeros(len(df), dtype=bool)
+        column_is_stringtype = isinstance(
+            df[key].dtype, (np.object, pd.core.arrays.string_.StringDtype)
+        )
+        for val_i in val:
+            value_is_repattern = isinstance(val_i, Pattern)
+            if column_is_stringtype and value_is_repattern:
+                cond = df[key].str.contains(val_i, regex=True)
+            else:
+                cond = df[key] == val_i
+            condition_i |= cond
+        condition &= condition_i
     query_results = df.loc[condition]
 
     if require_all_on:
@@ -726,7 +746,7 @@ def _get_subset(df, require_all_on=None, **query):
 def _normalize_query(query):
     q = query.copy()
     for key, val in q.items():
-        if isinstance(val, str):
+        if isinstance(val, str) or not isinstance(val, Iterable):
             q[key] = [val]
     return q
 
