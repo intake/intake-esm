@@ -58,7 +58,7 @@ fix the bug itself.
 Fix bugs
 --------
 
-Look through the `GitHub issues for bugs <https://github.com/NCAR/intake-esm/labels/type:%20bug>`_.
+Look through the `GitHub issues for bugs <https://github.com/intake/intake-esm/labels/type:%20bug>`_.
 
 Talk to developers to find out how you can fix specific bugs.
 

@@ -118,7 +118,7 @@ def _to_nested_dict(df):
 
 
 def _create_asset_info_lookup(
-    df, path_column_name, variable_column_name=None, data_format=None, format_column_name=None
+    df, path_column_name, variable_column_name=None, data_format=None, format_column_name=None,
 ):
 
     if format_column_name is not None:
@@ -157,7 +157,7 @@ def _aggregate(
             # return open_dataset(v)
             data_format = lookup[v][1]
             # Get varname in order to specify data_vars=[varname] during concatenation
-            # See https://github.com/NCAR/intake-esm/issues/172#issuecomment-549001751
+            # See https://github.com/intake/intake-esm/issues/172#issuecomment-549001751
             varname = lookup[v][0]
             ds = _open_asset(
                 mapper_dict[v],

@@ -90,7 +90,7 @@ Overview
 .. _NA-CORDEX: https://na-cordex.org/
 .. _CESM-LENS-AWS: http://ncar-aws-www.s3-website-us-west-2.amazonaws.com/
 .. _intake: https://github.com/intake/intake
-.. _Datasets Collection Curation: https://github.com/intake/intake-esm-datastore
+.. _Datasets Collection Curation: https://github.com/NCAR/intake-esm-datastore
 .. _Coupled Model Intercomparison Project (CMIP): https://www.wcrp-climate.org/wgcm-cmip
 .. _Community Earth System Model (CESM) Large Ensemble Project: http://www.cesm.ucar.edu/projects/community-projects/LENS/
 .. _Zarr: https://zarr.readthedocs.io/en/stable/

@@ -51,8 +51,8 @@ extensions = [
 ]
 
 extlinks = {
-    'issue': ('https://github.com/NCAR/intake-esm/issues/%s', 'GH#'),
-    'pr': ('https://github.com/NCAR/intake-esm/pull/%s', 'GH#'),
+    'issue': ('https://github.com/intake/intake-esm/issues/%s', 'GH#'),
+    'pr': ('https://github.com/intake/intake-esm/pull/%s', 'GH#'),
 }
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

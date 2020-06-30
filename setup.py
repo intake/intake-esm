@@ -40,8 +40,8 @@ setup(
     url='https://intake-esm.readthedocs.io',
     project_urls={
         'Documentation': 'https://intake-esm.readthedocs.io',
-        'Source': 'https://github.com/NCAR/intake-esm',
-        'Tracker': 'https://github.com/NCAR/intake-esm/issues',
+        'Source': 'https://github.com/intake/intake-esm',
+        'Tracker': 'https://github.com/intake/intake-esm/issues',
     },
     packages=find_packages(exclude=('tests',)),
     package_dir={'intake-esm': 'intake-esm'},
