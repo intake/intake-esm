@@ -1,12 +1,12 @@
-.. image:: https://img.shields.io/github/workflow/status/NCAR/intake-esm/code-style?label=Code%20Style&style=for-the-badge
-    :target: https://github.com/NCAR/intake-esm/actions
+.. image:: https://img.shields.io/github/workflow/status/intake/intake-esm/code-style?label=Code%20Style&style=for-the-badge
+    :target: https://github.com/intake/intake-esm/actions
     :alt: GitHub Workflow Status
 
-.. image:: https://img.shields.io/circleci/project/github/NCAR/intake-esm/master.svg?style=for-the-badge&logo=circleci
-    :target: https://circleci.com/gh/NCAR/intake-esm/tree/master
+.. image:: https://img.shields.io/circleci/project/github/intake/intake-esm/master.svg?style=for-the-badge&logo=circleci
+    :target: https://circleci.com/gh/intake/intake-esm/tree/master
 
-.. image:: https://img.shields.io/codecov/c/github/NCAR/intake-esm.svg?style=for-the-badge
-    :target: https://codecov.io/gh/NCAR/intake-esm
+.. image:: https://img.shields.io/codecov/c/github/intake/intake-esm.svg?style=for-the-badge
+    :target: https://codecov.io/gh/intake/intake-esm
 
 
 .. image:: https://img.shields.io/readthedocs/intake-esm/latest.svg?style=for-the-badge
@@ -63,7 +63,7 @@ Overview
   .. code-block:: python
 
         >>> import intake
-        >>> col_url = "https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json"
+        >>> col_url = "https://raw.githubusercontent.com/intake/intake-esm-datastore/master/catalogs/pangeo-cmip6.json"
         >>> col = intake.open_esm_datastore(col_url)
 
 - Search and Discovery: ``intake-esm`` provides functionality to execute queries against the database:
@@ -90,7 +90,7 @@ Overview
 .. _NA-CORDEX: https://na-cordex.org/
 .. _CESM-LENS-AWS: http://ncar-aws-www.s3-website-us-west-2.amazonaws.com/
 .. _intake: https://github.com/intake/intake
-.. _Datasets Collection Curation: https://github.com/NCAR/intake-esm-datastore
+.. _Datasets Collection Curation: https://github.com/intake/intake-esm-datastore
 .. _Coupled Model Intercomparison Project (CMIP): https://www.wcrp-climate.org/wgcm-cmip
 .. _Community Earth System Model (CESM) Large Ensemble Project: http://www.cesm.ucar.edu/projects/community-projects/LENS/
 .. _Zarr: https://zarr.readthedocs.io/en/stable/
