@@ -63,7 +63,7 @@ Overview
   .. code-block:: python
 
         >>> import intake
-        >>> col_url = "https://raw.githubusercontent.com/intake/intake-esm-datastore/master/catalogs/pangeo-cmip6.json"
+        >>> col_url = "https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json"
         >>> col = intake.open_esm_datastore(col_url)
 
 - Search and Discovery: ``intake-esm`` provides functionality to execute queries against the database:
