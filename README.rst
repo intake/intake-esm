@@ -1,12 +1,12 @@
-.. image:: https://img.shields.io/github/workflow/status/NCAR/intake-esm/code-style?label=Code%20Style&style=for-the-badge
-    :target: https://github.com/NCAR/intake-esm/actions
+.. image:: https://img.shields.io/github/workflow/status/intake/intake-esm/code-style?label=Code%20Style&style=for-the-badge
+    :target: https://github.com/intake/intake-esm/actions
     :alt: GitHub Workflow Status
 
-.. image:: https://img.shields.io/circleci/project/github/NCAR/intake-esm/master.svg?style=for-the-badge&logo=circleci
-    :target: https://circleci.com/gh/NCAR/intake-esm/tree/master
+.. image:: https://img.shields.io/circleci/project/github/intake/intake-esm/master.svg?style=for-the-badge&logo=circleci
+    :target: https://circleci.com/gh/intake/intake-esm/tree/master
 
-.. image:: https://img.shields.io/codecov/c/github/NCAR/intake-esm.svg?style=for-the-badge
-    :target: https://codecov.io/gh/NCAR/intake-esm
+.. image:: https://img.shields.io/codecov/c/github/intake/intake-esm.svg?style=for-the-badge
+    :target: https://codecov.io/gh/intake/intake-esm
 
 
 .. image:: https://img.shields.io/readthedocs/intake-esm/latest.svg?style=for-the-badge

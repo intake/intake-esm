@@ -28,7 +28,7 @@ Is there a list of existing catalogs?
 -------------------------------------
 
 The table below is an incomplete list of existing catalogs.
-Please feel free to add to this list or raise an issue on `GitHub <https://github.com/NCAR/intake-esm/issues/new>`_.
+Please feel free to add to this list or raise an issue on `GitHub <https://github.com/intake/intake-esm/issues/new>`_.
 
 
 {% for catalog in catalogs %}
