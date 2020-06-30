@@ -279,6 +279,23 @@ class esm_datastore(intake.catalog.Catalog):
         contents = self._repr_html_()
         display(HTML(contents))
 
+    def __dir__(self):
+        rv = [
+            'df',
+            'to_dataset_dict',
+            'from_df',
+            'keys',
+            'serialize',
+            'search',
+            'unique',
+            'nunique',
+            'key_template',
+        ]
+        return sorted(list(self.__dict__.keys()) + rv)
+
+    def _ipython_key_completions_(self):
+        return self.__dir__()
+
     @classmethod
     def from_df(
         cls,
@@ -563,7 +580,6 @@ class esm_datastore(intake.catalog.Catalog):
         storage_options : dict, optional
             Parameters passed to the backend file-system such as Google Cloud Storage,
             Amazon Web Service S3.
-            progressbar : bool
         progressbar : bool
             If True, will print a progress bar to standard error (stderr)
             when loading assets into :py:class:`~xarray.Dataset`.
