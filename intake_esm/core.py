@@ -274,7 +274,7 @@ class esm_datastore(intake.catalog.Catalog):
         """
         Display the entry as a rich object in an IPython session
         """
-        from IPython.display import display, HTML
+        from IPython.display import HTML, display
 
         contents = self._repr_html_()
         display(HTML(contents))
