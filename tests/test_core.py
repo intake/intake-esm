@@ -9,7 +9,7 @@ import pytest
 import xarray as xr
 
 import intake_esm
-from intake_esm.core import _get_subset, _normalize_query, _unique
+from intake_esm.core import _get_subset, _is_pattern, _normalize_query, _unique
 
 here = os.path.abspath(os.path.dirname(__file__))
 zarr_col_pangeo_cmip6 = (
@@ -449,3 +449,17 @@ def test_normalize_query():
     }
     actual = _normalize_query(query)
     assert actual == expected
+
+
+@pytest.mark.parametrize(
+    'value, expected',
+    [
+        (2, False),
+        ('foo', False),
+        ('^foo', True),
+        ('^foo.*bar$', True),
+        (re.compile('hist.*', flags=re.IGNORECASE), True),
+    ],
+)
+def test_is_pattern(value, expected):
+    assert _is_pattern(value) == expected

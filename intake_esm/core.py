@@ -756,7 +756,10 @@ def _is_pattern(value):
     if value_is_repattern:
         return True
     wildcard_chars = {'*', '?', '$', '^'}
-    return any(char in value for char in wildcard_chars)
+    try:
+        return any(char in value for char in wildcard_chars)
+    except TypeError:
+        return False
 
 
 def _flatten_list(data):
