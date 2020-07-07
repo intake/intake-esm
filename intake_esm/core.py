@@ -696,9 +696,9 @@ def _get_subset(df, require_all_on=None, **query):
             df[key].dtype, (np.object, pd.core.arrays.string_.StringDtype)
         )
         for val_i in val:
-            value_is_repattern = isinstance(val_i, Pattern)
-            if column_is_stringtype and value_is_repattern:
-                cond = df[key].str.contains(val_i, regex=True)
+            value_is_pattern = _is_pattern(val_i)
+            if column_is_stringtype and value_is_pattern:
+                cond = df[key].str.contains(val_i, regex=True, case=True, flags=0)
             else:
                 cond = df[key] == val_i
             condition_i |= cond
@@ -749,6 +749,14 @@ def _normalize_query(query):
         if isinstance(val, str) or not isinstance(val, Iterable):
             q[key] = [val]
     return q
+
+
+def _is_pattern(value):
+    value_is_repattern = isinstance(value, Pattern)
+    if value_is_repattern:
+        return True
+    wildcard_chars = {'*', '?', '$', '^'}
+    return any(char in value for char in wildcard_chars)
 
 
 def _flatten_list(data):

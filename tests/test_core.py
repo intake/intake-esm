@@ -401,6 +401,15 @@ params = [
             {'A': 'NCAR', 'B': 'CESM', 'C': 'control', 'D': 'O2'},
         ],
     ),
+    (
+        {'C': ['^co.*ol$']},
+        None,
+        [
+            {'A': 'IPSL', 'B': 'FOO', 'C': 'control', 'D': 'O2'},
+            {'A': 'CSIRO', 'B': 'BAR', 'C': 'control', 'D': 'O2'},
+            {'A': 'NCAR', 'B': 'CESM', 'C': 'control', 'D': 'O2'},
+        ],
+    ),
     ({'C': ['hist'], 'D': ['TA']}, None, [{'A': 'NCAR', 'B': 'WACM', 'C': 'hist', 'D': 'TA'}],),
     (
         {
