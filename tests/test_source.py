@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from intake_esm.core import search
+from intake_esm.search import search
 from intake_esm.source import ESMGroupDataSource
 
 

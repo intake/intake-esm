@@ -21,6 +21,25 @@ def _unique(df, columns=None):
 
 
 def search(df, require_all_on=None, **query):
+    """
+    Search for entries in a pandas DataFrame.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Pandas DataFrame to run query against.
+    require_all_on : list, str, optional
+        A dataframe column or a list of dataframe columns across
+        which all entries must satisfy the query criteria.
+        If None, return entries that fulfill any of the criteria specified
+        in the query, by default None.
+    **query:
+        keyword arguments corresponding to user's query to execute against the dataframe.
+
+    Returns
+    -------
+    pd.DataFrame
+    """
     message = 'Query returned zero results.'
     if not query:
         warn(message)
