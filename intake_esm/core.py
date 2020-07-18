@@ -752,13 +752,15 @@ def _normalize_query(query):
 
 
 def _is_pattern(value):
-    value_is_repattern = isinstance(value, Pattern)
-    if value_is_repattern:
+    if isinstance(value, Pattern):
         return True
     wildcard_chars = {'*', '?', '$', '^'}
     try:
-        return any(char in value for char in wildcard_chars)
-    except TypeError:
+        value_ = value
+        for char in wildcard_chars:
+            value_ = value_.replace('\\{0}'.format(char), '')
+        return any(char in value_ for char in wildcard_chars)
+    except (TypeError, AttributeError):
         return False
 
 
