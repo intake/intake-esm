@@ -2,9 +2,14 @@ name: intake-esm-dev
 channels:
   - conda-forge
 dependencies:
+  - boto3
   - cftime
   - codecov
   - fastprogress
+  - google-api-core
+  - google-api-python-client
+  - google-auth-oauthlib
+  - google-cloud-core
   - netcdf4
   - pip
   - psutil
@@ -20,4 +25,4 @@ dependencies:
     - git+https://github.com/intake/filesystem_spec.git
     - git+https://github.com/dask/gcsfs.git
     - git+https://github.com/dask/s3fs.git
-    - git+https://github.com/jbusecke/cmip6_preprocessing.git@more_tests_more_xr15_1
+    - git+https://github.com/jbusecke/cmip6_preprocessing.git
