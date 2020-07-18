@@ -62,7 +62,7 @@ class ESMGroupDataSource(DataSource):
         """
         Display the entry as a rich object in an IPython session
         """
-        from IPython.display import display, HTML
+        from IPython.display import HTML, display
 
         columns = list(set([self.path_column, self.variable_column] + self.aggregation_columns))
         text = self.df[columns].to_html()
