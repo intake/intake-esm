@@ -758,7 +758,7 @@ def _is_pattern(value):
     try:
         value_ = value
         for char in wildcard_chars:
-            value_ = value_.replace('\\{0}'.format(char), '')
+            value_ = value_.replace(f'\\{char}', '')
         return any(char in value_ for char in wildcard_chars)
     except (TypeError, AttributeError):
         return False
