@@ -457,6 +457,7 @@ def test_normalize_query():
         (2, False),
         ('foo', False),
         ('foo\\*bar', False),
+        (r'foo\*bar*', True),
         ('^foo', True),
         ('^foo.*bar$', True),
         (re.compile('hist.*', flags=re.IGNORECASE), True),
