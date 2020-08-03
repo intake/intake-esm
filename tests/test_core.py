@@ -456,6 +456,9 @@ def test_normalize_query():
     [
         (2, False),
         ('foo', False),
+        ('foo\\**bar', True),
+        ('foo\\?*bar', True),
+        ('foo\\?\\*bar', False),
         ('foo\\*bar', False),
         (r'foo\*bar*', True),
         ('^foo', True),
