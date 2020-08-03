@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from intake_esm.core import _get_subset
+from intake_esm.search import search
 from intake_esm.source import ESMGroupDataSource
 
 
@@ -26,7 +26,7 @@ def aggregation_dict():
 
 
 def test_esm_group(df, aggregation_dict):
-    subset_df = _get_subset(
+    subset_df = search(
         df,
         activity_id='CMIP',
         institution_id='CNRM-CERFACS',
