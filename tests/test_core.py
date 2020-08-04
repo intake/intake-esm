@@ -124,6 +124,123 @@ def test_df_property():
     assert len(col.df) == 2
 
 
+@pytest.mark.parametrize(
+    'property, expected',
+    [
+        ('groupby_attrs', ['component', 'experiment', 'frequency']),
+        ('variable_column_name', 'variable'),
+        (
+            'aggregations',
+            [{'type': 'union', 'attribute_name': 'variable', 'options': {'compat': 'override'}}],
+        ),
+        ('agg_columns', ['variable']),
+        ('aggregation_dict', {'variable': {'type': 'union', 'options': {'compat': 'override'}}}),
+        ('path_column_name', 'path'),
+        ('data_format', 'zarr'),
+        ('format_column_name', None),
+    ],
+)
+def test_aggregation_properties(property, expected):
+    col = intake.open_esm_datastore(catalog_dict_records)
+    value = getattr(col, property)
+    assert value == expected
+
+
+@pytest.mark.parametrize(
+    'aggregations, expected_aggregations, expected_aggregation_dict, expected_agg_columns',
+    [
+        (
+            [
+                {'type': 'union', 'attribute_name': 'variable_id'},
+                {
+                    'type': 'join_new',
+                    'attribute_name': 'member_id',
+                    'options': {'coords': 'minimal', 'compat': 'override'},
+                },
+                {
+                    'type': 'join_new',
+                    'attribute_name': 'dcpp_init_year',
+                    'options': {'coords': 'minimal', 'compat': 'override'},
+                },
+            ],
+            [
+                {'type': 'union', 'attribute_name': 'variable_id'},
+                {
+                    'type': 'join_new',
+                    'attribute_name': 'member_id',
+                    'options': {'coords': 'minimal', 'compat': 'override'},
+                },
+                {
+                    'type': 'join_new',
+                    'attribute_name': 'dcpp_init_year',
+                    'options': {'coords': 'minimal', 'compat': 'override'},
+                },
+            ],
+            {
+                'variable_id': {'type': 'union'},
+                'member_id': {
+                    'type': 'join_new',
+                    'options': {'coords': 'minimal', 'compat': 'override'},
+                },
+                'dcpp_init_year': {
+                    'type': 'join_new',
+                    'options': {'coords': 'minimal', 'compat': 'override'},
+                },
+            },
+            ['variable_id', 'member_id', 'dcpp_init_year'],
+        ),
+        (
+            [
+                {
+                    'type': 'join_new',
+                    'attribute_name': 'member_id',
+                    'options': {'coords': 'minimal', 'compat': 'override'},
+                },
+                {'type': 'union', 'attribute_name': 'variable_id'},
+                {
+                    'type': 'join_new',
+                    'attribute_name': 'dcpp_init_year',
+                    'options': {'coords': 'minimal', 'compat': 'override'},
+                },
+            ],
+            [
+                {'type': 'union', 'attribute_name': 'variable_id'},
+                {
+                    'type': 'join_new',
+                    'attribute_name': 'member_id',
+                    'options': {'coords': 'minimal', 'compat': 'override'},
+                },
+                {
+                    'type': 'join_new',
+                    'attribute_name': 'dcpp_init_year',
+                    'options': {'coords': 'minimal', 'compat': 'override'},
+                },
+            ],
+            {
+                'variable_id': {'type': 'union'},
+                'member_id': {
+                    'type': 'join_new',
+                    'options': {'coords': 'minimal', 'compat': 'override'},
+                },
+                'dcpp_init_year': {
+                    'type': 'join_new',
+                    'options': {'coords': 'minimal', 'compat': 'override'},
+                },
+            },
+            ['variable_id', 'member_id', 'dcpp_init_year'],
+        ),
+        ([], [], {}, []),
+    ],
+)
+def test_construct_agg_info(
+    aggregations, expected_aggregations, expected_aggregation_dict, expected_agg_columns
+):
+    r_agg, r_agg_dict, r_agg_colums = intake_esm.core._construct_agg_info(aggregations)
+    assert r_agg == expected_aggregations
+    assert r_agg_dict == expected_aggregation_dict
+    assert r_agg_colums == expected_agg_columns
+
+
 def test_serialize_to_json():
     with TemporaryDirectory() as local_store:
         col = intake.open_esm_datastore(catalog_dict_records)
