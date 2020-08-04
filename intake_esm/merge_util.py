@@ -229,7 +229,7 @@ def _aggregate(
     return apply_aggregation(v)
 
 
-def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess, varname):
+def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess, varname=None):
     protocol = None
     root = path
     if isinstance(path, fsspec.mapping.FSMap):
@@ -259,8 +259,8 @@ def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess, varname)
         except Exception as e:
             logger.error(f'Failed to open netCDF/HDF dataset with cdf_kwargs={cdf_kwargs}')
             raise e
-
-    ds.attrs['intake_esm_varname'] = varname
+    if varname:
+        ds.attrs['intake_esm_varname'] = varname
 
     if preprocess is None:
         return ds

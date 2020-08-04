@@ -1,10 +1,86 @@
 import copy
 
+import pandas as pd
 from intake.source.base import DataSource, Schema
 
-from .merge_util import _aggregate, _path_to_mapper, _to_nested_dict
+from .merge_util import _aggregate, _open_asset, _path_to_mapper, _to_nested_dict
 
 _DATA_FORMAT_KEY = '_data_format_'
+
+
+class ESMDataSource(DataSource):
+    version = '1.0'
+    container = 'xarray'
+    name = 'esm_single_source'
+    partition_access = True
+
+    def __init__(
+        self,
+        key,
+        row,
+        path_column,
+        data_format=None,
+        format_column=None,
+        cdf_kwargs=None,
+        zarr_kwargs=None,
+        storage_options=None,
+        preprocess=None,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.key = key
+        self.cdf_kwargs = cdf_kwargs or {'chunks': {}}
+        self.zarr_kwargs = zarr_kwargs or {}
+        self.storage_options = storage_options or {}
+        self.preprocess = preprocess
+        if not isinstance(row, pd.Series) or row.empty:
+            raise ValueError('`row` must be a non-empty pandas.Series')
+        self.row = row.copy()
+        self.path_column = path_column
+        self._ds = None
+        if format_column is not None:
+            self.data_format = self.row[format_column]
+        elif data_format:
+            self.data_format = data_format
+        else:
+            raise ValueError('Please specify either `data_format` or `format_column`')
+
+    def __repr__(self):
+        return f'<name: {self.key}, asset: 1'
+
+    def _get_schema(self):
+
+        if self._ds is None:
+            self._open_dataset()
+
+            metadata = {
+                'dims': dict(self._ds.dims),
+                'data_vars': {k: list(self._ds[k].coords) for k in self._ds.data_vars.keys()},
+                'coords': tuple(self._ds.coords.keys()),
+            }
+            self._schema = Schema(
+                datashape=None, dtype=None, shape=None, npartitions=None, extra_metadata=metadata,
+            )
+        return self._schema
+
+    def _open_dataset(self):
+        mapper = _path_to_mapper(self.row[self.path_column], self.storage_options)
+        ds = _open_asset(
+            mapper, self.data_format, self.zarr_kwargs, self.cdf_kwargs, self.preprocess
+        )
+        ds.attrs['intake_esm_dataset_key'] = self.key
+        self._ds = ds
+        return ds
+
+    def to_dask(self):
+        """Return xarray object (which will have chunks)"""
+        self._load_metadata()
+        return self._ds
+
+    def close(self):
+        """Delete open files from memory"""
+        self._ds = None
+        self._schema = None
 
 
 class ESMGroupDataSource(DataSource):
@@ -35,7 +111,7 @@ class ESMGroupDataSource(DataSource):
         self.storage_options = storage_options or {}
         self.preprocess = preprocess
         self._ds = None
-        if df.empty:
+        if not isinstance(df, pd.DataFrame) or df.empty:
             raise ValueError('`df` must be a non-empty pandas.DataFrame')
         self.df = df.copy()
         self.aggregation_columns, self.aggregation_dict = _sanitize_aggregations(
