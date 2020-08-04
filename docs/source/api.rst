@@ -8,14 +8,5 @@ For more details and examples, refer to the relevant chapters in the main part o
 ESM Datastore (intake.open_esm_datastore)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. module:: intake_esm.core
-
-.. autoclass:: esm_datastore
-
-   .. automethod:: __getitem__
-   .. automethod:: from_df
-   .. automethod:: to_dataset_dict
-   .. automethod:: nunique
-   .. automethod:: unique
-   .. automethod:: search
-   .. automethod:: serialize
+.. automodule:: intake_esm.core
+    :members:

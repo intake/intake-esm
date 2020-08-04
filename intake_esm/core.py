@@ -223,7 +223,7 @@ class esm_datastore(intake.catalog.Catalog):
     @property
     def df(self) -> pd.DataFrame:
         """
-        Return pandas dataframe.
+        Return pandas :py:class:`~pandas.DataFrame`.
         """
         return self._df
 
@@ -268,7 +268,8 @@ class esm_datastore(intake.catalog.Catalog):
     @property
     def agg_columns(self) -> list:
         """
-        List of columns used to aggregate/combine compatible datasets into single xarray dataset.
+        List of columns used to merge/concatenate compatible
+        multiple :py:class:`~xarray.Dataset` into a single :py:class:`~xarray.Dataset`.
         """
         return self.aggregation_info.agg_columns
 
@@ -447,7 +448,7 @@ class esm_datastore(intake.catalog.Catalog):
 
         Returns
         -------
-        intake_esm.core.esm_datastore
+        :py:class:`~intake_esm.core.esm_datastore`
             Catalog object
         """
         return cls(
@@ -497,7 +498,7 @@ class esm_datastore(intake.catalog.Catalog):
         401        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r3i...            NaN
 
         The search method also accepts compiled regular expression objects
-        from :py:method:`~re.compile` as patterns.
+        from :py:func:`~re.compile` as patterns.
 
         >>> import re
         >>> # Let's search for variables containing "Frac" in their name
@@ -679,9 +680,9 @@ class esm_datastore(intake.catalog.Catalog):
         Parameters
         ----------
         zarr_kwargs : dict
-            Keyword arguments to pass to `xarray.open_zarr()` function
+            Keyword arguments to pass to :py:func:`~xarray.open_zarr` function
         cdf_kwargs : dict
-            Keyword arguments to pass to `xarray.open_dataset()` function
+            Keyword arguments to pass to :py:func:`~xarray.open_dataset` function
         preprocess : callable, optional
             If provided, call this function on each dataset prior to aggregation.
         aggregate : bool, optional
@@ -696,7 +697,7 @@ class esm_datastore(intake.catalog.Catalog):
         Returns
         -------
         dsets : dict
-           A dictionary of xarray :py:class:`~xarray.Dataset`s.
+           A dictionary of xarray :py:class:`~xarray.Dataset`.
 
         Examples
         --------
