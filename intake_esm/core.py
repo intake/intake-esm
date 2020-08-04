@@ -1,6 +1,8 @@
+import concurrent.futures
 import json
 import logging
-from collections import namedtuple
+from collections import OrderedDict, namedtuple
+from copy import deepcopy
 from typing import Any, Dict, List, Tuple, Union
 from warnings import warn
 
@@ -699,6 +701,7 @@ class esm_datastore(intake.catalog.Catalog):
         preprocess: Dict[str, Any] = None,
         storage_options: Dict[str, Any] = None,
         progressbar: bool = None,
+        aggregate: bool = None,
     ) -> Dict[str, xr.Dataset]:
         """
         Load catalog entries into a dictionary of xarray datasets.
@@ -711,14 +714,14 @@ class esm_datastore(intake.catalog.Catalog):
             Keyword arguments to pass to :py:func:`~xarray.open_dataset` function
         preprocess : callable, optional
             If provided, call this function on each dataset prior to aggregation.
-        aggregate : bool, optional
-            If "False", no aggregation will be done.
         storage_options : dict, optional
             Parameters passed to the backend file-system such as Google Cloud Storage,
             Amazon Web Service S3.
         progressbar : bool
             If True, will print a progress bar to standard error (stderr)
             when loading assets into :py:class:`~xarray.Dataset`.
+        aggregate : bool, optional
+            If False, no aggregation will be done.
 
         Returns
         -------
@@ -751,9 +754,6 @@ class esm_datastore(intake.catalog.Catalog):
             pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
         """
 
-        import concurrent.futures
-        from collections import OrderedDict
-
         # Return fast
         if not self.keys():
             warn('There are no datasets to load! Returning an empty dictionary.')
@@ -765,7 +765,7 @@ class esm_datastore(intake.catalog.Catalog):
             preprocess=preprocess,
             storage_options=storage_options,
         )
-        token = dask.base.tokenize(source_kwargs)
+        token = dask.base.tokenize([source_kwargs, aggregate])
         if progressbar is not None:
             self.progressbar = progressbar
 
@@ -775,8 +775,12 @@ class esm_datastore(intake.catalog.Catalog):
         # Avoid re-loading data if nothing has changed since the last call
         if self._datasets and (token == self._to_dataset_args_token):
             return self._datasets
-
         self._to_dataset_args_token = token
+
+        if aggregate is not None and not aggregate:
+            self = deepcopy(self)
+            self.groupby_attrs = []
+
         if self.progressbar:
             print(
                 f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{self.key_template}'"""
@@ -787,22 +791,20 @@ class esm_datastore(intake.catalog.Catalog):
 
         sources = [source(**source_kwargs) for _, source in self.items()]
 
+        progress, total = None, None
         if self.progressbar:
             total = len(sources)
             progress = progress_bar(range(total))
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(sources)) as executor:
             future_tasks = [executor.submit(_load_source, source) for source in sources]
-
             for i, task in enumerate(concurrent.futures.as_completed(future_tasks)):
                 ds = task.result()
                 self._datasets[ds.attrs['intake_esm_dataset_key']] = ds
                 if self.progressbar:
                     progress.update(i)
-
             if self.progressbar:
                 progress.update(total)
-
             return self._datasets
 
 
