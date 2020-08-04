@@ -124,6 +124,28 @@ def test_df_property():
     assert len(col.df) == 2
 
 
+@pytest.mark.parametrize(
+    'property, expected',
+    [
+        ('groupby_attrs', ['component', 'experiment', 'frequency']),
+        ('variable_column_name', 'variable'),
+        (
+            'aggregations',
+            [{'type': 'union', 'attribute_name': 'variable', 'options': {'compat': 'override'}}],
+        ),
+        ('agg_columns', ['variable']),
+        ('aggregation_dict', {'variable': {'type': 'union', 'options': {'compat': 'override'}}}),
+        ('path_column_name', 'path'),
+        ('data_format', 'zarr'),
+        ('format_column_name', None),
+    ],
+)
+def test_aggregation_properties(property, expected):
+    col = intake.open_esm_datastore(catalog_dict_records)
+    value = getattr(col, property)
+    assert value == expected
+
+
 def test_serialize_to_json():
     with TemporaryDirectory() as local_store:
         col = intake.open_esm_datastore(catalog_dict_records)
