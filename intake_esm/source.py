@@ -1,5 +1,6 @@
 import copy
 
+import pandas as pd
 from intake.source.base import DataSource, Schema
 
 from .merge_util import _aggregate, _open_asset, _path_to_mapper, _to_nested_dict
@@ -32,6 +33,8 @@ class ESMDataSource(DataSource):
         self.zarr_kwargs = zarr_kwargs or {}
         self.storage_options = storage_options or {}
         self.preprocess = preprocess
+        if not isinstance(row, pd.Series) or row.empty:
+            raise ValueError('`row` must be a non-empty pandas.Series')
         self.row = row.copy()
         self.path_column = path_column
         self._ds = None
@@ -108,7 +111,7 @@ class ESMGroupDataSource(DataSource):
         self.storage_options = storage_options or {}
         self.preprocess = preprocess
         self._ds = None
-        if df.empty:
+        if not isinstance(df, pd.DataFrame) or df.empty:
             raise ValueError('`df` must be a non-empty pandas.DataFrame')
         self.df = df.copy()
         self.aggregation_columns, self.aggregation_dict = _sanitize_aggregations(

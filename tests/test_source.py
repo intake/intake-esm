@@ -1,11 +1,12 @@
 import os
 
+import dask
 import pandas as pd
 import pytest
 import xarray as xr
 
 from intake_esm.search import search
-from intake_esm.source import ESMGroupDataSource
+from intake_esm.source import ESMDataSource, ESMGroupDataSource
 
 
 @pytest.fixture(scope='module')
@@ -48,6 +49,7 @@ def test_esm_group(df, aggregation_dict):
     source = ESMGroupDataSource(**args)
     assert source._ds is None
     ds = source.to_dask()
+    assert dask.is_dask_collection(ds['tasmax'])
     assert ds.attrs['intake_esm_dataset_key'] == 'foo'
     assert isinstance(ds, xr.Dataset)
     assert set(subset_df['member_id']) == set(ds['member_id'].values)
@@ -55,11 +57,11 @@ def test_esm_group(df, aggregation_dict):
     assert source._ds is None
 
 
-def test_esm_group_empty_df(df, aggregation_dict):
-    empty_df = pd.DataFrame(columns=df.columns)
+@pytest.mark.parametrize('x', [pd.DataFrame(), pd.Series(dtype='object'), {}, None])
+def test_esm_group_invalid_df(x):
     args = dict(
         key='foo',
-        df=empty_df,
+        df=x,
         aggregation_dict=aggregation_dict,
         path_column='path',
         variable_column='variable_id',
@@ -70,3 +72,38 @@ def test_esm_group_empty_df(df, aggregation_dict):
 
     with pytest.raises(ValueError, match=r'`df` must be a non-empty pandas.DataFrame'):
         _ = ESMGroupDataSource(**args)
+
+
+def test_esm_single_source(df):
+    args = dict(
+        key='foo',
+        row=df.iloc[0],
+        path_column='path',
+        data_format='netcdf',
+        format_column=None,
+        cdf_kwargs={'chunks': {'time': 2}},
+    )
+
+    source = ESMDataSource(**args)
+    assert source._ds is None
+    ds = source.to_dask()
+    assert dask.is_dask_collection(ds['tasmax'])
+    assert ds.attrs['intake_esm_dataset_key'] == 'foo'
+    assert isinstance(ds, xr.Dataset)
+    source.close()
+    assert source._ds is None
+
+
+@pytest.mark.parametrize('row', [pd.DataFrame(), pd.Series(dtype='object'), {}, None])
+def test_esm_single_source_invalid_row(row):
+    args = dict(
+        key='foo',
+        row=row,
+        path_column='path',
+        data_format='netcdf',
+        format_column=None,
+        cdf_kwargs={'chunks': {'time': 2}},
+    )
+
+    with pytest.raises(ValueError, match=r'`row` must be a non-empty pandas.Series'):
+        _ = ESMDataSource(**args)
