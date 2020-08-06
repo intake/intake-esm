@@ -172,12 +172,6 @@ class ESMGroupDataSource(DataSource):
         return self._schema
 
     def _open_dataset(self):
-        nd = create_nested_dict(self.df, self.path_column, self.aggregation_columns)
-        n_agg = len(self.aggregation_columns)
-        mapper_dict = {
-            path: _path_to_mapper(path, self.storage_options) for path in self.df[self.path_column]
-        }
-
         @dask.delayed
         def read_dataset(
             path,
@@ -207,6 +201,8 @@ class ESMGroupDataSource(DataSource):
         ]
         datasets = dask.compute(*datasets)
         mapper_dict = dict(datasets)
+        nd = create_nested_dict(self.df, self.path_column, self.aggregation_columns)
+        n_agg = len(self.aggregation_columns)
 
         ds = _aggregate(
             self.aggregation_dict, self.aggregation_columns, n_agg, nd, mapper_dict, self.key,

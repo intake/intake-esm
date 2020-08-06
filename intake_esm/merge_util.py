@@ -157,9 +157,14 @@ def _to_nested_dict(df):
 
 
 def _aggregate(
-    aggregation_dict, agg_columns, n_agg, v, mapper_dict, group_key=None,
+    aggregation_dict: dict,
+    agg_columns: list,
+    n_agg: int,
+    nd: dict,
+    mapper_dict: dict,
+    group_key: str = None,
 ):
-    def apply_aggregation(v, agg_column=None, key=None, level=0):
+    def apply_aggregation(nd, agg_column=None, key=None, level=0):
         """Recursively descend into nested dictionary and aggregate items.
         level tells how deep we are."""
 
@@ -167,10 +172,13 @@ def _aggregate(
 
         if level == n_agg:
             # bottom of the hierarchy - should be an actual dataset
-            # return open_dataset(v) at this point
-            ds = mapper_dict[v]
+            # return dataset at this point
+            ds = mapper_dict[nd]
             if isinstance(ds, xr.Dataset):
                 return ds
+            raise TypeError(
+                f'Expected mapper_dict[{nd}] to be an xarray.Dataset. Found type of mapper_dict[{nd}] to be {type(mapper_dict[nd])}'
+            )
 
         agg_column = agg_columns[level]
         agg_info = aggregation_dict[agg_column]
@@ -183,9 +191,9 @@ def _aggregate(
 
         dsets = [
             apply_aggregation(value, agg_column, key=key, level=level + 1)
-            for key, value in v.items()
+            for key, value in nd.items()
         ]
-        keys = list(v.keys())
+        keys = list(nd.keys())
         attrs = dict_union(*[ds.attrs for ds in dsets])
         # copy encoding for each variable from first encounter
         variables = {v for ds in dsets for v in ds.variables}
@@ -225,7 +233,7 @@ def _aggregate(
                 ds[v].encoding = encoding[v]
         return ds
 
-    return apply_aggregation(v)
+    return apply_aggregation(nd)
 
 
 def _open_asset(
