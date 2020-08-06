@@ -58,9 +58,10 @@ def join_new(
 
         *** Arguments passed to xarray.concat() ***:
 
-        - dim={concat_dim}
-        - data_vars={varname}
-        - and kwargs={options}
+        - objs: a list of {len(dsets)} datasets
+        - dim: {concat_dim}
+        - data_vars: {varname}
+        - and kwargs: {options}
 
         ********************************************
         """
@@ -97,7 +98,8 @@ def join_existing(
 
         *** Arguments passed to xarray.concat() ***:
 
-        - kwargs={options}
+        - objs: a list of {len(dsets)} datasets
+        - kwargs: {options}
 
         ********************************************
         """
@@ -133,7 +135,8 @@ def union(
 
         *** Arguments passed to xarray.merge() ***:
 
-        - kwargs={options}
+        - objs: a list of {len(dsets)} datasets
+        - kwargs: {options}
 
         ********************************************
         """
@@ -284,13 +287,13 @@ def _open_asset(
 
             *** Arguments passed to xarray.open_zarr() ***:
 
-            - store={path}
-            - kwargs={zarr_kwargs}
+            - store: {path}
+            - kwargs: {zarr_kwargs}
 
             *** fsspec options used ***:
 
-            - root={root}
-            - protocol={protocol}
+            - root: {root}
+            - protocol: {protocol}
 
             ********************************************
             """
@@ -306,13 +309,13 @@ def _open_asset(
 
             *** Arguments passed to xarray.open_dataset() ***:
 
-            - filename_or_obj={path}
-            - kwargs={cdf_kwargs}
+            - filename_or_obj: {path}
+            - kwargs: {cdf_kwargs}
 
             *** fsspec options used ***:
 
-            - root={root}
-            - protocol={protocol}
+            - root: {root}
+            - protocol: {protocol}
 
             ********************************************
             """
