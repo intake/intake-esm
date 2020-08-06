@@ -765,17 +765,12 @@ class esm_datastore(intake.catalog.Catalog):
             preprocess=preprocess,
             storage_options=storage_options,
         )
-        token = dask.base.tokenize([source_kwargs, aggregate, self.__dict__.values()])
+
         if progressbar is not None:
             self.progressbar = progressbar
 
         if preprocess is not None and not callable(preprocess):
             raise ValueError('preprocess argument must be callable')
-
-        # Avoid re-loading data if nothing has changed since the last call
-        if self._datasets and (token == self._to_dataset_args_token):
-            return self._datasets
-        self._to_dataset_args_token = token
 
         if aggregate is not None and not aggregate:
             self = deepcopy(self)
