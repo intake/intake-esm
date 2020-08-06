@@ -796,7 +796,7 @@ class esm_datastore(intake.catalog.Catalog):
             total = len(sources)
             progress = progress_bar(range(total))
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=len(sources)) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=dask.system.CPU_COUNT) as executor:
             future_tasks = [executor.submit(_load_source, source) for source in sources]
             for i, task in enumerate(concurrent.futures.as_completed(future_tasks)):
                 ds = task.result()
