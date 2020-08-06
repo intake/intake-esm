@@ -765,7 +765,7 @@ class esm_datastore(intake.catalog.Catalog):
             preprocess=preprocess,
             storage_options=storage_options,
         )
-        token = dask.base.tokenize([source_kwargs, aggregate])
+        token = dask.base.tokenize([source_kwargs, aggregate, self.__dict__.values()])
         if progressbar is not None:
             self.progressbar = progressbar
 
