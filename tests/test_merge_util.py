@@ -11,7 +11,7 @@ def datasets():
 
 
 def test_join_new(datasets):
-    ds = join_new(datasets, 'member_id', ['one', 'two'], 'Tair')
+    ds = join_new(datasets, 'member_id', ['one', 'two'], ['Tair'])
     assert 'member_id' in ds.coords
     assert set(['one', 'two']) == set(ds.member_id.values)
 
@@ -20,11 +20,11 @@ def test_join_new_error(datasets):
     with pytest.raises(
         AggregationError, match=r'Failed to join/concatenate datasets in group with'
     ):
-        _ = join_new(datasets, 'time', ['one', 'two'], 'Tair')
+        _ = join_new(datasets, 'time', ['one', 'two'], ['Tair'])
 
 
 def test_join_existing(datasets):
-    ds = join_existing(datasets, options={'dim': 'time'})
+    ds = join_existing(datasets, ['Tair'], options={'dim': 'time'})
     assert len(ds.time) == len(datasets[0].time) * 2
 
 
@@ -32,11 +32,11 @@ def test_join_existing_error(datasets):
     with pytest.raises(
         AggregationError, match=r'Failed to join/concatenate datasets in group with'
     ):
-        join_existing(datasets)
+        join_existing(datasets, ['Tair'])
 
     with pytest.raises(AggregationError):
         datasets[0] = datasets[0].rename({'time': 'times'})
-        join_existing(datasets, options={'dim': 'time'})
+        join_existing(datasets, ['Tair'], options={'dim': 'time'})
 
 
 def test_union(datasets):

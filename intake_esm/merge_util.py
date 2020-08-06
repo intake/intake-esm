@@ -35,8 +35,8 @@ def join_new(
         Name of the new dimension
     coord_value : Any
         Value corresponding to the new dimension coordinate
-    varname : Union[str, List]
-        Name of data variables
+    varname : List
+        List of data variables
     options : Dict, optional
         Additional keyword arguments passed through to
         :py:func:`~xarray.concat()`, by default None
@@ -47,8 +47,6 @@ def join_new(
         xarray Dataset
     """
     options = options or {}
-    if isinstance(varname, str):
-        varname = [varname]
     try:
         concat_dim = xr.DataArray(coord_value, dims=(dim_name), name=dim_name)
         return xr.concat(dsets, dim=concat_dim, data_vars=varname, **options)
@@ -70,7 +68,10 @@ def join_new(
 
 
 def join_existing(
-    dsets: List[xr.Dataset], options: Dict[str, Any] = None, group_key: str = None
+    dsets: List[xr.Dataset],
+    varname: Union[str, List],
+    options: Dict[str, Any] = None,
+    group_key: str = None,
 ) -> xr.Dataset:
     """
     Concatenate a list of datasets along an existing dimension.
@@ -79,6 +80,8 @@ def join_existing(
     ----------
     dsets : List[xr.Dataset]
         A list of xarray.Dataset(s) to concatenate along an existing dimension.
+    varname : List
+        List of data variables
     options : Dict, optional
         Additional keyword arguments passed through to
         :py:func:`~xarray.concat()`, by default None
@@ -88,10 +91,9 @@ def join_existing(
     xr.Dataset
         xarray Dataset
     """
-
     options = options or {}
     try:
-        return xr.concat(dsets, **options)
+        return xr.concat(dsets, data_vars=varname, **options)
     except Exception as exc:
         message = f"""
         Failed to join/concatenate datasets in group with key={group_key} along an existing dimension.
@@ -99,6 +101,7 @@ def join_existing(
         *** Arguments passed to xarray.concat() ***:
 
         - objs: a list of {len(dsets)} datasets
+        - data_vars: {varname}
         - kwargs: {options}
 
         ********************************************
@@ -210,7 +213,8 @@ def _aggregate(
             )
 
         elif agg_type == 'join_existing':
-            ds = join_existing(dsets, options=agg_options, group_key=group_key)
+            varname = dsets[0].attrs['intake_esm_varname']
+            ds = join_existing(dsets, varname=varname, options=agg_options, group_key=group_key)
 
         elif agg_type == 'union':
             ds = union(dsets, options=agg_options, group_key=group_key)
@@ -285,6 +289,8 @@ def _open_asset(
             raise IOError(message) from exc
 
     if varname:
+        if isinstance(varname, str):
+            varname = [varname]
         ds.attrs['intake_esm_varname'] = varname
 
     if preprocess is None:
