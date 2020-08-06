@@ -22,6 +22,7 @@ def join_new(
     coord_value: Any,
     varname: Union[str, List],
     options: Dict[str, Any] = None,
+    group_key: str = None,
 ) -> xr.Dataset:
     """
     Concatenate a list of datasets along a new dimension.
@@ -53,7 +54,7 @@ def join_new(
         return xr.concat(dsets, dim=concat_dim, data_vars=varname, **options)
     except Exception as exc:
         message = f"""
-        Failed to join/concatenate datasets along a new dimension `{dim_name}`.
+        Failed to join/concatenate datasets in group with key={group_key} along a new dimension `{dim_name}`.
 
         *** Arguments passed to xarray.concat() ***:
 
@@ -67,7 +68,9 @@ def join_new(
         raise AggregationError(message) from exc
 
 
-def join_existing(dsets: List[xr.Dataset], options: Dict[str, Any] = None) -> xr.Dataset:
+def join_existing(
+    dsets: List[xr.Dataset], options: Dict[str, Any] = None, group_key: str = None
+) -> xr.Dataset:
     """
     Concatenate a list of datasets along an existing dimension.
 
@@ -90,7 +93,7 @@ def join_existing(dsets: List[xr.Dataset], options: Dict[str, Any] = None) -> xr
         return xr.concat(dsets, **options)
     except Exception as exc:
         message = f"""
-        Failed to join/concatenate datasets along an existing dimension.
+        Failed to join/concatenate datasets in group with key={group_key} along an existing dimension.
 
         *** Arguments passed to xarray.concat() ***:
 
@@ -101,7 +104,9 @@ def join_existing(dsets: List[xr.Dataset], options: Dict[str, Any] = None) -> xr
         raise AggregationError(message) from exc
 
 
-def union(dsets: List[xr.Dataset], options: Dict[str, Any] = None) -> xr.Dataset:
+def union(
+    dsets: List[xr.Dataset], options: Dict[str, Any] = None, group_key: str = None
+) -> xr.Dataset:
     """
     Merge a list of datasets into a single dataset.
 
@@ -124,7 +129,7 @@ def union(dsets: List[xr.Dataset], options: Dict[str, Any] = None) -> xr.Dataset
         return xr.merge(dsets, **options)
     except Exception as exc:
         message = f"""
-        Failed to merge multiple datasets into a single xarray Dataset as variables.
+        Failed to merge multiple datasets in group with key={group_key} into a single xarray Dataset as variables.
 
         *** Arguments passed to xarray.merge() ***:
 
@@ -173,6 +178,7 @@ def _aggregate(
     zarr_kwargs,
     cdf_kwargs,
     preprocess,
+    group_key=None,
 ):
     def apply_aggregation(v, agg_column=None, key=None, level=0):
         """Recursively descend into nested dictionary and aggregate items.
@@ -229,14 +235,19 @@ def _aggregate(
         if agg_type == 'join_new':
             varname = dsets[0].attrs['intake_esm_varname']
             ds = join_new(
-                dsets, dim_name=agg_column, coord_value=keys, varname=varname, options=agg_options,
+                dsets,
+                dim_name=agg_column,
+                coord_value=keys,
+                varname=varname,
+                options=agg_options,
+                group_key=group_key,
             )
 
         elif agg_type == 'join_existing':
-            ds = join_existing(dsets, options=agg_options)
+            ds = join_existing(dsets, options=agg_options, group_key=group_key)
 
         elif agg_type == 'union':
-            ds = union(dsets, options=agg_options)
+            ds = union(dsets, options=agg_options, group_key=group_key)
 
         ds.attrs = attrs
         for v in ds.variables:

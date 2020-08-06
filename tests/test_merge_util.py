@@ -25,7 +25,9 @@ def test_join_new(datasets):
 
 
 def test_join_new_error(datasets):
-    with pytest.raises(AggregationError):
+    with pytest.raises(
+        AggregationError, match=r'Failed to join/concatenate datasets in group with'
+    ):
         _ = join_new(datasets, 'time', ['one', 'two'], 'Tair')
 
 
@@ -35,7 +37,9 @@ def test_join_existing(datasets):
 
 
 def test_join_existing_error(datasets):
-    with pytest.raises(AggregationError):
+    with pytest.raises(
+        AggregationError, match=r'Failed to join/concatenate datasets in group with'
+    ):
         join_existing(datasets)
 
     with pytest.raises(AggregationError):
@@ -56,7 +60,9 @@ def test_union(datasets):
 def test_union_error():
     ds = xr.tutorial.open_dataset('rasm', decode_times=False)
     datasets = [ds, ds]
-    with pytest.raises(AggregationError):
+    with pytest.raises(
+        AggregationError, match=r'Failed to merge multiple datasets in group with key'
+    ):
         datasets[0] = datasets[0].rename({'time': 'times'})
         union(datasets)
 
