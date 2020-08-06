@@ -3,6 +3,7 @@ import pytest
 import xarray as xr
 
 from intake_esm.merge_util import (
+    AggregationError,
     _create_asset_info_lookup,
     _open_asset,
     join_existing,
@@ -24,7 +25,9 @@ def test_join_new(datasets):
 
 
 def test_join_new_error(datasets):
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        AggregationError, match=r'Failed to join/concatenate datasets in group with'
+    ):
         _ = join_new(datasets, 'time', ['one', 'two'], 'Tair')
 
 
@@ -34,10 +37,12 @@ def test_join_existing(datasets):
 
 
 def test_join_existing_error(datasets):
-    with pytest.raises(TypeError):
+    with pytest.raises(
+        AggregationError, match=r'Failed to join/concatenate datasets in group with'
+    ):
         join_existing(datasets)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(AggregationError):
         datasets[0] = datasets[0].rename({'time': 'times'})
         join_existing(datasets, options={'dim': 'time'})
 
@@ -55,14 +60,16 @@ def test_union(datasets):
 def test_union_error():
     ds = xr.tutorial.open_dataset('rasm', decode_times=False)
     datasets = [ds, ds]
-    with pytest.raises(xr.MergeError):
+    with pytest.raises(
+        AggregationError, match=r'Failed to merge multiple datasets in group with key'
+    ):
         datasets[0] = datasets[0].rename({'time': 'times'})
         union(datasets)
 
 
 @pytest.mark.parametrize(
     'path, data_format, error',
-    [('file://test', 'zarr', ValueError), ('file://test', 'netcdf', FileNotFoundError)],
+    [('file://test', 'zarr', IOError), ('file://test', 'netcdf', IOError)],
 )
 def test_open_asset_error(path, data_format, error):
     with pytest.raises(error):

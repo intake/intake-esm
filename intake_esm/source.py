@@ -188,6 +188,7 @@ class ESMGroupDataSource(DataSource):
             self.zarr_kwargs,
             self.cdf_kwargs,
             self.preprocess,
+            self.key,
         )
         ds.attrs['intake_esm_dataset_key'] = self.key
         self._ds = ds

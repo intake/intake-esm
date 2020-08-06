@@ -1,11 +1,12 @@
 """ Functions for aggregating multiple xarray datasets into a single xarray dataset"""
-import logging
 from typing import Any, Dict, List, Union
 
 import fsspec
 import xarray as xr
 
-logger = logging.getLogger('intake-esm')
+
+class AggregationError(Exception):
+    pass
 
 
 def _path_to_mapper(path, storage_options):
@@ -21,6 +22,7 @@ def join_new(
     coord_value: Any,
     varname: Union[str, List],
     options: Dict[str, Any] = None,
+    group_key: str = None,
 ) -> xr.Dataset:
     """
     Concatenate a list of datasets along a new dimension.
@@ -51,11 +53,25 @@ def join_new(
         concat_dim = xr.DataArray(coord_value, dims=(dim_name), name=dim_name)
         return xr.concat(dsets, dim=concat_dim, data_vars=varname, **options)
     except Exception as exc:
-        logger.error('Failed to join datasets along new dimension.')
-        raise exc
+        message = f"""
+        Failed to join/concatenate datasets in group with key={group_key} along a new dimension `{dim_name}`.
+
+        *** Arguments passed to xarray.concat() ***:
+
+        - objs: a list of {len(dsets)} datasets
+        - dim: {concat_dim}
+        - data_vars: {varname}
+        - and kwargs: {options}
+
+        ********************************************
+        """
+
+        raise AggregationError(message) from exc
 
 
-def join_existing(dsets: List[xr.Dataset], options: Dict[str, Any] = None) -> xr.Dataset:
+def join_existing(
+    dsets: List[xr.Dataset], options: Dict[str, Any] = None, group_key: str = None
+) -> xr.Dataset:
     """
     Concatenate a list of datasets along an existing dimension.
 
@@ -77,11 +93,22 @@ def join_existing(dsets: List[xr.Dataset], options: Dict[str, Any] = None) -> xr
     try:
         return xr.concat(dsets, **options)
     except Exception as exc:
-        logger.error('Failed to join datasets along existing dimension.')
-        raise exc
+        message = f"""
+        Failed to join/concatenate datasets in group with key={group_key} along an existing dimension.
+
+        *** Arguments passed to xarray.concat() ***:
+
+        - objs: a list of {len(dsets)} datasets
+        - kwargs: {options}
+
+        ********************************************
+        """
+        raise AggregationError(message) from exc
 
 
-def union(dsets: List[xr.Dataset], options: Dict[str, Any] = None) -> xr.Dataset:
+def union(
+    dsets: List[xr.Dataset], options: Dict[str, Any] = None, group_key: str = None
+) -> xr.Dataset:
     """
     Merge a list of datasets into a single dataset.
 
@@ -103,8 +130,17 @@ def union(dsets: List[xr.Dataset], options: Dict[str, Any] = None) -> xr.Dataset
     try:
         return xr.merge(dsets, **options)
     except Exception as exc:
-        logger.error('Failed to merge datasets.')
-        raise exc
+        message = f"""
+        Failed to merge multiple datasets in group with key={group_key} into a single xarray Dataset as variables.
+
+        *** Arguments passed to xarray.merge() ***:
+
+        - objs: a list of {len(dsets)} datasets
+        - kwargs: {options}
+
+        ********************************************
+        """
+        raise AggregationError(message) from exc
 
 
 def _to_nested_dict(df):
@@ -145,6 +181,7 @@ def _aggregate(
     zarr_kwargs,
     cdf_kwargs,
     preprocess,
+    group_key=None,
 ):
     def apply_aggregation(v, agg_column=None, key=None, level=0):
         """Recursively descend into nested dictionary and aggregate items.
@@ -199,37 +236,34 @@ def _aggregate(
                                 del encoding[v][enc_attrs]
 
         if agg_type == 'join_new':
-            logger.debug(
-                f'Joining {len(dsets)} dataset(s) along new {agg_column} dimension with options={agg_options}.\ndsets={dsets}'
-            )
             varname = dsets[0].attrs['intake_esm_varname']
             ds = join_new(
-                dsets, dim_name=agg_column, coord_value=keys, varname=varname, options=agg_options,
+                dsets,
+                dim_name=agg_column,
+                coord_value=keys,
+                varname=varname,
+                options=agg_options,
+                group_key=group_key,
             )
 
         elif agg_type == 'join_existing':
-            logger.debug(
-                f'Joining {len(dsets)} dataset(s) along existing dimension with options={agg_options}.\ndsets={dsets}'
-            )
-            ds = join_existing(dsets, options=agg_options)
+            ds = join_existing(dsets, options=agg_options, group_key=group_key)
 
         elif agg_type == 'union':
-            logger.debug(
-                f'Merging {len(dsets)} dataset(s) into a single Dataset with options={agg_options}.\ndsets={dsets}'
-            )
-            ds = union(dsets, options=agg_options)
+            ds = union(dsets, options=agg_options, group_key=group_key)
 
         ds.attrs = attrs
         for v in ds.variables:
             if v in encoding and not ds[v].encoding:
                 ds[v].encoding = encoding[v]
-
         return ds
 
     return apply_aggregation(v)
 
 
-def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess, varname=None):
+def _open_asset(
+    path, data_format, zarr_kwargs=None, cdf_kwargs=None, preprocess=None, varname=None
+):
     protocol = None
     root = path
     if isinstance(path, fsspec.mapping.FSMap):
@@ -245,27 +279,59 @@ def _open_asset(path, data_format, zarr_kwargs, cdf_kwargs, preprocess, varname=
             root = path.root
 
     if data_format == 'zarr':
-        logger.debug(f'Opening zarr store: {root} - protocol: {protocol}')
         try:
             ds = xr.open_zarr(path, **zarr_kwargs)
-        except Exception as e:
-            logger.error(f'Failed to open zarr store with zarr_kwargs={zarr_kwargs}')
-            raise e
+        except Exception as exc:
+            message = f"""
+            Failed to open zarr store.
+
+            *** Arguments passed to xarray.open_zarr() ***:
+
+            - store: {path}
+            - kwargs: {zarr_kwargs}
+
+            *** fsspec options used ***:
+
+            - root: {root}
+            - protocol: {protocol}
+
+            ********************************************
+            """
+
+            raise IOError(message) from exc
 
     else:
-        logger.debug(f'Opening netCDF/HDF dataset: {root} - protocol: {protocol}')
         try:
             ds = xr.open_dataset(path, **cdf_kwargs)
-        except Exception as e:
-            logger.error(f'Failed to open netCDF/HDF dataset with cdf_kwargs={cdf_kwargs}')
-            raise e
+        except Exception as exc:
+            message = f"""
+            Failed to open netCDF/HDF dataset.
+
+            *** Arguments passed to xarray.open_dataset() ***:
+
+            - filename_or_obj: {path}
+            - kwargs: {cdf_kwargs}
+
+            *** fsspec options used ***:
+
+            - root: {root}
+            - protocol: {protocol}
+
+            ********************************************
+            """
+            raise IOError(message) from exc
+
     if varname:
         ds.attrs['intake_esm_varname'] = varname
 
     if preprocess is None:
         return ds
-    logger.debug(f'Applying pre-processing with {preprocess.__name__} function')
-    return preprocess(ds)
+    try:
+        return preprocess(ds)
+    except Exception as exc:
+        raise RuntimeError(
+            'Failed to apply pre-processing function: {preprocess.__name__}'
+        ) from exc
 
 
 def dict_union(*dicts, merge_keys=None, drop_keys=None):
