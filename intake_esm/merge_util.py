@@ -153,35 +153,8 @@ def _to_nested_dict(df):
     return df.to_dict()
 
 
-def _create_asset_info_lookup(
-    df, path_column_name, variable_column_name=None, data_format=None, format_column_name=None,
-):
-
-    if format_column_name is not None:
-        data_format_list = df[format_column_name]
-    else:
-        if data_format is None:
-            raise ValueError('Please specify either `data_format` or `format_column_name`')
-        data_format_list = [data_format] * len(df)
-    if variable_column_name is None:
-        varname_list = [None] * len(df)
-    else:
-        varname_list = df[variable_column_name]
-
-    return dict(zip(df[path_column_name], tuple(zip(varname_list, data_format_list))))
-
-
 def _aggregate(
-    aggregation_dict,
-    agg_columns,
-    n_agg,
-    v,
-    lookup,
-    mapper_dict,
-    zarr_kwargs,
-    cdf_kwargs,
-    preprocess,
-    group_key=None,
+    aggregation_dict, agg_columns, n_agg, v, mapper_dict, group_key=None,
 ):
     def apply_aggregation(v, agg_column=None, key=None, level=0):
         """Recursively descend into nested dictionary and aggregate items.
@@ -190,21 +163,11 @@ def _aggregate(
         assert level <= n_agg
 
         if level == n_agg:
-            # bottom of the hierarchy - should be an actual path at this point
-            # return open_dataset(v)
-            data_format = lookup[v][1]
-            # Get varname in order to specify data_vars=[varname] during concatenation
-            # See https://github.com/intake/intake-esm/issues/172#issuecomment-549001751
-            varname = lookup[v][0]
-            ds = _open_asset(
-                mapper_dict[v],
-                data_format=data_format,
-                zarr_kwargs=zarr_kwargs,
-                cdf_kwargs=cdf_kwargs,
-                preprocess=preprocess,
-                varname=varname,
-            )
-            return ds
+            # bottom of the hierarchy - should be an actual dataset
+            # return open_dataset(v) at this point
+            ds = mapper_dict[v]
+            if isinstance(ds, xr.Dataset):
+                return ds
 
         agg_column = agg_columns[level]
         agg_info = aggregation_dict[agg_column]
