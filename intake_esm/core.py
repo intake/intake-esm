@@ -107,7 +107,7 @@ class esm_datastore(intake.catalog.Catalog):
         self._kwargs = kwargs
         self._to_dataset_args_token = None
         self._log_level = log_level
-        self._datasets = {}
+        self._datasets = None
         self.sep = sep
         self._data_format, self._format_column_name = None, None
         self._path_column_name = self.esmcol_data['assets']['column_name']
@@ -765,17 +765,12 @@ class esm_datastore(intake.catalog.Catalog):
             preprocess=preprocess,
             storage_options=storage_options,
         )
-        token = dask.base.tokenize([source_kwargs, aggregate])
+
         if progressbar is not None:
             self.progressbar = progressbar
 
         if preprocess is not None and not callable(preprocess):
             raise ValueError('preprocess argument must be callable')
-
-        # Avoid re-loading data if nothing has changed since the last call
-        if self._datasets and (token == self._to_dataset_args_token):
-            return self._datasets
-        self._to_dataset_args_token = token
 
         if aggregate is not None and not aggregate:
             self = deepcopy(self)
@@ -786,21 +781,23 @@ class esm_datastore(intake.catalog.Catalog):
                 f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{self.key_template}'"""
             )
 
-        def _load_source(source):
-            return source.to_dask()
+        def _load_source(key, source):
+            return key, source.to_dask()
 
-        sources = [source(**source_kwargs) for _, source in self.items()]
-
+        sources = {key: source(**source_kwargs) for key, source in self.items()}
         progress, total = None, None
         if self.progressbar:
             total = len(sources)
             progress = progress_bar(range(total))
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=len(sources)) as executor:
-            future_tasks = [executor.submit(_load_source, source) for source in sources]
+        self._datasets = {}
+        with concurrent.futures.ThreadPoolExecutor(max_workers=dask.system.CPU_COUNT) as executor:
+            future_tasks = [
+                executor.submit(_load_source, key, source) for key, source in sources.items()
+            ]
             for i, task in enumerate(concurrent.futures.as_completed(future_tasks)):
-                ds = task.result()
-                self._datasets[ds.attrs['intake_esm_dataset_key']] = ds
+                key, ds = task.result()
+                self._datasets[key] = ds
                 if self.progressbar:
                     progress.update(i)
             if self.progressbar:

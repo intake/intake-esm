@@ -1,15 +1,7 @@
-import pandas as pd
 import pytest
 import xarray as xr
 
-from intake_esm.merge_util import (
-    AggregationError,
-    _create_asset_info_lookup,
-    _open_asset,
-    join_existing,
-    join_new,
-    union,
-)
+from intake_esm.merge_util import AggregationError, _open_asset, join_existing, join_new, union
 
 
 @pytest.fixture(scope='module')
@@ -19,7 +11,7 @@ def datasets():
 
 
 def test_join_new(datasets):
-    ds = join_new(datasets, 'member_id', ['one', 'two'], 'Tair')
+    ds = join_new(datasets, 'member_id', ['one', 'two'], ['Tair'])
     assert 'member_id' in ds.coords
     assert set(['one', 'two']) == set(ds.member_id.values)
 
@@ -28,11 +20,11 @@ def test_join_new_error(datasets):
     with pytest.raises(
         AggregationError, match=r'Failed to join/concatenate datasets in group with'
     ):
-        _ = join_new(datasets, 'time', ['one', 'two'], 'Tair')
+        _ = join_new(datasets, 'time', ['one', 'two'], ['Tair'])
 
 
 def test_join_existing(datasets):
-    ds = join_existing(datasets, options={'dim': 'time'})
+    ds = join_existing(datasets, ['Tair'], options={'dim': 'time'})
     assert len(ds.time) == len(datasets[0].time) * 2
 
 
@@ -40,11 +32,11 @@ def test_join_existing_error(datasets):
     with pytest.raises(
         AggregationError, match=r'Failed to join/concatenate datasets in group with'
     ):
-        join_existing(datasets)
+        join_existing(datasets, ['Tair'])
 
     with pytest.raises(AggregationError):
         datasets[0] = datasets[0].rename({'time': 'times'})
-        join_existing(datasets, options={'dim': 'time'})
+        join_existing(datasets, ['Tair'], options={'dim': 'time'})
 
 
 def test_union(datasets):
@@ -74,16 +66,3 @@ def test_union_error():
 def test_open_asset_error(path, data_format, error):
     with pytest.raises(error):
         _open_asset(path, data_format, {}, {}, None, 'Tair')
-
-
-def test_create_asset_info_lookup():
-    df = pd.DataFrame({'A': ['x', 'y'], 'path': ['path_a', 'path_b']})
-    lookup = _create_asset_info_lookup(df, path_column_name='path', data_format='zarr')
-    assert lookup == {'path_a': (None, 'zarr'), 'path_b': (None, 'zarr')}
-
-    df['format'] = ['netcdf', 'zarr']
-    lookup = _create_asset_info_lookup(df, path_column_name='path', format_column_name='format')
-    assert lookup == {'path_a': (None, 'netcdf'), 'path_b': (None, 'zarr')}
-
-    with pytest.raises(ValueError):
-        _create_asset_info_lookup(df, path_column_name='path')

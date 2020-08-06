@@ -35,8 +35,8 @@ def join_new(
         Name of the new dimension
     coord_value : Any
         Value corresponding to the new dimension coordinate
-    varname : Union[str, List]
-        Name of data variables
+    varname : List
+        List of data variables
     options : Dict, optional
         Additional keyword arguments passed through to
         :py:func:`~xarray.concat()`, by default None
@@ -47,8 +47,6 @@ def join_new(
         xarray Dataset
     """
     options = options or {}
-    if isinstance(varname, str):
-        varname = [varname]
     try:
         concat_dim = xr.DataArray(coord_value, dims=(dim_name), name=dim_name)
         return xr.concat(dsets, dim=concat_dim, data_vars=varname, **options)
@@ -70,7 +68,10 @@ def join_new(
 
 
 def join_existing(
-    dsets: List[xr.Dataset], options: Dict[str, Any] = None, group_key: str = None
+    dsets: List[xr.Dataset],
+    varname: Union[str, List],
+    options: Dict[str, Any] = None,
+    group_key: str = None,
 ) -> xr.Dataset:
     """
     Concatenate a list of datasets along an existing dimension.
@@ -79,6 +80,8 @@ def join_existing(
     ----------
     dsets : List[xr.Dataset]
         A list of xarray.Dataset(s) to concatenate along an existing dimension.
+    varname : List
+        List of data variables
     options : Dict, optional
         Additional keyword arguments passed through to
         :py:func:`~xarray.concat()`, by default None
@@ -88,10 +91,9 @@ def join_existing(
     xr.Dataset
         xarray Dataset
     """
-
     options = options or {}
     try:
-        return xr.concat(dsets, **options)
+        return xr.concat(dsets, data_vars=varname, **options)
     except Exception as exc:
         message = f"""
         Failed to join/concatenate datasets in group with key={group_key} along an existing dimension.
@@ -99,6 +101,7 @@ def join_existing(
         *** Arguments passed to xarray.concat() ***:
 
         - objs: a list of {len(dsets)} datasets
+        - data_vars: {varname}
         - kwargs: {options}
 
         ********************************************
@@ -153,58 +156,29 @@ def _to_nested_dict(df):
     return df.to_dict()
 
 
-def _create_asset_info_lookup(
-    df, path_column_name, variable_column_name=None, data_format=None, format_column_name=None,
-):
-
-    if format_column_name is not None:
-        data_format_list = df[format_column_name]
-    else:
-        if data_format is None:
-            raise ValueError('Please specify either `data_format` or `format_column_name`')
-        data_format_list = [data_format] * len(df)
-    if variable_column_name is None:
-        varname_list = [None] * len(df)
-    else:
-        varname_list = df[variable_column_name]
-
-    return dict(zip(df[path_column_name], tuple(zip(varname_list, data_format_list))))
-
-
 def _aggregate(
-    aggregation_dict,
-    agg_columns,
-    n_agg,
-    v,
-    lookup,
-    mapper_dict,
-    zarr_kwargs,
-    cdf_kwargs,
-    preprocess,
-    group_key=None,
+    aggregation_dict: dict,
+    agg_columns: list,
+    n_agg: int,
+    nd: dict,
+    mapper_dict: dict,
+    group_key: str = None,
 ):
-    def apply_aggregation(v, agg_column=None, key=None, level=0):
+    def apply_aggregation(nd, agg_column=None, key=None, level=0):
         """Recursively descend into nested dictionary and aggregate items.
         level tells how deep we are."""
 
         assert level <= n_agg
 
         if level == n_agg:
-            # bottom of the hierarchy - should be an actual path at this point
-            # return open_dataset(v)
-            data_format = lookup[v][1]
-            # Get varname in order to specify data_vars=[varname] during concatenation
-            # See https://github.com/intake/intake-esm/issues/172#issuecomment-549001751
-            varname = lookup[v][0]
-            ds = _open_asset(
-                mapper_dict[v],
-                data_format=data_format,
-                zarr_kwargs=zarr_kwargs,
-                cdf_kwargs=cdf_kwargs,
-                preprocess=preprocess,
-                varname=varname,
+            # bottom of the hierarchy - should be an actual dataset
+            # return dataset at this point
+            ds = mapper_dict[nd]
+            if isinstance(ds, xr.Dataset):
+                return ds
+            raise TypeError(
+                f'Expected mapper_dict[{nd}] to be an xarray.Dataset. Found type of mapper_dict[{nd}] to be {type(mapper_dict[nd])}'
             )
-            return ds
 
         agg_column = agg_columns[level]
         agg_info = aggregation_dict[agg_column]
@@ -217,9 +191,9 @@ def _aggregate(
 
         dsets = [
             apply_aggregation(value, agg_column, key=key, level=level + 1)
-            for key, value in v.items()
+            for key, value in nd.items()
         ]
-        keys = list(v.keys())
+        keys = list(nd.keys())
         attrs = dict_union(*[ds.attrs for ds in dsets])
         # copy encoding for each variable from first encounter
         variables = {v for ds in dsets for v in ds.variables}
@@ -247,7 +221,8 @@ def _aggregate(
             )
 
         elif agg_type == 'join_existing':
-            ds = join_existing(dsets, options=agg_options, group_key=group_key)
+            varname = dsets[0].attrs['intake_esm_varname']
+            ds = join_existing(dsets, varname=varname, options=agg_options, group_key=group_key)
 
         elif agg_type == 'union':
             ds = union(dsets, options=agg_options, group_key=group_key)
@@ -258,7 +233,7 @@ def _aggregate(
                 ds[v].encoding = encoding[v]
         return ds
 
-    return apply_aggregation(v)
+    return apply_aggregation(nd)
 
 
 def _open_asset(
@@ -322,6 +297,8 @@ def _open_asset(
             raise IOError(message) from exc
 
     if varname:
+        if isinstance(varname, str):
+            varname = [varname]
         ds.attrs['intake_esm_varname'] = varname
 
     if preprocess is None:

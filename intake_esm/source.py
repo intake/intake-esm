@@ -1,5 +1,6 @@
 import copy
 
+import dask
 import pandas as pd
 from intake.source.base import DataSource, Schema
 
@@ -171,24 +172,40 @@ class ESMGroupDataSource(DataSource):
         return self._schema
 
     def _open_dataset(self):
+        @dask.delayed
+        def read_dataset(
+            path,
+            data_format,
+            storage_options,
+            cdf_kwargs,
+            zarr_kwargs,
+            preprocess=None,
+            varname=None,
+        ):
+            # replace path column with mapper (dependent on filesystem type)
+            mapper = _path_to_mapper(path, storage_options)
+            ds = _open_asset(mapper, data_format, zarr_kwargs, cdf_kwargs, preprocess, varname)
+            return (path, ds)
+
+        datasets = [
+            read_dataset(
+                row[self.path_column],
+                row[_DATA_FORMAT_KEY],
+                self.storage_options,
+                self.cdf_kwargs,
+                self.zarr_kwargs,
+                self.preprocess,
+                row[self.variable_column],
+            )
+            for _, row in self.df.iterrows()
+        ]
+        datasets = dask.compute(*datasets)
+        mapper_dict = dict(datasets)
         nd = create_nested_dict(self.df, self.path_column, self.aggregation_columns)
-        lookup = create_asset_info_lookup(self.df, self.path_column, self.variable_column)
         n_agg = len(self.aggregation_columns)
-        # replace path column with mapper (dependent on filesystem type)
-        mapper_dict = {
-            path: _path_to_mapper(path, self.storage_options) for path in self.df[self.path_column]
-        }
+
         ds = _aggregate(
-            self.aggregation_dict,
-            self.aggregation_columns,
-            n_agg,
-            nd,
-            lookup,
-            mapper_dict,
-            self.zarr_kwargs,
-            self.cdf_kwargs,
-            self.preprocess,
-            self.key,
+            self.aggregation_dict, self.aggregation_columns, n_agg, nd, mapper_dict, self.key,
         )
         ds.attrs['intake_esm_dataset_key'] = self.key
         self._ds = ds
@@ -209,10 +226,6 @@ def create_nested_dict(df, path_column, aggregation_columns):
     mi = df.set_index(aggregation_columns)
     nd = _to_nested_dict(mi[path_column])
     return nd
-
-
-def create_asset_info_lookup(df, path_column, variable_column):
-    return dict(zip(df[path_column], tuple(zip(df[variable_column], df[_DATA_FORMAT_KEY]))))
 
 
 def _sanitize_aggregations(df, aggregation_dict):
