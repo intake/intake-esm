@@ -193,6 +193,15 @@ def test_update_aggregation_error(attribute_name, agg_type, options):
         col.update_aggregation(attribute_name, agg_type, options)
 
 
+@pytest.mark.parametrize('attribute_name', [('variable')])
+def test_update_aggregation_delete(attribute_name):
+    col = intake.open_esm_datastore(catalog_dict_records)
+    col.update_aggregation(attribute_name, delete=True)
+    assert len(col.aggregations) == 0
+    assert len(col.aggregation_dict) == 0
+    assert len(col.keys()) == len(col.df)
+
+
 @pytest.mark.parametrize(
     'aggregations, expected_aggregations, expected_aggregation_dict, expected_agg_columns',
     [

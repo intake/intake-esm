@@ -192,7 +192,7 @@ class esm_datastore(intake.catalog.Catalog):
             aggregations, aggregation_dict, agg_columns = _construct_agg_info(aggregations)
             groupby_attrs = list(filter(self._allnan_or_nonan, groupby_attrs))
 
-        elif not groupby_attrs or 'aggregation_control' not in self.esmcol_data:
+        if not aggregations:
             groupby_attrs = []
 
         aggregation_info = AggregationInfo(
@@ -285,7 +285,9 @@ class esm_datastore(intake.catalog.Catalog):
     def aggregation_dict(self) -> dict:
         return self.aggregation_info.aggregation_dict
 
-    def update_aggregation(self, attribute_name: str, agg_type: str = None, options: dict = None):
+    def update_aggregation(
+        self, attribute_name: str, agg_type: str = None, options: dict = None, delete=False
+    ):
         """
         Updates aggregation operations info.
 
@@ -303,6 +305,10 @@ class esm_datastore(intake.catalog.Catalog):
             :py:func:`~xarray.concat` or :py:func:`~xarray.merge`. For `join_existing`, it must contain
             the name of the existing dimension to use (for e.g.: something like {'dim': 'time'}).,
             by default None
+
+        delete : bool, optional
+             Whether to delete/remove/disable aggregation operations for a particular attribute,
+             by default False
         """
 
         def validate_type(t):
@@ -333,30 +339,45 @@ class esm_datastore(intake.catalog.Catalog):
                 break
 
         if found:
-            if agg_type is not None:
-                validate_type(agg_type)
-                match['type'] = agg_type
-            if options is not None:
-                validate_options(options)
-                match['options'] = options
-            aggregations[idx] = match
+            if delete:
+                del aggregations[idx]
+            else:
+                if agg_type is not None:
+                    validate_type(agg_type)
+                    match['type'] = agg_type
+                if options is not None:
+                    validate_options(options)
+                    match['options'] = options
+                aggregations[idx] = match
 
         else:
-            match = {}
-            validate_type(agg_type)
-            match['type'] = agg_type
-            match['attribute_name'] = attribute_name
-            if options is not None:
-                validate_options(options)
-                match['options'] = options
-            elif options is None:
-                match['options'] = {}
-            aggregations.append(match)
+            if delete:
+                message = f'No change. Tried removing/deleting/disabling non-existing aggregation operations for attribute={attribute_name}'
+                warn(message)
+            else:
+                match = {}
+                validate_type(agg_type)
+                match['type'] = agg_type
+                match['attribute_name'] = attribute_name
+                if options is not None:
+                    validate_options(options)
+                    match['options'] = options
+                elif options is None:
+                    match['options'] = {}
+                aggregations.append(match)
 
         aggregations, aggregation_dict, agg_columns = _construct_agg_info(aggregations)
-        self.aggregation_info = self.aggregation_info._replace(
-            aggregations=aggregations, aggregation_dict=aggregation_dict, agg_columns=agg_columns
-        )
+        kwargs = {
+            'aggregations': aggregations,
+            'aggregation_dict': aggregation_dict,
+            'agg_columns': agg_columns,
+        }
+        if len(aggregations) == 0:
+            kwargs['groupby_attrs'] = []
+        self.aggregation_info = self.aggregation_info._replace(**kwargs)
+        if len(self.groupby_attrs) == 0:
+            self._set_groups_and_keys()
+            self._entries = {}
 
     @property
     def path_column_name(self) -> str:
