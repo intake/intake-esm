@@ -15,6 +15,8 @@ from fastprogress.fastprogress import progress_bar
 from .search import _unique, search
 from .utils import _fetch_and_parse_json, _fetch_catalog, logger
 
+_AGGREGATIONS_TYPES = {'join_existing', 'join_new', 'union'}
+
 
 class esm_datastore(intake.catalog.Catalog):
     """
@@ -283,6 +285,79 @@ class esm_datastore(intake.catalog.Catalog):
     def aggregation_dict(self) -> dict:
         return self.aggregation_info.aggregation_dict
 
+    def update_aggregation(self, attribute_name: str, agg_type: str = None, options: dict = None):
+        """
+        Updates aggregation operations info.
+
+        Parameters
+        ----------
+        attribute_name : str
+            Name of attribute (column) across which to aggregate.
+
+        agg_type : str, optional
+            Type of aggregation operation to apply. Valid values include:
+            `join_new`, `join_existing`, `union`, by default None
+
+        options : dict, optional
+            Aggregration settings that are passed as keywords arguments to
+            :py:func:`~xarray.concat` or :py:func:`~xarray.merge`. For `join_existing`, it must contain
+            the name of the existing dimension to use (for e.g.: something like {'dim': 'time'}).,
+            by default None
+        """
+
+        def validate_type(t):
+            assert (
+                t in _AGGREGATIONS_TYPES
+            ), f'Invalid aggregation agg_type={t}. Valid values are: {list(_AGGREGATIONS_TYPES)}.'
+
+        def validate_attribute_name(name):
+            assert (
+                name in self.df.columns
+            ), f'Attribute_name={attribute_name} is invalid. Attribute name must exist as a column in the dataframe. Valid values: {self.df.columns.tolist()}.'
+
+        def validate_options(options):
+            assert isinstance(
+                options, dict
+            ), f'Options must be a dictionary. Found the type of options={options} to be {type(options)}.'
+
+        aggregations = self.aggregations.copy()
+        validate_attribute_name(attribute_name)
+        found = False
+        match = None
+        idx = None
+        for index, agg in enumerate(aggregations):
+            if agg['attribute_name'] == attribute_name:
+                found = True
+                match = agg
+                idx = index
+                break
+
+        if found:
+            if agg_type is not None:
+                validate_type(agg_type)
+                match['type'] = agg_type
+            if options is not None:
+                validate_options(options)
+                match['options'] = options
+            aggregations[idx] = match
+
+        else:
+            match = {}
+            validate_type(agg_type)
+            match['type'] = agg_type
+            match['attribute_name'] = attribute_name
+            if options is not None:
+                validate_options(options)
+                match['options'] = options
+            elif options is None:
+                match['options'] = {}
+            aggregations.append(match)
+
+        aggregations, aggregation_dict, agg_columns = _construct_agg_info(aggregations)
+        self.aggregation_info = self.aggregation_info._replace(
+            aggregations=aggregations, aggregation_dict=aggregation_dict, agg_columns=agg_columns
+        )
+
     @property
     def path_column_name(self) -> str:
         """
@@ -431,6 +506,7 @@ class esm_datastore(intake.catalog.Catalog):
             'search',
             'unique',
             'nunique',
+            'update_aggregation',
             'key_template',
             'groupby_attrs',
             'variable_column_name',
