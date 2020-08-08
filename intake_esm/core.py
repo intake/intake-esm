@@ -373,6 +373,9 @@ class esm_datastore(intake.catalog.Catalog):
             'agg_columns': agg_columns,
         }
         if len(aggregations) == 0:
+            warn(
+                'Setting `groupby_attrs` to []. Aggregations will be disabled because `groupby_attrs` is empty.'
+            )
             kwargs['groupby_attrs'] = []
         self.aggregation_info = self.aggregation_info._replace(**kwargs)
         if len(self.groupby_attrs) == 0:
