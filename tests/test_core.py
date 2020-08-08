@@ -286,6 +286,12 @@ def test_update_aggregation_delete(attribute_name):
             ['variable_id', 'member_id', 'dcpp_init_year'],
         ),
         ([], [], {}, []),
+        (
+            [{'type': 'join_existing', 'attribute_name': 'dcpp_init_year', 'options': {}}],
+            [{'type': 'join_existing', 'attribute_name': 'dcpp_init_year', 'options': {}}],
+            {'dcpp_init_year': {'type': 'join_existing', 'options': {}}},
+            ['dcpp_init_year'],
+        ),
     ],
 )
 def test_construct_agg_info(

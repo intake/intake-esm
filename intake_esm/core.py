@@ -944,6 +944,13 @@ def _construct_agg_info(aggregations: List[Dict]) -> Tuple[List[Dict], Dict, Lis
         aggregations = sorted(aggregations, key=lambda i: i['type'], reverse=True)
         for agg in aggregations:
             key = agg['attribute_name']
+            if agg['type'] == 'join_existing' and 'dim' not in agg['options']:
+                message = f"""
+            Missing `dim` option for `join_existing` operation across `{key}` attribute.
+            For `join_existing` to properly work, `options` must contain the name of the existing dimension
+            to use (for e.g.: something like {{'dim': 'time'}}).
+                """
+                warn(message)
             rest = agg.copy()
             del rest['attribute_name']
             aggregation_dict[key] = rest
