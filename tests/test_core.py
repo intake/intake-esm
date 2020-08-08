@@ -140,10 +140,66 @@ def test_df_property():
         ('format_column_name', None),
     ],
 )
-def test_aggregation_properties(property, expected):
+def test_aggregation_properties_getter(property, expected):
     col = intake.open_esm_datastore(catalog_dict_records)
     value = getattr(col, property)
     assert value == expected
+
+
+@pytest.mark.parametrize(
+    'property, value',
+    [
+        ('data_format', 'netcdf'),
+        ('groupby_attrs', []),
+        ('variable_column_name', 'foo'),
+        ('path_column_name', 'bar'),
+        ('format_column_name', 'foobar'),
+    ],
+)
+def test_aggregation_properties_setter(property, value):
+    col = intake.open_esm_datastore(catalog_dict_records)
+    setattr(col, property, value)
+    res_value = getattr(col, property)
+    assert res_value == value
+
+
+@pytest.mark.parametrize(
+    'attribute_name, agg_type, options',
+    [
+        ('variable', 'union', {'dim': 'time'}),
+        ('variable', 'union', {}),
+        ('component', 'join_existing', {'compat': 'override'}),
+        ('experiment', 'join_new', {'compat': 'override'}),
+    ],
+)
+def test_update_aggregation(attribute_name, agg_type, options):
+    col = intake.open_esm_datastore(catalog_dict_records)
+    col.update_aggregation(attribute_name, agg_type, options)
+    assert col.aggregation_dict[attribute_name] == {'type': agg_type, 'options': options}
+
+
+@pytest.mark.parametrize(
+    'attribute_name, agg_type, options',
+    [
+        ('foo', 'union', {'dim': 'time'}),
+        ('variable', 'merge', {}),
+        ('experiment', 'join_new', 'foo'),
+        ('variable', 'join_existing', 'bar'),
+    ],
+)
+def test_update_aggregation_error(attribute_name, agg_type, options):
+    col = intake.open_esm_datastore(catalog_dict_records)
+    with pytest.raises(AssertionError):
+        col.update_aggregation(attribute_name, agg_type, options)
+
+
+@pytest.mark.parametrize('attribute_name', [('variable')])
+def test_update_aggregation_delete(attribute_name):
+    col = intake.open_esm_datastore(catalog_dict_records)
+    col.update_aggregation(attribute_name, delete=True)
+    assert len(col.aggregations) == 0
+    assert len(col.aggregation_dict) == 0
+    assert len(col.keys()) == len(col.df)
 
 
 @pytest.mark.parametrize(
@@ -230,6 +286,12 @@ def test_aggregation_properties(property, expected):
             ['variable_id', 'member_id', 'dcpp_init_year'],
         ),
         ([], [], {}, []),
+        (
+            [{'type': 'join_existing', 'attribute_name': 'dcpp_init_year', 'options': {}}],
+            [{'type': 'join_existing', 'attribute_name': 'dcpp_init_year', 'options': {}}],
+            {'dcpp_init_year': {'type': 'join_existing', 'options': {}}},
+            ['dcpp_init_year'],
+        ),
     ],
 )
 def test_construct_agg_info(
