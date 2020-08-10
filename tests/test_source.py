@@ -1,4 +1,5 @@
 import os
+from unittest import mock as mock
 
 import dask
 import pandas as pd
@@ -8,45 +9,48 @@ import xarray as xr
 from intake_esm.search import search
 from intake_esm.source import ESMDataSource, ESMGroupDataSource
 
+here = os.path.abspath(os.path.dirname(__file__))
+path = os.path.join(here, 'sample-collections/cmip6-netcdf-test.csv')
+df = pd.read_csv(path)
 
-@pytest.fixture(scope='module')
-def df():
-    here = os.path.abspath(os.path.dirname(__file__))
-    path = os.path.join(here, 'sample-collections/cmip6-netcdf-test.csv')
-    return pd.read_csv(path)
+aggregation_dict = {
+    'variable_id': {'type': 'union'},
+    'member_id': {'type': 'join_new', 'options': {'coords': 'minimal', 'compat': 'override'}},
+    'time_range': {'type': 'join_existing', 'options': {'dim': 'time'}},
+}
+
+subset_df = search(
+    df,
+    activity_id='CMIP',
+    institution_id='CNRM-CERFACS',
+    source_id='CNRM-CM6-1',
+    experiment_id='historical',
+    table_id='Amon',
+    grid_label='gr',
+)
+group_args = dict(
+    key='foo',
+    df=subset_df,
+    aggregation_dict=aggregation_dict,
+    path_column='path',
+    variable_column='variable_id',
+    data_format='netcdf',
+    format_column=None,
+    cdf_kwargs={'chunks': {'time': 2}},
+)
+
+single_row_args = dict(
+    key='foo',
+    row=df.iloc[0],
+    path_column='path',
+    data_format='netcdf',
+    format_column=None,
+    cdf_kwargs={'chunks': {'time': 2}},
+)
 
 
-@pytest.fixture(scope='module')
-def aggregation_dict():
-    x = {
-        'variable_id': {'type': 'union'},
-        'member_id': {'type': 'join_new', 'options': {'coords': 'minimal', 'compat': 'override'}},
-        'time_range': {'type': 'join_existing', 'options': {'dim': 'time'}},
-    }
-    return x
-
-
-def test_esm_group(df, aggregation_dict):
-    subset_df = search(
-        df,
-        activity_id='CMIP',
-        institution_id='CNRM-CERFACS',
-        source_id='CNRM-CM6-1',
-        experiment_id='historical',
-        table_id='Amon',
-        grid_label='gr',
-    )
-    args = dict(
-        key='foo',
-        df=subset_df,
-        aggregation_dict=aggregation_dict,
-        path_column='path',
-        variable_column='variable_id',
-        data_format='netcdf',
-        format_column=None,
-        cdf_kwargs={'chunks': {'time': 2}},
-    )
-    source = ESMGroupDataSource(**args)
+def test_esm_group():
+    source = ESMGroupDataSource(**group_args)
     assert source._ds is None
     ds = source.to_dask()
     assert dask.is_dask_collection(ds['tasmax'])
@@ -55,6 +59,21 @@ def test_esm_group(df, aggregation_dict):
     assert set(subset_df['member_id']) == set(ds['member_id'].values)
     source.close()
     assert source._ds is None
+
+
+def test_esm_group_repr(capsys):
+    source = ESMGroupDataSource(**group_args)
+    print(repr(source))
+    captured = capsys.readouterr()
+    assert 'assets:' in captured.out
+
+
+def test_esm_group_ipython_display():
+    pytest.importorskip('IPython')
+    source = ESMGroupDataSource(**group_args)
+    with mock.patch('IPython.display.display') as ipy_display:
+        source._ipython_display_()
+        ipy_display.assert_called_once()
 
 
 @pytest.mark.parametrize('x', [pd.DataFrame(), pd.Series(dtype='object'), {}, None])
@@ -74,17 +93,8 @@ def test_esm_group_invalid_df(x):
         _ = ESMGroupDataSource(**args)
 
 
-def test_esm_single_source(df):
-    args = dict(
-        key='foo',
-        row=df.iloc[0],
-        path_column='path',
-        data_format='netcdf',
-        format_column=None,
-        cdf_kwargs={'chunks': {'time': 2}},
-    )
-
-    source = ESMDataSource(**args)
+def test_esm_single_source():
+    source = ESMDataSource(**single_row_args)
     assert source._ds is None
     ds = source.to_dask()
     assert dask.is_dask_collection(ds['tasmax'])
@@ -92,6 +102,21 @@ def test_esm_single_source(df):
     assert isinstance(ds, xr.Dataset)
     source.close()
     assert source._ds is None
+
+
+def test_esm_single_source_repr(capsys):
+    source = ESMDataSource(**single_row_args)
+    print(repr(source))
+    captured = capsys.readouterr()
+    assert 'asset: 1' in captured.out
+
+
+def test_esm_single_source_ipython_display():
+    pytest.importorskip('IPython')
+    source = ESMDataSource(**single_row_args)
+    with mock.patch('IPython.display.display') as ipy_display:
+        source._ipython_display_()
+        ipy_display.assert_called_once()
 
 
 @pytest.mark.parametrize('row', [pd.DataFrame(), pd.Series(dtype='object'), {}, None])

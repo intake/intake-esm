@@ -1,5 +1,6 @@
 import os
 from tempfile import TemporaryDirectory
+from unittest import mock as mock
 
 import intake
 import pandas as pd
@@ -88,10 +89,22 @@ cdf_query = dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_i
         cdf_col_sample_cmip6,
     ],
 )
-def test_init(url):
+def test_init(capsys, url):
     col = intake.open_esm_datastore(url)
     assert isinstance(col.df, pd.DataFrame)
-    assert 'catalog with' in repr(col)
+    print(repr(col))
+    # Use pytest-capturing method
+    # https://docs.pytest.org/en/latest/capture.html#accessing-captured-output-from-a-test-function
+    captured = capsys.readouterr()
+    assert 'catalog with' in captured.out
+
+
+def test_ipython_display():
+    col = intake.open_esm_datastore(catalog_dict_records)
+    pytest.importorskip('IPython')
+    with mock.patch('IPython.display.display') as ipy_display:
+        col._ipython_display_()
+        ipy_display.assert_called_once()
 
 
 @pytest.mark.parametrize(
@@ -136,7 +149,7 @@ def test_repr_html(url):
 
 def test_ipython_key_completions():
     col = intake.open_esm_datastore(cdf_col_sample_cmip6)
-    rv = rv = [
+    rv = [
         'df',
         'to_dataset_dict',
         'from_df',
@@ -284,6 +297,7 @@ def test_aggregation_properties_setter(property, value):
     [
         ('variable', 'union', {'dim': 'time'}, False),
         ('variable', 'union', {}, False),
+        ('experiment', 'union', None, False),
         ('component', 'join_existing', {'compat': 'override'}, False),
         ('experiment', 'join_new', {'compat': 'override'}, False),
         ('experiment', None, None, True),
@@ -294,6 +308,8 @@ def test_update_aggregation(attribute_name, agg_type, options, delete):
     col = intake.open_esm_datastore(catalog_dict_records)
     col.update_aggregation(attribute_name, agg_type, options, delete)
     if not delete:
+        if options is None:
+            options = {}
         assert col.aggregation_dict[attribute_name] == {'type': agg_type, 'options': options}
     else:
         assert attribute_name not in col.aggregation_dict
@@ -529,6 +545,12 @@ def test_to_dataset_dict_w_preprocess(esmcol_path, query):
     _, ds = dsets.popitem()
     assert 'latitude' in ds.dims
     assert 'longitude' in ds.dims
+
+
+def test_to_dataset_dict_w_preprocess_error():
+    col = intake.open_esm_datastore(cdf_col_sample_cmip5)
+    with pytest.raises(ValueError, match=r'preprocess argument must be callable'):
+        col.to_dataset_dict(preprocess='foo')
 
 
 def test_to_dataset_dict_w_cmip6preprocessing():
