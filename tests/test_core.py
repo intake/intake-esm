@@ -109,12 +109,10 @@ def test_init_from_df(df, esmcol_data, data_format, data_format_column):
     assert col.path_column_name == 'path'
 
 
-@pytest.mark.parametrize('esmcol_obj', [None, open(catalog_dict_records)])
+@pytest.mark.parametrize('esmcol_obj', [None, open(catalog_dict_records), sample_df])
 def test_init_error(esmcol_obj):
     with pytest.raises(ValueError):
-        intake.open_esm_datastore(
-            esmcol_obj, match=r'esm_datastore constructor not properly called! `esmcol_obj`'
-        )
+        intake.open_esm_datastore(esmcol_obj)
 
 
 @pytest.mark.parametrize(
@@ -458,16 +456,36 @@ def test_to_dataset_dict(esmcol_path, query):
     assert ds.time.encoding
 
 
-@pytest.mark.skip
-@pytest.mark.parametrize('esmcol_path, query', [(cdf_col_sample_cmip6, cdf_query)])
+@pytest.mark.parametrize(
+    'esmcol_path, query',
+    [
+        (cdf_col_sample_cmip6, {'experiment_id': ['historical', 'rcp85']}),
+        (cdf_col_sample_cmip5, {'experiment': ['historical', 'rcp85']}),
+    ],
+)
+def test_to_aggregations_off(esmcol_path, query):
+    col = intake.open_esm_datastore(esmcol_path)
+    cat = col.search(**query)
+    nds = len(cat.df)
+    cat.groupby_attrs = []
+    assert len(cat.keys()) == nds
+    assert isinstance(cat._grouped, pd.DataFrame)
+    assert isinstance(col._grouped, pd.core.groupby.generic.DataFrameGroupBy)
+
+
+@pytest.mark.parametrize(
+    'esmcol_path, query',
+    [
+        (cdf_col_sample_cmip6, {'experiment_id': ['historical', 'rcp85']}),
+        (cdf_col_sample_cmip5, {'experiment': ['historical', 'rcp85']}),
+    ],
+)
 def test_to_dataset_dict_aggfalse(esmcol_path, query):
     col = intake.open_esm_datastore(esmcol_path)
     cat = col.search(**query)
     nds = len(cat.df)
     dsets = cat.to_dataset_dict(zarr_kwargs={'consolidated': True}, aggregate=False)
     assert len(dsets.keys()) == nds
-    key, ds = dsets.popitem()
-    assert 'tasmax' in key
 
 
 @pytest.mark.parametrize(
