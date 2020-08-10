@@ -1,7 +1,12 @@
+import os
+
+import fsspec
 import pytest
 import xarray as xr
 
 from intake_esm.merge_util import AggregationError, _open_asset, join_existing, join_new, union
+
+here = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.fixture(scope='module')
@@ -66,3 +71,18 @@ def test_union_error():
 def test_open_asset_error(path, data_format, error):
     with pytest.raises(error):
         _open_asset(path, data_format, {}, {}, None, 'Tair')
+
+
+def test_open_asset_preprocess_error():
+    path = os.path.join(
+        here, './sample_data/cesm-le/b.e11.B1850C5CN.f09_g16.005.pop.h.SHF.040001-049912.nc'
+    )
+    print(path)
+    path = f'file://{path}'
+    mapper = fsspec.get_mapper(path)
+
+    def preprocess(ds):
+        return ds.set_coords('foo')
+
+    with pytest.raises(RuntimeError):
+        _open_asset(mapper, 'netcdf', cdf_kwargs={}, varname=['SHF'], preprocess=preprocess)

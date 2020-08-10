@@ -307,7 +307,7 @@ def _open_asset(
         return preprocess(ds)
     except Exception as exc:
         raise RuntimeError(
-            'Failed to apply pre-processing function: {preprocess.__name__}'
+            f'Failed to apply pre-processing function: {preprocess.__name__}'
         ) from exc
 
 
