@@ -109,6 +109,14 @@ def test_init_from_df(df, esmcol_data, data_format, data_format_column):
     assert col.path_column_name == 'path'
 
 
+@pytest.mark.parametrize('esmcol_obj', [None, open(catalog_dict_records)])
+def test_init_error(esmcol_obj):
+    with pytest.raises(ValueError):
+        intake.open_esm_datastore(
+            esmcol_obj, match=r'esm_datastore constructor not properly called! `esmcol_obj`'
+        )
+
+
 @pytest.mark.parametrize(
     'url',
     [

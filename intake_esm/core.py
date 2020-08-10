@@ -1,6 +1,7 @@
 import concurrent.futures
 import json
 import logging
+import pathlib
 from collections import OrderedDict, namedtuple
 from copy import deepcopy
 from typing import Any, Dict, List, Tuple, Union
@@ -91,7 +92,7 @@ class esm_datastore(intake.catalog.Catalog):
             raise ValueError(f'Invalid log level: {log_level}')
         logger.setLevel(numeric_log_level)
 
-        if isinstance(esmcol_obj, str):
+        if isinstance(esmcol_obj, (str, pathlib.PurePath)):
             self.esmcol_data, self.esmcol_path = _fetch_and_parse_json(esmcol_obj)
             self._df, self.catalog_file = _fetch_catalog(self.esmcol_data, esmcol_obj)
 
@@ -103,7 +104,9 @@ class esm_datastore(intake.catalog.Catalog):
             self.esmcol_path = None
             self.catalog_file = None
         else:
-            raise ValueError(f'{self.name} constructor not properly called!')
+            raise ValueError(
+                f'{self.name} constructor not properly called! `esmcol_obj` is of type: {type(esmcol_obj)}, however valid types of `esmcol_obj` are either `str` or `pathlib.PurePath` or `pandas.DataFrame`. '
+            )
 
         self.progressbar = progressbar
         self._kwargs = kwargs
