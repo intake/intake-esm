@@ -253,18 +253,23 @@ def test_aggregation_properties_setter(property, value):
 
 
 @pytest.mark.parametrize(
-    'attribute_name, agg_type, options',
+    'attribute_name, agg_type, options, delete',
     [
-        ('variable', 'union', {'dim': 'time'}),
-        ('variable', 'union', {}),
-        ('component', 'join_existing', {'compat': 'override'}),
-        ('experiment', 'join_new', {'compat': 'override'}),
+        ('variable', 'union', {'dim': 'time'}, False),
+        ('variable', 'union', {}, False),
+        ('component', 'join_existing', {'compat': 'override'}, False),
+        ('experiment', 'join_new', {'compat': 'override'}, False),
+        ('experiment', None, None, True),
+        ('variable', None, None, True),
     ],
 )
-def test_update_aggregation(attribute_name, agg_type, options):
+def test_update_aggregation(attribute_name, agg_type, options, delete):
     col = intake.open_esm_datastore(catalog_dict_records)
-    col.update_aggregation(attribute_name, agg_type, options)
-    assert col.aggregation_dict[attribute_name] == {'type': agg_type, 'options': options}
+    col.update_aggregation(attribute_name, agg_type, options, delete)
+    if not delete:
+        assert col.aggregation_dict[attribute_name] == {'type': agg_type, 'options': options}
+    else:
+        assert attribute_name not in col.aggregation_dict
 
 
 @pytest.mark.parametrize(
@@ -280,15 +285,6 @@ def test_update_aggregation_error(attribute_name, agg_type, options):
     col = intake.open_esm_datastore(catalog_dict_records)
     with pytest.raises(AssertionError):
         col.update_aggregation(attribute_name, agg_type, options)
-
-
-@pytest.mark.parametrize('attribute_name', [('variable')])
-def test_update_aggregation_delete(attribute_name):
-    col = intake.open_esm_datastore(catalog_dict_records)
-    col.update_aggregation(attribute_name, delete=True)
-    assert len(col.aggregations) == 0
-    assert len(col.aggregation_dict) == 0
-    assert len(col.keys()) == len(col.df)
 
 
 @pytest.mark.parametrize(
