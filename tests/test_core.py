@@ -134,6 +134,33 @@ def test_repr_html(url):
         assert column in text
 
 
+def test_ipython_key_completions():
+    col = intake.open_esm_datastore(cdf_col_sample_cmip6)
+    rv = rv = [
+        'df',
+        'to_dataset_dict',
+        'from_df',
+        'keys',
+        'serialize',
+        'search',
+        'unique',
+        'nunique',
+        'update_aggregation',
+        'key_template',
+        'groupby_attrs',
+        'variable_column_name',
+        'aggregations',
+        'agg_columns',
+        'aggregation_dict',
+        'path_column_name',
+        'data_format',
+        'format_column_name',
+    ]
+    keys = col._ipython_key_completions_()
+    for key in rv:
+        assert key in keys
+
+
 def test_log_level_error():
     with pytest.raises(ValueError):
         intake.open_esm_datastore(cdf_col_sample_cmip6, log_level='VERBOSE')

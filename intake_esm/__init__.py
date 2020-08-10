@@ -9,5 +9,5 @@ from .core import esm_datastore
 
 try:
     __version__ = get_distribution(__name__).version
-except DistributionNotFound:
-    __version__ = '0.0.0'
+except DistributionNotFound:  # pragma: no cover
+    __version__ = '0.0.0'  # pragma: no cover
