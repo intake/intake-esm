@@ -111,14 +111,6 @@ def test_esm_single_source_repr(capsys):
     assert 'asset: 1' in captured.out
 
 
-def test_esm_single_source_ipython_display():
-    pytest.importorskip('IPython')
-    source = ESMDataSource(**single_row_args)
-    with mock.patch('IPython.display.display') as ipy_display:
-        source._ipython_display_()
-        ipy_display.assert_called_once()
-
-
 @pytest.mark.parametrize('row', [pd.DataFrame(), pd.Series(dtype='object'), {}, None])
 def test_esm_single_source_invalid_row(row):
     args = dict(
