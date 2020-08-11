@@ -13,6 +13,7 @@ dependencies:
   - ipython
   - netcdf4
   - pip
+  - pre-commit
   - psutil
   - pytest
   - pytest-cov
