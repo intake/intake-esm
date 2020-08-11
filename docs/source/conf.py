@@ -86,7 +86,7 @@ master_doc = 'index'
 # General information about the project.
 current_year = datetime.datetime.now().year
 project = u'Intake-esm'
-copyright = u'2018-{}, University Corporation for Atmospheric Research'.format(current_year)
+copyright = f'2018-{current_year}, the intake-esm development team'
 author = u'intake-esm developers'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -159,8 +159,11 @@ html_theme = 'pydata_sphinx_theme'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = 'images/nsf.png'
-html_theme_options = {'logo_only': False, 'style_nav_header_background': '#28938d'}
+html_logo = 'images/NSF_4-Color_bitmap_Logo.png'
+html_theme_options = {
+    'github_url': 'https://github.com/intake/intake-esm',
+    'twitter_url': 'https://twitter.com/NCARXDev',
+}
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -303,7 +306,14 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 # texinfo_no_detailmenu = False
-ipython_execlines = ['import intake', 'import intake_esm', 'import xarray']
+ipython_warning_is_error = False
+ipython_execlines = [
+    'import intake',
+    'import intake_esm',
+    'import xarray',
+    'import pandas as pd',
+    'pd.options.display.encoding="utf8"',
+]
 
 
 intersphinx_mapping = {
