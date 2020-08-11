@@ -2,6 +2,36 @@
 Changelog History
 =================
 
+Intake-esm v2020.08.15
+======================
+
+Features
+--------
+
+- Support regular expression objects in :py:meth:`~intake_esm.core.esm_datastore.search`
+  (:pr:`236`) `Anderson Banihirwe`_
+- Support wildcard expresssions in :py:meth:`~intake_esm.core.esm_datastore.search`
+  (:pr:`259`) `Anderson Banihirwe`_
+- Expose attributes used when aggregating/combining datasets (:pr:`268`) `Anderson Banihirwe`_
+- Support turning aggregations off (:pr:`269`) `Anderson Banihirwe`_
+- Improve error messages (:pr:`270`) `Anderson Banihirwe`_
+- Expose aggregations options passed to xarray during datasets aggregation
+  (:pr:`272`) `Anderson Banihirwe`_
+- Reset `_entries` dict after update aggregations (:pr:`274`) `Anderson Banihirwe`_
+
+
+Internal Changes
+----------------
+
+- Update pre-commit hooks & GitHub actions (:pr:`260`) `Anderson Banihirwe`_
+- Update badges (:pr:`258`) `Anderson Banihirwe`_
+- Update upstream environment (:pr:`263`) `Anderson Banihirwe`_
+- Refactor search functionality into a standalone module  (:pr:`267`) `Anderson Banihirwe`_
+- Fix dask/concurrent.futures parallelism (:pr:`271`) `Anderson Banihirwe`_
+- Increase test coverage to  ~100% (:pr:`273`) `Anderson Banihirwe`_
+- Bump minimum required versions (:pr:`275`) `Anderson Banihirwe`_
+
+
 Intake-esm v2020.06.11
 ======================
 
@@ -16,8 +46,8 @@ Documentation
 - Use Pandas sphinx theme (:pr:`244`) `Anderson Banihirwe`_
 - Update documentation tutorial (:pr:`252`) `Anderson Banihirwe`_ & `Charles Blackmon-Luca`_
 
-Internal
---------
+Internal Changes
+----------------
 
 - Fix anti-patterns and other bug risks (:pr:`251`) `Anderson Banihirwe`_
 - Sync with intake's Entry unification (:pr:`249`) `Anderson Banihirwe`_
@@ -58,8 +88,8 @@ Bug Fixes
 - Revert back to using `concurrent.futures` to address failures due
   to dask's distributed scheduler. (:issue:`225`) & (:issue:`226`)
 
-Internal
---------
+Internal Changes
+----------------
 
 - Increase test coverage. (:pr:`222`) `Anderson Banihirwe`_
 
@@ -423,8 +453,8 @@ Bug Fixes
 - Fix bug on build catalog and move `exclude_dirs` to `locations` (:pr:`33`) `Matthew Long`_
 
 
-Trivial/Internal Changes
-------------------------
+Internal Changes
+----------------
 
 - Change Logger, update dev-environment dependencies, and formatting fix in input.yml (:pr:`31`) `Matthew Long`_
 - Update CircleCI workflow (:pr:`32`) `Anderson Banihirwe`_
