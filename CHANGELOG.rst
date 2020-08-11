@@ -17,7 +17,7 @@ Features
 - Improve error messages (:pr:`270`) `Anderson Banihirwe`_
 - Expose aggregations options passed to xarray during datasets aggregation
   (:pr:`272`) `Anderson Banihirwe`_
-- Reset `_entries` dict after update aggregations (:pr:`274`) `Anderson Banihirwe`_
+- Reset `_entries` dict after updating aggregations (:pr:`274`) `Anderson Banihirwe`_
 
 
 Internal Changes
