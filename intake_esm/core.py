@@ -381,9 +381,9 @@ class esm_datastore(intake.catalog.Catalog):
             )
             kwargs['groupby_attrs'] = []
         self.aggregation_info = self.aggregation_info._replace(**kwargs)
+        self._entries = {}
         if len(self.groupby_attrs) == 0:
             self._set_groups_and_keys()
-            self._entries = {}
 
     @property
     def path_column_name(self) -> str:
