@@ -1,6 +1,6 @@
-xarray>=0.15.1
+xarray>=0.16
 intake>=0.6.0
-fsspec
+fsspec>=0.8.0
 requests
-fastprogress>=0.2.3
+fastprogress>=0.2.6
 dask[complete]
