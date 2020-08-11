@@ -7,7 +7,7 @@ import pytest
 import xarray as xr
 
 from intake_esm.search import search
-from intake_esm.source import ESMDataSource, ESMGroupDataSource
+from intake_esm.source import ESMDataSource, ESMGroupDataSource, _sanitize_aggregations
 
 here = os.path.abspath(os.path.dirname(__file__))
 path = os.path.join(here, 'sample-collections/cmip6-netcdf-test.csv')
@@ -143,3 +143,10 @@ def test_esm_single_source_invalid_row(row):
 
     with pytest.raises(ValueError, match=r'`row` must be a non-empty pandas.Series'):
         _ = ESMDataSource(**args)
+
+
+def test_sanitize_aggregations_error(group_args):
+    x_df = group_args['df'].head(3)
+    x_df['member_id'] = ['foo', 'bar', None]
+    with pytest.raises(ValueError):
+        _sanitize_aggregations(x_df, aggregation_dict)
