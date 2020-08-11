@@ -10,6 +10,7 @@ dependencies:
   - google-api-python-client
   - google-auth-oauthlib
   - google-cloud-core
+  - ipython
   - netcdf4
   - pip
   - psutil

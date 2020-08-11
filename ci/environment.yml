@@ -8,6 +8,7 @@ dependencies:
   - fsspec
   - gcsfs
   - intake
+  - ipython
   - netcdf4
   - pip
   - pytest

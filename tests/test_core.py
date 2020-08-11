@@ -1,5 +1,6 @@
 import os
 from tempfile import TemporaryDirectory
+from unittest import mock as mock
 
 import intake
 import pandas as pd
@@ -16,24 +17,56 @@ cdf_col_sample_cmip6 = os.path.join(here, 'sample-collections/cmip6-netcdf.json'
 cdf_col_sample_cmip5 = os.path.join(here, 'sample-collections/cmip5-netcdf.json')
 cdf_col_sample_cesmle = os.path.join(here, 'sample-collections/cesm1-lens-netcdf.json')
 catalog_dict_records = os.path.join(here, 'sample-collections/catalog-dict-records.json')
+zarr_col_aws_cesm = (
+    'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json'
+)
 
 
-@pytest.fixture(scope='module')
-def pangeo_cmip6_col():
-    url = 'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
-    return intake.open_esm_datastore(url)
+sample_df = pd.DataFrame(
+    [
+        {
+            'component': 'atm',
+            'frequency': 'daily',
+            'experiment': '20C',
+            'variable': 'FLNS',
+            'path': 's3://ncar-cesm-lens/atm/daily/cesmLE-20C-FLNS.zarr',
+            'format': 'zarr',
+        },
+        {
+            'component': 'atm',
+            'frequency': 'daily',
+            'experiment': '20C',
+            'variable': 'FLNSC',
+            'path': 's3://ncar-cesm-lens/atm/daily/cesmLE-20C-FLNSC.zarr',
+            'format': 'zarr',
+        },
+    ]
+)
 
+sample_esmcol_data = {
+    'esmcat_version': '0.1.0',
+    'id': 'aws-cesm1-le',
+    'description': '',
+    'catalog_file': '',
+    'attributes': [],
+    'assets': {'column_name': 'path', 'format_column_name': 'format'},
+    'aggregation_control': {
+        'variable_column_name': 'variable',
+        'groupby_attrs': ['component', 'experiment', 'frequency'],
+        'aggregations': [
+            {'type': 'union', 'attribute_name': 'variable', 'options': {'compat': 'override'}}
+        ],
+    },
+}
 
-@pytest.fixture(scope='module')
-def sample_cmip6_col():
-    return intake.open_esm_datastore(cdf_col_sample_cmip6)
-
-
-@pytest.fixture(scope='module')
-def zarr_aws_cesmle_col():
-    url = 'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json'
-    return intake.open_esm_datastore(url)
-
+sample_esmcol_data_without_agg = {
+    'esmcat_version': '0.1.0',
+    'id': 'aws-cesm1-le',
+    'description': '',
+    'catalog_file': '',
+    'attributes': [],
+    'assets': {'column_name': 'path', 'format': 'zarr'},
+}
 
 zarr_query = dict(
     variable_id=['pr'],
@@ -46,16 +79,99 @@ zarr_query = dict(
 cdf_query = dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_id=['tasmax'])
 
 
-def test_repr(sample_cmip6_col):
-    assert 'catalog with' in repr(sample_cmip6_col)
+@pytest.mark.parametrize(
+    'url',
+    [
+        zarr_col_aws_cesm,
+        catalog_dict_records,
+        cdf_col_sample_cesmle,
+        cdf_col_sample_cmip5,
+        cdf_col_sample_cmip6,
+    ],
+)
+def test_init(capsys, url):
+    col = intake.open_esm_datastore(url)
+    assert isinstance(col.df, pd.DataFrame)
+    print(repr(col))
+    # Use pytest-capturing method
+    # https://docs.pytest.org/en/latest/capture.html#accessing-captured-output-from-a-test-function
+    captured = capsys.readouterr()
+    assert 'catalog with' in captured.out
 
 
-def test_repr_html(sample_cmip6_col):
-    text = sample_cmip6_col._repr_html_()
+def test_ipython_display():
+    col = intake.open_esm_datastore(catalog_dict_records)
+    pytest.importorskip('IPython')
+    with mock.patch('IPython.display.display') as ipy_display:
+        col._ipython_display_()
+        ipy_display.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    'df, esmcol_data, data_format, data_format_column',
+    [
+        (sample_df, sample_esmcol_data, None, 'format'),
+        (sample_df, sample_esmcol_data_without_agg, 'zarr', None),
+    ],
+)
+def test_init_from_df(df, esmcol_data, data_format, data_format_column):
+    col = intake.open_esm_datastore(df, esmcol_data)
+    pd.testing.assert_frame_equal(df, col.df)
+    assert col.data_format == data_format
+    assert col.format_column_name == data_format_column
+    assert col.path_column_name == 'path'
+
+
+@pytest.mark.parametrize('esmcol_obj', [None, open(catalog_dict_records), sample_df])
+def test_init_error(esmcol_obj):
+    with pytest.raises(ValueError):
+        intake.open_esm_datastore(esmcol_obj)
+
+
+@pytest.mark.parametrize(
+    'url',
+    [
+        zarr_col_aws_cesm,
+        catalog_dict_records,
+        cdf_col_sample_cesmle,
+        cdf_col_sample_cmip5,
+        cdf_col_sample_cmip6,
+    ],
+)
+def test_repr_html(url):
+    col = intake.open_esm_datastore(url)
+    text = col._repr_html_()
     assert 'unique' in text
-    columns = sample_cmip6_col.df.columns.tolist()
+    columns = col.df.columns.tolist()
     for column in columns:
         assert column in text
+
+
+def test_ipython_key_completions():
+    col = intake.open_esm_datastore(cdf_col_sample_cmip6)
+    rv = [
+        'df',
+        'to_dataset_dict',
+        'from_df',
+        'keys',
+        'serialize',
+        'search',
+        'unique',
+        'nunique',
+        'update_aggregation',
+        'key_template',
+        'groupby_attrs',
+        'variable_column_name',
+        'aggregations',
+        'agg_columns',
+        'aggregation_dict',
+        'path_column_name',
+        'data_format',
+        'format_column_name',
+    ]
+    keys = col._ipython_key_completions_()
+    for key in rv:
+        assert key in keys
 
 
 def test_log_level_error():
@@ -63,14 +179,25 @@ def test_log_level_error():
         intake.open_esm_datastore(cdf_col_sample_cmip6, log_level='VERBOSE')
 
 
-def test_col_unique(sample_cmip6_col):
-    uniques = sample_cmip6_col.unique(columns=['activity_id', 'experiment_id'])
+@pytest.mark.parametrize(
+    'url, columns',
+    [
+        (zarr_col_aws_cesm, None),
+        (catalog_dict_records, None),
+        (cdf_col_sample_cesmle, ['experiment', 'component']),
+        (cdf_col_sample_cmip5, None),
+        (cdf_col_sample_cmip6, ['experiment_id']),
+    ],
+)
+def test_col_unique(url, columns):
+    col = intake.open_esm_datastore(url)
+    uniques = col.unique(columns=columns)
     assert isinstance(uniques, dict)
-    assert isinstance(sample_cmip6_col.nunique(), pd.Series)
-
-
-def test_load_esmcol_remote(zarr_aws_cesmle_col):
-    assert isinstance(zarr_aws_cesmle_col.df, pd.DataFrame)
+    if columns is None:
+        assert set(uniques.keys()) == set(col.df.columns.tolist())
+    else:
+        assert set(uniques.keys()) == set(columns)
+    assert isinstance(col.nunique(), pd.Series)
 
 
 @pytest.mark.parametrize(
@@ -84,18 +211,20 @@ def test_load_esmcol_remote(zarr_aws_cesmle_col):
     ],
 )
 @pytest.mark.parametrize('decode_times', [True, False])
-def test_getitem(sample_cmip6_col, key, decode_times):
-    x = sample_cmip6_col[key]
+def test_getitem(key, decode_times):
+    col = intake.open_esm_datastore(cdf_col_sample_cmip6)
+    x = col[key]
     assert isinstance(x, intake_esm.source.ESMGroupDataSource)
     ds = x(cdf_kwargs={'chunks': {}, 'decode_times': decode_times}).to_dask()
     assert isinstance(ds, xr.Dataset)
     assert set(x.df['member_id']) == set(ds['member_id'].values)
 
 
-def test_getitem_error(sample_cmip6_col):
+def test_getitem_error():
+    col = intake.open_esm_datastore(cdf_col_sample_cmip6)
     with pytest.raises(KeyError):
         key = 'DOES.NOT.EXIST'
-        sample_cmip6_col[key]
+        col[key]
 
 
 @pytest.mark.parametrize(
@@ -164,18 +293,26 @@ def test_aggregation_properties_setter(property, value):
 
 
 @pytest.mark.parametrize(
-    'attribute_name, agg_type, options',
+    'attribute_name, agg_type, options, delete',
     [
-        ('variable', 'union', {'dim': 'time'}),
-        ('variable', 'union', {}),
-        ('component', 'join_existing', {'compat': 'override'}),
-        ('experiment', 'join_new', {'compat': 'override'}),
+        ('variable', 'union', {'dim': 'time'}, False),
+        ('variable', 'union', {}, False),
+        ('experiment', 'union', None, False),
+        ('component', 'join_existing', {'compat': 'override'}, False),
+        ('experiment', 'join_new', {'compat': 'override'}, False),
+        ('experiment', None, None, True),
+        ('variable', None, None, True),
     ],
 )
-def test_update_aggregation(attribute_name, agg_type, options):
+def test_update_aggregation(attribute_name, agg_type, options, delete):
     col = intake.open_esm_datastore(catalog_dict_records)
-    col.update_aggregation(attribute_name, agg_type, options)
-    assert col.aggregation_dict[attribute_name] == {'type': agg_type, 'options': options}
+    col.update_aggregation(attribute_name, agg_type, options, delete)
+    if not delete:
+        if options is None:
+            options = {}
+        assert col.aggregation_dict[attribute_name] == {'type': agg_type, 'options': options}
+    else:
+        assert attribute_name not in col.aggregation_dict
 
 
 @pytest.mark.parametrize(
@@ -191,15 +328,6 @@ def test_update_aggregation_error(attribute_name, agg_type, options):
     col = intake.open_esm_datastore(catalog_dict_records)
     with pytest.raises(AssertionError):
         col.update_aggregation(attribute_name, agg_type, options)
-
-
-@pytest.mark.parametrize('attribute_name', [('variable')])
-def test_update_aggregation_delete(attribute_name):
-    col = intake.open_esm_datastore(catalog_dict_records)
-    col.update_aggregation(attribute_name, delete=True)
-    assert len(col.aggregations) == 0
-    assert len(col.aggregation_dict) == 0
-    assert len(col.keys()) == len(col.df)
 
 
 @pytest.mark.parametrize(
@@ -313,9 +441,10 @@ def test_serialize_to_json():
         pd.testing.assert_frame_equal(col.df, col2.df)
 
 
-def test_serialize_to_csv(sample_cmip6_col):
+def test_serialize_to_csv():
+    col = intake.open_esm_datastore(cdf_col_sample_cmip6)
     with TemporaryDirectory() as local_store:
-        col_subset = sample_cmip6_col.search(source_id='MRI-ESM2-0',)
+        col_subset = col.search(source_id='MRI-ESM2-0',)
         name = 'CMIP6-MRI-ESM2-0'
         col_subset.serialize(name=name, directory=local_store, catalog_type='file')
         col = intake.open_esm_datastore(f'{local_store}/{name}.json')
@@ -333,15 +462,16 @@ def test_search(esmcol_path, query):
     assert len(col.df.columns) == len(cat.df.columns)
 
 
-def test_empty_queries(sample_cmip6_col):
+def test_empty_queries():
+    col = intake.open_esm_datastore(cdf_col_sample_cmip6)
     msg = r'Query returned zero results.'
     with pytest.warns(UserWarning, match=msg):
-        _ = sample_cmip6_col.search()
+        _ = col.search()
 
     with pytest.warns(UserWarning, match=msg):
-        _ = sample_cmip6_col.search(variable_id='DONT_EXIST')
+        _ = col.search(variable_id='DONT_EXIST')
 
-    cat = sample_cmip6_col.search()
+    cat = col.search()
     with pytest.warns(
         UserWarning, match=r'There are no datasets to load! Returning an empty dictionary.'
     ):
@@ -365,16 +495,36 @@ def test_to_dataset_dict(esmcol_path, query):
     assert ds.time.encoding
 
 
-@pytest.mark.skip
-@pytest.mark.parametrize('esmcol_path, query', [(cdf_col_sample_cmip6, cdf_query)])
+@pytest.mark.parametrize(
+    'esmcol_path, query',
+    [
+        (cdf_col_sample_cmip6, {'experiment_id': ['historical', 'rcp85']}),
+        (cdf_col_sample_cmip5, {'experiment': ['historical', 'rcp85']}),
+    ],
+)
+def test_to_aggregations_off(esmcol_path, query):
+    col = intake.open_esm_datastore(esmcol_path)
+    cat = col.search(**query)
+    nds = len(cat.df)
+    cat.groupby_attrs = []
+    assert len(cat.keys()) == nds
+    assert isinstance(cat._grouped, pd.DataFrame)
+    assert isinstance(col._grouped, pd.core.groupby.generic.DataFrameGroupBy)
+
+
+@pytest.mark.parametrize(
+    'esmcol_path, query',
+    [
+        (cdf_col_sample_cmip6, {'experiment_id': ['historical', 'rcp85']}),
+        (cdf_col_sample_cmip5, {'experiment': ['historical', 'rcp85']}),
+    ],
+)
 def test_to_dataset_dict_aggfalse(esmcol_path, query):
     col = intake.open_esm_datastore(esmcol_path)
     cat = col.search(**query)
     nds = len(cat.df)
     dsets = cat.to_dataset_dict(zarr_kwargs={'consolidated': True}, aggregate=False)
     assert len(dsets.keys()) == nds
-    key, ds = dsets.popitem()
-    assert 'tasmax' in key
 
 
 @pytest.mark.parametrize(
@@ -397,11 +547,18 @@ def test_to_dataset_dict_w_preprocess(esmcol_path, query):
     assert 'longitude' in ds.dims
 
 
-def test_to_dataset_dict_w_cmip6preprocessing(pangeo_cmip6_col):
+def test_to_dataset_dict_w_preprocess_error():
+    col = intake.open_esm_datastore(cdf_col_sample_cmip5)
+    with pytest.raises(ValueError, match=r'preprocess argument must be callable'):
+        col.to_dataset_dict(preprocess='foo')
+
+
+def test_to_dataset_dict_w_cmip6preprocessing():
+    col = intake.open_esm_datastore(zarr_col_pangeo_cmip6)
     pytest.importorskip('cmip6_preprocessing')
     from cmip6_preprocessing.preprocessing import combined_preprocessing
 
-    cat = pangeo_cmip6_col.search(
+    cat = col.search(
         source_id='BCC-CSM2-MR',
         experiment_id='historical',
         table_id='Omon',
@@ -472,15 +629,10 @@ def test_progressbar(progressbar):
     _ = cat.to_dataset_dict(cdf_kwargs=dict(chunks={}), progressbar=progressbar)
 
 
-def test_to_dataset_dict_s3(zarr_aws_cesmle_col):
+def test_to_dataset_dict_s3():
     pytest.importorskip('s3fs')
-    cat = zarr_aws_cesmle_col.search(variable='RAIN', experiment='20C')
+    col = intake.open_esm_datastore(zarr_col_aws_cesm)
+    cat = col.search(variable='RAIN', experiment='20C')
     dsets = cat.to_dataset_dict(storage_options={'anon': True})
     _, ds = dsets.popitem()
     assert isinstance(ds, xr.Dataset)
-
-
-def test_read_catalog_dict():
-    col = intake.open_esm_datastore(catalog_dict_records)
-    assert isinstance(col.df, pd.DataFrame)
-    assert col.catalog_file is None
