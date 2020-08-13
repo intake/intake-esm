@@ -856,8 +856,8 @@ class esm_datastore(intake.catalog.Catalog):
             time_bnds  (time, bnds) object dask.array<chunksize=(1980, 2), meta=np.ndarray>
             pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
 
-        Usage Notes
-        -----------
+        Notes
+        -----
         If cdf_kwargs is used to specify a chunking strategy over multiple datasets, where chunking is not performed
         along some dimension, as in this example:
         >>> dsets = cat.to_dataset_dict(cdf_kwargs={"chunks": {"time": -1}}, aggregate=False)
