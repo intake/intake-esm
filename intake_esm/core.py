@@ -814,7 +814,9 @@ class esm_datastore(intake.catalog.Catalog):
         zarr_kwargs : dict
             Keyword arguments to pass to :py:func:`~xarray.open_zarr` function
         cdf_kwargs : dict
-            Keyword arguments to pass to :py:func:`~xarray.open_dataset` function
+            Keyword arguments to pass to :py:func:`~xarray.open_dataset` function.  If specifying chunks, the chunking
+            is applied to each netcdf file.  Therefore, chunks must refer to dimensions that are present in each netcdf
+            file, or chunking will fail.
         preprocess : callable, optional
             If provided, call this function on each dataset prior to aggregation.
         storage_options : dict, optional
@@ -855,14 +857,6 @@ class esm_datastore(intake.catalog.Catalog):
             lon_bnds   (lon, bnds) float64 dask.array<chunksize=(320, 2), meta=np.ndarray>
             time_bnds  (time, bnds) object dask.array<chunksize=(1980, 2), meta=np.ndarray>
             pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
-
-        Notes
-        -----
-        If cdf_kwargs is used to specify a chunking strategy over multiple datasets, where chunking is not performed
-        along some dimension, as in this example:
-        >>> dsets = cat.to_dataset_dict(cdf_kwargs={"chunks": {"time": -1}}, aggregate=False)
-        Then each dataset will potentially have its own unique chunk length, causing any later attempts to merge
-        datasets to fail.  It is better to specify a chunking strategy in this case after datasets have been merged.
         """
 
         # Return fast
