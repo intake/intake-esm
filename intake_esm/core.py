@@ -814,7 +814,9 @@ class esm_datastore(intake.catalog.Catalog):
         zarr_kwargs : dict
             Keyword arguments to pass to :py:func:`~xarray.open_zarr` function
         cdf_kwargs : dict
-            Keyword arguments to pass to :py:func:`~xarray.open_dataset` function
+            Keyword arguments to pass to :py:func:`~xarray.open_dataset` function.  If specifying chunks, the chunking
+            is applied to each netcdf file.  Therefore, chunks must refer to dimensions that are present in each netcdf
+            file, or chunking will fail.
         preprocess : callable, optional
             If provided, call this function on each dataset prior to aggregation.
         storage_options : dict, optional
