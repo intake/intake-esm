@@ -19,6 +19,13 @@ Features
   (:pr:`272`) `Anderson Banihirwe`_
 - Reset `_entries` dict after updating aggregations (:pr:`274`) `Anderson Banihirwe`_
 
+Documentation
+-------------
+
+- Update :py:meth:`~intake_esm.core.esm_datastore.to_dataset_dict` docstring
+  to inform users on how `cdf_kwargs` argument is used in regards to chunking
+  (:pr:`278`) `Brian Bonnlander`_
+
 
 Internal Changes
 ----------------
