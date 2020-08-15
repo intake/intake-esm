@@ -1,6 +1,6 @@
-=====================
+===================
 Contribution Guide
-=====================
+===================
 
 Interested in helping build intake-esm? Have code from your work that
 you believe others will find useful?  Have a few minutes to tackle an issue?
@@ -26,7 +26,7 @@ Feature requests and feedback
 -----------------------------
 
 We'd also like to hear about your propositions and suggestions.  Feel free to
-`submit them as issues <https://github.com/NCAR/intake-esm>`_ and:
+`submit them as issues <https://github.com/intake/intake-esm>`_ and:
 
 * Explain in detail how they should work.
 * Keep the scope as narrow as possible.  This will make it easier to implement.
@@ -38,7 +38,7 @@ We'd also like to hear about your propositions and suggestions.  Feel free to
 Report bugs
 -----------
 
-Report bugs for intake-esm in the `issue tracker <https://github.com/NCAR/intake-esm>`_.
+Report bugs for intake-esm in the `issue tracker <https://github.com/intake/intake-esm>`_.
 
 If you are reporting a bug, please include:
 
@@ -80,7 +80,7 @@ without using a local copy.  This can be convenient for small fixes.
 
     .. code:: bash
 
-        $ conda env update -f ci/environment-dev-3.7.yml
+        $ conda env update -f ci/environment.yml
         $ cd docs
         $ make html
 
@@ -96,7 +96,7 @@ Preparing Pull Requests
 
 
 #. Fork the
-   `intake-esm GitHub repository <https://github.com/NCAR/intake-esm>`__.  It's
+   `intake-esm GitHub repository <https://github.com/intake/intake-esm>`__.  It's
    fine to use ``intake-esm`` as your fork repository name because it will live
    under your user.
 
@@ -105,7 +105,7 @@ Preparing Pull Requests
 
     $ git clone git@github.com:YOUR_GITHUB_USERNAME/intake-esm.git
     $ cd intake-esm
-    $ git remote add upstream git@github.com:NCAR/intake-esm.git
+    $ git remote add upstream git@github.com:intake/intake-esm.git
 
     # now, to fix a bug or add feature create your own branch off "master":
 
@@ -116,23 +116,22 @@ Preparing Pull Requests
 
 #. Install dependencies into a new conda environment::
 
-    $ conda env update -f ci/environment-dev-3.7.yml
+    $ conda env update -f ci/environment.yml
     $ conda activate intake-esm-dev
 
 #. Make an editable install of intake-esm by running::
 
-    $ pip install -e .
+    $ python -m pip install -e .
 
 
 
-#. Install `pre-commit <https://pre-commit.com>`_ and its hook on the intake-esm repo::
+#. Install `pre-commit <https://pre-commit.com>`_ hooks on the intake-esm repo::
 
-     $ pip install --user pre-commit
      $ pre-commit install
 
    Afterwards ``pre-commit`` will run whenever you commit.
 
-   https://pre-commit.com/ is a framework for managing and maintaining multi-language pre-commit hooks
+   `pre-commit <https://pre-commit.com>`_ is a framework for managing and maintaining multi-language pre-commit hooks
    to ensure code-style and code formatting is consistent.
 
     Now you have an environment called ``intake-esm-dev`` that you can work in.
@@ -147,7 +146,7 @@ Preparing Pull Requests
     $ pytest --junitxml=test-reports/junit.xml --cov=./
 
 
-   This command will run tests via the "pytest" tool against Python 3.7.
+   This command will run tests via the "pytest" tool against Python 3.8.
 
 
 
@@ -155,10 +154,10 @@ Preparing Pull Requests
 
    - The entry should be entered as:
 
-    <description> (``:pr:`#<pull request number>```) ```<author's names>`_``
+     <description> (``:pr:`#<pull request number>```) ```<author's names>`_``
 
-    where ``<description>`` is the description of the PR related to the change and ``<pull request number>`` is
-    the pull request number and ``<author's names>`` are your first and last names.
+     where ``<description>`` is the description of the PR related to the change and ``<pull request number>`` is
+     the pull request number and ``<author's names>`` are your first and last names.
 
    - Add yourself to list of authors at the end of ``CHANGELOG.rst`` file if not there yet, in alphabetical order.
 
@@ -177,5 +176,5 @@ Preparing Pull Requests
     head-fork: YOUR_GITHUB_USERNAME/intake-esm
     compare: your-branch-name
 
-    base-fork: NCAR/intake-esm
+    base-fork: intake/intake-esm
     base: master          # if it's a bugfix or feature
