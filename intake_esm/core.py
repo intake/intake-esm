@@ -16,7 +16,7 @@ from fastprogress.fastprogress import progress_bar
 from .search import _unique, search
 from .utils import _fetch_and_parse_json, _fetch_catalog, logger
 
-_AGGREGATIONS_TYPES = {'join_existing', 'join_new', 'union'}
+_AGGREGATIONS_TYPES = {"join_existing", "join_new", "union"}
 
 
 class esm_datastore(intake.catalog.Catalog):
@@ -71,16 +71,16 @@ class esm_datastore(intake.catalog.Catalog):
     4  AerChemMIP            BCC  BCC-ESM1        ssp370  ...      tasmin         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
     """
 
-    name = 'esm_datastore'
-    container = 'xarray'
+    name = "esm_datastore"
+    container = "xarray"
 
     def __init__(
         self,
         esmcol_obj: Union[str, pd.DataFrame],
         esmcol_data: Dict[str, Any] = None,
         progressbar: bool = True,
-        sep: str = '.',
-        log_level: str = 'CRITICAL',
+        sep: str = ".",
+        log_level: str = "CRITICAL",
         **kwargs,
     ):
 
@@ -89,7 +89,7 @@ class esm_datastore(intake.catalog.Catalog):
 
         numeric_log_level = getattr(logging, log_level.upper(), None)
         if not isinstance(numeric_log_level, int):
-            raise ValueError(f'Invalid log level: {log_level}')
+            raise ValueError(f"Invalid log level: {log_level}")
         logger.setLevel(numeric_log_level)
 
         if isinstance(esmcol_obj, (str, pathlib.PurePath)):
@@ -105,7 +105,7 @@ class esm_datastore(intake.catalog.Catalog):
             self.catalog_file = None
         else:
             raise ValueError(
-                f'{self.name} constructor not properly called! `esmcol_obj` is of type: {type(esmcol_obj)}, however valid types of `esmcol_obj` are either `str` or `pathlib.PurePath` or `pandas.DataFrame`. '
+                f"{self.name} constructor not properly called! `esmcol_obj` is of type: {type(esmcol_obj)}, however valid types of `esmcol_obj` are either `str` or `pathlib.PurePath` or `pandas.DataFrame`. "
             )
 
         self.progressbar = progressbar
@@ -115,11 +115,11 @@ class esm_datastore(intake.catalog.Catalog):
         self._datasets = None
         self.sep = sep
         self._data_format, self._format_column_name = None, None
-        self._path_column_name = self.esmcol_data['assets']['column_name']
-        if 'format' in self.esmcol_data['assets']:
-            self._data_format = self.esmcol_data['assets']['format']
+        self._path_column_name = self.esmcol_data["assets"]["column_name"]
+        if "format" in self.esmcol_data["assets"]:
+            self._data_format = self.esmcol_data["assets"]["format"]
         else:
-            self._format_column_name = self.esmcol_data['assets']['format_column_name']
+            self._format_column_name = self.esmcol_data["assets"]["format_column_name"]
         self.aggregation_info = self._get_aggregation_info()
         self._entries = {}
         self._set_groups_and_keys()
@@ -165,20 +165,20 @@ class esm_datastore(intake.catalog.Catalog):
             return False
         if self.df[column].isnull().any():
             raise ValueError(
-                f'The data in the {column} column should either be all NaN or there should be no NaNs'
+                f"The data in the {column} column should either be all NaN or there should be no NaNs"
             )
         return True
 
     def _get_aggregation_info(self):
 
         AggregationInfo = namedtuple(
-            'AggregationInfo',
+            "AggregationInfo",
             [
-                'groupby_attrs',
-                'variable_column_name',
-                'aggregations',
-                'agg_columns',
-                'aggregation_dict',
+                "groupby_attrs",
+                "variable_column_name",
+                "aggregations",
+                "agg_columns",
+                "aggregation_dict",
             ],
         )
 
@@ -188,10 +188,10 @@ class esm_datastore(intake.catalog.Catalog):
         aggregation_dict = {}
         agg_columns = []
 
-        if 'aggregation_control' in self.esmcol_data:
-            variable_column_name = self.esmcol_data['aggregation_control']['variable_column_name']
-            groupby_attrs = self.esmcol_data['aggregation_control'].get('groupby_attrs', [])
-            aggregations = self.esmcol_data['aggregation_control'].get('aggregations', [])
+        if "aggregation_control" in self.esmcol_data:
+            variable_column_name = self.esmcol_data["aggregation_control"]["variable_column_name"]
+            groupby_attrs = self.esmcol_data["aggregation_control"].get("groupby_attrs", [])
+            aggregations = self.esmcol_data["aggregation_control"].get("aggregations", [])
             aggregations, aggregation_dict, agg_columns = _construct_agg_info(aggregations)
             groupby_attrs = list(filter(self._allnan_or_nonan, groupby_attrs))
 
@@ -317,17 +317,17 @@ class esm_datastore(intake.catalog.Catalog):
         def validate_type(t):
             assert (
                 t in _AGGREGATIONS_TYPES
-            ), f'Invalid aggregation agg_type={t}. Valid values are: {list(_AGGREGATIONS_TYPES)}.'
+            ), f"Invalid aggregation agg_type={t}. Valid values are: {list(_AGGREGATIONS_TYPES)}."
 
         def validate_attribute_name(name):
             assert (
                 name in self.df.columns
-            ), f'Attribute_name={attribute_name} is invalid. Attribute name must exist as a column in the dataframe. Valid values: {self.df.columns.tolist()}.'
+            ), f"Attribute_name={attribute_name} is invalid. Attribute name must exist as a column in the dataframe. Valid values: {self.df.columns.tolist()}."
 
         def validate_options(options):
             assert isinstance(
                 options, dict
-            ), f'Options must be a dictionary. Found the type of options={options} to be {type(options)}.'
+            ), f"Options must be a dictionary. Found the type of options={options} to be {type(options)}."
 
         aggregations = self.aggregations.copy()
         validate_attribute_name(attribute_name)
@@ -335,7 +335,7 @@ class esm_datastore(intake.catalog.Catalog):
         match = None
         idx = None
         for index, agg in enumerate(aggregations):
-            if agg['attribute_name'] == attribute_name:
+            if agg["attribute_name"] == attribute_name:
                 found = True
                 match = agg
                 idx = index
@@ -347,39 +347,39 @@ class esm_datastore(intake.catalog.Catalog):
             else:
                 if agg_type is not None:
                     validate_type(agg_type)
-                    match['type'] = agg_type
+                    match["type"] = agg_type
                 if options is not None:
                     validate_options(options)
-                    match['options'] = options
+                    match["options"] = options
                 aggregations[idx] = match
 
         else:
             if delete:
-                message = f'No change. Tried removing/deleting/disabling non-existing aggregation operations for attribute={attribute_name}'
+                message = f"No change. Tried removing/deleting/disabling non-existing aggregation operations for attribute={attribute_name}"
                 warn(message)
             else:
                 match = {}
                 validate_type(agg_type)
-                match['type'] = agg_type
-                match['attribute_name'] = attribute_name
+                match["type"] = agg_type
+                match["attribute_name"] = attribute_name
                 if options is not None:
                     validate_options(options)
-                    match['options'] = options
+                    match["options"] = options
                 elif options is None:
-                    match['options'] = {}
+                    match["options"] = {}
                 aggregations.append(match)
 
         aggregations, aggregation_dict, agg_columns = _construct_agg_info(aggregations)
         kwargs = {
-            'aggregations': aggregations,
-            'aggregation_dict': aggregation_dict,
-            'agg_columns': agg_columns,
+            "aggregations": aggregations,
+            "aggregation_dict": aggregation_dict,
+            "agg_columns": agg_columns,
         }
         if len(aggregations) == 0:
             warn(
-                'Setting `groupby_attrs` to []. Aggregations will be disabled because `groupby_attrs` is empty.'
+                "Setting `groupby_attrs` to []. Aggregations will be disabled because `groupby_attrs` is empty."
             )
-            kwargs['groupby_attrs'] = []
+            kwargs["groupby_attrs"] = []
         self.aggregation_info = self.aggregation_info._replace(**kwargs)
         self._entries = {}
         if len(self.groupby_attrs) == 0:
@@ -471,7 +471,7 @@ class esm_datastore(intake.catalog.Catalog):
                         data_format=self.data_format,
                         format_column=self.format_column_name,
                     )
-                    entry = _make_entry(key, 'esm_single_source', args)
+                    entry = _make_entry(key, "esm_single_source", args)
                 else:
                     df = self._grouped.get_group(internal_key)
                     args = dict(
@@ -483,7 +483,7 @@ class esm_datastore(intake.catalog.Catalog):
                         format_column=self.format_column_name,
                         key=key,
                     )
-                    entry = _make_entry(key, 'esm_group', args)
+                    entry = _make_entry(key, "esm_group", args)
 
                 self._entries[key] = entry
                 return self._entries[key]
@@ -509,7 +509,7 @@ class esm_datastore(intake.catalog.Catalog):
         Return an html representation for the catalog object.
         Mainly for IPython notebook
         """
-        uniques = pd.DataFrame(self.nunique(), columns=['unique'])
+        uniques = pd.DataFrame(self.nunique(), columns=["unique"])
         text = uniques._repr_html_()
         output = f'<p><strong>{self.esmcol_data["id"]} catalog with {len(self)} dataset(s) from {len(self.df)} asset(s)</strong>:</p> {text}'
         return output
@@ -525,24 +525,24 @@ class esm_datastore(intake.catalog.Catalog):
 
     def __dir__(self):
         rv = [
-            'df',
-            'to_dataset_dict',
-            'from_df',
-            'keys',
-            'serialize',
-            'search',
-            'unique',
-            'nunique',
-            'update_aggregation',
-            'key_template',
-            'groupby_attrs',
-            'variable_column_name',
-            'aggregations',
-            'agg_columns',
-            'aggregation_dict',
-            'path_column_name',
-            'data_format',
-            'format_column_name',
+            "df",
+            "to_dataset_dict",
+            "from_df",
+            "keys",
+            "serialize",
+            "search",
+            "unique",
+            "nunique",
+            "update_aggregation",
+            "key_template",
+            "groupby_attrs",
+            "variable_column_name",
+            "aggregations",
+            "agg_columns",
+            "aggregation_dict",
+            "path_column_name",
+            "data_format",
+            "format_column_name",
         ]
         return sorted(list(self.__dict__.keys()) + rv)
 
@@ -555,10 +555,10 @@ class esm_datastore(intake.catalog.Catalog):
         df: pd.DataFrame,
         esmcol_data: Dict[str, Any] = None,
         progressbar: bool = True,
-        sep: str = '.',
-        log_level: str = 'CRITICAL',
+        sep: str = ".",
+        log_level: str = "CRITICAL",
         **kwargs,
-    ) -> 'esm_datastore':
+    ) -> "esm_datastore":
         """
         Create catalog from the given dataframe
 
@@ -654,7 +654,7 @@ class esm_datastore(intake.catalog.Catalog):
         )
         return ret
 
-    def serialize(self, name: str, directory: str = None, catalog_type: str = 'dict') -> None:
+    def serialize(self, name: str, directory: str = None, catalog_type: str = "dict") -> None:
         """Serialize collection/catalog to corresponding json and csv files.
 
         Parameters
@@ -684,14 +684,14 @@ class esm_datastore(intake.catalog.Catalog):
 
         def _clear_old_catalog(catalog_data):
             """ Remove any old references to the catalog."""
-            for key in {'catalog_dict', 'catalog_file'}:
+            for key in {"catalog_dict", "catalog_file"}:
                 _ = catalog_data.pop(key, None)
             return catalog_data
 
         from pathlib import Path
 
-        csv_file_name = Path(f'{name}.csv.gz')
-        json_file_name = Path(f'{name}.json')
+        csv_file_name = Path(f"{name}.csv.gz")
+        json_file_name = Path(f"{name}.json")
         if directory:
             directory = Path(directory)
             directory.mkdir(parents=True, exist_ok=True)
@@ -700,19 +700,19 @@ class esm_datastore(intake.catalog.Catalog):
 
         collection_data = self.esmcol_data.copy()
         collection_data = _clear_old_catalog(collection_data)
-        collection_data['id'] = name
+        collection_data["id"] = name
 
         catalog_length = len(self.df)
-        if catalog_type == 'file':
-            collection_data['catalog_file'] = csv_file_name.as_posix()
-            print(f'Writing csv catalog with {catalog_length} entries to: {csv_file_name}')
-            self.df.to_csv(csv_file_name, compression='gzip', index=False)
+        if catalog_type == "file":
+            collection_data["catalog_file"] = csv_file_name.as_posix()
+            print(f"Writing csv catalog with {catalog_length} entries to: {csv_file_name}")
+            self.df.to_csv(csv_file_name, compression="gzip", index=False)
         else:
-            print(f'Writing catalog with {catalog_length} entries into: {json_file_name}')
-            collection_data['catalog_dict'] = self.df.to_dict(orient='records')
+            print(f"Writing catalog with {catalog_length} entries into: {json_file_name}")
+            collection_data["catalog_dict"] = self.df.to_dict(orient="records")
 
-        print(f'Writing ESM collection json file to: {json_file_name}')
-        with open(json_file_name, 'w') as outfile:
+        print(f"Writing ESM collection json file to: {json_file_name}")
+        with open(json_file_name, "w") as outfile:
             json.dump(collection_data, outfile)
 
     def nunique(self) -> pd.Series:
@@ -740,7 +740,7 @@ class esm_datastore(intake.catalog.Catalog):
         uniques = self.unique(self.df.columns.tolist())
         nuniques = {}
         for key, val in uniques.items():
-            nuniques[key] = val['count']
+            nuniques[key] = val["count"]
         return pd.Series(nuniques)
 
     def unique(self, columns: Union[str, List] = None) -> Dict[str, Any]:
@@ -861,7 +861,7 @@ class esm_datastore(intake.catalog.Catalog):
 
         # Return fast
         if not self.keys():
-            warn('There are no datasets to load! Returning an empty dictionary.')
+            warn("There are no datasets to load! Returning an empty dictionary.")
             return {}
 
         source_kwargs = OrderedDict(
@@ -875,7 +875,7 @@ class esm_datastore(intake.catalog.Catalog):
             self.progressbar = progressbar
 
         if preprocess is not None and not callable(preprocess):
-            raise ValueError('preprocess argument must be callable')
+            raise ValueError("preprocess argument must be callable")
 
         if aggregate is not None and not aggregate:
             self = deepcopy(self)
@@ -912,7 +912,7 @@ class esm_datastore(intake.catalog.Catalog):
 
 def _make_entry(key: str, driver: str, args: dict):
     entry = intake.catalog.local.LocalCatalogEntry(
-        name=key, description='', driver=driver, args=args, metadata={}
+        name=key, description="", driver=driver, args=args, metadata={}
     )
     return entry.get()
 
@@ -946,10 +946,10 @@ def _construct_agg_info(aggregations: List[Dict]) -> Tuple[List[Dict], Dict, Lis
     aggregation_dict = {}
     if aggregations:
         # Sort aggregations to make sure join_existing is always done before join_new
-        aggregations = sorted(aggregations, key=lambda i: i['type'], reverse=True)
+        aggregations = sorted(aggregations, key=lambda i: i["type"], reverse=True)
         for agg in aggregations:
-            key = agg['attribute_name']
-            if agg['type'] == 'join_existing' and 'dim' not in agg['options']:
+            key = agg["attribute_name"]
+            if agg["type"] == "join_existing" and "dim" not in agg["options"]:
                 message = f"""
             Missing `dim` option for `join_existing` operation across `{key}` attribute.
             For `join_existing` to properly work, `options` must contain the name of the existing dimension
@@ -957,7 +957,7 @@ def _construct_agg_info(aggregations: List[Dict]) -> Tuple[List[Dict], Dict, Lis
                 """
                 warn(message)
             rest = agg.copy()
-            del rest['attribute_name']
+            del rest["attribute_name"]
             aggregation_dict[key] = rest
         agg_columns = list(aggregation_dict.keys())
     return aggregations, aggregation_dict, agg_columns
