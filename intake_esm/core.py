@@ -199,7 +199,7 @@ class esm_datastore(intake.catalog.Catalog):
             groupby_attrs = []
 
         aggregation_info = AggregationInfo(
-            groupby_attrs, variable_column_name, aggregations, agg_columns, aggregation_dict,
+            groupby_attrs, variable_column_name, aggregations, agg_columns, aggregation_dict
         )
         return aggregation_info
 
