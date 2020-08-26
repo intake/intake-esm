@@ -76,7 +76,9 @@ def _fetch_catalog(collection_data, esmcol_path):
             catalog_path = collection_data["catalog_file"]
             if not _is_valid_url(catalog_path):
                 split_url = urlparse(esmcol_path)
-                path = (Path(split_url.path).parent / collection_data["catalog_file"]).as_posix()
+                path = (
+                    Path(split_url.path).parent / collection_data["catalog_file"]
+                ).as_posix()
                 components = ParseResult(
                     scheme=split_url.scheme,
                     netloc=split_url.netloc,
