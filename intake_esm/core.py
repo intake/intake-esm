@@ -137,8 +137,7 @@ class esm_datastore(intake.catalog.Catalog):
             self._grouped = self.df
             internal_keys = list(self._grouped.index)
             public_keys = [
-                self.sep.join(str(v) for v in row.values)
-                for _, row in self._grouped.iterrows()
+                self.sep.join(str(v) for v in row.values) for _, row in self._grouped.iterrows()
             ]
 
         self._keys = dict(zip(public_keys, internal_keys))
@@ -190,29 +189,17 @@ class esm_datastore(intake.catalog.Catalog):
         agg_columns = []
 
         if "aggregation_control" in self.esmcol_data:
-            variable_column_name = self.esmcol_data["aggregation_control"][
-                "variable_column_name"
-            ]
-            groupby_attrs = self.esmcol_data["aggregation_control"].get(
-                "groupby_attrs", []
-            )
-            aggregations = self.esmcol_data["aggregation_control"].get(
-                "aggregations", []
-            )
-            aggregations, aggregation_dict, agg_columns = _construct_agg_info(
-                aggregations
-            )
+            variable_column_name = self.esmcol_data["aggregation_control"]["variable_column_name"]
+            groupby_attrs = self.esmcol_data["aggregation_control"].get("groupby_attrs", [])
+            aggregations = self.esmcol_data["aggregation_control"].get("aggregations", [])
+            aggregations, aggregation_dict, agg_columns = _construct_agg_info(aggregations)
             groupby_attrs = list(filter(self._allnan_or_nonan, groupby_attrs))
 
         if not aggregations:
             groupby_attrs = []
 
         aggregation_info = AggregationInfo(
-            groupby_attrs,
-            variable_column_name,
-            aggregations,
-            agg_columns,
-            aggregation_dict,
+            groupby_attrs, variable_column_name, aggregations, agg_columns, aggregation_dict
         )
         return aggregation_info
 
@@ -270,9 +257,7 @@ class esm_datastore(intake.catalog.Catalog):
     @groupby_attrs.setter
     def groupby_attrs(self, value: list) -> None:
         groupby_attrs = list(filter(self._allnan_or_nonan, value))
-        self.aggregation_info = self.aggregation_info._replace(
-            groupby_attrs=groupby_attrs
-        )
+        self.aggregation_info = self.aggregation_info._replace(groupby_attrs=groupby_attrs)
         self._set_groups_and_keys()
         self._entries = {}
 
@@ -285,9 +270,7 @@ class esm_datastore(intake.catalog.Catalog):
 
     @variable_column_name.setter
     def variable_column_name(self, value: str) -> None:
-        self.aggregation_info = self.aggregation_info._replace(
-            variable_column_name=value
-        )
+        self.aggregation_info = self.aggregation_info._replace(variable_column_name=value)
 
     @property
     def aggregations(self):
@@ -306,11 +289,7 @@ class esm_datastore(intake.catalog.Catalog):
         return self.aggregation_info.aggregation_dict
 
     def update_aggregation(
-        self,
-        attribute_name: str,
-        agg_type: str = None,
-        options: dict = None,
-        delete=False,
+        self, attribute_name: str, agg_type: str = None, options: dict = None, delete=False
     ):
         """
         Updates aggregation operations info.
@@ -675,9 +654,7 @@ class esm_datastore(intake.catalog.Catalog):
         )
         return ret
 
-    def serialize(
-        self, name: str, directory: str = None, catalog_type: str = "dict"
-    ) -> None:
+    def serialize(self, name: str, directory: str = None, catalog_type: str = "dict") -> None:
         """Serialize collection/catalog to corresponding json and csv files.
 
         Parameters
@@ -728,14 +705,10 @@ class esm_datastore(intake.catalog.Catalog):
         catalog_length = len(self.df)
         if catalog_type == "file":
             collection_data["catalog_file"] = csv_file_name.as_posix()
-            print(
-                f"Writing csv catalog with {catalog_length} entries to: {csv_file_name}"
-            )
+            print(f"Writing csv catalog with {catalog_length} entries to: {csv_file_name}")
             self.df.to_csv(csv_file_name, compression="gzip", index=False)
         else:
-            print(
-                f"Writing catalog with {catalog_length} entries into: {json_file_name}"
-            )
+            print(f"Writing catalog with {catalog_length} entries into: {json_file_name}")
             collection_data["catalog_dict"] = self.df.to_dict(orient="records")
 
         print(f"Writing ESM collection json file to: {json_file_name}")
@@ -923,12 +896,9 @@ class esm_datastore(intake.catalog.Catalog):
             progress = progress_bar(range(total))
 
         self._datasets = {}
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=dask.system.CPU_COUNT
-        ) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=dask.system.CPU_COUNT) as executor:
             future_tasks = [
-                executor.submit(_load_source, key, source)
-                for key, source in sources.items()
+                executor.submit(_load_source, key, source) for key, source in sources.items()
             ]
             for i, task in enumerate(concurrent.futures.as_completed(future_tasks)):
                 key, ds = task.result()
