@@ -107,7 +107,11 @@ params = [
             {'A': 'NCAR', 'B': 'CESM', 'C': 'control', 'D': 'O2'},
         ],
     ),
-    ({'C': ['hist'], 'D': ['TA']}, None, [{'A': 'NCAR', 'B': 'WACM', 'C': 'hist', 'D': 'TA'}],),
+    (
+        {'C': ['hist'], 'D': ['TA']},
+        None,
+        [{'A': 'NCAR', 'B': 'WACM', 'C': 'hist', 'D': 'TA'}],
+    ),
     (
         {
             'C': [re.compile('hist.*', flags=re.IGNORECASE)],

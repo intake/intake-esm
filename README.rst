@@ -1,4 +1,4 @@
-.. image:: https://img.shields.io/github/workflow/status/intake/intake-esm/code-style?label=Code%20Style&style=for-the-badge
+.. image:: https://img.shields.io/github/workflow/status/intake/intake-esm/linting?label=linting&style=for-the-badge
     :target: https://github.com/intake/intake-esm/actions
     :alt: GitHub Workflow Status
 
@@ -62,25 +62,40 @@ Overview
 
   .. code-block:: python
 
-        >>> import intake
-        >>> col_url = "https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json"
-        >>> col = intake.open_esm_datastore(col_url)
+    In [1]: import intake
+
+    In [2]: col_url = "https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json"
+
+    In [3]: col = intake.open_esm_datastore(col_url)
+
+    In [4]: col
+    Out[4]: <pangeo-cmip6 catalog with 4287 dataset(s) from 282905 asset(s)>
+
 
 - Search and Discovery: ``intake-esm`` provides functionality to execute queries against the database:
 
   .. code-block:: python
 
-        >>> cat = col.search(experiment_id=['historical', 'ssp585'], table_id='Oyr',
-        ...          variable_id='o2', grid_label='gn')
+    In [5]: col_subset = col.search(
+       ...:     experiment_id=["historical", "ssp585"],
+       ...:     table_id="Oyr",
+       ...:     variable_id="o2",
+       ...:     grid_label="gn",
+       ...: )
+
+    In [6]: col_subset
+    Out[6]: <pangeo-cmip6 catalog with 18 dataset(s) from 138 asset(s)>
 
 - Access: when the user is satisfied with the results of their query, they can ask ``intake-esm``
   to load data assets (netCDF/HDF files and/or Zarr stores) into xarray datasets:
 
   .. code-block:: python
 
-        >>> dset_dict = cat.to_dataset_dict(zarr_kwargs={'consolidated': True, 'decode_times': False},
-        ...                        cdf_kwargs={'chunks': {}, 'decode_times': False})
+    In [7]: dset_dict = col_subset.to_dataset_dict(zarr_kwargs={"consolidated": True})
 
+    --> The keys in the returned dictionary of datasets are constructed as follows:
+            'activity_id.institution_id.source_id.experiment_id.table_id.grid_label'
+    |███████████████████████████████████████████████████████████████| 100.00% [18/18 00:10<00:00]
 
 .. _CMIP: https://www.wcrp-climate.org/wgcm-cmip
 .. _CESM: http://www.cesm.ucar.edu/projects/community-projects/LENS/

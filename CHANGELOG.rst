@@ -224,42 +224,6 @@ Features
   With `netCDF`, we can record very useful information into the global attributes of the netCDF dataset.
   (:pr:`119`) `Anderson Banihirwe`_
 
-  .. code-block:: python
-
-    >>> import intake
-    >>> col = intake.open_esm_metadatastore(collection_input_definition="GLADE-CMIP5")
-    >>> col.ds
-    <xarray.Dataset>
-    Dimensions:          (index: 615296)
-    Coordinates:
-    * index            (index) int64 0 1 2 3 4 ... 615292 615293 615294 615295
-    Data variables:
-        resource         (index) object ...
-        resource_type    (index) object ...
-        direct_access    (index) bool True True True True ... True True True True
-        activity         (index) object ...
-        ensemble_member  (index) object ...
-        experiment       (index) object ...
-        file_basename    (index) object ...
-        file_fullpath    (index) object ...
-        frequency        (index) object ...
-        institute        (index) object ...
-        mip_table        (index) object ...
-        model            (index) object ...
-        modeling_realm   (index) object ...
-        product          (index) object ...
-        temporal_subset  (index) object ...
-        variable         (index) object ...
-        version          (index) object ...
-    Attributes:
-        created_at:             2019-08-07T18:05:09.371259
-        intake_esm_version:     2019.5.11.post153
-        intake_version:         0.5.2
-        intake_xarray_version:  0.3.1
-        collection_spec:        {"name": "GLADE-CMIP5", "collection_type": "cmip5...
-        name:                   GLADE-CMIP5
-        collection_type:        cmip5
-
 - Add string representation of `ESMMetadataStoreCatalog`` object (:pr:`122`) `Anderson Banihirwe`_
 
 
@@ -269,10 +233,13 @@ Features
 
   .. code-block:: python
 
-    >>> import intake
-    >>> col = intake.open_esm_metadatastore(collection_name="GLADE-CMIP5")
-    >>> # if "GLADE-CMIP5" collection isn't built already, the above is equivalent to:
-    >>> col = intake.open_esm_metadatastore(collection_input_definition="GLADE-CMIP5")
+    In [1]: import intake
+
+    In [2]: col = intake.open_esm_metadatastore(collection_name="GLADE-CMIP5")
+
+    In [3]: # if "GLADE-CMIP5" collection isn't built already, the above is equivalent to:
+
+    In [4]: col = intake.open_esm_metadatastore(collection_input_definition="GLADE-CMIP5")
 
 - Revert back to using official DRS attributes when building CMIP5 and CMIP6 collections.
   (:pr:`126`) `Anderson Banihirwe`_
@@ -285,10 +252,12 @@ Features
 
   .. code-block:: python
 
-    >>> import intake
-    >>> col = intake.open_esm_metadatastore(collection_name="GLADE-CMIP5")
-    >>> col
-    GLADE-CMIP5 collection catalogue with 615853 entries:
+    In [1]: import intake
+
+    In [2]: col = intake.open_esm_metadatastore(collection_name="GLADE-CMIP5")
+
+    In [3]: col
+    Out[3]: GLADE-CMIP5 collection catalogue with 615853 entries:
             > 3 resource(s)
 
             > 1 resource_type(s)
@@ -323,7 +292,8 @@ Features
 
             > 489 version(s)
 
-    >>> col.nunique()
+    In[4]: col.nunique()
+
     resource                3
     resource_type           1
     direct_access           1
@@ -342,7 +312,9 @@ Features
     variable              454
     version               489
     dtype: int64
-    >>> col.unique(columns=['frequency', 'modeling_realm'])
+
+    In[4]: col.unique(columns=['frequency', 'modeling_realm'])
+
     {'frequency': {'count': 6, 'values': ['mon', 'day', '6hr', 'yr', '3hr', 'fx']},
     'modeling_realm': {'count': 7, 'values': ['atmos', 'land', 'ocean', 'seaIce', 'ocnBgchem',
     'landIce', 'aerosol']}}
