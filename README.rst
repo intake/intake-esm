@@ -1,4 +1,4 @@
-.. image:: https://img.shields.io/github/workflow/status/intake/intake-esm/code-style?label=Code%20Style&style=for-the-badge
+.. image:: https://img.shields.io/github/workflow/status/intake/intake-esm/linting?label=linting&style=for-the-badge
     :target: https://github.com/intake/intake-esm/actions
     :alt: GitHub Workflow Status
 
