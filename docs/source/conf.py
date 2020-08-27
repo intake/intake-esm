@@ -341,7 +341,7 @@ def rstjinja(app, docname, source):
 
 def setup(app):
     app.connect('source-read', rstjinja)
-    app.add_stylesheet('style.css')
+    # app.add_stylesheet('style.css')
 
 
 with open('catalogs.yaml') as f:

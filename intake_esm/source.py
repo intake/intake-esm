@@ -60,7 +60,11 @@ class ESMDataSource(DataSource):
                 'coords': tuple(self._ds.coords.keys()),
             }
             self._schema = Schema(
-                datashape=None, dtype=None, shape=None, npartitions=None, extra_metadata=metadata
+                datashape=None,
+                dtype=None,
+                shape=None,
+                npartitions=None,
+                extra_metadata=metadata,
             )
         return self._schema
 
@@ -167,7 +171,11 @@ class ESMGroupDataSource(DataSource):
                 'coords': tuple(self._ds.coords.keys()),
             }
             self._schema = Schema(
-                datashape=None, dtype=None, shape=None, npartitions=None, extra_metadata=metadata
+                datashape=None,
+                dtype=None,
+                shape=None,
+                npartitions=None,
+                extra_metadata=metadata,
             )
         return self._schema
 
@@ -205,7 +213,12 @@ class ESMGroupDataSource(DataSource):
         n_agg = len(self.aggregation_columns)
 
         ds = _aggregate(
-            self.aggregation_dict, self.aggregation_columns, n_agg, nd, mapper_dict, self.key
+            self.aggregation_dict,
+            self.aggregation_columns,
+            n_agg,
+            nd,
+            mapper_dict,
+            self.key,
         )
         ds.attrs['intake_esm_dataset_key'] = self.key
         self._ds = ds

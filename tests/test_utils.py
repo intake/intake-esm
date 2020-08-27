@@ -49,8 +49,8 @@ def test_fetch_catalog_local_error(sample_bad_input):
 
 
 def test_catalog_url_construction_from_relative_url():
-    url = 'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json'
-    catalog_file = 'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.csv'
+    url = 'https://raw.githubusercontent.com/intake/intake-esm/master/tests/sample-collections/cesm1-lens-netcdf.json'
+    catalog_file = 'https://raw.githubusercontent.com/intake/intake-esm/master/tests/sample-collections/cesm1-lens-netcdf.csv'
     data, path = _fetch_and_parse_json(url)
     df, cat_file = _fetch_catalog(data, path)
     assert isinstance(df, pd.DataFrame)
@@ -58,7 +58,7 @@ def test_catalog_url_construction_from_relative_url():
 
 
 def test_catalog_url_construction_from_relative_url_error():
-    url = 'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json'
+    url = 'https://raw.githubusercontent.com/intake/intake-esm/master/tests/sample-collections/cesm1-lens-netcdf.json'
     data, path = _fetch_and_parse_json(url)
     data['catalog_file'] = 'DONT_EXIST'
     with pytest.raises(FileNotFoundError):

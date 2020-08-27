@@ -84,8 +84,7 @@ class esm_datastore(intake.catalog.Catalog):
         **kwargs,
     ):
 
-        """Intake Catalog representing an ESM Collection.
-        """
+        """Intake Catalog representing an ESM Collection."""
 
         numeric_log_level = getattr(logging, log_level.upper(), None)
         if not isinstance(numeric_log_level, int):
@@ -199,7 +198,11 @@ class esm_datastore(intake.catalog.Catalog):
             groupby_attrs = []
 
         aggregation_info = AggregationInfo(
-            groupby_attrs, variable_column_name, aggregations, agg_columns, aggregation_dict
+            groupby_attrs,
+            variable_column_name,
+            aggregations,
+            agg_columns,
+            aggregation_dict,
         )
         return aggregation_info
 
@@ -619,9 +622,13 @@ class esm_datastore(intake.catalog.Catalog):
         1  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
         2  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
 
-        >>> cat = col.search(source_id=['BCC-CSM2-MR', 'CNRM-CM6-1', 'CNRM-ESM2-1'],
-        ...                 experiment_id=['historical', 'ssp585'], variable_id='pr',
-        ...                table_id='Amon', grid_label='gn')
+        >>> cat = col.search(
+        ...     source_id=["BCC-CSM2-MR", "CNRM-CM6-1", "CNRM-ESM2-1"],
+        ...     experiment_id=["historical", "ssp585"],
+        ...     variable_id="pr",
+        ...     table_id="Amon",
+        ...     grid_label="gn",
+        ... )
         >>> cat.df.head(3)
             activity_id institution_id    source_id  ... grid_label                                             zstore dcpp_init_year
         260        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r1i...            NaN
@@ -633,7 +640,7 @@ class esm_datastore(intake.catalog.Catalog):
 
         >>> import re
         >>> # Let's search for variables containing "Frac" in their name
-        >>> pat = re.compile(r'Frac') # Define a regular expression
+        >>> pat = re.compile(r"Frac")  # Define a regular expression
         >>> cat.search(variable_id=pat)
         >>> cat.df.head().variable_id
         0     residualFrac
@@ -675,9 +682,13 @@ class esm_datastore(intake.catalog.Catalog):
         --------
         >>> import intake
         >>> col = intake.open_esm_datastore("pangeo-cmip6.json")
-        >>> col_subset = col.search(source_id="BCC-ESM1", grid_label="gn",
-        ...                      table_id="Amon", experiment_id="historical")
-        >>> col_subset.serialize(name="cmip6_bcc_esm1", catalog_type='file')
+        >>> col_subset = col.search(
+        ...     source_id="BCC-ESM1",
+        ...     grid_label="gn",
+        ...     table_id="Amon",
+        ...     experiment_id="historical",
+        ... )
+        >>> col_subset.serialize(name="cmip6_bcc_esm1", catalog_type="file")
         Writing csv catalog to: cmip6_bcc_esm1.csv.gz
         Writing ESM collection json file to: cmip6_bcc_esm1.json
         """
@@ -837,13 +848,17 @@ class esm_datastore(intake.catalog.Catalog):
         --------
         >>> import intake
         >>> col = intake.open_esm_datastore("glade-cmip6.json")
-        >>> cat = col.search(source_id=['BCC-CSM2-MR', 'CNRM-CM6-1', 'CNRM-ESM2-1'],
-        ...                       experiment_id=['historical', 'ssp585'], variable_id='pr',
-        ...                       table_id='Amon', grid_label='gn')
+        >>> cat = col.search(
+        ...     source_id=["BCC-CSM2-MR", "CNRM-CM6-1", "CNRM-ESM2-1"],
+        ...     experiment_id=["historical", "ssp585"],
+        ...     variable_id="pr",
+        ...     table_id="Amon",
+        ...     grid_label="gn",
+        ... )
         >>> dsets = cat.to_dataset_dict()
         >>> dsets.keys()
         dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
-        >>> dsets['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn']
+        >>> dsets["CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn"]
         <xarray.Dataset>
         Dimensions:    (bnds: 2, lat: 160, lon: 320, member_id: 3, time: 1980)
         Coordinates:
@@ -925,13 +940,19 @@ def _construct_agg_info(aggregations: List[Dict]) -> Tuple[List[Dict], Dict, Lis
     Examples
     --------
 
-    >>> a = [{'type': 'union', 'attribute_name': 'variable_id'},
-    ...  {'type': 'join_new',
-    ...   'attribute_name': 'member_id',
-    ...   'options': {'coords': 'minimal', 'compat': 'override'}},
-    ...  {'type': 'join_new',
-    ...   'attribute_name': 'dcpp_init_year',
-    ...   'options': {'coords': 'minimal', 'compat': 'override'}}]
+    >>> a = [
+    ...     {"type": "union", "attribute_name": "variable_id"},
+    ...     {
+    ...         "type": "join_new",
+    ...         "attribute_name": "member_id",
+    ...         "options": {"coords": "minimal", "compat": "override"},
+    ...     },
+    ...     {
+    ...         "type": "join_new",
+    ...         "attribute_name": "dcpp_init_year",
+    ...         "options": {"coords": "minimal", "compat": "override"},
+    ...     },
+    ... ]
     >>> aggregations, aggregation_dict, agg_columns = _construct_agg_info(a)
     >>> agg_columns
     ['variable_id', 'member_id', 'dcpp_init_year']
