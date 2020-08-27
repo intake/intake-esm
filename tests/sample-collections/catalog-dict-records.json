@@ -1,81 +1,77 @@
 {
-    "esmcat_version":"0.1.0",
-    "id":"aws-cesm1-le",
-    "description":"This is an ESM collection for CESM1 Large Ensemble Zarr dataset publicly available on Amazon S3 (us-west-2 region)",
-    "catalog_dict":[
-        {
-            "component":"atm",
-            "frequency":"daily",
-            "experiment":"20C",
-            "variable":"FLNS",
-            "path":"s3://ncar-cesm-lens/atm/daily/cesmLE-20C-FLNS.zarr"
-        },
-        {
-            "component":"atm",
-            "frequency":"daily",
-            "experiment":"20C",
-            "variable":"FLNSC",
-            "path":"s3://ncar-cesm-lens/atm/daily/cesmLE-20C-FLNSC.zarr"
-        },
-        {
-            "component":"atm",
-            "frequency":"daily",
-            "experiment":"20C",
-            "variable":"FLUT",
-            "path":"s3://ncar-cesm-lens/atm/daily/cesmLE-20C-FLUT.zarr"
-        },
-        {
-            "component":"atm",
-            "frequency":"daily",
-            "experiment":"20C",
-            "variable":"FSNS",
-            "path":"s3://ncar-cesm-lens/atm/daily/cesmLE-20C-FSNS.zarr"
-        },
-        {
-            "component":"atm",
-            "frequency":"daily",
-            "experiment":"20C",
-            "variable":"FSNSC",
-            "path":"s3://ncar-cesm-lens/atm/daily/cesmLE-20C-FSNSC.zarr"
-        }
-    ],
-    "attributes":[
-        {
-            "column_name":"component",
-            "vocabulary":""
-        },
-        {
-            "column_name":"frequency",
-            "vocabulary":""
-        },
-        {
-            "column_name":"experiment",
-            "vocabulary":""
-        },
-        {
-            "column_name":"variable",
-            "vocabulary":""
-        }
-    ],
-    "assets":{
-        "column_name":"path",
-        "format":"zarr"
+  "esmcat_version": "0.1.0",
+  "id": "aws-cesm1-le",
+  "description": "This is an ESM collection for CESM1 Large Ensemble Zarr dataset publicly available on Amazon S3 (us-west-2 region)",
+  "catalog_dict": [
+    {
+      "component": "atm",
+      "frequency": "daily",
+      "experiment": "20C",
+      "variable": "FLNS",
+      "path": "s3://ncar-cesm-lens/atm/daily/cesmLE-20C-FLNS.zarr"
     },
-    "aggregation_control":{
-        "variable_column_name":"variable",
-        "groupby_attrs":[
-            "component",
-            "experiment",
-            "frequency"
-        ],
-        "aggregations":[
-            {
-                "type":"union",
-                "attribute_name":"variable",
-                "options":{
-                    "compat":"override"
-                }
-            }
-        ]
+    {
+      "component": "atm",
+      "frequency": "daily",
+      "experiment": "20C",
+      "variable": "FLNSC",
+      "path": "s3://ncar-cesm-lens/atm/daily/cesmLE-20C-FLNSC.zarr"
+    },
+    {
+      "component": "atm",
+      "frequency": "daily",
+      "experiment": "20C",
+      "variable": "FLUT",
+      "path": "s3://ncar-cesm-lens/atm/daily/cesmLE-20C-FLUT.zarr"
+    },
+    {
+      "component": "atm",
+      "frequency": "daily",
+      "experiment": "20C",
+      "variable": "FSNS",
+      "path": "s3://ncar-cesm-lens/atm/daily/cesmLE-20C-FSNS.zarr"
+    },
+    {
+      "component": "atm",
+      "frequency": "daily",
+      "experiment": "20C",
+      "variable": "FSNSC",
+      "path": "s3://ncar-cesm-lens/atm/daily/cesmLE-20C-FSNSC.zarr"
     }
+  ],
+  "attributes": [
+    {
+      "column_name": "component",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "frequency",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "experiment",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "variable",
+      "vocabulary": ""
+    }
+  ],
+  "assets": {
+    "column_name": "path",
+    "format": "zarr"
+  },
+  "aggregation_control": {
+    "variable_column_name": "variable",
+    "groupby_attrs": ["component", "experiment", "frequency"],
+    "aggregations": [
+      {
+        "type": "union",
+        "attribute_name": "variable",
+        "options": {
+          "compat": "override"
+        }
+      }
+    ]
+  }
 }

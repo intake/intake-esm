@@ -16,7 +16,7 @@ logger.addHandler(handle)
 
 
 def _is_valid_url(url):
-    """ Check if path is URL or not
+    """Check if path is URL or not
     Parameters
     ----------
     url : str
@@ -38,7 +38,7 @@ def _is_valid_url(url):
 
 
 def _fetch_and_parse_json(input_path):
-    """ Fetch and parse ESMCol file.
+    """Fetch and parse ESMCol file.
     Parameters
     ----------
     input_path : str

@@ -1,38 +1,35 @@
 {
-    "esmcat_version": "0.1.0",
-    "id": "sample-cesm1-lens-aws",
-    "description": "This is a sample ESM collection for CESM1-LENS data in zarr format",
-    "catalog_file": "./tests/cesm1-lens-aws-zarr.csv",
-    "attributes": [
-      {
-        "column_name": "experiment",
-        "vocabulary": ""
-      },
-      {
-        "column_name": "component",
-        "vocabulary": ""
-      },
-      {
-        "column_name": "frequency",
-        "vocabulary": ""
-      },
-      { "column_name": "variable", "vocabulary": "" }
-
-    ],
-    "assets": {
-      "column_name": "path",
-      "format": "zarr"
+  "esmcat_version": "0.1.0",
+  "id": "sample-cesm1-lens-aws",
+  "description": "This is a sample ESM collection for CESM1-LENS data in zarr format",
+  "catalog_file": "./tests/cesm1-lens-aws-zarr.csv",
+  "attributes": [
+    {
+      "column_name": "experiment",
+      "vocabulary": ""
     },
-    "aggregation_control": {
-      "variable_column_name": "variable",
-      "groupby_attrs": [
-        "component", "experiment", "frequency"
-      ],
-        "aggregations": [
-          {
-            "type": "union",
-            "attribute_name": "variable"
-          }
-        ]
-    }
+    {
+      "column_name": "component",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "frequency",
+      "vocabulary": ""
+    },
+    { "column_name": "variable", "vocabulary": "" }
+  ],
+  "assets": {
+    "column_name": "path",
+    "format": "zarr"
+  },
+  "aggregation_control": {
+    "variable_column_name": "variable",
+    "groupby_attrs": ["component", "experiment", "frequency"],
+    "aggregations": [
+      {
+        "type": "union",
+        "attribute_name": "variable"
+      }
+    ]
   }
+}

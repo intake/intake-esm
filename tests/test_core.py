@@ -444,7 +444,9 @@ def test_serialize_to_json():
 def test_serialize_to_csv():
     col = intake.open_esm_datastore(cdf_col_sample_cmip6)
     with TemporaryDirectory() as local_store:
-        col_subset = col.search(source_id='MRI-ESM2-0',)
+        col_subset = col.search(
+            source_id='MRI-ESM2-0',
+        )
         name = 'CMIP6-MRI-ESM2-0'
         col_subset.serialize(name=name, directory=local_store, catalog_type='file')
         col = intake.open_esm_datastore(f'{local_store}/{name}.json')
@@ -453,7 +455,8 @@ def test_serialize_to_csv():
 
 
 @pytest.mark.parametrize(
-    'esmcol_path, query', [(zarr_col_pangeo_cmip6, zarr_query), (cdf_col_sample_cmip6, cdf_query)],
+    'esmcol_path, query',
+    [(zarr_col_pangeo_cmip6, zarr_query), (cdf_col_sample_cmip6, cdf_query)],
 )
 def test_search(esmcol_path, query):
     col = intake.open_esm_datastore(esmcol_path)
@@ -528,7 +531,8 @@ def test_to_dataset_dict_aggfalse(esmcol_path, query):
 
 
 @pytest.mark.parametrize(
-    'esmcol_path, query', [(zarr_col_pangeo_cmip6, zarr_query), (cdf_col_sample_cmip6, cdf_query)],
+    'esmcol_path, query',
+    [(zarr_col_pangeo_cmip6, zarr_query), (cdf_col_sample_cmip6, cdf_query)],
 )
 def test_to_dataset_dict_w_preprocess(esmcol_path, query):
     def rename_coords(ds):
@@ -574,7 +578,8 @@ def test_to_dataset_dict_w_cmip6preprocessing():
 
 
 @pytest.mark.parametrize(
-    'esmcol_path, query', [(zarr_col_pangeo_cmip6, zarr_query), (cdf_col_sample_cmip6, cdf_query)],
+    'esmcol_path, query',
+    [(zarr_col_pangeo_cmip6, zarr_query), (cdf_col_sample_cmip6, cdf_query)],
 )
 def test_to_dataset_dict_nocache(esmcol_path, query):
     col = intake.open_esm_datastore(esmcol_path)
