@@ -6,6 +6,7 @@ import intake
 from pkg_resources import DistributionNotFound, get_distribution
 
 from .core import esm_datastore
+from .utils import show_versions
 
 try:
     __version__ = get_distribution(__name__).version

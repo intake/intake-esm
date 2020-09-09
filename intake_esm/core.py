@@ -12,6 +12,7 @@ import intake
 import pandas as pd
 import xarray as xr
 from fastprogress.fastprogress import progress_bar
+from intake.catalog import Catalog
 
 from .search import _unique, search
 from .utils import _fetch_and_parse_json, _fetch_catalog, logger
@@ -19,7 +20,7 @@ from .utils import _fetch_and_parse_json, _fetch_catalog, logger
 _AGGREGATIONS_TYPES = {'join_existing', 'join_new', 'union'}
 
 
-class esm_datastore(intake.catalog.Catalog):
+class esm_datastore(Catalog):
     """
     An intake plugin for parsing an ESM (Earth System Model) Collection/catalog
     and loading assets (netCDF files and/or Zarr stores) into xarray datasets.
