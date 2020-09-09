@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        shell: bash
+        shell: bash -l {0}
     strategy:
       fail-fast: false
       matrix:
@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        shell: bash
+        shell: bash -l {0}
     steps:
       - uses: actions/checkout@v2
       - uses: goanpeca/setup-miniconda@v1
