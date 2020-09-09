@@ -1,13 +1,14 @@
-.. image:: https://img.shields.io/github/workflow/status/intake/intake-esm/linting?label=linting&style=for-the-badge
-    :target: https://github.com/intake/intake-esm/actions
+.. image:: https://img.shields.io/github/workflow/status/intake/intake-esm/CI?label=CI&logo=github&style=for-the-badge
+    :target: https://github.com/intake/intake-esm/actions?query=workflow%3ACI
     :alt: GitHub Workflow Status
 
-.. image:: https://img.shields.io/circleci/project/github/intake/intake-esm/master.svg?style=for-the-badge&logo=circleci
-    :target: https://circleci.com/gh/intake/intake-esm/tree/master
+.. image:: https://img.shields.io/github/workflow/status/intake/intake-esm/linting?label=linting&style=for-the-badge
+    :target: https://github.com/intake/intake-esm/actions?query=workflow%3Alinting
+    :alt: GitHub Workflow Status
 
 .. image:: https://img.shields.io/codecov/c/github/intake/intake-esm.svg?style=for-the-badge
     :target: https://codecov.io/gh/intake/intake-esm
-
+    :alt: Code Coverage Status
 
 .. image:: https://img.shields.io/readthedocs/intake-esm/latest.svg?style=for-the-badge
     :target: https://intake-esm.readthedocs.io/en/latest/?badge=latest
@@ -24,7 +25,6 @@
 .. image:: http://img.shields.io/badge/DOI-10.5281%20%2F%20zenodo.3491062-blue.svg?style=for-the-badge
     :target: https://doi.org/10.5281/zenodo.3491062
     :alt: Zenodo
-
 
 
 ===========
