@@ -15,7 +15,7 @@ Thanks for submitting an issue!
 Here's a quick checklist in what to include:
 
 - [ ] Include a detailed description of the bug or suggestion
-- [ ] `conda list` of the conda environment you are using
+- [ ] Output of `intake_esm.show_versions()`
 - [ ] Minimal, self-contained copy-pastable example that generates the issue if possible. Please be concise with code posted. See guidelines below on how to provide a good bug report:
 
   - [Minimal Complete Verifiable Examples](https://stackoverflow.com/help/mcve)
@@ -38,12 +38,15 @@ Paste the command(s) you ran and the output.
 If there was a crash, please include the traceback here.
 ```
 
-### Output of `intake_esm.__version__`
+### Version information: output of `intake_esm.show_versions()`
 
 <details>
 
-```
-Paste the output of `intake_esm.__version__` here
+Paste the output of `intake_esm.show_versions()` here:
+
+```python
+import intake_esm
+intake_esm.show_versions()
 ```
 
 </details>
