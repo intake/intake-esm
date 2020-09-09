@@ -45,7 +45,7 @@ jobs:
 
       - name: Run Tests
         run: |
-          python -m pytest -n 4 --cov=./ --cov-report=xml
+          python -m pytest -n 4 --cov=./ --cov-report=xml --verbose
 
       - name: Upload code coverage to Codecov
         uses: codecov/codecov-action@v1
@@ -78,4 +78,4 @@ jobs:
 
       - name: Run Tests
         run: |
-          python -m pytest -n 4 --cov=./ --cov-report=xml
+          python -m pytest -n 4 --cov=./ --cov-report=xml --verbose
