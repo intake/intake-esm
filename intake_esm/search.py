@@ -57,8 +57,8 @@ def search(df, require_all_on=None, **query):
                 cond = df[key].str.contains(val_i, regex=True, case=True, flags=0)
             else:
                 cond = df[key] == val_i
-            condition_i |= cond
-        condition &= condition_i
+            condition_i = condition_i | cond
+        condition = condition & condition_i
     query_results = df.loc[condition]
 
     if require_all_on:
