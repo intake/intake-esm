@@ -6,6 +6,15 @@ import pytest
 
 from intake_esm.search import _is_pattern, _normalize_query, _unique, search
 
+df = pd.DataFrame(
+    {
+        'path': ['file1', 'file2', 'file3'],
+        'variable': [['A', 'B'], ['A', 'B', 'C'], ['C', 'D', 'A']],
+        'attr': [1, 2, 3],
+        'random': [set(['bx', 'by']), set(['bx', 'bz']), set(['bx', 'by'])],
+    }
+)
+
 
 def test_unique():
     df = pd.DataFrame(
@@ -173,3 +182,26 @@ def test_normalize_query():
 )
 def test_is_pattern(value, expected):
     assert _is_pattern(value) == expected
+
+
+@pytest.mark.parametrize(
+    'df,query,expected',
+    [
+        (
+            df,
+            dict(variable=['A', 'C'], random='bz'),
+            [{'path': 'file2', 'variable': ['A', 'B', 'C'], 'attr': 2, 'random': {'bx', 'bz'}}],
+        ),
+        (
+            df,
+            dict(variable=['A', 'C'], attr=[1, 2]),
+            [
+                {'path': 'file1', 'variable': ['A', 'B'], 'attr': 1, 'random': {'bx', 'by'}},
+                {'path': 'file2', 'variable': ['A', 'B', 'C'], 'attr': 2, 'random': {'bx', 'bz'}},
+            ],
+        ),
+    ],
+)
+def test_search_columns_with_iterables(df, query, expected):
+    results = search(df, **query).to_dict(orient='records')
+    assert results == expected

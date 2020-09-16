@@ -14,7 +14,7 @@ import xarray as xr
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
-from .search import _unique, search
+from .search import _get_columns_with_iterables, _unique, search
 from .utils import _fetch_and_parse_json, _fetch_catalog, logger
 
 _AGGREGATIONS_TYPES = {'join_existing', 'join_new', 'union'}
@@ -124,6 +124,10 @@ class esm_datastore(Catalog):
         self._entries = {}
         self._set_groups_and_keys()
         super(esm_datastore, self).__init__(**kwargs)
+        self._multiple_variable_assets = self.variable_column_name in _get_columns_with_iterables(
+            self.df
+        )
+        self._requested_variables = []
 
     def _set_groups_and_keys(self):
         if self.aggregation_info.groupby_attrs and set(self.df.columns) != set(
