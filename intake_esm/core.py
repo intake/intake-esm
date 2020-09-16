@@ -50,6 +50,9 @@ class esm_datastore(Catalog):
         - INFO
         - DEBUG
         - NOTSET
+    csv_kwargs : dict, optional
+        Additional keyword arguments passed through to the
+        :py:func:`~pandas.read_csv` function.
     **kwargs :
         Additional keyword arguments are passed through to the
         :py:class:`~intake.catalog.Catalog` base class.
@@ -82,6 +85,7 @@ class esm_datastore(Catalog):
         progressbar: bool = True,
         sep: str = '.',
         log_level: str = 'CRITICAL',
+        csv_kwargs: Dict[str, Any] = None,
         **kwargs,
     ):
 
@@ -94,7 +98,7 @@ class esm_datastore(Catalog):
 
         if isinstance(esmcol_obj, (str, pathlib.PurePath)):
             self.esmcol_data, self.esmcol_path = _fetch_and_parse_json(esmcol_obj)
-            self._df, self.catalog_file = _fetch_catalog(self.esmcol_data, esmcol_obj)
+            self._df, self.catalog_file = _fetch_catalog(self.esmcol_data, esmcol_obj, csv_kwargs)
 
         elif isinstance(esmcol_obj, pd.DataFrame):
             if esmcol_data is None:
@@ -124,10 +128,10 @@ class esm_datastore(Catalog):
         self._entries = {}
         self._set_groups_and_keys()
         super(esm_datastore, self).__init__(**kwargs)
+        self._requested_variables = []
         self._multiple_variable_assets = self.variable_column_name in _get_columns_with_iterables(
             self.df
         )
-        self._requested_variables = []
 
     def _set_groups_and_keys(self):
         if self.aggregation_info.groupby_attrs and set(self.df.columns) != set(

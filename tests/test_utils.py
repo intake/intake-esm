@@ -1,3 +1,4 @@
+import os
 from unittest import mock
 
 import pandas as pd
@@ -6,9 +7,12 @@ import requests
 
 from intake_esm.utils import _fetch_and_parse_json, _fetch_catalog, _is_valid_url
 
+here = os.path.abspath(os.path.dirname(__file__))
+multi_variable_col = os.path.join(here, 'sample-collections/multi-variable-collection.json')
 
-def test_invalid_url():
-    url = 'http://www.example.com/file[/].html'
+
+@pytest.mark.parametrize('url', ['http://www.example.com/file[/].html', 55555])
+def test_invalid_url(url):
     assert not _is_valid_url(url)
 
 
@@ -17,11 +21,6 @@ def test_is_valid_url_not_found():
     with mock.patch('requests.get') as mock_request:
         mock_request.return_value.status_code = 404
         assert not _is_valid_url(url)
-
-
-def test_is_valid_url_exception():
-    url = 55555
-    assert not _is_valid_url(url)
 
 
 def test_fetch_and_parse_json_url():
@@ -63,3 +62,12 @@ def test_catalog_url_construction_from_relative_url_error():
     data['catalog_file'] = 'DONT_EXIST'
     with pytest.raises(FileNotFoundError):
         _fetch_catalog(data, path)
+
+
+@pytest.mark.parametrize(
+    'esmcol_path,csv_kwargs', [(multi_variable_col, {'converters': {'variable': pd.eval}})]
+)
+def test_catalog_csv_kwargs(esmcol_path, csv_kwargs):
+    data, path = _fetch_and_parse_json(esmcol_path)
+    df, _ = _fetch_catalog(data, esmcol_path, csv_kwargs=csv_kwargs)
+    assert isinstance(df.iloc[0].variable, list)
