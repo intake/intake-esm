@@ -5,8 +5,9 @@ nbsphinx
 netcdf4
 numcodecs
 pydata-sphinx-theme
-setuptools>=41.2
-sphinx
+setuptools>=50.3
+sphinx>=3.2
+Pygments>=2.6
 watermark
 zarr
 -r ../requirements.txt
