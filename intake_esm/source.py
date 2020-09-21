@@ -26,6 +26,7 @@ class ESMDataSource(DataSource):
         zarr_kwargs=None,
         storage_options=None,
         preprocess=None,
+        requested_variables=None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -34,6 +35,7 @@ class ESMDataSource(DataSource):
         self.zarr_kwargs = zarr_kwargs or {}
         self.storage_options = storage_options or {}
         self.preprocess = preprocess
+        self.requested_variables = requested_variables
         if not isinstance(row, pd.Series) or row.empty:
             raise ValueError('`row` must be a non-empty pandas.Series')
         self.row = row.copy()
@@ -71,7 +73,12 @@ class ESMDataSource(DataSource):
     def _open_dataset(self):
         mapper = _path_to_mapper(self.row[self.path_column], self.storage_options)
         ds = _open_asset(
-            mapper, self.data_format, self.zarr_kwargs, self.cdf_kwargs, self.preprocess
+            mapper,
+            data_format=self.data_format,
+            zarr_kwargs=self.zarr_kwargs,
+            cdf_kwargs=self.cdf_kwargs,
+            preprocess=self.preprocess,
+            requested_variables=self.requested_variables,
         )
         ds.attrs['intake_esm_dataset_key'] = self.key
         self._ds = ds
@@ -107,6 +114,7 @@ class ESMGroupDataSource(DataSource):
         zarr_kwargs=None,
         storage_options=None,
         preprocess=None,
+        requested_variables=None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -115,6 +123,7 @@ class ESMGroupDataSource(DataSource):
         self.zarr_kwargs = zarr_kwargs or {}
         self.storage_options = storage_options or {}
         self.preprocess = preprocess
+        self.requested_variables = requested_variables
         self._ds = None
         if not isinstance(df, pd.DataFrame) or df.empty:
             raise ValueError('`df` must be a non-empty pandas.DataFrame')
@@ -192,7 +201,15 @@ class ESMGroupDataSource(DataSource):
         ):
             # replace path column with mapper (dependent on filesystem type)
             mapper = _path_to_mapper(path, storage_options)
-            ds = _open_asset(mapper, data_format, zarr_kwargs, cdf_kwargs, preprocess, varname)
+            ds = _open_asset(
+                mapper,
+                data_format=data_format,
+                zarr_kwargs=zarr_kwargs,
+                cdf_kwargs=cdf_kwargs,
+                preprocess=preprocess,
+                varname=varname,
+                requested_variables=self.requested_variables,
+            )
             return (path, ds)
 
         datasets = [

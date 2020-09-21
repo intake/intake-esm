@@ -129,9 +129,12 @@ class esm_datastore(Catalog):
         self._set_groups_and_keys()
         super(esm_datastore, self).__init__(**kwargs)
         self._requested_variables = []
-        self._multiple_variable_assets = self.variable_column_name in _get_columns_with_iterables(
-            self.df
-        )
+        if self.variable_column_name:
+            self._multiple_variable_assets = (
+                self.variable_column_name in _get_columns_with_iterables(self.df)
+            )
+        else:
+            self._multiple_variable_assets = False
 
     def _set_groups_and_keys(self):
         if self.aggregation_info.groupby_attrs and set(self.df.columns) != set(
@@ -482,6 +485,7 @@ class esm_datastore(Catalog):
                         path_column=self.path_column_name,
                         data_format=self.data_format,
                         format_column=self.format_column_name,
+                        requested_variables=self._requested_variables,
                     )
                     entry = _make_entry(key, 'esm_single_source', args)
                 else:
@@ -494,6 +498,7 @@ class esm_datastore(Catalog):
                         data_format=self.data_format,
                         format_column=self.format_column_name,
                         key=key,
+                        requested_variables=self._requested_variables,
                     )
                     entry = _make_entry(key, 'esm_group', args)
 
@@ -660,6 +665,7 @@ class esm_datastore(Catalog):
         """
 
         results = search(self.df, require_all_on=require_all_on, **query)
+        requested_variables = query.get(self.variable_column_name, [])
         ret = esm_datastore.from_df(
             results,
             esmcol_data=self.esmcol_data,
@@ -668,6 +674,7 @@ class esm_datastore(Catalog):
             log_level=self._log_level,
             **self._kwargs,
         )
+        ret._requested_variables = requested_variables
         return ret
 
     def serialize(self, name: str, directory: str = None, catalog_type: str = 'dict') -> None:
