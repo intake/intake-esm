@@ -303,6 +303,13 @@ def _open_asset(
             ********************************************
             """
             raise IOError(message) from exc
+    if preprocess is not None:
+        try:
+            ds = preprocess(ds)
+        except Exception as exc:
+            raise RuntimeError(
+                f'Failed to apply pre-processing function: {preprocess.__name__}'
+            ) from exc
 
     if varname:
         if isinstance(varname, str):
@@ -318,14 +325,8 @@ def _open_asset(
 
     else:
         ds.attrs['intake_esm_varname'] = varname
-    if preprocess is None:
-        return ds
-    try:
-        return preprocess(ds)
-    except Exception as exc:
-        raise RuntimeError(
-            f'Failed to apply pre-processing function: {preprocess.__name__}'
-        ) from exc
+
+    return ds
 
 
 def dict_union(*dicts, merge_keys=['history', 'tracking_id', 'intake_esm_varname'], drop_keys=[]):
