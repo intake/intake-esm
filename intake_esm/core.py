@@ -142,7 +142,13 @@ class esm_datastore(Catalog):
         ):
             self._grouped = self.df.groupby(self.aggregation_info.groupby_attrs)
             internal_keys = self._grouped.groups.keys()
-            public_keys = [self.sep.join(str(v) for v in x) for x in internal_keys]
+            public_keys = []
+            for key in internal_keys:
+                if isinstance(key, str):
+                    p_key = key
+                else:
+                    p_key = self.sep.join(str(v) for v in key)
+                public_keys.append(p_key)
 
         else:
             self._grouped = self.df

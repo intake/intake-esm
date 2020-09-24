@@ -78,4 +78,4 @@ jobs:
 
       - name: Run Tests
         run: |
-          python -m pytest -n 4 --cov=./ --cov-report=xml --verbose
+          python -m pytest -n auto --cov=./ --cov-report=xml --verbose
