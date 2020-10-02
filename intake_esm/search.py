@@ -5,7 +5,78 @@ from warnings import warn
 
 import numpy as np
 import pandas as pd
+from datetime import datetime
 
+def _search_time(df, needed_timerange):
+#Some checks for the format:
+    if len(needed_timerange) != 2 :
+        message="Timerange must have start and end values."
+        warn(message)
+        return pd.DataFrame(columns=columns)
+    if type(needed_timerange) == tuple:
+        needed_timerange = list(needed_timerange)
+    try:
+        int(needed_timerange[0])
+        int(needed_timerange[1])
+    except:
+        message="Timerange values must be convertable into integers."
+        warn(message)
+        return pd.DataFrame(columns=columns)
+
+#Functions used in the actual code:
+    def combine_alternately(S1, S2):
+        i = 0
+        while i < len(S2):
+            yield S1[i]
+            yield S2[i]
+            i = i + 1
+        yield S1[i]
+
+    def limit_format(fmt, date):
+        last_entry = int((len(date) - 2) / 2)
+        return fmt[:last_entry]
+
+    def select_fmt(date):
+        fmt = ['%Y','%m','%d','%H','%M','%s']
+        nondigits = [x for x in date if not x.isdigit()]
+        fmt = combine_alternately(fmt, nondigits) if nondigits else limit_format(fmt, date)    
+        fmt = ''.join(fmt)
+        return fmt
+
+    def strptime(date):
+        return datetime.strptime(date, select_fmt(date))
+
+    def within_timerange(needed_timerange, given_timerange):
+        n_start = strptime(needed_timerange[0])
+        n_stop  = strptime(needed_timerange[1])
+
+        try:
+            g_start = strptime(given_timerange[0])
+            g_stop  = strptime(given_timerange[1])
+        except:
+            g_start = n_start
+            g_stop = n_stop
+
+        if g_start <= n_start and n_start <= g_stop:
+            return True
+        elif g_start <= n_stop and n_stop <= g_stop:
+            return True
+        elif n_start <= g_start and g_stop <= n_stop:
+            return True
+        else:
+            return False        
+
+    rows, columns = df.shape
+    given_timeranges = df['time_range'].to_list()
+    i = 0
+    drop = []
+    while i < rows:
+        if isinstance(given_timeranges[i], str):
+            within = within_timerange(needed_timerange, given_timeranges[i].split('-'))
+            if not within: drop.append(i)
+        i = i + 1
+    drop = df.index[drop]
+    return df.drop(drop)
 
 def _unique(df, columns=None):
     if isinstance(columns, str):
