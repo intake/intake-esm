@@ -9,9 +9,11 @@ class AggregationError(Exception):
     pass
 
 
-def _path_to_mapper(path, storage_options):
+def _path_to_mapper(path, storage_options, data_format=None):
     """Convert path to mapper if necessary."""
     if fsspec.core.split_protocol(path)[0] is not None:
+        if data_format == 'netcdf':
+            return fsspec.open(path, **storage_options)
         return fsspec.get_mapper(path, **storage_options)
     return path
 
@@ -252,6 +254,12 @@ def _open_asset(
 
         else:
             root = path.root
+    elif isinstance(path, fsspec.core.OpenFile):
+        protocol = path.fs.protocol
+        if isinstance(protocol, list):
+            protocol = tuple(protocol)
+        root = path.path
+        path = path.open()
 
     if data_format == 'zarr':
         try:
