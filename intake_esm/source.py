@@ -71,7 +71,7 @@ class ESMDataSource(DataSource):
         return self._schema
 
     def _open_dataset(self):
-        mapper = _path_to_mapper(self.row[self.path_column], self.storage_options)
+        mapper = _path_to_mapper(self.row[self.path_column], self.storage_options, self.data_format)
         ds = _open_asset(
             mapper,
             data_format=self.data_format,
@@ -200,7 +200,7 @@ class ESMGroupDataSource(DataSource):
             varname=None,
         ):
             # replace path column with mapper (dependent on filesystem type)
-            mapper = _path_to_mapper(path, storage_options)
+            mapper = _path_to_mapper(path, storage_options, data_format)
             ds = _open_asset(
                 mapper,
                 data_format=data_format,
