@@ -1,6 +1,8 @@
-xarray>=0.16
-intake>=0.6.0
-fsspec>=0.8.0
-requests
-fastprogress>=0.2.6
 dask[complete]
+fastprogress>=0.2.6
+fsspec>=0.8.0
+h5netcdf>=0.8.1
+intake>=0.6.0
+netCDF4>=1.5.3
+requests>=2.24.0
+xarray>=0.16
