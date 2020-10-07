@@ -23,29 +23,23 @@ jobs:
         python-version: ['3.6', '3.7', '3.8']
     steps:
       - uses: actions/checkout@v2
-      - name: Cache conda
-        uses: actions/cache@v2
-        env:
-          # Increase this value to reset cache if ci/environment.yml has not changed
-          CACHE_NUMBER: 0
-        with:
-          path: ~/conda_pkgs_dir
-          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/environment.yml') }}
       - uses: goanpeca/setup-miniconda@v1
         with:
-          activate-environment: intake-esm-dev # Defined in ci/environment.yml
+          channels: conda-forge
+          mamba-version: '*'
+          activate-environment: intake-esm-dev
           auto-update-conda: false
           python-version: ${{ matrix.python-version }}
-          environment-file: ci/environment.yml
-          use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
+
       - name: Set up conda environment
         run: |
+          mamba env update -f ci/environment.yml
           python -m pip install -e .
           conda list
 
       - name: Run Tests
         run: |
-          python -m pytest -n 4 --cov=./ --cov-report=xml --verbose
+          python -m pytest -n auto --cov=./ --cov-report=xml --verbose
 
       - name: Upload code coverage to Codecov
         uses: codecov/codecov-action@v1
@@ -66,16 +60,17 @@ jobs:
       - uses: actions/checkout@v2
       - uses: goanpeca/setup-miniconda@v1
         with:
+          channels: conda-forge
+          mamba-version: '*'
           activate-environment: intake-esm-dev
           auto-update-conda: false
           python-version: 3.8
-          environment-file: ci/environment-upstream-dev.yml
-          use-only-tar-bz2: true
       - name: Set up conda environment
         run: |
+          mamba env update -f ci/environment-upstream-dev.yml
           python -m pip install -e .
           conda list
 
       - name: Run Tests
         run: |
-          python -m pytest -n 4 --cov=./ --cov-report=xml --verbose
+          python -m pytest -n auto --cov=./ --cov-report=xml --verbose
