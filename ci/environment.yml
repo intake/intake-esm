@@ -7,6 +7,7 @@ dependencies:
   - fastprogress
   - fsspec
   - gcsfs
+  - h5netcdf
   - intake
   - ipython
   - netcdf4
