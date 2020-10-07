@@ -241,23 +241,22 @@ def _aggregate(
 def _open_asset(
     path, data_format, zarr_kwargs=None, cdf_kwargs=None, preprocess=None, varname=None
 ):
-    protocol = None
-    root = path
-    if isinstance(path, fsspec.mapping.FSMap):
-        protocol = path.fs.protocol
+    def normalize_protocol(protocol):
         if isinstance(protocol, list):
-            protocol = tuple(protocol)
+            return tuple(protocol)
+        return protocol
 
+    protocol, root = None, path
+    if isinstance(path, fsspec.mapping.FSMap):
+        protocol = normalize_protocol(path.fs.protocol)
         if protocol in {'http', 'https', 'file'} or protocol is None:
             path = path.root
             root = path
-
         else:
             root = path.root
+
     elif isinstance(path, fsspec.core.OpenFile):
-        protocol = path.fs.protocol
-        if isinstance(protocol, list):
-            protocol = tuple(protocol)
+        protocol = normalize_protocol(path.fs.protocol)
         root = path.path
         path = path.open()
 

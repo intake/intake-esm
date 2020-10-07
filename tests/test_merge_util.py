@@ -4,7 +4,14 @@ import fsspec
 import pytest
 import xarray as xr
 
-from intake_esm.merge_util import AggregationError, _open_asset, join_existing, join_new, union
+from intake_esm.merge_util import (
+    AggregationError,
+    _open_asset,
+    _path_to_mapper,
+    join_existing,
+    join_new,
+    union,
+)
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -71,6 +78,29 @@ def test_union_error():
 def test_open_asset_error(path, data_format, error):
     with pytest.raises(error):
         _open_asset(path, data_format, {}, {}, None, 'Tair')
+
+
+@pytest.mark.parametrize(
+    'path,data_format,storage_options',
+    [
+        (
+            's3://gfdl-esgf/CMIP6/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/Amon/tas/gr1/v20190726/tas_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc',
+            'netcdf',
+            {'anon': True},
+        ),
+        ('s3://ncar-cesm-lens/lnd/monthly/cesmLE-20C-FSNO.zarr', 'zarr', {'anon': True}),
+        ('gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1p1f1/Amon/pr/gn/', 'zarr', {'anon': True}),
+        (
+            f'{here}/sample_data/cmip/CMIP6/CMIP/BCC/BCC-ESM1/piControl/r1i1p1f1/Amon/tasmax/gn/v20181214/tasmax/tasmax_Amon_BCC-ESM1_piControl_r1i1p1f1_gn_185001-230012.nc',
+            'netcdf',
+            {},
+        ),
+    ],
+)
+def test_open_asset(path, data_format, storage_options):
+    x = _path_to_mapper(path, storage_options, data_format)
+    ds = _open_asset(x, data_format, cdf_kwargs={'chunks': {}}, zarr_kwargs={'consolidated': True})
+    assert isinstance(ds, xr.Dataset)
 
 
 def test_open_asset_preprocess_error():
