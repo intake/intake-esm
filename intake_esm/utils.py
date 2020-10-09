@@ -75,6 +75,7 @@ def _fetch_catalog(collection_data, esmcol_path, csv_kwargs=None):
 
     if csv_kwargs is None:
         csv_kwargs = {}
+    catalog_path = None
     if 'catalog_file' in collection_data:
         if _is_valid_url(esmcol_path):
             catalog_path = collection_data['catalog_file']
@@ -89,24 +90,19 @@ def _fetch_catalog(collection_data, esmcol_path, csv_kwargs=None):
                     query=split_url.query,
                     fragment=split_url.fragment,
                 )
-                catalog = urlunparse(components)
-                if not _is_valid_url(catalog):
-                    raise FileNotFoundError(f'Unable to find: {catalog}')
-                return pd.read_csv(catalog, **csv_kwargs), catalog
-            return pd.read_csv(catalog_path, **csv_kwargs), catalog_path
-
-        catalog_path = Path(collection_data['catalog_file'])
-        # If the catalog_path does not exist,
-        # try constructing a path using the relative path
-        if not catalog_path.exists():
-            esmcol_path = Path(esmcol_path).absolute()
-            catalog = esmcol_path.parent / collection_data['catalog_file']
-            if not catalog.exists():
-                raise FileNotFoundError(f'Unable to find: {catalog}')
-            return pd.read_csv(catalog, **csv_kwargs), catalog
-
+                catalog_path = urlunparse(components)
+                if not _is_valid_url(catalog_path):
+                    raise FileNotFoundError(f'Unable to find: {catalog_path}')
+        else:
+            catalog_path = Path(collection_data['catalog_file'])
+            # If the catalog_path does not exist,
+            # try constructing a path using the relative path
+            if not catalog_path.exists():
+                esmcol_path = Path(esmcol_path).absolute()
+                catalog_path = esmcol_path.parent / collection_data['catalog_file']
+                if not catalog_path.exists():
+                    raise FileNotFoundError(f'Unable to find: {catalog_path}')
         return pd.read_csv(catalog_path, **csv_kwargs), catalog_path
-
     return pd.DataFrame(collection_data['catalog_dict']), None
 
 
