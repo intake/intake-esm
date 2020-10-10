@@ -644,3 +644,22 @@ def test_to_dataset_dict_s3():
     dsets = cat.to_dataset_dict(storage_options={'anon': True})
     _, ds = dsets.popitem()
     assert isinstance(ds, xr.Dataset)
+
+
+@pytest.mark.parametrize(
+    'query', [dict(variable=['O2', 'TEMP']), dict(variable=['SHF']), dict(experiment='CTRL')]
+)
+def test_multi_variable_catalog(query):
+    import ast
+
+    col = intake.open_esm_datastore(
+        multi_variable_col, csv_kwargs={'converters': {'variable': ast.literal_eval}}
+    )
+    assert col._multiple_variable_assets
+
+    col_sub = col.search(**query)
+    assert set(col_sub._requested_variables) == set(query.pop('variable', []))
+
+    _, ds = col_sub.to_dataset_dict().popitem()
+    if col_sub._requested_variables:
+        assert set(ds.data_vars) == set(col_sub._requested_variables)
