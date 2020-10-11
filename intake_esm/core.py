@@ -124,12 +124,13 @@ class esm_datastore(Catalog):
             self._data_format = self.esmcol_data['assets']['format']
         else:
             self._format_column_name = self.esmcol_data['assets']['format_column_name']
+        self._columns_with_iterables = _get_columns_with_iterables(self.df)
         self.aggregation_info = self._get_aggregation_info()
         self._entries = {}
         self._set_groups_and_keys()
         super(esm_datastore, self).__init__(**kwargs)
         self._requested_variables = []
-        self._columns_with_iterables = _get_columns_with_iterables(self.df)
+
         if self.variable_column_name:
             self._multiple_variable_assets = (
                 self.variable_column_name in self._columns_with_iterables
@@ -218,6 +219,7 @@ class esm_datastore(Catalog):
 
         # Cast all agg_columns with iterables to tuple values so as
         # to avoid hashing issues (e.g. TypeError: unhashable type: 'list')
+
         columns = set(self._columns_with_iterables).intersection(set(agg_columns))
         if columns:
             for column in columns:

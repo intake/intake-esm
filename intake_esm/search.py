@@ -139,7 +139,7 @@ def _get_columns_with_iterables(df):
         has_iterables = (
             df.sample(20, replace=True).applymap(type).isin([list, tuple, set]).any().to_dict()
         )
-        columns_with_iterables = {column for column, check in has_iterables.items() if check}
+        columns_with_iterables = [column for column, check in has_iterables.items() if check]
     else:
-        columns_with_iterables = set()
+        columns_with_iterables = []
     return columns_with_iterables
