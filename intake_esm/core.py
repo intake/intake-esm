@@ -129,9 +129,10 @@ class esm_datastore(Catalog):
         self._set_groups_and_keys()
         super(esm_datastore, self).__init__(**kwargs)
         self._requested_variables = []
+        self._columns_with_iterables = _get_columns_with_iterables(self.df)
         if self.variable_column_name:
             self._multiple_variable_assets = (
-                self.variable_column_name in _get_columns_with_iterables(self.df)
+                self.variable_column_name in self._columns_with_iterables
             )
         else:
             self._multiple_variable_assets = False
@@ -214,6 +215,13 @@ class esm_datastore(Catalog):
 
         if not aggregations:
             groupby_attrs = []
+
+        # Cast all agg_columns with iterables to tuple values so as
+        # to avoid hashing issues (e.g. TypeError: unhashable type: 'list')
+        columns = set(self._columns_with_iterables).intersection(set(agg_columns))
+        if columns:
+            for column in columns:
+                self.df[column] = self.df[column].map(lambda x: tuple(x))
 
         aggregation_info = AggregationInfo(
             groupby_attrs,
