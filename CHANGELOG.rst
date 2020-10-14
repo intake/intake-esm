@@ -2,6 +2,9 @@
 Changelog History
 =================
 
+- Support time range subsetting
+  (:pr:`291`) `Fabian Wachsmann`_
+
 Intake-esm v2020.08.15
 ======================
 
@@ -445,6 +448,7 @@ Internal Changes
 .. _`Anderson Banihirwe`: https://github.com/andersy005
 .. _`Brian Bonnlander`: https://github.com/bonnland
 .. _`Charles Blackmon-Luca`: https://github.com/charlesbluca
+.. _`Fabian Wachsmann`: https://github.com/wachsylon
 .. _`Julia Kent`: https://github.com/jukent
 .. _`Matthew Long`: https://github.com/matt-long
 .. _`Naomi Henderson`: https://github.com/naomi-henderson
