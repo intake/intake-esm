@@ -48,6 +48,7 @@ extensions = [
     'IPython.sphinxext.ipython_directive',
     'nbsphinx',
     'sphinx.ext.napoleon',
+    'myst_parser',
 ]
 
 extlinks = {
