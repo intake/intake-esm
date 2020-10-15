@@ -51,6 +51,8 @@ extensions = [
     'myst_parser',
 ]
 
+autodoc_member_order = 'groupwise'
+
 myst_amsmath_enable = True
 myst_admonition_enable = True
 myst_html_img_enable = True
@@ -138,7 +140,6 @@ html_theme_options = {
     'twitter_url': 'https://twitter.com/NCARXDev',
     'show_toc_level': 1,
 }
-html_sidebars = {'**': ['sidebar-search-bs.html', 'globaltoc.html', 'sidebar-nav-bs.html']}
 
 
 # The name of an image file (within the static path) to use as favicon of the
