@@ -10,7 +10,7 @@ If you encounter any errors or problems with **intake-esm**, please open an issu
 
 ```{toctree}
 ---
-maxdepth: 1
+maxdepth: 2
 caption: Using intake-esm
 ---
 installation.md
@@ -21,7 +21,7 @@ cmip_ap.md
 
 ```{toctree}
 ---
-maxdepth: 1
+maxdepth: 2
 caption: Reference and contributing
 ---
 api.md
