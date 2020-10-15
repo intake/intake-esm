@@ -8,18 +8,18 @@
 
 ## Badges
 
-| CI           | [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/intake/intake-esm/CI?label=CI&logo=github&style=for-the-badge)](https://github.com/intake/intake-esm/actions?query=workflow%3ACI) [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/intake/intake-esm/linting?label=linting&style=for-the-badge)](https://github.com/intake/intake-esm/actions?query=workflow%3Alinting) [![Code Coverage Status](https://img.shields.io/codecov/c/github/intake/intake-esm.svg?style=for-the-badge)](https://codecov.io/gh/intake/intake-esm) |
-| :----------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-| **Docs**     |                                                                                                                                                                                                       [![Documentation Status](https://img.shields.io/readthedocs/intake-esm/latest.svg?style=for-the-badge)](https://intake-esm.readthedocs.io/en/latest/?badge=latest)                                                                                                                                                                                                       |
-| **Package**  |                                                                                                                                                            [![Conda](https://img.shields.io/conda/vn/conda-forge/intake-esm.svg?style=for-the-badge)](https://anaconda.org/conda-forge/intake-esm) [![PyPI](https://img.shields.io/pypi/v/intake-esm.svg?style=for-the-badge)](https://pypi.org/project/intake-esm)                                                                                                                                                            |
-| **License**  |                                                                                                                                                                                                                        [![License](https://img.shields.io/github/license/intake/intake-esm?style=for-the-badge)](https://github.com/intake/intake-esm)                                                                                                                                                                                                                         |
-| **Citation** |                                                                                                                                                                                                               [![Zenodo](https://img.shields.io/badge/DOI-10.5281%20%2F%20zenodo.3491062-blue.svg?style=for-the-badge)](https://doi.org/10.5281/zenodo.3491062)                                                                                                                                                                                                                |
+| CI           | [![GitHub Workflow Status][github-ci-badge]][github-ci-link] [![GitHub Workflow Status][github-lint-badge]][github-lint-link] [![Code Coverage Status][codecov-badge]][codecov-link] |
+| :----------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| **Docs**     |                                                                    [![Documentation Status][rtd-badge]][rtd-link]                                                                    |
+| **Package**  |                                                         [![Conda][conda-badge]][conda-link] [![PyPI][pypi-badge]][pypi-link]                                                         |
+| **License**  |                                                                        [![License][license-badge]][repo-link]                                                                        |
+| **Citation** |                                                                        [![Zenodo][zenodo-badge]][zenodo-link]                                                                        |
 
 ## Motivation
 
 Computer simulations of the Earth’s climate and weather generate huge amounts of data.
 These data are often persisted on HPC systems or in the cloud across multiple data
-assets of a variety of formats (netCDF, [zarr](https://zarr.readthedocs.io/en/stable/), etc...). Finding, investigating,
+assets of a variety of formats ([netCDF](https://www.unidata.ucar.edu/software/netcdf/), [zarr](https://zarr.readthedocs.io/en/stable/), etc...). Finding, investigating,
 loading these data assets into compute-ready data containers costs time and effort.
 The data user needs to know what data sets are available, the attributes describing
 each data set, before loading a specific data set and analyzing it.
@@ -92,3 +92,20 @@ It is also available from `conda-forge` for conda installations:
 ```bash
 conda install -c conda-forge intake-esm
 ```
+
+[github-ci-badge]: https://img.shields.io/github/workflow/status/intake/intake-esm/CI?label=CI&logo=github&style=for-the-badge
+[github-lint-badge]: https://img.shields.io/github/workflow/status/intake/intake-esm/linting?label=linting&logo=github&style=for-the-badge
+[github-ci-link]: https://github.com/intake/intake-esm/actions?query=workflow%3ACI
+[github-lint-link]: https://github.com/intake/intake-esm/actions?query=workflow%3Alinting
+[codecov-badge]: https://img.shields.io/codecov/c/github/intake/intake-esm.svg?logo=codecov&style=for-the-badge
+[codecov-link]: https://codecov.io/gh/intake/intake-esm
+[rtd-badge]: https://img.shields.io/readthedocs/intake-esm/latest.svg?style=for-the-badge
+[rtd-link]: https://intake-esm.readthedocs.io/en/latest/?badge=latest
+[pypi-badge]: https://img.shields.io/pypi/v/intake-esm?logo=pypi&style=for-the-badge
+[pypi-link]: https://pypi.org/project/intake-esm
+[conda-badge]: https://img.shields.io/conda/vn/conda-forge/intake-esm?logo=anaconda&style=for-the-badge
+[conda-link]: https://anaconda.org/conda-forge/intake-esm
+[zenodo-badge]: https://img.shields.io/badge/DOI-10.5281%20%2F%20zenodo.3491062-blue.svg?style=for-the-badge
+[zenodo-link]: https://doi.org/10.5281/zenodo.3491062
+[license-badge]: https://img.shields.io/github/license/intake/intake-esm?style=for-the-badge
+[repo-link]: https://github.com/intake/intake-esm
