@@ -10,8 +10,8 @@ with open('requirements.txt') as f:
     install_requires = f.read().strip().split('\n')
 
 
-if exists('README.rst'):
-    with open('README.rst') as f:
+if exists('README.md'):
+    with open('README.md') as f:
         long_description = f.read()
 else:
     long_description = ''
@@ -33,6 +33,7 @@ setup(
     name='intake-esm',
     description='An intake plugin for parsing an ESM (Earth System Model) Collection/catalog and loading assets (netCDF files and/or Zarr stores) into xarray datasets.',
     long_description=long_description,
+    long_description_content_type='text/markdown',
     python_requires='>=3.6',
     maintainer='NCAR XDev Team',
     maintainer_email='xdev@ucar.edu',
