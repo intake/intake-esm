@@ -222,8 +222,7 @@ class esm_datastore(Catalog):
 
         columns = set(self._columns_with_iterables).intersection(set(agg_columns))
         if columns:
-            for column in columns:
-                self.df[column] = self.df[column].map(lambda x: tuple(x))
+            self.df[columns] = self.df[columns].applymap(tuple)
 
         aggregation_info = AggregationInfo(
             groupby_attrs,
