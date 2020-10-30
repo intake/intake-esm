@@ -40,6 +40,7 @@ def search(df, require_all_on=None, **query):
     -------
     pd.DataFrame
     """
+    columns_with_iterables = _get_columns_with_iterables(df)
     message = 'Query returned zero results.'
     if not query:
         warn(message)
@@ -51,12 +52,16 @@ def search(df, require_all_on=None, **query):
         column_is_stringtype = isinstance(
             df[key].dtype, (np.object, pd.core.arrays.string_.StringDtype)
         )
+        column_has_iterables = key in columns_with_iterables
         for val_i in val:
-            value_is_pattern = _is_pattern(val_i)
-            if column_is_stringtype and value_is_pattern:
-                cond = df[key].str.contains(val_i, regex=True, case=True, flags=0)
+            if column_has_iterables:
+                cond = df[key].str.contains(val_i, regex=False)
             else:
-                cond = df[key] == val_i
+                value_is_pattern = _is_pattern(val_i)
+                if column_is_stringtype and value_is_pattern:
+                    cond = df[key].str.contains(val_i, regex=True, case=True, flags=0)
+                else:
+                    cond = df[key] == val_i
             condition_i = condition_i | cond
         condition = condition & condition_i
     query_results = df.loc[condition]
@@ -127,3 +132,14 @@ def _flatten_list(data):
                 yield x
         else:
             yield item
+
+
+def _get_columns_with_iterables(df):
+    if not df.empty:
+        has_iterables = (
+            df.sample(20, replace=True).applymap(type).isin([list, tuple, set]).any().to_dict()
+        )
+        columns_with_iterables = [column for column, check in has_iterables.items() if check]
+    else:
+        columns_with_iterables = []
+    return columns_with_iterables

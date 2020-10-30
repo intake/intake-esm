@@ -4,6 +4,8 @@ from typing import Any, Dict, List, Union
 import fsspec
 import xarray as xr
 
+from .search import _flatten_list
+
 
 class AggregationError(Exception):
     pass
@@ -22,7 +24,7 @@ def join_new(
     dsets: List[xr.Dataset],
     dim_name: str,
     coord_value: Any,
-    varname: Union[str, List],
+    varname: Union[str, List[str]],
     options: Dict[str, Any] = None,
     group_key: str = None,
 ) -> xr.Dataset:
@@ -71,7 +73,7 @@ def join_new(
 
 def join_existing(
     dsets: List[xr.Dataset],
-    varname: Union[str, List],
+    varname: Union[str, List[str]],
     options: Dict[str, Any] = None,
     group_key: str = None,
 ) -> xr.Dataset:
@@ -159,11 +161,11 @@ def _to_nested_dict(df):
 
 
 def _aggregate(
-    aggregation_dict: dict,
-    agg_columns: list,
-    n_agg: int,
-    nd: dict,
-    mapper_dict: dict,
+    aggregation_dict: Dict[str, Any],
+    agg_columns: List[str],
+    n_agg: Dict[str, Any],
+    nd: Dict[str, Any],
+    mapper_dict: Dict[str, Any],
     group_key: str = None,
 ):
     def apply_aggregation(nd, agg_column=None, key=None, level=0):
@@ -239,7 +241,13 @@ def _aggregate(
 
 
 def _open_asset(
-    path, data_format, zarr_kwargs=None, cdf_kwargs=None, preprocess=None, varname=None
+    path,
+    data_format,
+    zarr_kwargs=None,
+    cdf_kwargs=None,
+    preprocess=None,
+    varname: Union[List[str], str] = None,
+    requested_variables: Union[List[str], str] = None,
 ):
     def normalize_protocol(protocol):
         if isinstance(protocol, list):
@@ -302,28 +310,35 @@ def _open_asset(
             ********************************************
             """
             raise IOError(message) from exc
+    if preprocess is not None:
+        try:
+            ds = preprocess(ds)
+        except Exception as exc:
+            raise RuntimeError(
+                f'Failed to apply pre-processing function: {preprocess.__name__}'
+            ) from exc
 
     if varname:
         if isinstance(varname, str):
             varname = [varname]
+
+    if requested_variables:
+        if isinstance(requested_variables, str):
+            requested_variables = [requested_variables]
+        variable_intersection = set(requested_variables).intersection(set(varname))
+        variables = [variable for variable in variable_intersection if variable in ds.data_vars]
+        ds = ds[variables]
+        ds.attrs['intake_esm_varname'] = variables
+
+    else:
         ds.attrs['intake_esm_varname'] = varname
 
-    if preprocess is None:
-        return ds
-    try:
-        return preprocess(ds)
-    except Exception as exc:
-        raise RuntimeError(
-            f'Failed to apply pre-processing function: {preprocess.__name__}'
-        ) from exc
+    return ds
 
 
-def dict_union(*dicts, merge_keys=None, drop_keys=None):
+def dict_union(*dicts, merge_keys=['history', 'tracking_id', 'intake_esm_varname'], drop_keys=[]):
     """Return the union of two or more dictionaries."""
     from functools import reduce
-
-    merge_keys = merge_keys or ['history', 'tracking_id']
-    drop_keys = drop_keys or []
 
     if len(dicts) > 2:
         return reduce(dict_union, dicts)
@@ -344,7 +359,7 @@ def dict_union(*dicts, merge_keys=None, drop_keys=None):
             elif v1 == v2:
                 d[k] = v1
             elif k in merge_keys:
-                d[k] = '\n'.join([v1, v2])
+                d[k] = '\n'.join(_flatten_list([v1, v2]))
         return d
     elif len(dicts) == 1:
         return dicts[0]

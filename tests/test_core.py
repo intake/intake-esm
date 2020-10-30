@@ -14,6 +14,7 @@ zarr_col_pangeo_cmip6 = (
     'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
 )
 cdf_col_sample_cmip6 = os.path.join(here, 'sample-collections/cmip6-netcdf.json')
+multi_variable_col = os.path.join(here, 'sample-collections/multi-variable-collection.json')
 cdf_col_sample_cmip5 = os.path.join(here, 'sample-collections/cmip5-netcdf.json')
 cdf_col_sample_cesmle = os.path.join(here, 'sample-collections/cesm1-lens-netcdf.json')
 catalog_dict_records = os.path.join(here, 'sample-collections/catalog-dict-records.json')
@@ -136,6 +137,7 @@ def test_init_error(esmcol_obj):
         cdf_col_sample_cesmle,
         cdf_col_sample_cmip5,
         cdf_col_sample_cmip6,
+        multi_variable_col,
     ],
 )
 def test_repr_html(url):
@@ -187,6 +189,7 @@ def test_log_level_error():
         (cdf_col_sample_cesmle, ['experiment', 'component']),
         (cdf_col_sample_cmip5, None),
         (cdf_col_sample_cmip6, ['experiment_id']),
+        (multi_variable_col, None),
     ],
 )
 def test_col_unique(url, columns):
@@ -641,3 +644,22 @@ def test_to_dataset_dict_s3():
     dsets = cat.to_dataset_dict(storage_options={'anon': True})
     _, ds = dsets.popitem()
     assert isinstance(ds, xr.Dataset)
+
+
+@pytest.mark.parametrize(
+    'query', [dict(variable=['O2', 'TEMP']), dict(variable=['SHF']), dict(experiment='CTRL')]
+)
+def test_multi_variable_catalog(query):
+    import ast
+
+    col = intake.open_esm_datastore(
+        multi_variable_col, csv_kwargs={'converters': {'variable': ast.literal_eval}}
+    )
+    assert col._multiple_variable_assets
+
+    col_sub = col.search(**query)
+    assert set(col_sub._requested_variables) == set(query.pop('variable', []))
+
+    _, ds = col_sub.to_dataset_dict().popitem()
+    if col_sub._requested_variables:
+        assert set(ds.data_vars) == set(col_sub._requested_variables)

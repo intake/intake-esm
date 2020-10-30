@@ -1,0 +1,54 @@
+{
+  "esmcat_version": "0.1.0",
+  "id": "sample-multi-variable-cesm1-lens",
+  "description": "This is a sample ESM collection emulating multi variable/history files for CESM1-LENS",
+  "catalog_file": "multi-variable-catalog.csv",
+  "attributes": [
+    {
+      "column_name": "experiment",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "case",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "component",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "stream",
+      "vocabulary": ""
+    },
+    { "column_name": "variable", "vocabulary": "" },
+    {
+      "column_name": "member_id",
+      "vocabulary": ""
+    }
+  ],
+  "assets": {
+    "column_name": "path",
+    "format": "netcdf"
+  },
+
+  "aggregation_control": {
+    "variable_column_name": "variable",
+    "groupby_attrs": ["component", "experiment", "stream"],
+    "aggregations": [
+      {
+        "type": "join_new",
+        "attribute_name": "member_id",
+        "options": { "coords": "minimal", "compat": "override" }
+      },
+      {
+        "type": "join_existing",
+        "attribute_name": "time_range",
+        "options": { "dim": "time" }
+      },
+      {
+        "type": "union",
+        "attribute_name": "variable"
+      }
+    ]
+  }
+}

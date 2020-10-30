@@ -14,7 +14,7 @@ import xarray as xr
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
-from .search import _unique, search
+from .search import _get_columns_with_iterables, _unique, search
 from .utils import _fetch_and_parse_json, _fetch_catalog, logger
 
 _AGGREGATIONS_TYPES = {'join_existing', 'join_new', 'union'}
@@ -50,6 +50,9 @@ class esm_datastore(Catalog):
         - INFO
         - DEBUG
         - NOTSET
+    csv_kwargs : dict, optional
+        Additional keyword arguments passed through to the
+        :py:func:`~pandas.read_csv` function.
     **kwargs :
         Additional keyword arguments are passed through to the
         :py:class:`~intake.catalog.Catalog` base class.
@@ -82,6 +85,7 @@ class esm_datastore(Catalog):
         progressbar: bool = True,
         sep: str = '.',
         log_level: str = 'CRITICAL',
+        csv_kwargs: Dict[str, Any] = None,
         **kwargs,
     ):
 
@@ -94,7 +98,7 @@ class esm_datastore(Catalog):
 
         if isinstance(esmcol_obj, (str, pathlib.PurePath)):
             self.esmcol_data, self.esmcol_path = _fetch_and_parse_json(esmcol_obj)
-            self._df, self.catalog_file = _fetch_catalog(self.esmcol_data, esmcol_obj)
+            self._df, self.catalog_file = _fetch_catalog(self.esmcol_data, esmcol_obj, csv_kwargs)
 
         elif isinstance(esmcol_obj, pd.DataFrame):
             if esmcol_data is None:
@@ -120,10 +124,19 @@ class esm_datastore(Catalog):
             self._data_format = self.esmcol_data['assets']['format']
         else:
             self._format_column_name = self.esmcol_data['assets']['format_column_name']
+        self._columns_with_iterables = _get_columns_with_iterables(self.df)
         self.aggregation_info = self._get_aggregation_info()
         self._entries = {}
         self._set_groups_and_keys()
         super(esm_datastore, self).__init__(**kwargs)
+        self._requested_variables = []
+
+        if self.variable_column_name:
+            self._multiple_variable_assets = (
+                self.variable_column_name in self._columns_with_iterables
+            )
+        else:
+            self._multiple_variable_assets = False
 
     def _set_groups_and_keys(self):
         if self.aggregation_info.groupby_attrs and set(self.df.columns) != set(
@@ -131,7 +144,13 @@ class esm_datastore(Catalog):
         ):
             self._grouped = self.df.groupby(self.aggregation_info.groupby_attrs)
             internal_keys = self._grouped.groups.keys()
-            public_keys = [self.sep.join(str(v) for v in x) for x in internal_keys]
+            public_keys = []
+            for key in internal_keys:
+                if isinstance(key, str):
+                    p_key = key
+                else:
+                    p_key = self.sep.join(str(v) for v in key)
+                public_keys.append(p_key)
 
         else:
             self._grouped = self.df
@@ -197,6 +216,14 @@ class esm_datastore(Catalog):
 
         if not aggregations:
             groupby_attrs = []
+
+        # Cast all agg_columns with iterables to tuple values so as
+        # to avoid hashing issues (e.g. TypeError: unhashable type: 'list')
+
+        columns = set(self._columns_with_iterables).intersection(set(agg_columns))
+        if columns:
+            for column in columns:
+                self.df[column] = self.df[column].map(tuple)
 
         aggregation_info = AggregationInfo(
             groupby_attrs,
@@ -474,6 +501,7 @@ class esm_datastore(Catalog):
                         path_column=self.path_column_name,
                         data_format=self.data_format,
                         format_column=self.format_column_name,
+                        requested_variables=self._requested_variables,
                     )
                     entry = _make_entry(key, 'esm_single_source', args)
                 else:
@@ -486,6 +514,7 @@ class esm_datastore(Catalog):
                         data_format=self.data_format,
                         format_column=self.format_column_name,
                         key=key,
+                        requested_variables=self._requested_variables,
                     )
                     entry = _make_entry(key, 'esm_group', args)
 
@@ -652,6 +681,7 @@ class esm_datastore(Catalog):
         """
 
         results = search(self.df, require_all_on=require_all_on, **query)
+        requested_variables = query.get(self.variable_column_name, [])
         ret = esm_datastore.from_df(
             results,
             esmcol_data=self.esmcol_data,
@@ -660,6 +690,7 @@ class esm_datastore(Catalog):
             log_level=self._log_level,
             **self._kwargs,
         )
+        ret._requested_variables = requested_variables
         return ret
 
     def serialize(self, name: str, directory: str = None, catalog_type: str = 'dict') -> None:
