@@ -2,19 +2,12 @@
 """ Helper functions for fetching and loading catalog"""
 import importlib
 import json
-import logging
 import sys
 from pathlib import Path
 from urllib.parse import ParseResult, urlparse, urlunparse
 
 import pandas as pd
 import requests
-
-logger = logging.getLogger('intake-esm')
-handle = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s ' '- %(message)s')
-handle.setFormatter(formatter)
-logger.addHandler(handle)
 
 
 def _is_valid_url(url):
@@ -55,13 +48,11 @@ def _fetch_and_parse_json(input_path):
 
     try:
         if _is_valid_url(input_path):
-            logger.debug(f'Loading ESMCol from URL: {input_path}')
             resp = requests.get(input_path)
             data = resp.json()
         else:
             input_path = Path(input_path).absolute().as_posix()
             with open(input_path) as filein:
-                logger.debug(f'Loading ESMCol from filesystem: {input_path}')
                 data = json.load(filein)
 
     except Exception as exc:

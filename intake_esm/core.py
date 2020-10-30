@@ -1,6 +1,5 @@
 import concurrent.futures
 import json
-import logging
 import pathlib
 from collections import OrderedDict, namedtuple
 from copy import deepcopy
@@ -15,7 +14,7 @@ from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
 from .search import _get_columns_with_iterables, _unique, search
-from .utils import _fetch_and_parse_json, _fetch_catalog, logger
+from .utils import _fetch_and_parse_json, _fetch_catalog
 
 _AGGREGATIONS_TYPES = {'join_existing', 'join_new', 'union'}
 
@@ -40,16 +39,6 @@ class esm_datastore(Catalog):
         by default True
     sep : str, optional
         Delimiter to use when constructing a key for a query, by default '.'
-    log_level: str, optional
-        Level of logging to report, by default 'CRITICAL'
-        Accepted values include:
-
-        - CRITICAL
-        - ERROR
-        - WARNING
-        - INFO
-        - DEBUG
-        - NOTSET
     csv_kwargs : dict, optional
         Additional keyword arguments passed through to the
         :py:func:`~pandas.read_csv` function.
@@ -84,18 +73,12 @@ class esm_datastore(Catalog):
         esmcol_data: Dict[str, Any] = None,
         progressbar: bool = True,
         sep: str = '.',
-        log_level: str = 'CRITICAL',
         csv_kwargs: Dict[str, Any] = None,
         **kwargs,
     ):
 
         """Intake Catalog representing an ESM Collection."""
-
-        numeric_log_level = getattr(logging, log_level.upper(), None)
-        if not isinstance(numeric_log_level, int):
-            raise ValueError(f'Invalid log level: {log_level}')
-        logger.setLevel(numeric_log_level)
-
+        super(esm_datastore, self).__init__(**kwargs)
         if isinstance(esmcol_obj, (str, pathlib.PurePath)):
             self.esmcol_data, self.esmcol_path = _fetch_and_parse_json(esmcol_obj)
             self._df, self.catalog_file = _fetch_catalog(self.esmcol_data, esmcol_obj, csv_kwargs)
@@ -115,7 +98,6 @@ class esm_datastore(Catalog):
         self.progressbar = progressbar
         self._kwargs = kwargs
         self._to_dataset_args_token = None
-        self._log_level = log_level
         self._datasets = None
         self.sep = sep
         self._data_format, self._format_column_name = None, None
@@ -128,7 +110,6 @@ class esm_datastore(Catalog):
         self.aggregation_info = self._get_aggregation_info()
         self._entries = {}
         self._set_groups_and_keys()
-        super(esm_datastore, self).__init__(**kwargs)
         self._requested_variables = []
 
         if self.variable_column_name:
@@ -589,7 +570,6 @@ class esm_datastore(Catalog):
         esmcol_data: Dict[str, Any] = None,
         progressbar: bool = True,
         sep: str = '.',
-        log_level: str = 'CRITICAL',
         **kwargs,
     ) -> 'esm_datastore':
         """
@@ -607,8 +587,6 @@ class esm_datastore(Catalog):
             by default True
         sep : str, optional
             Delimiter to use when constructing a key for a query, by default '.'
-        log_level : str, optional
-            Level of logging to report, by default 'CRITICAL'
 
         Returns
         -------
@@ -620,7 +598,6 @@ class esm_datastore(Catalog):
             esmcol_data=esmcol_data,
             progressbar=progressbar,
             sep=sep,
-            log_level=log_level,
             **kwargs,
         )
 
@@ -687,7 +664,6 @@ class esm_datastore(Catalog):
             esmcol_data=self.esmcol_data,
             progressbar=self.progressbar,
             sep=self.sep,
-            log_level=self._log_level,
             **self._kwargs,
         )
         ret._requested_variables = requested_variables
