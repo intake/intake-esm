@@ -176,11 +176,6 @@ def test_ipython_key_completions():
         assert key in keys
 
 
-def test_log_level_error():
-    with pytest.raises(ValueError):
-        intake.open_esm_datastore(cdf_col_sample_cmip6, log_level='VERBOSE')
-
-
 @pytest.mark.parametrize(
     'url, columns',
     [
