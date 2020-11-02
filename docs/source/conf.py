@@ -46,9 +46,8 @@ extensions = [
     'sphinx.ext.intersphinx',
     'IPython.sphinxext.ipython_console_highlighting',
     'IPython.sphinxext.ipython_directive',
-    'nbsphinx',
     'sphinx.ext.napoleon',
-    'myst_parser',
+    'myst_nb',
 ]
 
 autodoc_member_order = 'groupwise'
@@ -62,6 +61,9 @@ myst_figure_enable = True
 myst_url_schemes = ('http', 'https', 'mailto')
 myst_heading_anchors = 2
 panels_add_boostrap_css = False
+
+jupyter_execute_notebooks = 'cache'
+# jupyter_execute_notebooks = 'off'
 
 extlinks = {
     'issue': ('https://github.com/intake/intake-esm/issues/%s', 'GH#'),
@@ -80,15 +82,15 @@ napoleon_use_rtype = False
 # Enable notebook execution
 # https://nbsphinx.readthedocs.io/en/0.4.2/never-execute.html
 # nbsphinx_execute = 'auto'
-# Allow errors in all notebooks by
-nbsphinx_allow_errors = True
+# # Allow errors in all notebooks by
+# nbsphinx_allow_errors = True
 
-# Disable cell timeout
-nbsphinx_timeout = -1
+# # Disable cell timeout
+# nbsphinx_timeout = -1
 
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+# source_suffix = '.rst'
 
 # The encoding of source files.
 # source_encoding = 'utf-8-sig'
