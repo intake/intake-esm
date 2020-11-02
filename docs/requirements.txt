@@ -2,7 +2,7 @@ Pygments>=2.6
 gcsfs
 jupyterlab
 matplotlib
-myst-parser
+myst-nb
 nbsphinx
 netcdf4
 numcodecs
