@@ -8,6 +8,7 @@ maxdepth: 2
 caption: Core Guide
 ---
 overview.ipynb
+search.ipynb
 ```
 
 ```{toctree}
