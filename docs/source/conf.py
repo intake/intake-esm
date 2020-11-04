@@ -46,9 +46,8 @@ extensions = [
     'sphinx.ext.intersphinx',
     'IPython.sphinxext.ipython_console_highlighting',
     'IPython.sphinxext.ipython_directive',
-    'nbsphinx',
     'sphinx.ext.napoleon',
-    'myst_parser',
+    'myst_nb',
 ]
 
 autodoc_member_order = 'groupwise'
@@ -62,6 +61,10 @@ myst_figure_enable = True
 myst_url_schemes = ('http', 'https', 'mailto')
 myst_heading_anchors = 2
 panels_add_boostrap_css = False
+
+jupyter_execute_notebooks = 'cache'
+# jupyter_execute_notebooks = 'off'
+execution_timeout = 60
 
 extlinks = {
     'issue': ('https://github.com/intake/intake-esm/issues/%s', 'GH#'),
@@ -77,18 +80,8 @@ autosummary_generate = []
 napoleon_use_rtype = False
 
 
-# Enable notebook execution
-# https://nbsphinx.readthedocs.io/en/0.4.2/never-execute.html
-# nbsphinx_execute = 'auto'
-# Allow errors in all notebooks by
-nbsphinx_allow_errors = True
-
-# Disable cell timeout
-nbsphinx_timeout = -1
-
-
 # The suffix of source filenames.
-source_suffix = '.rst'
+# source_suffix = '.rst'
 
 # The encoding of source files.
 # source_encoding = 'utf-8-sig'
@@ -98,9 +91,9 @@ master_doc = 'index'
 
 # General information about the project.
 current_year = datetime.datetime.now().year
-project = u'Intake-esm'
-copyright = f'2018-{current_year}, the intake-esm development team'
-author = u'intake-esm developers'
+project = u'Intake-ESM'
+copyright = f'2018-{current_year}, Intake-ESM development team'
+author = u'Intake-ESM developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

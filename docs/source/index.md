@@ -14,9 +14,8 @@ maxdepth: 2
 caption: Using intake-esm
 ---
 installation.md
-notebooks/tutorial.ipynb
-faq.md
-cmip_ap.md
+user-guide/index.md
+supplemental-guide/index.md
 ```
 
 ```{toctree}
