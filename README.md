@@ -36,7 +36,7 @@ providing necessary functionality for searching, discovering, data access/loadin
 - Opening an ESM collection definition file: An ESM (Earth System Model) collection file is a JSON file that conforms
   to the [ESM Collection Specification](https://github.com/NCAR/esm-collection-spec). When provided a link/path to an esm collection file, `intake-esm` establishes
   a link to a database (CSV file) that contains data assets locations and associated metadata
-  (i.e., which experiement, model, the come from). The collection JSON file can be stored on a local filesystem
+  (i.e., which experiment, model, the come from). The collection JSON file can be stored on a local filesystem
   or can be hosted on a remote server.
 
   ```python
@@ -51,7 +51,7 @@ providing necessary functionality for searching, discovering, data access/loadin
   Out[4]: <pangeo-cmip6 catalog with 4287 dataset(s) from 282905 asset(s)>
   ```
 
-- Search and Discovery: `intake-esm` provides functionality to execute queries against the database:
+- Search and Discovery: `intake-esm` provides functionality to execute queries against the catalog:
 
   ```python
   In [5]: col_subset = col.search(

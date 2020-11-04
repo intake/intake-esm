@@ -9,6 +9,7 @@ caption: Core Guide
 ---
 overview.ipynb
 search.ipynb
+multi-variable-assets.ipynb
 ```
 
 ```{toctree}
@@ -17,4 +18,5 @@ maxdepth: 2
 caption: Tutorials & Examples
 ---
 cmip6-tutorial.ipynb
+manipulating-dataframe.ipynb
 ```

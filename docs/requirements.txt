@@ -1,14 +1,11 @@
 Pygments>=2.6
 gcsfs
+s3fs
 jupyterlab
 matplotlib
 myst-nb
-nbsphinx
-netcdf4
-numcodecs
 pydata-sphinx-theme
 setuptools>=50.3
 sphinx>=3.2
 watermark
-zarr
 -r ../requirements.txt
