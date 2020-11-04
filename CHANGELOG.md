@@ -1,5 +1,36 @@
 # Changelog
 
+## Intake-esm v2020.11.4
+
+### Features
+
+- ✨ Support multiple variable assets/files. ({pr}`287`) [@andersy005](https://github.com/andersy005)
+- ✨ Add utility function for printing version information. ({pr}`284`) [@andersy005](https://github.com/andersy005)
+
+### Breaking Changes
+
+- 💥 Remove unnecessary logging bits. ({pr}`297`) [@andersy005](https://github.com/andersy005)
+
+### Bug Fixes
+
+- ✔️ Fix test failures. ({pr}`280`) [@andersy005](https://github.com/andersy005)
+- Fix TypeError bug in `.search()` method when using wildcard and regular expressions. ({pr}`285`) [@andersy005](https://github.com/andersy005)
+- Use file like object when dealing with netcdf in the cloud. ({pr}`292`) [@andersy005](https://github.com/andersy005)
+
+### Documentation
+
+- 📚 Fix ReadtheDocs documentation builds. ({pr}`286`) [@andersy005](https://github.com/andersy005)
+- 📚 Migrate docs from restructured text to markdown via `myst-parsers`. ({pr}`296`) [@andersy005](https://github.com/andersy005)
+- 🔨 Refactor documentation contents & add new notebooks. ({pr}`298`) [@andersy005](https://github.com/andersy005)
+
+### Internal Changes
+
+- Fix import errors due to [intake/intake#526](https://github.com/intake/intake/pull/526). ({pr}`282`) [@andersy005](https://github.com/andersy005)
+- Migrate CI from CircleCI to GitHub Actions. ({pr}`283`) [@andersy005](https://github.com/andersy005)
+- Use mamba to speed up CI testing. ({pr}`293`) [@andersy005](https://github.com/andersy005)
+- Enable dependabot updates. ({pr}`294`) [@andersy005](https://github.com/andersy005)
+- Test against Python 3.9. ({pr}`295`) [@andersy005](https://github.com/andersy005)
+
 ## Intake-esm v2020.8.15
 
 ### Features
