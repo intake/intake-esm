@@ -1,4 +1,12 @@
 [tool.black]
 line-length = 100
-target-version = ['py37']
+target-version = ['py38']
 skip-string-normalization = true
+
+[tool.nbqa.mutate]
+isort = 1
+black = 1
+pyupgrade = 1
+
+[tool.nbqa.addopts]
+pyupgrade = ["--py36-plus"]
