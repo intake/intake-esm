@@ -31,6 +31,12 @@
 - Enable dependabot updates. ({pr}`294`) [@andersy005](https://github.com/andersy005)
 - Test against Python 3.9. ({pr}`295`) [@andersy005](https://github.com/andersy005)
 
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/intake/intake-esm/graphs/contributors?from=2020-08-15&to=2020-11-04&type=c))
+
+[@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2020-08-15..2020-11-04&type=Issues) | [@dcherian](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adcherian+updated%3A2020-08-15..2020-11-04&type=Issues) | [@jbusecke](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajbusecke+updated%3A2020-08-15..2020-11-04&type=Issues) | [@jukent](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajukent+updated%3A2020-08-15..2020-11-04&type=Issues) | [@sherimickelson](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Asherimickelson+updated%3A2020-08-15..2020-11-04&type=Issues)
+
 ## Intake-esm v2020.8.15
 
 ### Features
@@ -66,6 +72,8 @@
 
 ([GitHub contributors page for this release](https://github.com/intake/intake-esm/graphs/contributors?from=2020-06-11&to=2020-08-15&type=c))
 
+[@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2020-06-11..2020-08-15&type=Issues) | [@bonnland](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Abonnland+updated%3A2020-06-11..2020-08-15&type=Issues) | [@dcherian](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adcherian+updated%3A2020-06-11..2020-08-15&type=Issues) | [@jeffdlb](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajeffdlb+updated%3A2020-06-11..2020-08-15&type=Issues) | [@jukent](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajukent+updated%3A2020-06-11..2020-08-15&type=Issues) | [@kmpaul](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Akmpaul+updated%3A2020-06-11..2020-08-15&type=Issues) | [@markusritschel](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Amarkusritschel+updated%3A2020-06-11..2020-08-15&type=Issues) | [@martindurant](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Amartindurant+updated%3A2020-06-11..2020-08-15&type=Issues) | [@matt-long](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Amatt-long+updated%3A2020-06-11..2020-08-15&type=Issues)
+
 ## Intake-esm v2020.6.11
 
 ### Features
@@ -86,6 +94,8 @@
 
 ([GitHub contributors page for this release](https://github.com/intake/intake-esm/graphs/contributors?from=2020-05-21&to=2020-06-11&type=c))
 
+[@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2020-05-21..2020-06-11&type=Issues) | [@jhamman](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajhamman+updated%3A2020-05-21..2020-06-11&type=Issues) | [@martindurant](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Amartindurant+updated%3A2020-05-21..2020-06-11&type=Issues)
+
 ## Intake-esm v2020.5.21
 
 ### Features
@@ -93,6 +103,12 @@
 - Provide informative message/warnings from empty queries. ({pr}`235`) [@andersy005](https://github.com/andersy005)
 - Replace tqdm progressbar with fastprogress. ({pr}`238`) [@andersy005](https://github.com/andersy005)
 - Add `catalog_file` attribute to `esm_datastore` class. ({pr}`240`) [@andersy005](https://github.com/andersy005)
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/intake/intake-esm/graphs/contributors?from=2020-05-01&to=2020-05-21&type=c))
+
+[@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2020-05-01..2020-05-21&type=Issues) | [@bonnland](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Abonnland+updated%3A2020-05-01..2020-05-21&type=Issues) | [@dcherian](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adcherian+updated%3A2020-05-01..2020-05-21&type=Issues) | [@jbusecke](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajbusecke+updated%3A2020-05-01..2020-05-21&type=Issues) | [@jeffdlb](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajeffdlb+updated%3A2020-05-01..2020-05-21&type=Issues) | [@kmpaul](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Akmpaul+updated%3A2020-05-01..2020-05-21&type=Issues) | [@markusritschel](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Amarkusritschel+updated%3A2020-05-01..2020-05-21&type=Issues)
 
 ## Intake-esm v2020.5.01
 
@@ -119,6 +135,8 @@
 ### Contributors to this release
 
 ([GitHub contributors page for this release](https://github.com/intake/intake-esm/graphs/contributors?from=2020-03-16&to=2020-05-01&type=c))
+
+[@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2020-03-16..2020-05-01&type=Issues) | [@bonnland](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Abonnland+updated%3A2020-03-16..2020-05-01&type=Issues) | [@dcherian](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adcherian+updated%3A2020-03-16..2020-05-01&type=Issues) | [@jbusecke](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajbusecke+updated%3A2020-03-16..2020-05-01&type=Issues) | [@jhamman](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajhamman+updated%3A2020-03-16..2020-05-01&type=Issues) | [@kmpaul](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Akmpaul+updated%3A2020-03-16..2020-05-01&type=Issues) | [@sherimickelson](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Asherimickelson+updated%3A2020-03-16..2020-05-01&type=Issues)
 
 ## Intake-esm v2020.3.16
 
@@ -153,6 +171,8 @@
 ### Contributors to this release
 
 ([GitHub contributors page for this release](https://github.com/intake/intake-esm/graphs/contributors?from=2019-12-13&to=2020-03-16&type=c))
+
+[@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2019-12-13..2020-03-16&type=Issues) | [@bonnland](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Abonnland+updated%3A2019-12-13..2020-03-16&type=Issues) | [@dcherian](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adcherian+updated%3A2019-12-13..2020-03-16&type=Issues) | [@jbusecke](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajbusecke+updated%3A2019-12-13..2020-03-16&type=Issues) | [@jhamman](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajhamman+updated%3A2019-12-13..2020-03-16&type=Issues) | [@kmpaul](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Akmpaul+updated%3A2019-12-13..2020-03-16&type=Issues)
 
 ## Intake-esm v2019.12.13
 
@@ -196,6 +216,8 @@
 
 ([GitHub contributors page for this release](https://github.com/intake/intake-esm/graphs/contributors?from=2019-10-15&to=2019-12-13&type=c))
 
+[@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2019-10-15..2019-12-13&type=Issues) | [@bonnland](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Abonnland+updated%3A2019-10-15..2019-12-13&type=Issues) | [@dcherian](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adcherian+updated%3A2019-10-15..2019-12-13&type=Issues) | [@jbusecke](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajbusecke+updated%3A2019-10-15..2019-12-13&type=Issues) | [@jhamman](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajhamman+updated%3A2019-10-15..2019-12-13&type=Issues) | [@matt-long](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Amatt-long+updated%3A2019-10-15..2019-12-13&type=Issues) | [@naomi-henderson](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Anaomi-henderson+updated%3A2019-10-15..2019-12-13&type=Issues) | [@Recalculate](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3ARecalculate+updated%3A2019-10-15..2019-12-13&type=Issues) | [@sebasblancogonz](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Asebasblancogonz+updated%3A2019-10-15..2019-12-13&type=Issues)
+
 ## Intake-esm v2019.10.15
 
 ### Features
@@ -211,6 +233,8 @@
 ### Contributors to this release
 
 ([GitHub contributors page for this release](https://github.com/intake/intake-esm/graphs/contributors?from=2019-08-23&to=2019-10-15&type=c))
+
+[@aaronspring](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aaaronspring+updated%3A2019-08-23..2019-10-15&type=Issues) | [@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2019-08-23..2019-10-15&type=Issues) | [@bonnland](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Abonnland+updated%3A2019-08-23..2019-10-15&type=Issues) | [@dcherian](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adcherian+updated%3A2019-08-23..2019-10-15&type=Issues) | [@n-henderson](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3An-henderson+updated%3A2019-08-23..2019-10-15&type=Issues) | [@naomi-henderson](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Anaomi-henderson+updated%3A2019-08-23..2019-10-15&type=Issues) | [@rabernat](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Arabernat+updated%3A2019-08-23..2019-10-15&type=Issues)
 
 ## Intake-esm v2019.8.23
 
