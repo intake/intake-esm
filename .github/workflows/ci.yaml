@@ -13,6 +13,7 @@ on:
 jobs:
   build:
     name: python-${{ matrix.python-version }}
+    if: github.repository == 'intake/intake-esm'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -27,6 +28,7 @@ jobs:
         with:
           channels: conda-forge
           mamba-version: '*'
+          channel-priority: strict
           activate-environment: intake-esm-dev
           auto-update-conda: false
           python-version: ${{ matrix.python-version }}
@@ -52,6 +54,7 @@ jobs:
 
   upstream-dev:
     name: upstream-dev
+    if: github.repository == 'intake/intake-esm'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -62,6 +65,7 @@ jobs:
         with:
           channels: conda-forge
           mamba-version: '*'
+          channel-priority: strict
           activate-environment: intake-esm-dev
           auto-update-conda: false
           python-version: 3.8
