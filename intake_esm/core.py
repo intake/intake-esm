@@ -658,7 +658,10 @@ class esm_datastore(Catalog):
         """
 
         results = search(self.df, require_all_on=require_all_on, **query)
-        requested_variables = query.get(self.variable_column_name, [])
+        if self._multiple_variable_assets:
+            requested_variables = query.get(self.variable_column_name, [])
+        else:
+            requested_variables = []
         ret = esm_datastore.from_df(
             results,
             esmcol_data=self.esmcol_data,
