@@ -1,5 +1,25 @@
 # Changelog
 
+## Intake-esm v2020.12.18
+
+([full changelog](https://github.com/intake/intake-esm/compare/4f63319294fc7d8394a7c89680ca3525ca1b0d54...dd3e7fdbd752a9e26030ccc7c03e571adb3d3be1))
+
+### Bug Fixes
+
+- 🐛 Disable `_requested_variables` for single variable assets [#306](https://github.com/intake/intake-esm/pull/306) ([@andersy005](https://github.com/andersy005))
+
+### Internal Changes
+
+- Use `github-activity` to update list of contributors [#302](https://github.com/intake/intake-esm/pull/302) ([@andersy005](https://github.com/andersy005))
+- Add nbqa & Update prettier commit hooks [#300](https://github.com/intake/intake-esm/pull/300) ([@andersy005](https://github.com/andersy005))
+- Update pre-commit and GH actions [#299](https://github.com/intake/intake-esm/pull/299) ([@andersy005](https://github.com/andersy005))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/intake/intake-esm/graphs/contributors?from=2020-11-05&to=2020-12-19&type=c))
+
+[@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2020-11-05..2020-12-19&type=Issues) | [@dcherian](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adcherian+updated%3A2020-11-05..2020-12-19&type=Issues) | [@jbusecke](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajbusecke+updated%3A2020-11-05..2020-12-19&type=Issues) | [@naomi-henderson](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Anaomi-henderson+updated%3A2020-11-05..2020-12-19&type=Issues) | [@Recalculate](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3ARecalculate+updated%3A2020-11-05..2020-12-19&type=Issues)
+
 ## Intake-esm v2020.11.4
 
 ### Features
