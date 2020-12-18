@@ -10,7 +10,7 @@
 
 ### Internal Changes
 
-- Update changelog in preparation for new release [#307](https://github.com/intake/intake-esm/pull/302) ([@andersy005](https://github.com/andersy005))
+- Update changelog in preparation for new release [#307](https://github.com/intake/intake-esm/pull/307) ([@andersy005](https://github.com/andersy005))
 - Use `github-activity` to update list of contributors [#302](https://github.com/intake/intake-esm/pull/302) ([@andersy005](https://github.com/andersy005))
 - Add nbqa & Update prettier commit hooks [#300](https://github.com/intake/intake-esm/pull/300) ([@andersy005](https://github.com/andersy005))
 - Update pre-commit and GH actions [#299](https://github.com/intake/intake-esm/pull/299) ([@andersy005](https://github.com/andersy005))
