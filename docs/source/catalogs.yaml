@@ -42,28 +42,28 @@ catalogs:
     dataset_docs_link: https://pcmdi.llnl.gov/CMIP6/Guide/dataUsers.html
 
   - name: CMIP6-MISTRAL
-    url: /home/mpim/m300524/intake-esm-datastore/catalogs/mistral-cmip6.json
+    url: /work/ik1017/Catalogs/mistral-cmip6.json
     description: CMIP6 data accessible on the DKRZ's MISTRAL disk storage system
     platform: DKRZ (German Climate Computing Centre)-MISTRAL
     data_format: netCDF
     dataset_docs_link: https://pcmdi.llnl.gov/CMIP6/Guide/dataUsers.html
 
   - name: CMIP5-MISTRAL
-    url: /home/mpim/m300524/intake-esm-datastore/catalogs/mistral-cmip5.json
+    url: /work/ik1017/Catalogs/mistral-cmip5.json
     description: CMIP5 data accessible on the DKRZ's MISTRAL disk storage system
     platform: DKRZ (German Climate Computing Centre)-MISTRAL
     data_format: netCDF
     dataset_docs_link: https://pcmdi.llnl.gov/mips/cmip5/guide.html
 
   - name: MiKlip-MISTRAL
-    url: /home/mpim/m300524/intake-esm-datastore/catalogs/mistral-miklip.json
+    url: /work/ik1017/Catalogs/mistral-miklip.json
     description: Data from MiKlip projects at the Max Planck Institute for Meteorology (MPI-M)
     platform: DKRZ (German Climate Computing Centre)-MISTRAL
     data_format: netCDF
     dataset_docs_link: https://www.fona-miklip.de/
 
   - name: MPI-GE-MISTRAL
-    url: /home/mpim/m300524/intake-esm-datastore/catalogs/mistral-MPI-GE.json
+    url: /work/ik1017/Catalogs/mistral-MPI-GE.json
     description: Max Planck Institute Grand Ensemble cmorized by CMIP5-standards
     platform: DKRZ (German Climate Computing Centre)-MISTRAL
     data_format: netCDF
