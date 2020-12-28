@@ -69,6 +69,11 @@ jobs:
           activate-environment: intake-esm-dev
           auto-update-conda: false
           python-version: 3.8
+
+      - name: Set environment variables
+        run: |
+          echo "XARRAY_BACKEND_API=v2" >> $GITHUB_ENV
+
       - name: Set up conda environment
         run: |
           mamba env update -f ci/environment-upstream-dev.yml
