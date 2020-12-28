@@ -3,6 +3,7 @@ include CONTRIBUTING.md
 include LICENSE
 include README.md
 include requirements.txt
+include pyproject.toml
 
 recursive-include docs/source *
 include docs/Makefile docs/make.bat
