@@ -10,3 +10,6 @@ pyupgrade = 1
 
 [tool.nbqa.addopts]
 pyupgrade = ["--py36-plus"]
+
+[build-system]
+requires = ["setuptools>=30.3.0", "wheel", "setuptools_scm"]
