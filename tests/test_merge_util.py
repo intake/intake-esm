@@ -99,7 +99,12 @@ def test_open_asset_error(path, data_format, error):
 )
 def test_open_asset(path, data_format, storage_options):
     x = _path_to_mapper(path, storage_options, data_format)
-    ds = _open_asset(x, data_format, cdf_kwargs={'chunks': {}}, zarr_kwargs={'consolidated': True})
+    ds = _open_asset(
+        x,
+        data_format,
+        cdf_kwargs={'chunks': {}, 'engine': 'h5netcdf'},
+        zarr_kwargs={'consolidated': True},
+    )
     assert isinstance(ds, xr.Dataset)
 
 

@@ -23,7 +23,14 @@ jobs:
       matrix:
         python-version: ['3.6', '3.7', '3.8', '3.9']
     steps:
+      - name: Cancel previous runs
+        uses: styfle/cancel-workflow-action@0.6.0
+        with:
+          access_token: ${{ github.token }}
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # Fetch all history for all branches and tags.
+
       - uses: conda-incubator/setup-miniconda@v2
         with:
           channels: conda-forge
@@ -60,7 +67,14 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
+      - name: Cancel previous runs
+        uses: styfle/cancel-workflow-action@0.6.0
+        with:
+          access_token: ${{ github.token }}
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # Fetch all history for all branches and tags.
+
       - uses: conda-incubator/setup-miniconda@v2
         with:
           channels: conda-forge
@@ -69,6 +83,11 @@ jobs:
           activate-environment: intake-esm-dev
           auto-update-conda: false
           python-version: 3.8
+
+      - name: Set environment variables
+        run: |
+          echo "XARRAY_BACKEND_API=v2" >> $GITHUB_ENV
+
       - name: Set up conda environment
         run: |
           mamba env update -f ci/environment-upstream-dev.yml
