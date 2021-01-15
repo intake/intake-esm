@@ -4,13 +4,13 @@ channels:
 dependencies:
   - cftime
   - codecov
-  - fastprogress
-  - fsspec
+  - fastprogress>= 0.2.6
+  - fsspec>=0.8.0
   - gcsfs
-  - h5netcdf
-  - intake
+  - h5netcdf>=0.8.1
+  - intake>=0.6.0
   - ipython
-  - netcdf4
+  - netcdf4>=1.5.5
   - pip
   - pre-commit
   - pytest
@@ -18,5 +18,6 @@ dependencies:
   - pytest-icdiff
   - pytest-xdist
   - s3fs
-  - xarray
-  - zarr
+  - scipy
+  - xarray>=0.16.2
+  - zarr >=2.5
