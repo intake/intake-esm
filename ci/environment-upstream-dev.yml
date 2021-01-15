@@ -8,7 +8,7 @@ dependencies:
   - fastprogress>= 0.2.6
   - h5netcdf>=0.8.1
   - ipython
-  - netcdf4>=1.5.3
+  - netcdf4>=1.5.5
   - pip
   - pre-commit
   - psutil
@@ -18,7 +18,7 @@ dependencies:
   - pytest-xdist
   - scipy
   - toolz
-  - zarr>=2.4
+  - zarr>=2.5
   - pip:
       - git+https://github.com/intake/filesystem_spec.git
       - git+https://github.com/intake/intake.git

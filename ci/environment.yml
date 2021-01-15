@@ -10,7 +10,7 @@ dependencies:
   - h5netcdf>=0.8.1
   - intake>=0.6.0
   - ipython
-  - netcdf4>=1.5.3
+  - netcdf4>=1.5.5
   - pip
   - pre-commit
   - pytest
@@ -19,5 +19,5 @@ dependencies:
   - pytest-xdist
   - s3fs
   - scipy
-  - xarray>=0.16
-  - zarr >=2.4
+  - xarray>=0.16.2
+  - zarr >=2.5
