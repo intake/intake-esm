@@ -25,6 +25,8 @@
 
 ([GitHub contributors page for this release](https://github.com/intake/intake-esm/graphs/contributors?from=2020-12-19&to=2021-01-16&type=c))
 
+[@aaronspring](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aaaronspring+updated%3A2020-12-19..2021-01-16&type=Issues) | [@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2020-12-19..2021-01-16&type=Issues) | [@jbusecke](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajbusecke+updated%3A2020-12-19..2021-01-16&type=Issues)
+
 ## Intake-esm v2020.12.18
 
 ([full changelog](https://github.com/intake/intake-esm/compare/4f63319294fc7d8394a7c89680ca3525ca1b0d54...dd3e7fdbd752a9e26030ccc7c03e571adb3d3be1))
