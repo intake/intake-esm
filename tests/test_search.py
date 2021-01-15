@@ -32,14 +32,17 @@ def test_unique():
         'random': {'count': 3, 'values': ['bx', 'by', 'bz']},
     }
     actual = _unique(df, df.columns.tolist())
-    assert actual == expected
+
+    assert set(actual.keys()) == set(expected.keys())
+    for key in actual.keys():
+        assert set(actual[key]['values']) == set(expected[key]['values'])
 
     actual = _unique(df)
-    assert actual == expected
+    assert set(actual.keys()) == set(expected.keys())
 
     actual = _unique(df, columns='random')
     expected = {'random': {'count': 3, 'values': ['bx', 'by', 'bz']}}
-    assert actual == expected
+    assert set(actual['random']['values']) == set(expected['random']['values'])
 
 
 params = [

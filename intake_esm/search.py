@@ -12,11 +12,16 @@ def _unique(df, columns=None):
         columns = [columns]
     if not columns:
         columns = df.columns.tolist()
+
+    def _find_unique(series):
+        values = series.dropna().values
+        uniques = list(set(_flatten_list(values)))
+        return uniques
+
+    x = df[columns].apply(_find_unique, result_type='reduce').to_dict()
     info = {}
-    for col in columns:
-        values = df[col].dropna().values
-        uniques = np.unique(list(_flatten_list(values))).tolist()
-        info[col] = {'count': len(uniques), 'values': uniques}
+    for col in x.keys():
+        info[col] = {'count': len(x[col]), 'values': x[col]}
     return info
 
 
