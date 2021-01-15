@@ -16,6 +16,7 @@ dependencies:
   - pytest-cov
   - pytest-icdiff
   - pytest-xdist
+  - scipy
   - toolz
   - zarr>=2.4
   - pip:

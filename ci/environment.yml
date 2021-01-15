@@ -18,5 +18,6 @@ dependencies:
   - pytest-icdiff
   - pytest-xdist
   - s3fs
+  - scipy
   - xarray>=0.16
   - zarr >=2.4
