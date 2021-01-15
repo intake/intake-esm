@@ -1,5 +1,32 @@
 # Changelog
 
+## Intake-esm v2021.1.15
+
+([full changelog](https://github.com/intake/intake-esm/compare/2c89c1f15f2d66b93247e83494117b3e90340d01...66ecb069cd1961d2ecde29f696627d7a3f611a59))
+
+### Bug Fixes
+
+- Fix memory error when computing unique values [#313](https://github.com/intake/intake-esm/pull/313) ([@andersy005](https://github.com/andersy005))
+
+### Breaking Changes
+
+- 📦 Drop support for Python 3.6 [#311](https://github.com/intake/intake-esm/pull/311) ([@andersy005](https://github.com/andersy005))
+
+### Internal Changes
+
+- ⬆️ Upgrade dependencies & pin versions in CI environment [#314](https://github.com/intake/intake-esm/pull/314) ([@andersy005](https://github.com/andersy005))
+- 💚 Fix failing upstream-dev CI [#310](https://github.com/intake/intake-esm/pull/310) ([@andersy005](https://github.com/andersy005))
+
+### Documentation
+
+- Update MPI catalogs for MISTRAL [#308](https://github.com/intake/intake-esm/pull/308) ([@aaronspring](https://github.com/aaronspring))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/intake/intake-esm/graphs/contributors?from=2020-12-19&to=2021-01-16&type=c))
+
+[@aaronspring](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aaaronspring+updated%3A2020-12-19..2021-01-16&type=Issues) | [@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2020-12-19..2021-01-16&type=Issues) | [@jbusecke](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajbusecke+updated%3A2020-12-19..2021-01-16&type=Issues)
+
 ## Intake-esm v2020.12.18
 
 ([full changelog](https://github.com/intake/intake-esm/compare/4f63319294fc7d8394a7c89680ca3525ca1b0d54...dd3e7fdbd752a9e26030ccc7c03e571adb3d3be1))
