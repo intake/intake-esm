@@ -84,7 +84,7 @@ def test_open_asset_error(path, data_format, error):
     'path,data_format,storage_options',
     [
         (
-            's3://gfdl-esgf/CMIP6/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/Amon/tas/gr1/v20190726/tas_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc',
+            's3://ncar-cesm-pop-test/tas_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_195001-201412.nc',
             'netcdf',
             {'anon': True},
         ),
