@@ -31,12 +31,15 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           channels: conda-forge
-          # mamba-version: '*'
           channel-priority: strict
           activate-environment: intake-esm-dev
           auto-update-conda: false
           python-version: ${{ matrix.python-version }}
           environment-file: ci/environment.yml
+          mamba-version: '*'
+          use-mamba: true
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
 
       - name: Install intake-esm
         run: |
@@ -76,12 +79,15 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           channels: conda-forge
-          # mamba-version: '*'
           channel-priority: strict
           activate-environment: intake-esm-dev
           auto-update-conda: false
           python-version: 3.8
           environment-file: ci/environment-upstream-dev.yml
+          mamba-version: '*'
+          use-mamba: true
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
 
       - name: Set environment variables
         run: |
