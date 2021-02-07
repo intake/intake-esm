@@ -1,11 +1,7 @@
 name: CI
 on:
   push:
-    branches:
-      - '*'
   pull_request:
-    branches:
-      - '*'
   schedule:
     - cron: '0 0 * * *' # Daily “At 00:00”
   workflow_dispatch: # allows you to trigger manually
@@ -15,6 +11,7 @@ jobs:
     name: python-${{ matrix.python-version }}
     if: github.repository == 'intake/intake-esm'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         shell: bash -l {0}
@@ -39,11 +36,11 @@ jobs:
           activate-environment: intake-esm-dev
           auto-update-conda: false
           python-version: ${{ matrix.python-version }}
+          environment-file: ci/environment.yml
 
-      - name: Set up conda environment
+      - name: Install intake-esm
         run: |
-          mamba env update -f ci/environment.yml
-          python -m pip install -e .
+          python -m pip install -e . --no-deps --force-reinstall
           conda list
 
       - name: Run Tests
@@ -63,6 +60,7 @@ jobs:
     name: upstream-dev
     if: github.repository == 'intake/intake-esm'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         shell: bash -l {0}
@@ -83,15 +81,15 @@ jobs:
           activate-environment: intake-esm-dev
           auto-update-conda: false
           python-version: 3.8
+          environment-file: ci/environment-upstream-dev.yml
 
       - name: Set environment variables
         run: |
           echo "XARRAY_BACKEND_API=v2" >> $GITHUB_ENV
 
-      - name: Set up conda environment
+      - name: Install intake-esm
         run: |
-          mamba env update -f ci/environment-upstream-dev.yml
-          python -m pip install -e .
+          python -m pip install -e . --no-deps --force-reinstall
           conda list
 
       - name: Run Tests
