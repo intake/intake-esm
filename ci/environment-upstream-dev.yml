@@ -3,21 +3,27 @@ channels:
   - conda-forge
 dependencies:
   - boto3
+  - cartopy
   - cftime
   - codecov
   - fastprogress>= 0.2.6
   - h5netcdf>=0.8.1
   - ipython
+  - matplotlib
   - netcdf4>=1.5.5
+  - pandas
   - pip
   - pre-commit
   - psutil
+  - pyproj
   - pytest
   - pytest-cov
   - pytest-icdiff
   - pytest-xdist
+  - regionmask
   - scipy
   - toolz
+  - xgcm
   - zarr>=2.5
   - pip:
       - git+https://github.com/intake/filesystem_spec.git

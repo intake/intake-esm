@@ -37,9 +37,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
           environment-file: ci/environment.yml
           mamba-version: '*'
-          use-mamba: true
-          miniforge-variant: Mambaforge
-          miniforge-version: latest
 
       - name: Install intake-esm
         run: |
@@ -85,9 +82,6 @@ jobs:
           python-version: 3.8
           environment-file: ci/environment-upstream-dev.yml
           mamba-version: '*'
-          use-mamba: true
-          miniforge-variant: Mambaforge
-          miniforge-version: latest
 
       - name: Set environment variables
         run: |
