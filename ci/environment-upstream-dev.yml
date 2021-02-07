@@ -2,6 +2,7 @@ name: intake-esm-dev
 channels:
   - conda-forge
 dependencies:
+  - python=*=*cp*
   - boto3
   - cartopy
   - cftime
