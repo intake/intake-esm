@@ -89,7 +89,11 @@ def test_open_asset_error(path, data_format, error):
             {'anon': True},
         ),
         ('s3://ncar-cesm-lens/lnd/monthly/cesmLE-20C-FSNO.zarr', 'zarr', {'anon': True}),
-        ('gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1p1f1/Amon/pr/gn/', 'zarr', {'anon': True}),
+        (
+            'gs://cmip6/CMIP6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1p1f1/Amon/pr/gn/v20190624/',
+            'zarr',
+            {'anon': True},
+        ),
         (
             f'file://{here}/sample_data/cmip/CMIP6/CMIP/BCC/BCC-ESM1/piControl/r1i1p1f1/Amon/tasmax/gn/v20181214/tasmax/tasmax_Amon_BCC-ESM1_piControl_r1i1p1f1_gn_185001-230012.nc',
             'netcdf',
