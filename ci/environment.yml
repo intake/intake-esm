@@ -2,6 +2,7 @@ name: intake-esm-dev
 channels:
   - conda-forge
 dependencies:
+  - python=*=*cp*
   - cftime
   - codecov
   - fastprogress>= 0.2.6
