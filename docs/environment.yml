@@ -17,4 +17,7 @@ dependencies:
   - pip:
       - gcsfs
       - s3fs
+      - sphinxext-opengraph
+      - sphinx-comments
       - -r ../requirements.txt
+      - -e ..
