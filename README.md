@@ -43,7 +43,7 @@ providing necessary functionality for searching, discovering, data access/loadin
 
   In [1]: import intake
 
-  In [2]: col_url = "https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json"
+  In [2]: col_url = "https://storage.googleapis.com/cmip6/pangeo-cmip6.json"
 
   In [3]: col = intake.open_esm_datastore(col_url)
 
