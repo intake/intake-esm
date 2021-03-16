@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
-
+# import inspect
 import datetime
-import inspect
 import os
 import sys
 
@@ -34,7 +33,7 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.extlinks',
-    'sphinx.ext.linkcode',
+    # 'sphinx.ext.linkcode',
     'sphinx.ext.intersphinx',
     'IPython.sphinxext.ipython_console_highlighting',
     'IPython.sphinxext.ipython_directive',
@@ -49,6 +48,16 @@ extensions = [
 # MyST config
 myst_enable_extensions = ['amsmath', 'colon_fence', 'deflist', 'html_image']
 myst_url_schemes = ('http', 'https', 'mailto')
+
+# sphinx-copybutton configurations
+copybutton_prompt_text = r'>>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: '
+copybutton_prompt_is_regexp = True
+
+comments_config = {
+    'utterances': {'repo': 'NCAR/pop-tools', 'optional': 'config', 'label': '💬 comment'},
+    'hypothesis': False,
+}
+
 
 jupyter_execute_notebooks = 'cache'
 # jupyter_execute_notebooks = 'off'
@@ -222,53 +231,53 @@ intersphinx_mapping = {
 # based on numpy doc/source/conf.py
 
 
-def linkcode_resolve(domain, info):
-    """
-    Determine the URL corresponding to Python object
-    """
-    if domain != 'py':
-        return None
+# def linkcode_resolve(domain, info):
+#     """
+#     Determine the URL corresponding to Python object
+#     """
+#     if domain != 'py':
+#         return None
 
-    modname = info['module']
-    fullname = info['fullname']
+#     modname = info['module']
+#     fullname = info['fullname']
 
-    submod = sys.modules.get(modname)
-    if submod is None:
-        return None
+#     submod = sys.modules.get(modname)
+#     if submod is None:
+#         return None
 
-    obj = submod
-    for part in fullname.split('.'):
-        try:
-            obj = getattr(obj, part)
-        except AttributeError:
-            return None
+#     obj = submod
+#     for part in fullname.split('.'):
+#         try:
+#             obj = getattr(obj, part)
+#         except AttributeError:
+#             return None
 
-    try:
-        fn = inspect.getsourcefile(inspect.unwrap(obj))
-    except TypeError:
-        fn = None
-    if not fn:
-        return None
+#     try:
+#         fn = inspect.getsourcefile(inspect.unwrap(obj))
+#     except TypeError:
+#         fn = None
+#     if not fn:
+#         return None
 
-    try:
-        source, lineno = inspect.getsourcelines(obj)
-    except OSError:
-        lineno = None
+#     try:
+#         source, lineno = inspect.getsourcelines(obj)
+#     except OSError:
+#         lineno = None
 
-    if lineno:
-        linespec = f'#L{lineno}-L{lineno + len(source) - 1}'
-    else:
-        linespec = ''
+#     if lineno:
+#         linespec = f'#L{lineno}-L{lineno + len(source) - 1}'
+#     else:
+#         linespec = ''
 
-    fn = os.path.relpath(fn, start=os.path.dirname(intake_esm.__file__))
+#     fn = os.path.relpath(fn, start=os.path.dirname(intake_esm.__file__))
 
-    if '+' in intake_esm.__version__:
-        return f'https://github.com/intake/intake-esm/blob/master/intake_esm/{fn}{linespec}'
-    else:
-        return (
-            f'https://github.com/intake/intake-esm/blob/'
-            f'v{intake_esm.__version__}/intake_esm/{fn}{linespec}'
-        )
+#     if '+' in intake_esm.__version__:
+#         return f'https://github.com/intake/intake-esm/blob/master/intake_esm/{fn}{linespec}'
+#     else:
+#         return (
+#             f'https://github.com/intake/intake-esm/blob/'
+#             f'v{intake_esm.__version__}/intake_esm/{fn}{linespec}'
+#         )
 
 
 # https://www.ericholscher.com/blog/2016/jul/25/integrating-jinja-rst-sphinx/
