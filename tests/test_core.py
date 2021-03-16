@@ -10,9 +10,7 @@ import xarray as xr
 import intake_esm
 
 here = os.path.abspath(os.path.dirname(__file__))
-zarr_col_pangeo_cmip6 = (
-    'https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json'
-)
+zarr_col_pangeo_cmip6 = 'https://storage.googleapis.com/cmip6/pangeo-cmip6.json'
 cdf_col_sample_cmip6 = os.path.join(here, 'sample-collections/cmip6-netcdf.json')
 multi_variable_col = os.path.join(here, 'sample-collections/multi-variable-collection.json')
 cdf_col_sample_cmip5 = os.path.join(here, 'sample-collections/cmip5-netcdf.json')

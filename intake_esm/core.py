@@ -53,7 +53,7 @@ class esm_datastore(Catalog):
     can be accessed with `intake.open_esm_datastore()`:
 
     >>> import intake
-    >>> url = "https://raw.githubusercontent.com/NCAR/intake-esm-datastore/master/catalogs/pangeo-cmip6.json"
+    >>> url = "https://storage.googleapis.com/cmip6/pangeo-cmip6.json"
     >>> col = intake.open_esm_datastore(url)
     >>> col.df.head()
     activity_id institution_id source_id experiment_id  ... variable_id grid_label                                             zstore dcpp_init_year
