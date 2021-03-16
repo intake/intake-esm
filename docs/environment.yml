@@ -1,11 +1,26 @@
 name: intake-esm-dev
 channels:
   - conda-forge
+  - nodefaults
 dependencies:
-  - intake-xarray
-  - nb_conda_kernels
-  - nbsphinx
-  - python=3.7
-  - sphinx_rtd_theme
-  - jupyter_client
+  - cftime
+  - fastprogress
+  - fsspec
+  - gcsfs
+  - h5netcdf
+  - intake
+  - jupyterlab
+  - matplotlib
+  - myst-nb
+  - netcdf4
+  - pip
+  - python=3.8
+  - s3fs
+  - sphinx-book-theme >= 0.0.38
+  - sphinx-copybutton
+  - sqlalchemy==1.3.12
   - watermark
+  - xarray
+  - zarr
+  - pip:
+      - -r ../requirements.txt

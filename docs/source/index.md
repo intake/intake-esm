@@ -4,7 +4,7 @@
 
 ## Feedback
 
-If you encounter any errors or problems with **intake-esm**, please open an issue at the GitHub [main repository](http://github.com/NCAR/intake-esm).
+If you encounter any errors or problems with **intake-esm**, please open an issue at the GitHub [main repository](http://github.com/intake/intake-esm).
 
 ## Documentation Contents
 

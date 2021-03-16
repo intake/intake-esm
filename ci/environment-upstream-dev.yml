@@ -1,6 +1,7 @@
 name: intake-esm-dev
 channels:
   - conda-forge
+  - nodefaults
 dependencies:
   - python=*=*cp*
   - boto3
