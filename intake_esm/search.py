@@ -15,8 +15,7 @@ def _unique(df, columns=None):
 
     def _find_unique(series):
         values = series.dropna().values
-        uniques = list(set(_flatten_list(values)))
-        return uniques
+        return list(set(_flatten_list(values)))
 
     x = df[columns].apply(_find_unique, result_type='reduce').to_dict()
     info = {}
@@ -98,7 +97,7 @@ def search(df, require_all_on=None, **query):
             if index == condition:
                 results.append(group)
 
-        if len(results) >= 1:
+        if results:
             return pd.concat(results).reset_index(drop=True)
 
         warn(message)
@@ -133,18 +132,15 @@ def _is_pattern(value):
 def _flatten_list(data):
     for item in data:
         if isinstance(item, Iterable) and not isinstance(item, str):
-            for x in _flatten_list(item):
-                yield x
+            yield from _flatten_list(item)
         else:
             yield item
 
 
 def _get_columns_with_iterables(df):
-    if not df.empty:
-        has_iterables = (
-            df.sample(20, replace=True).applymap(type).isin([list, tuple, set]).any().to_dict()
-        )
-        columns_with_iterables = [column for column, check in has_iterables.items() if check]
-    else:
-        columns_with_iterables = []
-    return columns_with_iterables
+    if df.empty:
+        return []
+    has_iterables = (
+        df.sample(20, replace=True).applymap(type).isin([list, tuple, set]).any().to_dict()
+    )
+    return [column for column, check in has_iterables.items() if check]
