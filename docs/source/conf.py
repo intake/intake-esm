@@ -59,8 +59,6 @@ comments_config = {
 }
 
 
-jupyter_execute_notebooks = 'cache'
-# jupyter_execute_notebooks = 'off'
 execution_timeout = 600
 
 extlinks = {
