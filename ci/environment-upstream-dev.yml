@@ -15,12 +15,14 @@ dependencies:
   - netcdf4>=1.5.5
   - pandas
   - pip
+  - pooch
   - pre-commit
   - psutil
   - pyproj
   - pytest
   - pytest-cov
   - pytest-icdiff
+  - pytest-sugar
   - pytest-xdist
   - regionmask
   - scipy
