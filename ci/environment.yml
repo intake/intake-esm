@@ -14,10 +14,12 @@ dependencies:
   - ipython
   - netcdf4>=1.5.5
   - pip
+  - pooch
   - pre-commit
   - pytest
   - pytest-cov
   - pytest-icdiff
+  - pytest-sugar
   - pytest-xdist
   - s3fs
   - scipy
