@@ -153,10 +153,7 @@ def union(
 def _to_nested_dict(df):
     """Converts a multiindex series to nested dict"""
     if hasattr(df.index, 'levels') and len(df.index.levels) > 1:
-        ret = {}
-        for k, v in df.groupby(level=0):
-            ret[k] = _to_nested_dict(v.droplevel(0))
-        return ret
+        return {k: _to_nested_dict(v.droplevel(0)) for k, v in df.groupby(level=0)}
     return df.to_dict()
 
 

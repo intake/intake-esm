@@ -145,8 +145,7 @@ class ESMGroupDataSource(DataSource):
 
     def __repr__(self):
         """Make string representation of object."""
-        contents = f'<name: {self.name}, assets: {len(self.df)}'
-        return contents
+        return f'<name: {self.name}, assets: {len(self.df)}'
 
     def _ipython_display_(self):
         """
@@ -254,8 +253,7 @@ class ESMGroupDataSource(DataSource):
 
 def create_nested_dict(df, path_column, aggregation_columns):
     mi = df.set_index(aggregation_columns)
-    nd = _to_nested_dict(mi[path_column])
-    return nd
+    return _to_nested_dict(mi[path_column])
 
 
 def _sanitize_aggregations(df, aggregation_dict):

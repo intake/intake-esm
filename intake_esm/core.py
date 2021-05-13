@@ -127,10 +127,7 @@ class esm_datastore(Catalog):
             internal_keys = self._grouped.groups.keys()
             public_keys = []
             for key in internal_keys:
-                if isinstance(key, str):
-                    p_key = key
-                else:
-                    p_key = self.sep.join(str(v) for v in key)
+                p_key = key if isinstance(key, str) else self.sep.join(str(v) for v in key)
                 public_keys.append(p_key)
 
         else:
@@ -206,14 +203,13 @@ class esm_datastore(Catalog):
             for column in columns:
                 self.df[column] = self.df[column].map(tuple)
 
-        aggregation_info = AggregationInfo(
+        return AggregationInfo(
             groupby_attrs,
             variable_column_name,
             aggregations,
             agg_columns,
             aggregation_dict,
         )
-        return aggregation_info
 
     def keys(self) -> List:
         """
@@ -237,10 +233,9 @@ class esm_datastore(Catalog):
           string template used to create catalog entry keys
         """
         if self.aggregation_info.groupby_attrs:
-            template = self.sep.join(self.aggregation_info.groupby_attrs)
+            return self.sep.join(self.aggregation_info.groupby_attrs)
         else:
-            template = self.sep.join(self.df.columns)
-        return template
+            return self.sep.join(self.df.columns)
 
     @property
     def df(self) -> pd.DataFrame:
@@ -525,8 +520,7 @@ class esm_datastore(Catalog):
         """
         uniques = pd.DataFrame(self.nunique(), columns=['unique'])
         text = uniques._repr_html_()
-        output = f'<p><strong>{self.esmcol_data["id"]} catalog with {len(self)} dataset(s) from {len(self.df)} asset(s)</strong>:</p> {text}'
-        return output
+        return f'<p><strong>{self.esmcol_data["id"]} catalog with {len(self)} dataset(s) from {len(self.df)} asset(s)</strong>:</p> {text}'
 
     def _ipython_display_(self):
         """
@@ -760,9 +754,7 @@ class esm_datastore(Catalog):
         """
 
         uniques = self.unique(self.df.columns.tolist())
-        nuniques = {}
-        for key, val in uniques.items():
-            nuniques[key] = val['count']
+        nuniques = {key: val['count'] for key, val in uniques.items()}
         return pd.Series(nuniques)
 
     def unique(self, columns: Union[str, List] = None) -> Dict[str, Any]:
