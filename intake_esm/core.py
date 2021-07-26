@@ -699,7 +699,7 @@ class esm_datastore(Catalog):
         """
 
         def _clear_old_catalog(catalog_data):
-            """ Remove any old references to the catalog."""
+            """Remove any old references to the catalog."""
             for key in {'catalog_dict', 'catalog_file'}:
                 _ = catalog_data.pop(key, None)
             return catalog_data
