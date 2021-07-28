@@ -74,7 +74,7 @@ class ESMCatalog(pydantic.BaseModel):
         cls,
         catalog_file: typing.Union[str, pydantic.FilePath, pydantic.AnyUrl],
         storage_options=None,
-    ):
+    ) -> 'ESMCatalog':
         """
         Loads the catalog from a file
         """
