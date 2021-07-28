@@ -25,3 +25,4 @@ dependencies:
   - scipy
   - xarray>=0.16.2
   - zarr >=2.5
+  - pydantic
