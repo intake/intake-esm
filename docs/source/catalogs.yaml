@@ -34,6 +34,13 @@ catalogs:
     data_format: netCDF
     dataset_docs_link: https://doi.org/10.5065/d6j101d1
 
+  - name: CESM2-LE-GLADE
+    url: /glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cesm2-le.json
+    description: ESM collection for the CESM2 LENS data stored on GLADE in /glade/campaign/cgd/cesm/CESM2-LE/timeseries
+    platform: NCAR-GLADE
+    data_format: netCDF
+    dataset_docs_link: https://www.cesm.ucar.edu/projects/community-projects/LENS2/
+
   - name: CMIP6-GCP
     url: https://storage.googleapis.com/cmip6/pangeo-cmip6.json
     description: CMIP6 Zarr data residing in Pangeo's Google Storage
