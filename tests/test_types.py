@@ -1,6 +1,6 @@
 import pytest
 
-from intake_esm.models import Assets, ESMCatalog
+from intake_esm._types import Assets, ESMCatalogModel
 
 from .utils import (
     catalog_dict_records,
@@ -43,5 +43,5 @@ def test_assets_mutually_exclusive():
     ],
 )
 def test_assets_from_file(file):
-    cat = ESMCatalog.load_catalog_file(file)
-    assert isinstance(cat, ESMCatalog)
+    cat = ESMCatalogModel.load_catalog_file(file)
+    assert isinstance(cat, ESMCatalogModel)

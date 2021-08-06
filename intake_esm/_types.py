@@ -46,7 +46,7 @@ class AggregationControl(pydantic.BaseModel):
     aggregations: typing.List[Aggregation] = []
 
 
-class ESMCatalog(pydantic.BaseModel):
+class ESMCatalogModel(pydantic.BaseModel):
     """
     Pydantic model for the ESM data catalog defined in https://git.io/JBWoW
     """
@@ -74,7 +74,7 @@ class ESMCatalog(pydantic.BaseModel):
         cls,
         catalog_file: typing.Union[str, pydantic.FilePath, pydantic.AnyUrl],
         storage_options=None,
-    ) -> 'ESMCatalog':
+    ) -> 'ESMCatalogModel':
         """
         Loads the catalog from a file
         """
