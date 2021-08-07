@@ -1,4 +1,3 @@
-import functools
 import os
 import typing
 
@@ -7,6 +6,7 @@ import intake
 import intake.catalog
 import pandas as pd
 import pydantic
+import toolz
 
 from ._types import ESMCatalogModel
 
@@ -14,7 +14,7 @@ from ._types import ESMCatalogModel
 class esm_datastore_v2(intake.catalog.Catalog):
     """in-memory representation for the Earth System Model (ESM) catalog."""
 
-    name = 'esm_datastore'
+    name = 'esm_datastore_v2'
 
     def __init__(
         self,
@@ -52,6 +52,7 @@ class esm_datastore_v2(intake.catalog.Catalog):
         )
         self._entries = {}
 
+    @toolz.memoize
     def _load_dataframe(self) -> pd.DataFrame:
         """Load the catalog into a dataframe."""
 
@@ -69,6 +70,33 @@ class esm_datastore_v2(intake.catalog.Catalog):
 
         return pd.DataFrame(self.esmcat.catalog_dict)
 
-    @functools.cached_property
-    def df(self):
+    @property
+    def df(self) -> pd.DataFrame:
         return self._load_dataframe()
+
+    @property
+    @toolz.memoize
+    def _columns_with_iterables(self):
+        """Return a list of columns that have iterables."""
+        if self.df.empty:
+            return set()
+        has_iterables = (
+            self.df.sample(20, replace=True).applymap(type).isin([list, tuple, set]).any().to_dict()
+        )
+        return {column for column, check in has_iterables.items() if check}
+
+    @toolz.memoize
+    def _unique(self):
+        def _find_unique(series):
+            values = series.dropna()
+            if series.name in self._columns_with_iterables:
+                values = toolz.concat(values)
+            return list(toolz.unique(values))
+
+        return self.df[self.df.columns].apply(_find_unique, result_type='reduce').to_dict()
+
+    def unique(self) -> pd.Series:
+        return pd.Series(self._unique())
+
+    def nunique(self) -> pd.Series:
+        return pd.Series(toolz.valmap(len, self._unique()))
