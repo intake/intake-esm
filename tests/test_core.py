@@ -508,6 +508,7 @@ def test_to_dataset_dict_w_preprocess_error():
         col.to_dataset_dict(preprocess='foo')
 
 
+@pytest.mark.skip(reason='Disable CMIP6 preprocessing for the time being')
 def test_to_dataset_dict_w_cmip6preprocessing():
     col = intake.open_esm_datastore(zarr_col_pangeo_cmip6)
     pytest.importorskip('cmip6_preprocessing')
