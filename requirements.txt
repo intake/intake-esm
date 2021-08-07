@@ -7,3 +7,4 @@ netCDF4>=1.5.5
 requests>=2.24.0
 xarray>=0.16.2
 zarr>=2.5
+pydantic
