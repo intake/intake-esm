@@ -10,21 +10,37 @@ class AggregationType(str, enum.Enum):
     join_existing = 'join_existing'
     union = 'union'
 
+    class Config:
+        validate_all = True
+        validate_assignment = True
+
 
 class DataFormat(str, enum.Enum):
     netcdf = 'netcdf'
     zarr = 'zarr'
 
+    class Config:
+        validate_all = True
+        validate_assignment = True
+
 
 class Attribute(pydantic.BaseModel):
-    column_name: str
-    vocabulary: str = ''
+    column_name: pydantic.StrictStr
+    vocabulary: pydantic.StrictStr = ''
+
+    class Config:
+        validate_all = True
+        validate_assignment = True
 
 
 class Assets(pydantic.BaseModel):
-    column_name: str
+    column_name: pydantic.StrictStr
     format: DataFormat
-    format_column_name: typing.Optional[str]
+    format_column_name: typing.Optional[pydantic.StrictStr]
+
+    class Config:
+        validate_all = True
+        validate_assignment = True
 
     @pydantic.root_validator
     def _validate_data_format(cls, values):
@@ -36,14 +52,22 @@ class Assets(pydantic.BaseModel):
 
 class Aggregation(pydantic.BaseModel):
     type: AggregationType
-    attribute_name: str
+    attribute_name: pydantic.StrictStr
     options: typing.Optional[typing.Dict] = {}
+
+    class Config:
+        validate_all = True
+        validate_assignment = True
 
 
 class AggregationControl(pydantic.BaseModel):
-    variable_column_name: str
-    groupby_attrs: typing.List[str]
+    variable_column_name: pydantic.StrictStr
+    groupby_attrs: typing.List[pydantic.StrictStr]
     aggregations: typing.List[Aggregation] = []
+
+    class Config:
+        validate_all = True
+        validate_assignment = True
 
 
 class ESMCatalogModel(pydantic.BaseModel):
@@ -51,15 +75,19 @@ class ESMCatalogModel(pydantic.BaseModel):
     Pydantic model for the ESM data catalog defined in https://git.io/JBWoW
     """
 
-    esmcat_version: str
+    esmcat_version: pydantic.StrictStr
     id: str
     attributes: typing.List[Attribute]
     assets: Assets
     aggregation_control: AggregationControl
     catalog_dict: typing.Optional[typing.List[typing.Dict]] = None
-    catalog_file: str = None
-    description: str = None
-    title: str = None
+    catalog_file: pydantic.StrictStr = None
+    description: pydantic.StrictStr = None
+    title: pydantic.StrictStr = None
+
+    class Config:
+        validate_all = True
+        validate_assignment = True
 
     @pydantic.root_validator
     def validate_catalog(cls, values):
@@ -70,9 +98,9 @@ class ESMCatalogModel(pydantic.BaseModel):
         return values
 
     @classmethod
-    def load_catalog_file(
+    def load_json_file(
         cls,
-        catalog_file: typing.Union[str, pydantic.FilePath, pydantic.AnyUrl],
+        json_file: typing.Union[str, pydantic.FilePath, pydantic.AnyUrl],
         storage_options=None,
     ) -> 'ESMCatalogModel':
         """
@@ -80,5 +108,5 @@ class ESMCatalogModel(pydantic.BaseModel):
         """
         storage_options = storage_options if storage_options is not None else {}
 
-        with fsspec.open(catalog_file, **storage_options) as fobj:
+        with fsspec.open(json_file, **storage_options) as fobj:
             return cls.parse_raw(fobj.read())

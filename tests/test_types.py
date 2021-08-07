@@ -43,5 +43,5 @@ def test_assets_mutually_exclusive():
     ],
 )
 def test_assets_from_file(file):
-    cat = ESMCatalogModel.load_catalog_file(file)
+    cat = ESMCatalogModel.load_json_file(file)
     assert isinstance(cat, ESMCatalogModel)

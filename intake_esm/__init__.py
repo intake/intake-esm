@@ -6,6 +6,7 @@ import intake
 from pkg_resources import DistributionNotFound, get_distribution
 
 from .core import esm_datastore
+from .main import esm_datastore_v2
 from .utils import show_versions
 
 try:
