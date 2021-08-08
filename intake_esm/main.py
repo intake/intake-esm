@@ -51,6 +51,24 @@ class esm_datastore_v2(intake.catalog.Catalog):
             self._mapper.root, storage_options=self.storage_options
         )
         self._entries = {}
+        self._df = self._load_dataframe()
+        self._cast_agg_columns_with_iterables()
+
+    def _cast_agg_columns_with_iterables(self) -> None:
+        """Cast all agg_columns with iterables to tuple values so as
+        to avoid hashing issues (e.g. TypeError: unhashable type: 'list')
+        """
+        columns = list(
+            self._columns_with_iterables.intersection(
+                set(
+                    map(
+                        lambda agg: agg.attribute_name, self.esmcat.aggregation_control.aggregations
+                    )
+                )
+            )
+        )
+        if columns:
+            self._df[columns] = self._df[columns].apply(tuple)
 
     @toolz.memoize
     def _load_dataframe(self) -> pd.DataFrame:
@@ -72,11 +90,11 @@ class esm_datastore_v2(intake.catalog.Catalog):
 
     @property
     def df(self) -> pd.DataFrame:
-        return self._load_dataframe()
+        return self._df
 
     @property
     @toolz.memoize
-    def _columns_with_iterables(self):
+    def _columns_with_iterables(self) -> typing.Set[str]:
         """Return a list of columns that have iterables."""
         if self.df.empty:
             return set()
@@ -85,8 +103,50 @@ class esm_datastore_v2(intake.catalog.Catalog):
         )
         return {column for column, check in has_iterables.items() if check}
 
-    @toolz.memoize
-    def _unique(self):
+    @property
+    def _multiple_variable_assets(self) -> bool:
+        return self.esmcat.aggregation_control.variable_column_name in self._columns_with_iterables
+
+    @property
+    def _grouped(self) -> typing.Union[pd.core.groupby.DataFrameGroupBy, pd.DataFrame]:
+        if self.esmcat.aggregation_control.groupby_attrs and set(
+            self.esmcat.aggregation_control.groupby_attrs
+        ) != set(self.df.columns):
+            return self.df.groupby(self.esmcat.aggregation_control.groupby_attrs)
+        return self.df
+
+    def _construct_groups_and_keys(self) -> typing.List[str]:
+        if isinstance(self._grouped, pd.core.groupby.generic.DataFrameGroupBy):
+            internal_keys = self._grouped.groups.keys()
+            public_keys = map(
+                lambda key: key
+                if isinstance(key, str)
+                else self.sep.join(str(value) for value in key),
+                internal_keys,
+            )
+
+        else:
+            internal_keys = self._grouped.index
+            public_keys = (
+                self.df[self.df.columns.tolist()]
+                .apply(lambda row: self.sep.join(str(v) for v in row), axis=1)
+                .tolist()
+            )
+
+        return dict(zip(public_keys, internal_keys))
+
+    def keys(self) -> typing.List[str]:
+        return list(self._construct_groups_and_keys().keys())
+
+    @property
+    def key_template(self) -> str:
+        """Return string template used to create catalog entry keys."""
+        if self.esmcat.aggregation_control.groupby_attrs:
+            return self.sep.join(self.esmcat.aggregation_control.groupby_attrs)
+        else:
+            return self.sep.join(self.df.columns)
+
+    def _unique(self) -> typing.Dict:
         def _find_unique(series):
             values = series.dropna()
             if series.name in self._columns_with_iterables:
@@ -100,3 +160,10 @@ class esm_datastore_v2(intake.catalog.Catalog):
 
     def nunique(self) -> pd.Series:
         return pd.Series(toolz.valmap(len, self._unique()))
+
+    def __len__(self):
+        return len(self.keys())
+
+    def __dir__(self):
+        values = ['df', 'keys', 'unique', 'nunique', 'key_template']
+        return sorted(list(self.__dict__.keys()) + values)
