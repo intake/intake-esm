@@ -54,7 +54,7 @@ copybutton_prompt_text = r'>>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: 
 copybutton_prompt_is_regexp = True
 
 comments_config = {
-    'utterances': {'repo': 'NCAR/pop-tools', 'optional': 'config', 'label': '💬 comment'},
+    'utterances': {'repo': 'intake/intake-esm', 'optional': 'config', 'label': '💬 comment'},
     'hypothesis': False,
 }
 
