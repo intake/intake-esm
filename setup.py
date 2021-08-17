@@ -53,6 +53,7 @@ setup(
     entry_points={
         'intake.drivers': [
             'esm_datastore = intake_esm.core:esm_datastore',
+            'esm_datastore_v2 = intake_esm.main:esm_datastore_v2',
             'esm_group = intake_esm.source:ESMGroupDataSource',
             'esm_single_source = intake_esm.source:ESMDataSource',
         ]
