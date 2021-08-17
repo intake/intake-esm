@@ -1,5 +1,47 @@
 # Changelog
 
+## Intake-esm v2021.8.17
+
+([full changelog](https://github.com/intake/intake-esm/compare/1563b7092415114f1fcda9d2a077413ebaf17fad...a7962e47ac812d938c013e2951c635ac676be80f))
+
+### Enhancements made
+
+- Add pydantic models to facilitate data validation [#347](https://github.com/intake/intake-esm/pull/347) ([@andersy005](https://github.com/andersy005))
+
+### Maintenance and upkeep improvements
+
+- [pre-commit.ci] pre-commit autoupdate [#355](https://github.com/intake/intake-esm/pull/355) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- skip cmip6_preprocessing tests for the time being [#354](https://github.com/intake/intake-esm/pull/354) ([@andersy005](https://github.com/andersy005))
+- Bump styfle/cancel-workflow-action from 0.9.0 to 0.9.1 [#348](https://github.com/intake/intake-esm/pull/348) ([@dependabot](https://github.com/dependabot))
+- Update pre-commit hooks [#346](https://github.com/intake/intake-esm/pull/346) ([@andersy005](https://github.com/andersy005))
+- Bump codecov/codecov-action from 1 to 2.0.2 [#345](https://github.com/intake/intake-esm/pull/345) ([@dependabot](https://github.com/dependabot))
+- Disable workflows on Forks [#342](https://github.com/intake/intake-esm/pull/342) ([@andersy005](https://github.com/andersy005))
+- 💚 Add missing test dependency [#340](https://github.com/intake/intake-esm/pull/340) ([@andersy005](https://github.com/andersy005))
+- Code refactoring [#338](https://github.com/intake/intake-esm/pull/338) ([@andersy005](https://github.com/andersy005))
+- Bump pre-commit/action from v2.0.2 to v2.0.3 [#337](https://github.com/intake/intake-esm/pull/337) ([@dependabot](https://github.com/dependabot))
+- Bump styfle/cancel-workflow-action from 0.8.0 to 0.9.0 [#334](https://github.com/intake/intake-esm/pull/334) ([@dependabot](https://github.com/dependabot))
+- Bump pre-commit/action from v2.0.0 to v2.0.2 [#333](https://github.com/intake/intake-esm/pull/333) ([@dependabot](https://github.com/dependabot))
+- Bump styfle/cancel-workflow-action from 0.7.0 to 0.8.0 [#322](https://github.com/intake/intake-esm/pull/322) ([@dependabot](https://github.com/dependabot))
+- 💚 Fix CI [#321](https://github.com/intake/intake-esm/pull/321) ([@andersy005](https://github.com/andersy005))
+- Fix Tests: Use a publicly available s3 object [#318](https://github.com/intake/intake-esm/pull/318) ([@andersy005](https://github.com/andersy005))
+- Bump styfle/cancel-workflow-action from 0.6.0 to 0.7.0 [#316](https://github.com/intake/intake-esm/pull/316) ([@dependabot](https://github.com/dependabot))
+
+### Documentation improvements
+
+- Add cesm2-le catalog [#349](https://github.com/intake/intake-esm/pull/349) ([@mgrover1](https://github.com/mgrover1))
+- Docs: Execute all notebooks [#341](https://github.com/intake/intake-esm/pull/341) ([@andersy005](https://github.com/andersy005))
+- 📚 Enable comments in docs via sphinx-comments [#326](https://github.com/intake/intake-esm/pull/326) ([@andersy005](https://github.com/andersy005))
+
+### Other merged PRs
+
+- pin pandas version [#356](https://github.com/intake/intake-esm/pull/356) ([@mgrover1](https://github.com/mgrover1))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/intake/intake-esm/graphs/contributors?from=2021-01-16&to=2021-08-17&type=c))
+
+[@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2021-01-16..2021-08-17&type=Issues) | [@dependabot](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adependabot+updated%3A2021-01-16..2021-08-17&type=Issues) | [@mgrover1](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Amgrover1+updated%3A2021-01-16..2021-08-17&type=Issues) | [@pre-commit-ci](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Apre-commit-ci+updated%3A2021-01-16..2021-08-17&type=Issues)
+
 ## Intake-esm v2021.1.15
 
 ([full changelog](https://github.com/intake/intake-esm/compare/2c89c1f15f2d66b93247e83494117b3e90340d01...66ecb069cd1961d2ecde29f696627d7a3f611a59))
