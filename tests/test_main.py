@@ -2,6 +2,7 @@ import ast
 
 import intake
 import pandas as pd
+import pydantic
 import pytest
 
 from intake_esm._types import ESMCatalogModel
@@ -79,3 +80,24 @@ def test_contains():
     assert 'ocn.CTRL.pop.h' in cat
     assert 'ocn.RCP85.pop.h' in cat
     assert 'foo' not in cat
+
+
+@pytest.mark.parametrize(
+    'path, query, expected_size',
+    [
+        (cdf_col_sample_cesmle, {'experiment': 'CTRL'}, 1),
+        (cdf_col_sample_cesmle, {'experiment': ['CTRL', '20C']}, 2),
+        (cdf_col_sample_cesmle, {}, 0),
+        (cdf_col_sample_cesmle, {'variable': 'SHF', 'time_range': ['200601-210012']}, 1),
+    ],
+)
+def test_search(path, query, expected_size):
+    cat = intake.open_esm_datastore_v2(path)
+    new_cat = cat.search(**query)
+    assert len(new_cat) == expected_size
+
+
+def test_query_validation_error():
+    cat = intake.open_esm_datastore_v2(cdf_col_sample_cesmle)
+    with pytest.raises(pydantic.ValidationError):
+        cat.search(my_experiment='foo')

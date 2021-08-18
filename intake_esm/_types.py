@@ -119,10 +119,46 @@ class ESMSingleDataSourceModel(pydantic.BaseModel):
     requested_variables: typing.List[pydantic.StrictStr] = []
     kwargs: typing.Dict[str, typing.Any] = pydantic.Field(default_factory=dict)
 
+    class Config:
+        validate_all = True
+        validate_assignment = True
+
 
 class ESMGroupedDataSourceModel(pydantic.BaseModel):
+
     key: pydantic.StrictStr
     records: typing.List[typing.Dict[str, typing.Any]]
     esmcat: ESMCatalogModel
     requested_variables: typing.List[pydantic.StrictStr] = []
     kwargs: typing.Dict[str, typing.Any] = pydantic.Field(default_factory=dict)
+
+    class Config:
+        validate_all = True
+        validate_assignment = True
+
+
+class QueryModel(pydantic.BaseModel):
+    query: typing.Dict[pydantic.StrictStr, typing.Union[str, typing.List[typing.Any]]]
+    columns: typing.List[str]
+
+    class Config:
+        validate_all = True
+        validate_assignment = True
+
+    @pydantic.root_validator(pre=False)
+    def validate_query(cls, values):
+        query = values.get('query', {})
+        columns = values.get('columns')
+
+        if query:
+            for key in query:
+                if key not in columns:
+                    raise ValueError(f'Column {key} not in columns {columns}')
+        return values
+
+    def normalize_query(self) -> typing.Dict[pydantic.StrictStr, typing.List[typing.Any]]:
+        _query = self.query.copy()
+        for key, value in _query.items():
+            if isinstance(value, str):
+                _query[key] = [value]
+        return _query

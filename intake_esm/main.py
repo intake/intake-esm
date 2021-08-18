@@ -1,20 +1,36 @@
+import copy
 import os
 import typing
+import warnings
 
 import fsspec
 import intake
 import intake.catalog
+import numpy as np
 import pandas as pd
 import pydantic
 import toolz
 
-from ._types import ESMCatalogModel
+from ._types import ESMCatalogModel, QueryModel
 from .data_source import (
     ESMGroupedDataSource,
     ESMGroupedDataSourceModel,
     ESMSingleDataSource,
     ESMSingleDataSourceModel,
 )
+
+
+def _is_pattern(value):
+    if isinstance(value, typing.Pattern):
+        return True
+    wildcard_chars = {'*', '?', '$', '^'}
+    try:
+        value_ = value
+        for char in wildcard_chars:
+            value_ = value_.replace(fr'\{char}', '')
+        return any(char in value_ for char in wildcard_chars)
+    except (TypeError, AttributeError):
+        return False
 
 
 class esm_datastore_v2(intake.catalog.Catalog):
@@ -200,7 +216,7 @@ class esm_datastore_v2(intake.catalog.Catalog):
 
         Returns
         -------
-        ESMDataSource or ESMGroupDataSource
+        ESMSingleDataSource or ESMGroupedDataSource
             The data source for the entry.
         """
         try:
@@ -236,3 +252,58 @@ class esm_datastore_v2(intake.catalog.Catalog):
             return False
         else:
             return True
+
+    def search(
+        self, require_all_on: typing.Union[str, typing.List[str]] = None, **query
+    ) -> 'esm_datastore_v2':
+        """Search for entries in the catalog.
+
+        Parameters
+        ----------
+        require_all_on : list, str, optional
+            A dataframe column or a list of dataframe columns across
+            which all entries must satisfy the query criteria.
+            If None, return entries that fulfill any of the criteria specified
+            in the query, by default None.
+        **query:
+            keyword arguments corresponding to user's query to execute against the dataframe.
+
+        Returns
+        -------
+        cat : :py:class:`~intake_esm.main.esm_datastore_v2`
+          A new Catalog with a subset of the entries in this Catalog.
+        """
+
+        query_model = QueryModel(query=query, columns=self.df.columns.tolist())
+        query = query_model.normalize_query()
+        if not query:
+            warnings.warn(f'Empty query: {query} returned zero results.', stacklevel=2)
+            results = pd.DataFrame(columns=self.df.columns)
+
+        else:
+            columns_with_iterables = self._columns_with_iterables
+            df = self.df
+            global_mask = np.ones(len(df), dtype=bool)
+            for column, values in query.items():
+                local_mask = np.zeros(len(df), dtype=bool)
+                column_is_stringtype = isinstance(
+                    df[column].dtype, (object, pd.core.arrays.string_.StringDtype)
+                )
+                column_has_iterables = column in columns_with_iterables
+                for value in values:
+                    if column_has_iterables:
+                        mask = df[column].str.contains(value, regex=False)
+                    elif column_is_stringtype and _is_pattern(value):
+                        mask = df[column].str.contains(value, regex=True, case=True, flags=0)
+                    else:
+                        mask = df[column] == value
+                    local_mask = local_mask | mask
+                global_mask = global_mask & local_mask
+            results = df.loc[global_mask]
+
+        new_cat = self.copy()
+        new_cat._df = results
+        return new_cat
+
+    def copy(self):
+        return copy.copy(self)
