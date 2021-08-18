@@ -10,6 +10,8 @@ import toolz
 
 from ._types import ESMCatalogModel
 
+# from .source import ESMDataSource, ESMGroupDataSource
+
 
 class esm_datastore_v2(intake.catalog.Catalog):
     """in-memory representation for the Earth System Model (ESM) catalog."""
@@ -136,7 +138,15 @@ class esm_datastore_v2(intake.catalog.Catalog):
         return dict(zip(public_keys, internal_keys))
 
     def keys(self) -> typing.List[str]:
-        return list(self._construct_groups_and_keys().keys())
+        return list(self._keys_dict.keys())
+
+    @property
+    def _internal_keys(self) -> typing.List[str]:
+        return list(self._keys_dict.values())
+
+    @property
+    def _keys_dict(self) -> typing.Dict[str, typing.Tuple[str]]:
+        return self._construct_groups_and_keys()
 
     @property
     def key_template(self) -> str:
@@ -167,3 +177,33 @@ class esm_datastore_v2(intake.catalog.Catalog):
     def __dir__(self):
         values = ['df', 'keys', 'unique', 'nunique', 'key_template']
         return sorted(list(self.__dict__.keys()) + values)
+
+    def _get_entries(self):
+        # Due to just-in-time entry creation, we may not have all entries loaded
+        # We need to make sure to create entries missing from self._entries
+        missing = set(self.keys()) - set(self._entries.keys())
+        for key in missing:
+            _ = self[key]
+        return self._entries
+
+    # def __getitem__(self, key:str) -> typing.Union[ESMDataSource, ESMGroupDataSource]:
+    #     """Get an entry from the catalog.
+
+    #     Parameters
+    #     ----------
+    #     key : str
+    #         The key to get from the catalog.
+
+    #     Returns
+    #     -------
+    #     ESMDataSource or ESMGroupDataSource
+    #         The data source for the entry.
+    #     """
+    #     try:
+    #         return self._entries[key]
+    #     except KeyError:
+    #         if key in self.keys():
+    #             internal_key = self._keys_dict[key]
+    #             if isinstance(self._grouped, pd.DataFrame):
+    #                 df = self._grouped.loc[internal_key]
+    #                 entry = intake.catalog.local.LocalCatalogEntry(name=key, description='', driver=ESMDataSource, args={'df': df, 'aggregation_dict'}, metadata={}).get()
