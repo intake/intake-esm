@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 from intake_esm._types import ESMCatalogModel
+from intake_esm.data_source import ESMGroupedDataSource
 
 from .utils import (
     catalog_dict_records,
@@ -57,3 +58,24 @@ def test_unique(path, sep, read_csv_kwargs):
     assert isinstance(nuniques, pd.Series)
     assert set(uniques.keys()) == set(cat.df.columns)
     assert set(nuniques.keys()) == set(cat.df.columns)
+
+
+@pytest.mark.parametrize('key', ['ocn.20C.pop.h', 'ocn.CTRL.pop.h', 'ocn.RCP85.pop.h'])
+def test_getitem(key):
+    cat = intake.open_esm_datastore_v2(cdf_col_sample_cesmle)
+    entry = cat[key]
+    assert isinstance(entry, ESMGroupedDataSource)
+
+
+def test_getitem_error():
+    cat = intake.open_esm_datastore_v2(cdf_col_sample_cesmle)
+    with pytest.raises(KeyError):
+        cat['foo']
+
+
+def test_contains():
+    cat = intake.open_esm_datastore_v2(cdf_col_sample_cesmle)
+    assert 'ocn.20C.pop.h' in cat
+    assert 'ocn.CTRL.pop.h' in cat
+    assert 'ocn.RCP85.pop.h' in cat
+    assert 'foo' not in cat
