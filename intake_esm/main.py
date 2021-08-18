@@ -9,8 +9,12 @@ import pydantic
 import toolz
 
 from ._types import ESMCatalogModel
-
-# from .source import ESMDataSource, ESMGroupDataSource
+from .data_source import (
+    ESMGroupedDataSource,
+    ESMGroupedDataSourceModel,
+    ESMSingleDataSource,
+    ESMSingleDataSourceModel,
+)
 
 
 class esm_datastore_v2(intake.catalog.Catalog):
@@ -178,7 +182,7 @@ class esm_datastore_v2(intake.catalog.Catalog):
         values = ['df', 'keys', 'unique', 'nunique', 'key_template']
         return sorted(list(self.__dict__.keys()) + values)
 
-    def _get_entries(self):
+    def _get_entries(self) -> typing.Dict[str, typing.Any]:
         # Due to just-in-time entry creation, we may not have all entries loaded
         # We need to make sure to create entries missing from self._entries
         missing = set(self.keys()) - set(self._entries.keys())
@@ -186,24 +190,49 @@ class esm_datastore_v2(intake.catalog.Catalog):
             _ = self[key]
         return self._entries
 
-    # def __getitem__(self, key:str) -> typing.Union[ESMDataSource, ESMGroupDataSource]:
-    #     """Get an entry from the catalog.
+    def __getitem__(self, key: str) -> typing.Union[ESMSingleDataSource, ESMGroupedDataSource]:
+        """Get an entry from the catalog.
 
-    #     Parameters
-    #     ----------
-    #     key : str
-    #         The key to get from the catalog.
+        Parameters
+        ----------
+        key : str
+            The key to get from the catalog.
 
-    #     Returns
-    #     -------
-    #     ESMDataSource or ESMGroupDataSource
-    #         The data source for the entry.
-    #     """
-    #     try:
-    #         return self._entries[key]
-    #     except KeyError:
-    #         if key in self.keys():
-    #             internal_key = self._keys_dict[key]
-    #             if isinstance(self._grouped, pd.DataFrame):
-    #                 df = self._grouped.loc[internal_key]
-    #                 entry = intake.catalog.local.LocalCatalogEntry(name=key, description='', driver=ESMDataSource, args={'df': df, 'aggregation_dict'}, metadata={}).get()
+        Returns
+        -------
+        ESMDataSource or ESMGroupDataSource
+            The data source for the entry.
+        """
+        try:
+            return self._entries[key]
+        except KeyError:
+            if key in self.keys():
+                internal_key = self._keys_dict[key]
+                if isinstance(self._grouped, pd.DataFrame):
+                    record = self._grouped.loc[internal_key].to_dict()
+                    model = ESMSingleDataSourceModel(
+                        key=key, record=record, esmcat=self.esmcat, kwargs={'metadata': {}}
+                    )
+                    entry = ESMSingleDataSource(model=model)
+
+                else:
+                    records = self._grouped.get_group(internal_key).to_dict(orient='records')
+                    model = ESMGroupedDataSourceModel(
+                        key=key, records=records, esmcat=self.esmcat, kwargs={'metadata': {}}
+                    )
+                    entry = ESMGroupedDataSource(model=model)
+
+                self._entries[key] = entry
+                return entry
+            raise KeyError(f'{key} not found in catalog')
+
+    def __contains__(self, key: str) -> bool:
+        # Python falls back to iterating over the entire catalog
+        # if this method is not defined. To avoid this, we implement it differently
+
+        try:
+            self[key]
+        except KeyError:
+            return False
+        else:
+            return True

@@ -110,3 +110,19 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         with fsspec.open(json_file, **storage_options) as fobj:
             return cls.parse_raw(fobj.read())
+
+
+class ESMSingleDataSourceModel(pydantic.BaseModel):
+    key: pydantic.StrictStr
+    record: typing.Dict[str, typing.Any]
+    esmcat: ESMCatalogModel
+    requested_variables: typing.List[pydantic.StrictStr] = []
+    kwargs: typing.Dict[str, typing.Any] = pydantic.Field(default_factory=dict)
+
+
+class ESMGroupedDataSourceModel(pydantic.BaseModel):
+    key: pydantic.StrictStr
+    records: typing.List[typing.Dict[str, typing.Any]]
+    esmcat: ESMCatalogModel
+    requested_variables: typing.List[pydantic.StrictStr] = []
+    kwargs: typing.Dict[str, typing.Any] = pydantic.Field(default_factory=dict)
