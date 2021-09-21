@@ -116,7 +116,6 @@ class ESMSingleDataSourceModel(pydantic.BaseModel):
     key: pydantic.StrictStr
     record: typing.Dict[str, typing.Any]
     esmcat: ESMCatalogModel
-    requested_variables: typing.List[pydantic.StrictStr] = []
     kwargs: typing.Dict[str, typing.Any] = pydantic.Field(default_factory=dict)
 
     class Config:
@@ -129,7 +128,6 @@ class ESMGroupedDataSourceModel(pydantic.BaseModel):
     key: pydantic.StrictStr
     records: typing.List[typing.Dict[str, typing.Any]]
     esmcat: ESMCatalogModel
-    requested_variables: typing.List[pydantic.StrictStr] = []
     kwargs: typing.Dict[str, typing.Any] = pydantic.Field(default_factory=dict)
 
     class Config:
@@ -138,8 +136,9 @@ class ESMGroupedDataSourceModel(pydantic.BaseModel):
 
 
 class QueryModel(pydantic.BaseModel):
-    query: typing.Dict[pydantic.StrictStr, typing.Union[str, typing.List[typing.Any]]]
+    query: typing.Dict[pydantic.StrictStr, typing.Union[typing.Any, typing.List[typing.Any]]]
     columns: typing.List[str]
+    require_all_on: typing.Union[str, typing.List[typing.Any]] = None
 
     class Config:
         validate_all = True
@@ -149,9 +148,16 @@ class QueryModel(pydantic.BaseModel):
     def validate_query(cls, values):
         query = values.get('query', {})
         columns = values.get('columns')
+        require_all_on = values.get('require_all_on', [])
 
         if query:
             for key in query:
+                if key not in columns:
+                    raise ValueError(f'Column {key} not in columns {columns}')
+        if isinstance(require_all_on, str):
+            values['require_all_on'] = [require_all_on]
+        if require_all_on is not None:
+            for key in values['require_all_on']:
                 if key not in columns:
                     raise ValueError(f'Column {key} not in columns {columns}')
         return values

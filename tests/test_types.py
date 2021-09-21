@@ -1,6 +1,7 @@
+import pydantic
 import pytest
 
-from intake_esm._types import Assets, ESMCatalogModel
+from intake_esm._types import Assets, ESMCatalogModel, QueryModel
 
 from .utils import (
     catalog_dict_records,
@@ -45,3 +46,28 @@ def test_assets_mutually_exclusive():
 def test_assets_from_file(file):
     cat = ESMCatalogModel.load_json_file(file)
     assert isinstance(cat, ESMCatalogModel)
+
+
+@pytest.mark.parametrize(
+    'query, columns, require_all_on',
+    [({'foo': 1}, ['foo', 'bar'], ['bar']), ({'bar': 1}, ['foo', 'bar'], 'foo')],
+)
+def test_query_model(query, columns, require_all_on):
+    q = QueryModel(query=query, columns=columns, require_all_on=require_all_on)
+    assert q.query == query
+    assert q.columns == columns
+    if not isinstance(require_all_on, str):
+        assert q.require_all_on == require_all_on
+    else:
+        assert q.require_all_on == [require_all_on]
+
+    assert set(q.normalize_query().keys()) == set(query.keys())
+
+
+@pytest.mark.parametrize(
+    'query, columns, require_all_on',
+    [({'testing': 1}, ['foo', 'bar'], ['bar']), ({'bar': 1}, ['foo', 'bar'], 'testing')],
+)
+def test_query_model_validation_error(query, columns, require_all_on):
+    with pytest.raises(pydantic.ValidationError):
+        QueryModel(query=query, columns=columns, require_all_on=require_all_on)
