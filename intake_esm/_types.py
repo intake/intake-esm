@@ -69,6 +69,14 @@ class AggregationControl(pydantic.BaseModel):
         validate_all = True
         validate_assignment = True
 
+    @pydantic.validator('aggregations')
+    def _validate_aggregations(cls, values):
+        return sorted(
+            values,
+            key=lambda item: item.type,
+            reverse=False,
+        )
+
 
 class ESMCatalogModel(pydantic.BaseModel):
     """

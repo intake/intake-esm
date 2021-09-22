@@ -1,5 +1,6 @@
 import typing
 
+import dask
 import fsspec
 import pandas as pd
 import pydantic
@@ -7,6 +8,7 @@ import xarray as xr
 from intake.source.base import DataSource, Schema
 
 from ._types import ESMGroupedDataSourceModel, ESMSingleDataSourceModel
+from .merge_util import _aggregate
 
 
 def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None):
@@ -26,15 +28,6 @@ def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None):
     ):
         xarray_open_kwargs['backend_kwargs']['storage_options'] = {}
     return xarray_open_kwargs
-
-
-def _expand_dims(ds, aggregations, record):
-    dims = {
-        aggregation.attribute_name: [record[aggregation.attribute_name]]
-        for aggregation in aggregations
-        if aggregation.type.value == 'join_new'
-    }
-    return ds.expand_dims(**dims)
 
 
 def _open_dataset(
@@ -67,10 +60,6 @@ def _open_dataset(
         ds.attrs['intake_esm_varname'] = variables
     else:
         ds.attrs['intake_esm_varname'] = varname
-
-    for variable in ds.attrs['intake_esm_varname']:
-        ds[variable] = _expand_dims(ds[variable], esmcat.aggregation_control.aggregations, record)
-
     return ds
 
 
@@ -163,6 +152,16 @@ class ESMGroupedDataSource(DataSource):
             self.model.esmcat.assets.format.value, xarray_open_kwargs
         )
         self.preprocess = preprocess
+        self.aggregation_columns, self.aggregation_dict = self._construct_aggregations_info()
+
+        def _to_nested_dict(df):
+            """Converts a multiindex series to nested dict"""
+            if hasattr(df.index, 'levels') and len(df.index.levels) > 1:
+                return {k: _to_nested_dict(v.droplevel(0)) for k, v in df.groupby(level=0)}
+            return df.to_dict()
+
+        mi = self.df.set_index(self.aggregation_columns)
+        self.nd = _to_nested_dict(mi[self.model.esmcat.assets.column_name])
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}  (name: {self.model.key}, asset(s): {len(self.df)})>'
@@ -185,20 +184,56 @@ class ESMGroupedDataSource(DataSource):
             )
         return self._schema
 
+    def _construct_aggregations_info(self):
+        aggregation_dict = {}
+        for aggregation in self.model.esmcat.aggregation_control.aggregations:
+            rest = aggregation.dict().copy()
+            del rest['attribute_name']
+            rest['type'] = aggregation.type.value
+            aggregation_dict[aggregation.attribute_name] = rest
+
+        aggregation_columns = list(aggregation_dict.keys())
+        drop_columns = []
+        for column in aggregation_columns:
+            if self.df[column].isnull().all():
+                drop_columns.append(column)
+                del aggregation_dict[column]
+            elif self.df[column].isnull().any():
+                raise ValueError(
+                    f'The data in the {column} column should either be all NaN or there should be no NaNs'
+                )
+        aggregation_columns = list(
+            filter(lambda item: item not in drop_columns, aggregation_columns)
+        )
+        return aggregation_columns, aggregation_dict
+
     def _open_dataset(self):
+        _open_dataset_delayed = dask.delayed(_open_dataset)
         datasets = [
-            _open_dataset(
-                record,
-                self.model.esmcat,
-                xarray_open_kwargs=self.xarray_open_kwargs,
-                preprocess=self.preprocess,
-                requested_variables=self.requested_variables,
+            (
+                record[self.model.esmcat.assets.column_name],
+                _open_dataset_delayed(
+                    record,
+                    self.model.esmcat,
+                    xarray_open_kwargs=self.xarray_open_kwargs,
+                    preprocess=self.preprocess,
+                    requested_variables=self.requested_variables,
+                ),
             )
             for record in self.model.records
         ]
 
-        self._ds = xr.merge(datasets, compat='override')
-        return self._ds
+        datasets = dask.compute(*datasets)
+        mapper_dict = dict(datasets)
+        ds = _aggregate(
+            self.aggregation_dict,
+            self.aggregation_columns,
+            len(self.aggregation_columns),
+            self.nd,
+            mapper_dict,
+            'test',
+        )
+        self._ds = ds
 
     def to_dask(self):
         """Return xarray object (which will have chunks)"""
