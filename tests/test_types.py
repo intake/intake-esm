@@ -1,3 +1,4 @@
+import pandas as pd
 import pytest
 
 from intake_esm._types import Assets, ESMCatalogModel
@@ -43,5 +44,8 @@ def test_assets_mutually_exclusive():
     ],
 )
 def test_assets_from_file(file):
-    cat = ESMCatalogModel.load_catalog_file(file)
+    cat = ESMCatalogModel.load(file)
     assert isinstance(cat, ESMCatalogModel)
+    assert isinstance(cat.df, pd.DataFrame)
+    assert isinstance(cat.columns_with_iterables, list)
+    assert isinstance(cat.has_multiple_variable_assets, bool)
