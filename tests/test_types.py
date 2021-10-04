@@ -47,5 +47,5 @@ def test_assets_from_file(file):
     cat = ESMCatalogModel.load(file)
     assert isinstance(cat, ESMCatalogModel)
     assert isinstance(cat.df, pd.DataFrame)
-    assert isinstance(cat.columns_with_iterables, list)
+    assert isinstance(cat.columns_with_iterables, set)
     assert isinstance(cat.has_multiple_variable_assets, bool)

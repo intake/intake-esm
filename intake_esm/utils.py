@@ -2,9 +2,6 @@
 """ Helper functions for fetching and loading catalog"""
 import importlib
 import sys
-from urllib.parse import urlparse
-
-import requests
 
 
 def _allnan_or_nonan(df, column: str) -> bool:
@@ -27,28 +24,6 @@ def _allnan_or_nonan(df, column: str) -> bool:
             f'The data in the {column} column should either be all NaN or there should be no NaNs'
         )
     return True
-
-
-def _is_valid_url(url):
-    """Check if path is URL or not
-    Parameters
-    ----------
-    url : str
-        path to check
-    Returns
-    -------
-    bool
-    """
-    try:
-        result = urlparse(url)
-        return (
-            result.scheme
-            and result.netloc
-            and result.path
-            and (requests.get(url).status_code == 200)
-        )
-    except Exception:
-        return False
 
 
 def show_versions(file=sys.stdout):  # pragma: no cover
