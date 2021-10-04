@@ -1,100 +1,29 @@
 # -*- coding: utf-8 -*-
 """ Helper functions for fetching and loading catalog"""
 import importlib
-import json
 import sys
-from pathlib import Path
-from urllib.parse import ParseResult, urlparse, urlunparse
-
-import pandas as pd
-import requests
 
 
-def _is_valid_url(url):
-    """Check if path is URL or not
-    Parameters
-    ----------
-    url : str
-        path to check
+def _allnan_or_nonan(df, column: str) -> bool:
+    """Check if all values in a column are NaN or not NaN
+
     Returns
     -------
     bool
+        Whether the dataframe column has all NaNs or no NaN valles
+
+    Raises
+    ------
+    ValueError
+        When the column has a mix of NaNs non NaN values
     """
-    try:
-        result = urlparse(url)
-        return (
-            result.scheme
-            and result.netloc
-            and result.path
-            and (requests.get(url).status_code == 200)
-        )
-    except Exception:
+    if df[column].isnull().all():
         return False
-
-
-def _fetch_and_parse_json(input_path):
-    """Fetch and parse ESMCol file.
-    Parameters
-    ----------
-    input_path : str
-            ESMCol file to get and read
-    Returns
-    -------
-    data : dict
-    input_path : str
-    """
-
-    data = None
-
-    try:
-        if _is_valid_url(input_path):
-            resp = requests.get(input_path)
-            data = resp.json()
-        else:
-            input_path = Path(input_path).absolute().as_posix()
-            with open(input_path) as filein:
-                data = json.load(filein)
-
-    except Exception as exc:
-        raise exc
-
-    return data, input_path
-
-
-def _fetch_catalog(collection_data, esmcol_path, csv_kwargs=None):
-    """Get the catalog file content, and load it into a pandas dataframe"""
-
-    if csv_kwargs is None:
-        csv_kwargs = {}
-    catalog_path = None
-    if 'catalog_file' in collection_data:
-        if _is_valid_url(esmcol_path):
-            catalog_path = collection_data['catalog_file']
-            if not _is_valid_url(catalog_path):
-                split_url = urlparse(esmcol_path)
-                path = (Path(split_url.path).parent / collection_data['catalog_file']).as_posix()
-                components = ParseResult(
-                    scheme=split_url.scheme,
-                    netloc=split_url.netloc,
-                    path=path,
-                    params=split_url.params,
-                    query=split_url.query,
-                    fragment=split_url.fragment,
-                )
-                catalog_path = urlunparse(components)
-                if not _is_valid_url(catalog_path):
-                    raise FileNotFoundError(f'Unable to find: {catalog_path}')
-        else:
-            catalog_path = Path(collection_data['catalog_file'])
-            # If the catalog_path does not exist,
-            # try constructing a path using the relative path
-            if not catalog_path.exists():
-                esmcol_path = Path(esmcol_path).absolute()
-                catalog_path = esmcol_path.parent / collection_data['catalog_file']
-                if not catalog_path.exists():
-                    raise FileNotFoundError(f'Unable to find: {catalog_path}')
-        return pd.read_csv(catalog_path, **csv_kwargs), catalog_path
-    return pd.DataFrame(collection_data['catalog_dict']), None
+    if df[column].isnull().any():
+        raise ValueError(
+            f'The data in the {column} column should either be all NaN or there should be no NaNs'
+        )
+    return True
 
 
 def show_versions(file=sys.stdout):  # pragma: no cover

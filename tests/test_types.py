@@ -1,3 +1,4 @@
+import pandas as pd
 import pydantic
 import pytest
 
@@ -9,6 +10,8 @@ from .utils import (
     cdf_col_sample_cmip5,
     cdf_col_sample_cmip6,
     multi_variable_col,
+    sample_df,
+    sample_esmcol_data,
     zarr_col_aws_cesm,
     zarr_col_pangeo_cmip6,
 )
@@ -43,9 +46,20 @@ def test_assets_mutually_exclusive():
         multi_variable_col,
     ],
 )
-def test_assets_from_file(file):
-    cat = ESMCatalogModel.load_catalog_file(file)
+def test_esmcatmodel_load(file):
+    cat = ESMCatalogModel.load(file)
     assert isinstance(cat, ESMCatalogModel)
+    assert isinstance(cat.df, pd.DataFrame)
+    assert isinstance(cat.columns_with_iterables, set)
+    assert isinstance(cat.has_multiple_variable_assets, bool)
+
+
+def test_esmcatmodel_from_dict():
+    cat = ESMCatalogModel.from_dict({'esmcat': sample_esmcol_data, 'df': sample_df})
+    assert isinstance(cat, ESMCatalogModel)
+    assert isinstance(cat.df, pd.DataFrame)
+    assert isinstance(cat.columns_with_iterables, set)
+    assert isinstance(cat.has_multiple_variable_assets, bool)
 
 
 @pytest.mark.parametrize(

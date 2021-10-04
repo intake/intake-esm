@@ -1,7 +1,7 @@
 import concurrent.futures
 import json
-import pathlib
-from collections import OrderedDict, namedtuple
+import typing
+from collections import OrderedDict
 from copy import deepcopy
 from typing import Any, Dict, List, Tuple, Union
 from warnings import warn
@@ -9,14 +9,12 @@ from warnings import warn
 import dask
 import intake
 import pandas as pd
+import pydantic
 import xarray as xr
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
-from .search import _get_columns_with_iterables, _unique, search
-from .utils import _fetch_and_parse_json, _fetch_catalog
-
-_AGGREGATIONS_TYPES = {'join_existing', 'join_new', 'union'}
+from ._types import ESMCatalogModel
 
 
 class esm_datastore(Catalog):
@@ -27,24 +25,21 @@ class esm_datastore(Catalog):
 
     Parameters
     ----------
-    esmcol_obj : str, pandas.DataFrame
+    obj : str, dict
         If string, this must be a path or URL to an ESM collection JSON file.
-        If pandas.DataFrame, this must be the catalog content that would otherwise
-        be in a CSV file.
-    esmcol_data : dict, optional
-            ESM collection spec information, by default None
-    progressbar : bool, optional
-        Will print a progress bar to standard error (stderr)
-        when loading assets into :py:class:`~xarray.Dataset`,
-        by default True
+        If dict, this must be a dict representation of an ESM collection.
+        This dict must have two keys: 'esmcat' and 'df'. The 'esmcat' key must be a
+        dict representation of the ESM collection and the 'df' key must
+        be a Pandas DataFrame containing content that would otherwise be in a CSV file.
     sep : str, optional
         Delimiter to use when constructing a key for a query, by default '.'
-    csv_kwargs : dict, optional
-        Additional keyword arguments passed through to the
-        :py:func:`~pandas.read_csv` function.
-    **kwargs :
-        Additional keyword arguments are passed through to the
-        :py:class:`~intake.catalog.Catalog` base class.
+    read_csv_kwargs : dict, optional
+        Additional keyword arguments passed through to the :py:func:`~pandas.read_csv` function.
+    storage_options : dict, optional
+            Parameters passed to the backend file-system such as Google Cloud Storage,
+            Amazon Web Service S3.
+    intake_kwargs: dict, optional
+            Additional keyword arguments are passed through to the :py:class:`~intake.catalog.Catalog` base class.
 
     Examples
     --------
@@ -69,147 +64,27 @@ class esm_datastore(Catalog):
 
     def __init__(
         self,
-        esmcol_obj: Union[str, pd.DataFrame],
-        esmcol_data: Dict[str, Any] = None,
-        progressbar: bool = True,
+        obj: typing.Union[pydantic.FilePath, pydantic.AnyUrl, typing.Dict[str, typing.Any]],
+        *,
         sep: str = '.',
-        csv_kwargs: Dict[str, Any] = None,
-        **kwargs,
+        read_csv_kwargs: typing.Dict[str, typing.Any] = None,
+        storage_options: typing.Dict = None,
+        intake_kwargs: typing.Dict = None,
     ):
 
         """Intake Catalog representing an ESM Collection."""
-        super(esm_datastore, self).__init__(**kwargs)
-        if isinstance(esmcol_obj, (str, pathlib.PurePath)):
-            self.esmcol_data, self.esmcol_path = _fetch_and_parse_json(esmcol_obj)
-            self._df, self.catalog_file = _fetch_catalog(self.esmcol_data, esmcol_obj, csv_kwargs)
-
-        elif isinstance(esmcol_obj, pd.DataFrame):
-            if esmcol_data is None:
-                raise ValueError("Missing required argument: 'esmcol_data'")
-            self._df = esmcol_obj
-            self.esmcol_data = esmcol_data
-            self.esmcol_path = None
-            self.catalog_file = None
-        else:
-            raise ValueError(
-                f'{self.name} constructor not properly called! `esmcol_obj` is of type: {type(esmcol_obj)}, however valid types of `esmcol_obj` are either `str` or `pathlib.PurePath` or `pandas.DataFrame`. '
-            )
-
-        self.progressbar = progressbar
-        self._kwargs = kwargs
-        self._to_dataset_args_token = None
-        self._datasets = None
+        intake_kwargs = intake_kwargs or {}
+        super(esm_datastore, self).__init__(**intake_kwargs)
+        self.storage_options = storage_options or {}
+        self.read_csv_kwargs = read_csv_kwargs or {}
         self.sep = sep
-        self._data_format, self._format_column_name = None, None
-        self._path_column_name = self.esmcol_data['assets']['column_name']
-        if 'format' in self.esmcol_data['assets']:
-            self._data_format = self.esmcol_data['assets']['format']
+        if isinstance(obj, dict):
+            self.esmcat = ESMCatalogModel.from_dict(obj)
         else:
-            self._format_column_name = self.esmcol_data['assets']['format_column_name']
-        self._columns_with_iterables = _get_columns_with_iterables(self.df)
-        self.aggregation_info = self._get_aggregation_info()
+            self.esmcat = ESMCatalogModel.load(
+                obj, storage_options=self.storage_options, read_csv_kwargs=read_csv_kwargs
+            )
         self._entries = {}
-        self._set_groups_and_keys()
-        self._requested_variables = []
-
-        if self.variable_column_name:
-            self._multiple_variable_assets = (
-                self.variable_column_name in self._columns_with_iterables
-            )
-        else:
-            self._multiple_variable_assets = False
-
-    def _set_groups_and_keys(self):
-        if self.aggregation_info.groupby_attrs and set(self.df.columns) != set(
-            self.aggregation_info.groupby_attrs
-        ):
-            self._grouped = self.df.groupby(self.aggregation_info.groupby_attrs)
-            internal_keys = self._grouped.groups.keys()
-            public_keys = []
-            for key in internal_keys:
-                p_key = key if isinstance(key, str) else self.sep.join(str(v) for v in key)
-                public_keys.append(p_key)
-
-        else:
-            self._grouped = self.df
-            internal_keys = list(self._grouped.index)
-            public_keys = [
-                self.sep.join(str(v) for v in row.values) for _, row in self._grouped.iterrows()
-            ]
-
-        self._keys = dict(zip(public_keys, internal_keys))
-
-    def _allnan_or_nonan(self, column: str) -> bool:
-        """
-        Helper function used to filter groupby_attrs to ensure no columns with all nans
-
-        Parameters
-        ----------
-        column : str
-            Column name
-
-        Returns
-        -------
-        bool
-            Whether the dataframe column has all NaNs or no NaN valles
-
-        Raises
-        ------
-        ValueError
-            When the column has a mix of NaNs non NaN values
-        """
-        if self.df[column].isnull().all():
-            return False
-        if self.df[column].isnull().any():
-            raise ValueError(
-                f'The data in the {column} column should either be all NaN or there should be no NaNs'
-            )
-        return True
-
-    def _get_aggregation_info(self):
-
-        AggregationInfo = namedtuple(
-            'AggregationInfo',
-            [
-                'groupby_attrs',
-                'variable_column_name',
-                'aggregations',
-                'agg_columns',
-                'aggregation_dict',
-            ],
-        )
-
-        groupby_attrs = []
-        variable_column_name = None
-        aggregations = []
-        aggregation_dict = {}
-        agg_columns = []
-
-        if 'aggregation_control' in self.esmcol_data:
-            variable_column_name = self.esmcol_data['aggregation_control']['variable_column_name']
-            groupby_attrs = self.esmcol_data['aggregation_control'].get('groupby_attrs', [])
-            aggregations = self.esmcol_data['aggregation_control'].get('aggregations', [])
-            aggregations, aggregation_dict, agg_columns = _construct_agg_info(aggregations)
-            groupby_attrs = list(filter(self._allnan_or_nonan, groupby_attrs))
-
-        if not aggregations:
-            groupby_attrs = []
-
-        # Cast all agg_columns with iterables to tuple values so as
-        # to avoid hashing issues (e.g. TypeError: unhashable type: 'list')
-
-        columns = set(self._columns_with_iterables).intersection(set(agg_columns))
-        if columns:
-            for column in columns:
-                self.df[column] = self.df[column].map(tuple)
-
-        return AggregationInfo(
-            groupby_attrs,
-            variable_column_name,
-            aggregations,
-            agg_columns,
-            aggregation_dict,
-        )
 
     def keys(self) -> List:
         """
@@ -220,7 +95,7 @@ class esm_datastore(Catalog):
         list
             keys for the catalog entries
         """
-        return self._keys.keys()
+        return list(self.esmcat._construct_group_keys(sep=self.sep).keys())
 
     @property
     def key_template(self) -> str:
@@ -232,199 +107,17 @@ class esm_datastore(Catalog):
         str
           string template used to create catalog entry keys
         """
-        if self.aggregation_info.groupby_attrs:
-            return self.sep.join(self.aggregation_info.groupby_attrs)
+        if self.esmcat.aggregation_control.groupby_attrs:
+            return self.sep.join(self.esmcat.aggregation_control.groupby_attrs)
         else:
-            return self.sep.join(self.df.columns)
+            return self.sep.join(self.esmcat.df.columns)
 
     @property
     def df(self) -> pd.DataFrame:
         """
         Return pandas :py:class:`~pandas.DataFrame`.
         """
-        return self._df
-
-    @df.setter
-    def df(self, value: pd.DataFrame):
-        self._df = value
-        self._set_groups_and_keys()
-
-    @property
-    def groupby_attrs(self) -> list:
-        """
-        Dataframe columns used to determine groups of compatible datasets.
-
-        Returns
-        -------
-        list
-            Columns used to determine groups of compatible datasets.
-        """
-        return self.aggregation_info.groupby_attrs
-
-    @groupby_attrs.setter
-    def groupby_attrs(self, value: list) -> None:
-        groupby_attrs = list(filter(self._allnan_or_nonan, value))
-        self.aggregation_info = self.aggregation_info._replace(groupby_attrs=groupby_attrs)
-        self._set_groups_and_keys()
-        self._entries = {}
-
-    @property
-    def variable_column_name(self) -> str:
-        """
-        Name of the column that contains the variable name.
-        """
-        return self.aggregation_info.variable_column_name
-
-    @variable_column_name.setter
-    def variable_column_name(self, value: str) -> None:
-        self.aggregation_info = self.aggregation_info._replace(variable_column_name=value)
-
-    @property
-    def aggregations(self):
-        return self.aggregation_info.aggregations
-
-    @property
-    def agg_columns(self) -> list:
-        """
-        List of columns used to merge/concatenate compatible
-        multiple :py:class:`~xarray.Dataset` into a single :py:class:`~xarray.Dataset`.
-        """
-        return self.aggregation_info.agg_columns
-
-    @property
-    def aggregation_dict(self) -> dict:
-        return self.aggregation_info.aggregation_dict
-
-    def update_aggregation(
-        self, attribute_name: str, agg_type: str = None, options: dict = None, delete=False
-    ):
-        """
-        Updates aggregation operations info.
-
-        Parameters
-        ----------
-        attribute_name : str
-            Name of attribute (column) across which to aggregate.
-
-        agg_type : str, optional
-            Type of aggregation operation to apply. Valid values include:
-            `join_new`, `join_existing`, `union`, by default None
-
-        options : dict, optional
-            Aggregration settings that are passed as keywords arguments to
-            :py:func:`~xarray.concat` or :py:func:`~xarray.merge`. For `join_existing`, it must contain
-            the name of the existing dimension to use (for e.g.: something like {'dim': 'time'}).,
-            by default None
-
-        delete : bool, optional
-             Whether to delete/remove/disable aggregation operations for a particular attribute,
-             by default False
-        """
-
-        def validate_type(t):
-            assert (
-                t in _AGGREGATIONS_TYPES
-            ), f'Invalid aggregation agg_type={t}. Valid values are: {list(_AGGREGATIONS_TYPES)}.'
-
-        def validate_attribute_name(name):
-            assert (
-                name in self.df.columns
-            ), f'Attribute_name={attribute_name} is invalid. Attribute name must exist as a column in the dataframe. Valid values: {self.df.columns.tolist()}.'
-
-        def validate_options(options):
-            assert isinstance(
-                options, dict
-            ), f'Options must be a dictionary. Found the type of options={options} to be {type(options)}.'
-
-        aggregations = self.aggregations.copy()
-        validate_attribute_name(attribute_name)
-        found = False
-        match = None
-        idx = None
-        for index, agg in enumerate(aggregations):
-            if agg['attribute_name'] == attribute_name:
-                found = True
-                match = agg
-                idx = index
-                break
-
-        if found:
-            if delete:
-                del aggregations[idx]
-            else:
-                if agg_type is not None:
-                    validate_type(agg_type)
-                    match['type'] = agg_type
-                if options is not None:
-                    validate_options(options)
-                    match['options'] = options
-                aggregations[idx] = match
-
-        else:
-            if delete:
-                message = f'No change. Tried removing/deleting/disabling non-existing aggregation operations for attribute={attribute_name}'
-                warn(message)
-            else:
-                match = {}
-                validate_type(agg_type)
-                match['type'] = agg_type
-                match['attribute_name'] = attribute_name
-                if options is not None:
-                    validate_options(options)
-                    match['options'] = options
-                elif options is None:
-                    match['options'] = {}
-                aggregations.append(match)
-
-        aggregations, aggregation_dict, agg_columns = _construct_agg_info(aggregations)
-        kwargs = {
-            'aggregations': aggregations,
-            'aggregation_dict': aggregation_dict,
-            'agg_columns': agg_columns,
-        }
-        if len(aggregations) == 0:
-            warn(
-                'Setting `groupby_attrs` to []. Aggregations will be disabled because `groupby_attrs` is empty.'
-            )
-            kwargs['groupby_attrs'] = []
-        self.aggregation_info = self.aggregation_info._replace(**kwargs)
-        self._entries = {}
-        if len(self.groupby_attrs) == 0:
-            self._set_groups_and_keys()
-
-    @property
-    def path_column_name(self) -> str:
-        """
-        The name of the column containing the path to the asset.
-        """
-        return self._path_column_name
-
-    @path_column_name.setter
-    def path_column_name(self, value: str) -> None:
-        self._path_column_name = value
-
-    @property
-    def data_format(self) -> str:
-        """
-        The data format. Valid values are netcdf and zarr.
-        If specified, it means that all data assets in the catalog use the same data format.
-        """
-        return self._data_format
-
-    @data_format.setter
-    def data_format(self, value: str) -> None:
-        self._data_format = value
-
-    @property
-    def format_column_name(self) -> str:
-        """
-        Name of the column which contains the data format.
-        """
-        return self._format_column_name
-
-    @format_column_name.setter
-    def format_column_name(self, value: str) -> None:
-        self._format_column_name = value
+        return self.esmcat.df
 
     def __len__(self):
         return len(self.keys())
@@ -557,44 +250,6 @@ class esm_datastore(Catalog):
     def _ipython_key_completions_(self):
         return self.__dir__()
 
-    @classmethod
-    def from_df(
-        cls,
-        df: pd.DataFrame,
-        esmcol_data: Dict[str, Any] = None,
-        progressbar: bool = True,
-        sep: str = '.',
-        **kwargs,
-    ) -> 'esm_datastore':
-        """
-        Create catalog from the given dataframe
-
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            catalog content that would otherwise be in a CSV file.
-        esmcol_data : dict, optional
-            ESM collection spec information, by default None
-        progressbar : bool, optional
-            Will print a progress bar to standard error (stderr)
-            when loading assets into :py:class:`~xarray.Dataset`,
-            by default True
-        sep : str, optional
-            Delimiter to use when constructing a key for a query, by default '.'
-
-        Returns
-        -------
-        :py:class:`~intake_esm.core.esm_datastore`
-            Catalog object
-        """
-        return cls(
-            df,
-            esmcol_data=esmcol_data,
-            progressbar=progressbar,
-            sep=sep,
-            **kwargs,
-        )
-
     def search(self, require_all_on: Union[str, List] = None, **query):
         """Search for entries in the catalog.
 
@@ -651,20 +306,8 @@ class esm_datastore(Catalog):
         4    landCoverFrac
         """
 
-        results = search(self.df, require_all_on=require_all_on, **query)
-        if self._multiple_variable_assets:
-            requested_variables = query.get(self.variable_column_name, [])
-        else:
-            requested_variables = []
-        ret = esm_datastore.from_df(
-            results,
-            esmcol_data=self.esmcol_data,
-            progressbar=self.progressbar,
-            sep=self.sep,
-            **self._kwargs,
-        )
-        ret._requested_variables = requested_variables
-        return ret
+        results = self.esmcat.search(require_all_on=require_all_on, **query)
+        return esm_datastore({'esmcat': self.esmcat.dict(), 'df': results})
 
     def serialize(self, name: str, directory: str = None, catalog_type: str = 'dict') -> None:
         """Serialize collection/catalog to corresponding json and csv files.
@@ -752,64 +395,14 @@ class esm_datastore(Catalog):
         dcpp_init_year       59
         dtype: int64
         """
+        return self.esmcat.nunique()
 
-        uniques = self.unique(self.df.columns.tolist())
-        nuniques = {key: val['count'] for key, val in uniques.items()}
-        return pd.Series(nuniques)
-
-    def unique(self, columns: Union[str, List] = None) -> Dict[str, Any]:
+    def unique(self) -> pd.Series:
         """Return unique values for given columns in the
         catalog.
-
-        Parameters
-        ----------
-        columns : str, list
-           name of columns for which to get unique values
-
-        Returns
-        -------
-        info : dict
-           dictionary containing count, and unique values
-
-        Examples
-        --------
-        >>> import intake
-        >>> import pprint
-        >>> col = intake.open_esm_datastore("pangeo-cmip6.json")
-        >>> uniques = col.unique(columns=["activity_id", "source_id"])
-        >>> pprint.pprint(uniques)
-        {'activity_id': {'count': 10,
-                        'values': ['AerChemMIP',
-                                    'C4MIP',
-                                    'CMIP',
-                                    'DAMIP',
-                                    'DCPP',
-                                    'HighResMIP',
-                                    'LUMIP',
-                                    'OMIP',
-                                    'PMIP',
-                                    'ScenarioMIP']},
-        'source_id': {'count': 17,
-                    'values': ['BCC-ESM1',
-                                'CNRM-ESM2-1',
-                                'E3SM-1-0',
-                                'MIROC6',
-                                'HadGEM3-GC31-LL',
-                                'MRI-ESM2-0',
-                                'GISS-E2-1-G-CC',
-                                'CESM2-WACCM',
-                                'NorCPM1',
-                                'GFDL-AM4',
-                                'GFDL-CM4',
-                                'NESM3',
-                                'ECMWF-IFS-LR',
-                                'IPSL-CM6A-ATM-HR',
-                                'NICAM16-7S',
-                                'GFDL-CM4C192',
-                                'MPI-ESM1-2-HR']}}
-
         """
-        return _unique(self.df, columns)
+
+        return self.esmcat.unique()
 
     def to_dataset_dict(
         self,
