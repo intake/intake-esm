@@ -1,7 +1,8 @@
 import pandas as pd
+import pydantic
 import pytest
 
-from intake_esm._types import Assets, ESMCatalogModel
+from intake_esm._types import Assets, ESMCatalogModel, QueryModel
 
 from .utils import (
     catalog_dict_records,
@@ -59,3 +60,28 @@ def test_esmcatmodel_from_dict():
     assert isinstance(cat.df, pd.DataFrame)
     assert isinstance(cat.columns_with_iterables, set)
     assert isinstance(cat.has_multiple_variable_assets, bool)
+
+
+@pytest.mark.parametrize(
+    'query, columns, require_all_on',
+    [({'foo': 1}, ['foo', 'bar'], ['bar']), ({'bar': 1}, ['foo', 'bar'], 'foo')],
+)
+def test_query_model(query, columns, require_all_on):
+    q = QueryModel(query=query, columns=columns, require_all_on=require_all_on)
+    assert q.query == query
+    assert q.columns == columns
+    if not isinstance(require_all_on, str):
+        assert q.require_all_on == require_all_on
+    else:
+        assert q.require_all_on == [require_all_on]
+
+    assert set(q.normalize_query().keys()) == set(query.keys())
+
+
+@pytest.mark.parametrize(
+    'query, columns, require_all_on',
+    [({'testing': 1}, ['foo', 'bar'], ['bar']), ({'bar': 1}, ['foo', 'bar'], 'testing')],
+)
+def test_query_model_validation_error(query, columns, require_all_on):
+    with pytest.raises(pydantic.ValidationError):
+        QueryModel(query=query, columns=columns, require_all_on=require_all_on)
