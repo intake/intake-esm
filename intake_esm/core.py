@@ -15,7 +15,6 @@ from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
 from ._types import ESMCatalogModel
-from .search import search
 
 
 class esm_datastore(Catalog):
@@ -307,20 +306,8 @@ class esm_datastore(Catalog):
         4    landCoverFrac
         """
 
-        results = search(self.df, require_all_on=require_all_on, **query)
-        if self._multiple_variable_assets:
-            requested_variables = query.get(self.variable_column_name, [])
-        else:
-            requested_variables = []
-        ret = esm_datastore.from_df(
-            results,
-            esmcol_data=self.esmcol_data,
-            progressbar=self.progressbar,
-            sep=self.sep,
-            **self._kwargs,
-        )
-        ret._requested_variables = requested_variables
-        return ret
+        results = self.esmcat.search(require_all_on=require_all_on, **query)
+        return esm_datastore({'esmcat': self.esmcat.dict(), 'df': results})
 
     def serialize(self, name: str, directory: str = None, catalog_type: str = 'dict') -> None:
         """Serialize collection/catalog to corresponding json and csv files.

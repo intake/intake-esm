@@ -7,6 +7,8 @@ import pandas as pd
 import pydantic
 import tlz
 
+from ._search import search, search_apply_require_all_on
+
 
 class AggregationType(str, enum.Enum):
     join_new = 'join_new'
@@ -226,6 +228,31 @@ class ESMCatalogModel(pydantic.BaseModel):
 
     def nunique(self) -> pd.Series:
         return pd.Series(tlz.valmap(len, self._unique()))
+
+    def search(
+        self, require_all_on: typing.Union[str, typing.List[str]] = None, **query
+    ) -> 'ESMCatalogModel':
+        """
+        Search for entries in the catalog.
+
+        Parameters
+        ----------
+        require_all_on : list, str, optional
+            A dataframe column or a list of dataframe columns across
+            which all entries must satisfy the query criteria.
+            If None, return entries that fulfill any of the criteria specified
+            in the query, by default None.
+        **query:
+            keyword arguments corresponding to user's query to execute against the dataframe.
+        """
+
+        _query = QueryModel(
+            query=query, require_all_on=require_all_on, columns=self.df.columns.tolist()
+        )
+        results = search(self.df, _query, self.columns_with_iterables)
+        if _query.require_all_on is not None and results:
+            results = search_apply_require_all_on(results, _query)
+        return results
 
 
 class QueryModel(pydantic.BaseModel):
