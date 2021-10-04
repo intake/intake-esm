@@ -1,10 +1,9 @@
 """ Functions for aggregating multiple xarray datasets into a single xarray dataset"""
+import itertools
 from typing import Any, Dict, List, Union
 
 import fsspec
 import xarray as xr
-
-from .search import _flatten_list
 
 
 class AggregationError(Exception):
@@ -356,7 +355,7 @@ def dict_union(*dicts, merge_keys=['history', 'tracking_id', 'intake_esm_varname
             elif v1 == v2:
                 d[k] = v1
             elif k in merge_keys:
-                d[k] = '\n'.join(_flatten_list([v1, v2]))
+                d[k] = '\n'.join(itertools.chain(*[v1, v2]))
         return d
     elif len(dicts) == 1:
         return dicts[0]
