@@ -102,6 +102,14 @@ class ESMCatalogModel(pydantic.BaseModel):
         return values
 
     @classmethod
+    def from_dict(cls, data: typing.Dict) -> 'ESMCatalogModel':
+        esmcat = data['esmcat']
+        df = data['df']
+        cat = cls.parse_obj(esmcat)
+        cat._df = df
+        return cat
+
+    @classmethod
     def load(
         cls,
         json_file: typing.Union[str, pydantic.FilePath, pydantic.AnyUrl],

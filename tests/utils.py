@@ -41,7 +41,7 @@ sample_esmcol_data = {
     'description': '',
     'catalog_file': '',
     'attributes': [],
-    'assets': {'column_name': 'path', 'format_column_name': 'format'},
+    'assets': {'column_name': 'path', 'format': 'zarr'},
     'aggregation_control': {
         'variable_column_name': 'variable',
         'groupby_attrs': ['component', 'experiment', 'frequency'],

@@ -17,8 +17,6 @@ from intake.catalog import Catalog
 from ._types import ESMCatalogModel
 from .search import search
 
-_AGGREGATIONS_TYPES = {'join_existing', 'join_new', 'union'}
-
 
 class esm_datastore(Catalog):
     """
@@ -28,8 +26,12 @@ class esm_datastore(Catalog):
 
     Parameters
     ----------
-    path : str, pandas.DataFrame
-        A path or URL to an ESM collection JSON file.
+    obj : str, dict
+        If string, this must be a path or URL to an ESM collection JSON file.
+        If dict, this must be a dict representation of an ESM collection.
+        This dict must have two keys: 'esmcat' and 'df'. The 'esmcat' key must be a
+        dict representation of the ESM collection and the 'df' key must
+        be a Pandas DataFrame containing content that would otherwise be in a CSV file.
     sep : str, optional
         Delimiter to use when constructing a key for a query, by default '.'
     read_csv_kwargs : dict, optional
@@ -63,7 +65,7 @@ class esm_datastore(Catalog):
 
     def __init__(
         self,
-        path: typing.Union[pydantic.FilePath, pydantic.AnyUrl],
+        obj: typing.Union[pydantic.FilePath, pydantic.AnyUrl, typing.Dict[str, typing.Any]],
         *,
         sep: str = '.',
         read_csv_kwargs: typing.Dict[str, typing.Any] = None,
@@ -77,9 +79,12 @@ class esm_datastore(Catalog):
         self.storage_options = storage_options or {}
         self.read_csv_kwargs = read_csv_kwargs or {}
         self.sep = sep
-        self.esmcat = ESMCatalogModel.load(
-            path, storage_options=self.storage_options, read_csv_kwargs=read_csv_kwargs
-        )
+        if isinstance(obj, dict):
+            self.esmcat = ESMCatalogModel.from_dict(obj)
+        else:
+            self.esmcat = ESMCatalogModel.load(
+                obj, storage_options=self.storage_options, read_csv_kwargs=read_csv_kwargs
+            )
         self._entries = {}
 
     def keys(self) -> List:
@@ -245,44 +250,6 @@ class esm_datastore(Catalog):
 
     def _ipython_key_completions_(self):
         return self.__dir__()
-
-    @classmethod
-    def from_df(
-        cls,
-        df: pd.DataFrame,
-        esmcol_data: Dict[str, Any] = None,
-        progressbar: bool = True,
-        sep: str = '.',
-        **kwargs,
-    ) -> 'esm_datastore':
-        """
-        Create catalog from the given dataframe
-
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            catalog content that would otherwise be in a CSV file.
-        esmcol_data : dict, optional
-            ESM collection spec information, by default None
-        progressbar : bool, optional
-            Will print a progress bar to standard error (stderr)
-            when loading assets into :py:class:`~xarray.Dataset`,
-            by default True
-        sep : str, optional
-            Delimiter to use when constructing a key for a query, by default '.'
-
-        Returns
-        -------
-        :py:class:`~intake_esm.core.esm_datastore`
-            Catalog object
-        """
-        return cls(
-            df,
-            esmcol_data=esmcol_data,
-            progressbar=progressbar,
-            sep=sep,
-            **kwargs,
-        )
 
     def search(self, require_all_on: Union[str, List] = None, **query):
         """Search for entries in the catalog.
