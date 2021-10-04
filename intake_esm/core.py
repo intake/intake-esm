@@ -96,7 +96,7 @@ class esm_datastore(Catalog):
         list
             keys for the catalog entries
         """
-        return list(self.esmcat._construct_groups_and_keys(sep=self.sep).keys())
+        return list(self.esmcat._construct_group_keys(sep=self.sep).keys())
 
     @property
     def key_template(self) -> str:

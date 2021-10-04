@@ -191,7 +191,7 @@ class ESMCatalogModel(pydantic.BaseModel):
             return self.df.groupby(self.aggregation_control.groupby_attrs)
         return self.df
 
-    def _construct_groups_and_keys(
+    def _construct_group_keys(
         self, sep: str = '.'
     ) -> typing.Dict[str, typing.Union[str, typing.Tuple[str]]]:
         grouped = self.grouped
