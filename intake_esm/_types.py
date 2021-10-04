@@ -110,3 +110,38 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         with fsspec.open(catalog_file, **storage_options) as fobj:
             return cls.parse_raw(fobj.read())
+
+
+class QueryModel(pydantic.BaseModel):
+    query: typing.Dict[pydantic.StrictStr, typing.Union[typing.Any, typing.List[typing.Any]]]
+    columns: typing.List[str]
+    require_all_on: typing.Union[str, typing.List[typing.Any]] = None
+
+    class Config:
+        validate_all = True
+        validate_assignment = True
+
+    @pydantic.root_validator(pre=False)
+    def validate_query(cls, values):
+        query = values.get('query', {})
+        columns = values.get('columns')
+        require_all_on = values.get('require_all_on', [])
+
+        if query:
+            for key in query:
+                if key not in columns:
+                    raise ValueError(f'Column {key} not in columns {columns}')
+        if isinstance(require_all_on, str):
+            values['require_all_on'] = [require_all_on]
+        if require_all_on is not None:
+            for key in values['require_all_on']:
+                if key not in columns:
+                    raise ValueError(f'Column {key} not in columns {columns}')
+        return values
+
+    def normalize_query(self) -> typing.Dict[pydantic.StrictStr, typing.List[typing.Any]]:
+        _query = self.query.copy()
+        for key, value in _query.items():
+            if isinstance(value, str):
+                _query[key] = [value]
+        return _query
