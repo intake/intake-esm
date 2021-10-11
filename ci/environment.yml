@@ -5,7 +5,7 @@ channels:
 dependencies:
   - cftime
   - codecov
-  - fastprogress>= 0.2.6
+  - fastprogress>= 1.0.0
   - fsspec>=0.8.0
   - gcsfs
   - h5netcdf>=0.8.1
@@ -24,7 +24,7 @@ dependencies:
   - python=*=*cp*
   - s3fs
   - scipy
-  - xarray>=0.16.2
+  - xarray>=0.19
   - zarr >=2.5
   - pip:
       - -r ../requirements.txt
