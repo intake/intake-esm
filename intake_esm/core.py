@@ -15,6 +15,7 @@ from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
 from ._types import ESMCatalogModel
+from .source import ESMDataSource
 
 
 class esm_datastore(Catalog):
@@ -161,35 +162,32 @@ class esm_datastore(Catalog):
             return self._entries[key]
         except KeyError:
             if key in self.keys():
-                internal_key = self._keys[key]
-                if isinstance(self._grouped, pd.DataFrame):
-                    df = self._grouped.loc[internal_key]
-                    args = dict(
-                        key=key,
-                        row=df,
-                        path_column=self.path_column_name,
-                        data_format=self.data_format,
-                        format_column=self.format_column_name,
-                        requested_variables=self._requested_variables,
-                    )
-                    entry = _make_entry(key, 'esm_single_source', args)
-                else:
-                    df = self._grouped.get_group(internal_key)
-                    args = dict(
-                        df=df,
-                        aggregation_dict=self.aggregation_info.aggregation_dict,
-                        path_column=self.path_column_name,
-                        variable_column=self.aggregation_info.variable_column_name,
-                        data_format=self.data_format,
-                        format_column=self.format_column_name,
-                        key=key,
-                        requested_variables=self._requested_variables,
-                    )
-                    entry = _make_entry(key, 'esm_group', args)
+                keys_dict = self.esmcat._construct_group_keys(sep=self.sep)
+                grouped = self.esmcat.grouped
 
+                internal_key = keys_dict[key]
+
+                if isinstance(grouped, pd.DataFrame):
+                    records = [grouped.loc[internal_key].to_dict()]
+
+                else:
+                    records = grouped.get_group(internal_key).to_dict(orient='records')
+
+                # Create a new entry
+                entry = ESMDataSource(
+                    key=key,
+                    records=records,
+                    variable_column_name=self.esmcat.aggregation_control.variable_column_name,
+                    path_column_name=self.esmcat.assets.column_name,
+                    data_format=self.esmcat.assets.format,
+                    aggregations=self.esmcat.aggregation_control.aggregations,
+                    intake_kwargs={'metadata': {}},
+                )
                 self._entries[key] = entry
                 return self._entries[key]
-            raise KeyError(key)
+            raise KeyError(
+                f'key={key} not found in catalog. You can access the list of valid keys via the .keys() method.'
+            )
 
     def __contains__(self, key):
         # Python falls back to iterating over the entire catalog
