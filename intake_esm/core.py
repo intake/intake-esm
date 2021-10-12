@@ -200,7 +200,7 @@ class esm_datastore(Catalog):
 
     def __repr__(self) -> str:
         """Make string representation of object."""
-        return f'<{self.esmcol_data["id"]} catalog with {len(self)} dataset(s) from {len(self.df)} asset(s)>'
+        return f'<{self.esmcat.id or ""} catalog with {len(self)} dataset(s) from {len(self.df)} asset(s)>'
 
     def _repr_html_(self) -> str:
         """
@@ -209,7 +209,7 @@ class esm_datastore(Catalog):
         """
         uniques = pd.DataFrame(self.nunique(), columns=['unique'])
         text = uniques._repr_html_()
-        return f'<p><strong>{self.esmcol_data["id"]} catalog with {len(self)} dataset(s) from {len(self.df)} asset(s)</strong>:</p> {text}'
+        return f'<p><strong>{self.esmcat.id or ""} catalog with {len(self)} dataset(s) from {len(self.df)} asset(s)</strong>:</p> {text}'
 
     def _ipython_display_(self):
         """
