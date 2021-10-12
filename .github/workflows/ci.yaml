@@ -87,10 +87,6 @@ jobs:
           use-mamba: true
           miniforge-variant: Mambaforge
 
-      - name: Set environment variables
-        run: |
-          echo "XARRAY_BACKEND_API=v2" >> $GITHUB_ENV
-
       - name: Install intake-esm
         run: |
           python -m pip install -e . --no-deps --force-reinstall

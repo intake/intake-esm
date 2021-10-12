@@ -68,8 +68,8 @@ class esm_datastore(Catalog):
         progressbar: bool = True,
         sep: str = '.',
         read_csv_kwargs: typing.Dict[str, typing.Any] = None,
-        storage_options: typing.Dict = None,
-        intake_kwargs: typing.Dict = None,
+        storage_options: typing.Dict[str, typing.Any] = None,
+        intake_kwargs: typing.Dict[str, typing.Any] = None,
     ):
 
         """Intake Catalog representing an ESM Collection."""
