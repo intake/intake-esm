@@ -130,6 +130,7 @@ class esm_datastore(Catalog):
             _ = self[key]
         return self._entries
 
+    @pydantic.validate_arguments
     def __getitem__(self, key: str) -> ESMDataSource:
         """
         This method takes a key argument and return a data source
@@ -237,9 +238,10 @@ class esm_datastore(Catalog):
     def _ipython_key_completions_(self):
         return self.__dir__()
 
+    @pydantic.validate_arguments
     def search(
-        self, require_all_on: typing.Union[str, typing.List[str]] = None, **query
-    ) -> 'esm_datastore':
+        self, require_all_on: typing.Union[str, typing.List[str]] = None, **query: typing.Any
+    ):
         """Search for entries in the catalog.
 
         Parameters
@@ -307,7 +309,13 @@ class esm_datastore(Catalog):
         cat._requested_variables = requested_variables
         return cat
 
-    def serialize(self, name: str, directory: str = None, catalog_type: str = 'dict') -> None:
+    @pydantic.validate_arguments
+    def serialize(
+        self,
+        name: pydantic.StrictStr,
+        directory: typing.Union[pydantic.DirectoryPath, pydantic.StrictStr] = None,
+        catalog_type: str = 'dict',
+    ) -> None:
         """Serialize collection/catalog to corresponding json and csv files.
 
         Parameters
@@ -369,14 +377,15 @@ class esm_datastore(Catalog):
 
         return self.esmcat.unique()
 
+    @pydantic.validate_arguments
     def to_dataset_dict(
         self,
         xarray_open_kwargs: typing.Dict[str, typing.Any] = None,
         xarray_combine_by_coords_kwargs: typing.Dict[str, typing.Any] = None,
-        preprocess: typing.Dict[str, typing.Any] = None,
-        storage_options: typing.Dict[str, typing.Any] = None,
-        progressbar: bool = None,
-        aggregate: bool = None,
+        preprocess: typing.Callable = None,
+        storage_options: typing.Dict[pydantic.StrictStr, typing.Any] = None,
+        progressbar: pydantic.StrictBool = None,
+        aggregate: pydantic.StrictBool = None,
         **kwargs,
     ) -> typing.Dict[str, xr.Dataset]:
         """
@@ -475,9 +484,6 @@ class esm_datastore(Catalog):
 
         if progressbar is not None:
             self.progressbar = progressbar
-
-        if preprocess is not None and not callable(preprocess):
-            raise ValueError('preprocess argument must be callable')
 
         if self.progressbar:
             print(
