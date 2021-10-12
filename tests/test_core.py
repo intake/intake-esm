@@ -94,3 +94,33 @@ def test_catalog_getitem_error():
     cat = intake.open_esm_datastore(cdf_col_sample_cesmle)
     with pytest.raises(KeyError):
         cat['foo']
+
+
+@pytest.mark.xfail(reason='Needs to be fixed')
+def test_serialize_to_csv(tmp_path):
+    col = intake.open_esm_datastore(cdf_col_sample_cmip6)
+    local_store = tmp_path
+    col_subset = col.search(
+        source_id='MRI-ESM2-0',
+    )
+    name = 'CMIP6-MRI-ESM2-0'
+    col_subset.serialize(name=name, directory=local_store, catalog_type='file')
+    col = intake.open_esm_datastore(f'{local_store}/{name}.json')
+    pd.testing.assert_frame_equal(col_subset.df, col.df)
+    assert col.esmcat.id == name
+
+
+def test_empty_queries():
+    col = intake.open_esm_datastore(cdf_col_sample_cmip6)
+    with pytest.warns(UserWarning, match=r'Empty query: {} returned zero results.'):
+        _ = col.search()
+
+    with pytest.warns(UserWarning, match=r'Query:'):
+        _ = col.search(variable_id='DONT_EXIST')
+
+    cat = col.search()
+    with pytest.warns(
+        UserWarning, match=r'There are no datasets to load! Returning an empty dictionary.'
+    ):
+        dsets = cat.to_dataset_dict()
+        assert not dsets

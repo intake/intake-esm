@@ -29,7 +29,7 @@ def search(
     """Search for entries in the catalog."""
     query = query_model.normalize_query()
     if not query:
-        warnings.warn(f'Empty query: {query} returned zero results.', stacklevel=2)
+        warnings.warn(f'Empty query: {query} returned zero results.', UserWarning, stacklevel=2)
         return pd.DataFrame(columns=df.columns)
     global_mask = np.ones(len(df), dtype=bool)
     for column, values in query.items():
@@ -47,7 +47,10 @@ def search(
                 mask = df[column] == value
             local_mask = local_mask | mask
         global_mask = global_mask & local_mask
-    return df.loc[global_mask]
+    results = df.loc[global_mask]
+    if results.empty:
+        warnings.warn(f'Query: {query} returned zero results.', UserWarning, stacklevel=2)
+    return results
 
 
 def search_apply_require_all_on(results: pd.DataFrame, query_model: 'QueryModel') -> pd.DataFrame:
@@ -78,5 +81,7 @@ def search_apply_require_all_on(results: pd.DataFrame, query_model: 'QueryModel'
     if query_results:
         return pd.concat(query_results)
 
-    warnings.warn(f'Query: {query_model.normalize_query()} returned zero results.', stacklevel=2)
+    warnings.warn(
+        f'Query: {query_model.normalize_query()} returned zero results.', UserWarning, stacklevel=2
+    )
     return pd.DataFrame(columns=results.columns)

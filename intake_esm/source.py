@@ -112,6 +112,7 @@ class ESMDataSource(DataSource):
         preprocess: typing.Callable = None,
         storage_options: typing.Dict[str, typing.Any] = None,
         xarray_open_kwargs: typing.Dict[str, typing.Any] = None,
+        xarray_combine_by_coords_kwargs: typing.Dict[str, typing.Any] = None,
         intake_kwargs: typing.Dict[str, typing.Any] = None,
     ) -> 'ESMDataSource':
 
@@ -127,6 +128,13 @@ class ESMDataSource(DataSource):
         self.aggregations = aggregations
         self.df = pd.DataFrame.from_records(records)
         self.xarray_open_kwargs = _get_xarray_open_kwargs(self.data_format, xarray_open_kwargs)
+        self.xarray_combine_by_coords_kwargs = dict(combine_attrs='drop_conflicts')
+        if xarray_combine_by_coords_kwargs is None:
+            xarray_combine_by_coords_kwargs = {}
+        self.xarray_combine_by_coords_kwargs = {
+            **self.xarray_combine_by_coords_kwargs,
+            **xarray_combine_by_coords_kwargs,
+        }
         self._ds = None
 
     def __repr__(self) -> str:
@@ -183,7 +191,7 @@ class ESMDataSource(DataSource):
                     ds.set_coords(set(ds.variables) - set(ds.attrs[INTAKE_ESM_VARS_KEY]))
                     for ds in datasets
                 ]
-                self._ds = xr.combine_by_coords(datasets, combine_attrs='drop_conflicts')
+                self._ds = xr.combine_by_coords(datasets, **self.xarray_combine_by_coords_kwargs)
 
         self._ds.attrs[INTAKE_ESM_DATASET_KEY] = self.key
 
