@@ -218,3 +218,32 @@ def test_to_dataset_dict_aggfalse(path, query):
     nds = len(cat.df)
     dsets = cat.to_dataset_dict(xarray_open_kwargs={'chunks': {'time': 1}}, aggregate=False)
     assert len(dsets.keys()) == nds
+
+
+@pytest.mark.parametrize(
+    'path, query',
+    [
+        (
+            cdf_col_sample_cmip6,
+            dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_id=['tasmax']),
+        )
+    ],
+)
+def test_to_dataset_dict_w_preprocess(path, query):
+    def rename_coords(ds):
+        return ds.rename({'lon': 'longitude', 'lat': 'latitude'})
+
+    cat = intake.open_esm_datastore(path)
+    cat_sub = cat.search(**query)
+    dsets = cat_sub.to_dataset_dict(
+        xarray_open_kwargs={'chunks': {'time': 1}}, preprocess=rename_coords
+    )
+    _, ds = dsets.popitem()
+    assert 'latitude' in ds.dims
+    assert 'longitude' in ds.dims
+
+
+def test_to_dataset_dict_w_preprocess_error():
+    cat = intake.open_esm_datastore(cdf_col_sample_cmip5)
+    with pytest.raises(ValueError, match=r'preprocess argument must be callable'):
+        cat.to_dataset_dict(preprocess='foo')
