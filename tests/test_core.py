@@ -156,6 +156,25 @@ def test_getitem(key, decode_times):
 
 
 @pytest.mark.parametrize(
+    'query', [dict(variable=['O2', 'TEMP']), dict(variable=['SHF']), dict(experiment='CTRL')]
+)
+def test_multi_variable_catalog(query):
+    import ast
+
+    cat = intake.open_esm_datastore(
+        multi_variable_col, read_csv_kwargs={'converters': {'variable': ast.literal_eval}}
+    )
+    assert cat.esmcat.has_multiple_variable_assets
+
+    cat_sub = cat.search(**query)
+    assert set(cat_sub._requested_variables) == set(query.pop('variable', []))
+
+    _, ds = cat_sub.to_dataset_dict().popitem()
+    if cat_sub._requested_variables:
+        assert set(ds.data_vars) == set(cat_sub._requested_variables)
+
+
+@pytest.mark.parametrize(
     'path, query, xarray_open_kwargs',
     [
         (
