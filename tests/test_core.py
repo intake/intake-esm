@@ -3,6 +3,7 @@ import ast
 import intake
 import pandas as pd
 import pytest
+import xarray as xr
 
 import intake_esm
 from intake_esm.source import ESMDataSource
@@ -127,6 +128,26 @@ def test_empty_queries():
 
 
 @pytest.mark.parametrize(
+    'key',
+    [
+        'CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.Lmon.gr',
+        'CMIP.CNRM-CERFACS.CNRM-CM6-1.piControl.Lmon.gr',
+        'CMIP.CNRM-CERFACS.CNRM-ESM2-1.1pctCO2.Omon.gn',
+        'CMIP.CNRM-CERFACS.CNRM-ESM2-1.abrupt-4xCO2.Amon.gr',
+        'CMIP.CNRM-CERFACS.CNRM-ESM2-1.amip.Amon.gr',
+    ],
+)
+@pytest.mark.parametrize('decode_times', [True, False])
+def test_getitem(key, decode_times):
+    col = intake.open_esm_datastore(cdf_col_sample_cmip6)
+    x = col[key]
+    assert isinstance(x, ESMDataSource)
+    ds = x(xarray_open_kwargs={'chunks': {}, 'decode_times': decode_times}).to_dask()
+    assert isinstance(ds, xr.Dataset)
+    assert set(x.df['member_id']) == set(ds['member_id'].values)
+
+
+@pytest.mark.parametrize(
     'path, query, xarray_open_kwargs',
     [
         (
@@ -155,3 +176,18 @@ def test_to_dataset_dict(path, query, xarray_open_kwargs):
     assert 'member_id' in ds.dims
     assert len(ds.__dask_keys__()) > 0
     assert ds.time.encoding
+
+
+@pytest.mark.parametrize(
+    'path, query',
+    [
+        (cdf_col_sample_cmip6, {'experiment_id': ['historical', 'rcp85']}),
+        (cdf_col_sample_cmip5, {'experiment': ['historical', 'rcp85']}),
+    ],
+)
+def test_to_dataset_dict_aggfalse(path, query):
+    col = intake.open_esm_datastore(path)
+    cat = col.search(**query)
+    nds = len(cat.df)
+    dsets = cat.to_dataset_dict(xarray_open_kwargs={'chunks': {'time': 1}}, aggregate=False)
+    assert len(dsets.keys()) == nds
