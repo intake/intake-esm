@@ -33,12 +33,18 @@ from .utils import (
         ({'esmcat': sample_esmcol_data, 'df': sample_df}, '.', None),
     ],
 )
-def test_catalog_init(obj, sep, read_csv_kwargs):
+def test_catalog_init(capsys, obj, sep, read_csv_kwargs):
     """Test that the catalog can be initialized."""
     cat = intake.open_esm_datastore(obj, sep=sep, read_csv_kwargs=read_csv_kwargs)
     assert isinstance(cat.esmcat, intake_esm._types.ESMCatalogModel)
     assert isinstance(cat.df, pd.DataFrame)
     assert len(cat) > 0
+
+    print(repr(cat))
+    # Use pytest-capturing method
+    # https://docs.pytest.org/en/latest/capture.html#accessing-captured-output-from-a-test-function
+    captured = capsys.readouterr()
+    assert 'catalog with' in captured.out
 
 
 @pytest.mark.parametrize(
