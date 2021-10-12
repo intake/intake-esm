@@ -97,18 +97,20 @@ def test_catalog_getitem_error():
         cat['foo']
 
 
-@pytest.mark.xfail(reason='Needs to be fixed')
-def test_serialize_to_csv(tmp_path):
-    col = intake.open_esm_datastore(cdf_col_sample_cmip6)
+@pytest.mark.parametrize('catalog_type', ['file', 'dict'])
+def test_catalog_serialize(tmp_path, catalog_type):
+    cat = intake.open_esm_datastore(cdf_col_sample_cmip6)
     local_store = tmp_path
-    col_subset = col.search(
+    cat_subset = cat.search(
         source_id='MRI-ESM2-0',
     )
     name = 'CMIP6-MRI-ESM2-0'
-    col_subset.serialize(name=name, directory=local_store, catalog_type='file')
-    col = intake.open_esm_datastore(f'{local_store}/{name}.json')
-    pd.testing.assert_frame_equal(col_subset.df, col.df)
-    assert col.esmcat.id == name
+    cat_subset.serialize(name=name, directory=local_store, catalog_type=catalog_type)
+    cat = intake.open_esm_datastore(f'{local_store}/{name}.json')
+    pd.testing.assert_frame_equal(
+        cat_subset.df.reset_index(drop=True), cat.df.reset_index(drop=True)
+    )
+    assert cat.esmcat.id == name
 
 
 def test_empty_queries():

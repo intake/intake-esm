@@ -1,5 +1,7 @@
 import enum
+import json
 import os
+import pathlib
 import typing
 
 import fsspec
@@ -110,6 +112,55 @@ class ESMCatalogModel(pydantic.BaseModel):
         cat = cls.parse_obj(esmcat)
         cat._df = df
         return cat
+
+    def save(self, name: str, *, directory: str = None, catalog_type: str = 'dict') -> None:
+        """
+        Save the catalog to a file.
+
+        Parameters
+        -----------
+        name: str
+            The name of the file to save the catalog to.
+        directory: str
+            The directory to save the catalog to. If None, use the current directory
+        catalog_type: str
+            The type of catalog to save. Whether to save the catalog table as a dictionary
+            in the JSON file or as a separate CSV file. Valid options are 'dict' and 'file'.
+
+        Notes
+        -----
+        Large catalogs can result in large JSON files. To keep the JSON file size manageable, call with
+        `catalog_type='file'` to save catalog as a separate CSV file.
+
+        """
+
+        if catalog_type not in {'file', 'dict'}:
+            raise ValueError(
+                f'catalog_type must be either "dict" or "file". Received catalog_type={catalog_type}'
+            )
+        csv_file_name = pathlib.Path(f'{name}.csv.gz')
+        json_file_name = pathlib.Path(f'{name}.json')
+        if directory:
+            directory = pathlib.Path(directory)
+            directory.mkdir(parents=True, exist_ok=True)
+            csv_file_name = directory / csv_file_name
+            json_file_name = directory / json_file_name
+
+        data = self.dict().copy()
+        for key in {'catalog_dict', 'catalog_file'}:
+            data.pop(key, None)
+        data['id'] = name
+
+        if catalog_type == 'file':
+            data['catalog_file'] = str(csv_file_name)
+            self.df.to_csv(csv_file_name, compression='gzip', index=False)
+        else:
+            data['catalog_dict'] = self.df.to_dict(orient='records')
+
+        with open(json_file_name, 'w') as outfile:
+            json.dump(data, outfile, indent=2)
+
+        print(f'Successfully wrote ESM collection json file to: {json_file_name}')
 
     @classmethod
     def load(
