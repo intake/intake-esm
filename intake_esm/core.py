@@ -488,7 +488,7 @@ class esm_datastore(Catalog):
 
         source_kwargs = OrderedDict(
             xarray_open_kwargs=xarray_open_kwargs,
-            xarray_combine_by_coords_kwargs=cdf_kwargs,
+            xarray_combine_by_coords_kwargs=xarray_combine_by_coords_kwargs,
             preprocess=preprocess,
             storage_options=storage_options,
         )
