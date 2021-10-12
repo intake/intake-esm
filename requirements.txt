@@ -1,11 +1,9 @@
-dask[complete]
-fastprogress>=0.2.6
+dask[complete] >=2021.9
+fastprogress>=1.0.0
 fsspec>=0.8.0
-h5netcdf>=0.8.1
 intake>=0.6.0
 netCDF4>=1.5.5
-pandas>=1.0.0
 requests>=2.24.0
-xarray>=0.16.2
+xarray>=0.19
 zarr>=2.5
 pydantic

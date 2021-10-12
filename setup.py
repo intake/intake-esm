@@ -53,8 +53,7 @@ setup(
     entry_points={
         'intake.drivers': [
             'esm_datastore = intake_esm.core:esm_datastore',
-            'esm_group = intake_esm.source:ESMGroupDataSource',
-            'esm_single_source = intake_esm.source:ESMDataSource',
+            'esm_datasource = intake_esm.source:ESMDataSource',
         ]
     },
     keywords='intake, xarray, catalog',

@@ -7,7 +7,7 @@ dependencies:
   - cartopy
   - cftime
   - codecov
-  - fastprogress>= 0.2.6
+  - fastprogress>= 1.0.0
   - h5netcdf>=0.8.1
   - ipython
   - matplotlib

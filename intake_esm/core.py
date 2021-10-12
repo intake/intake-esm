@@ -1,13 +1,11 @@
 import concurrent.futures
 import json
 import typing
+import warnings
 from collections import OrderedDict
 from copy import deepcopy
-from typing import Any, Dict, List, Tuple, Union
-from warnings import warn
 
 import dask
-import intake
 import pandas as pd
 import pydantic
 import xarray as xr
@@ -15,6 +13,7 @@ from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
 from ._types import ESMCatalogModel
+from .source import ESMDataSource
 
 
 class esm_datastore(Catalog):
@@ -66,10 +65,11 @@ class esm_datastore(Catalog):
         self,
         obj: typing.Union[pydantic.FilePath, pydantic.AnyUrl, typing.Dict[str, typing.Any]],
         *,
+        progressbar: bool = True,
         sep: str = '.',
         read_csv_kwargs: typing.Dict[str, typing.Any] = None,
-        storage_options: typing.Dict = None,
-        intake_kwargs: typing.Dict = None,
+        storage_options: typing.Dict[str, typing.Any] = None,
+        intake_kwargs: typing.Dict[str, typing.Any] = None,
     ):
 
         """Intake Catalog representing an ESM Collection."""
@@ -77,6 +77,7 @@ class esm_datastore(Catalog):
         super(esm_datastore, self).__init__(**intake_kwargs)
         self.storage_options = storage_options or {}
         self.read_csv_kwargs = read_csv_kwargs or {}
+        self.progressbar = progressbar
         self.sep = sep
         if isinstance(obj, dict):
             self.esmcat = ESMCatalogModel.from_dict(obj)
@@ -86,7 +87,7 @@ class esm_datastore(Catalog):
             )
         self._entries = {}
 
-    def keys(self) -> List:
+    def keys(self) -> typing.List:
         """
         Get keys for the catalog entries
 
@@ -119,10 +120,10 @@ class esm_datastore(Catalog):
         """
         return self.esmcat.df
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.keys())
 
-    def _get_entries(self):
+    def _get_entries(self) -> typing.Dict[str, ESMDataSource]:
         # Due to just-in-time entry creation, we may not have all entries loaded
         # We need to make sure to create entries missing from self._entries
         missing = set(self.keys()) - set(self._entries.keys())
@@ -130,7 +131,7 @@ class esm_datastore(Catalog):
             _ = self[key]
         return self._entries
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> ESMDataSource:
         """
         This method takes a key argument and return a data source
         corresponding to assets (files) that will be aggregated into a
@@ -161,37 +162,34 @@ class esm_datastore(Catalog):
             return self._entries[key]
         except KeyError:
             if key in self.keys():
-                internal_key = self._keys[key]
-                if isinstance(self._grouped, pd.DataFrame):
-                    df = self._grouped.loc[internal_key]
-                    args = dict(
-                        key=key,
-                        row=df,
-                        path_column=self.path_column_name,
-                        data_format=self.data_format,
-                        format_column=self.format_column_name,
-                        requested_variables=self._requested_variables,
-                    )
-                    entry = _make_entry(key, 'esm_single_source', args)
-                else:
-                    df = self._grouped.get_group(internal_key)
-                    args = dict(
-                        df=df,
-                        aggregation_dict=self.aggregation_info.aggregation_dict,
-                        path_column=self.path_column_name,
-                        variable_column=self.aggregation_info.variable_column_name,
-                        data_format=self.data_format,
-                        format_column=self.format_column_name,
-                        key=key,
-                        requested_variables=self._requested_variables,
-                    )
-                    entry = _make_entry(key, 'esm_group', args)
+                keys_dict = self.esmcat._construct_group_keys(sep=self.sep)
+                grouped = self.esmcat.grouped
 
+                internal_key = keys_dict[key]
+
+                if isinstance(grouped, pd.DataFrame):
+                    records = [grouped.loc[internal_key].to_dict()]
+
+                else:
+                    records = grouped.get_group(internal_key).to_dict(orient='records')
+
+                # Create a new entry
+                entry = ESMDataSource(
+                    key=key,
+                    records=records,
+                    variable_column_name=self.esmcat.aggregation_control.variable_column_name,
+                    path_column_name=self.esmcat.assets.column_name,
+                    data_format=self.esmcat.assets.format,
+                    aggregations=self.esmcat.aggregation_control.aggregations,
+                    intake_kwargs={'metadata': {}},
+                )
                 self._entries[key] = entry
                 return self._entries[key]
-            raise KeyError(key)
+            raise KeyError(
+                f'key={key} not found in catalog. You can access the list of valid keys via the .keys() method.'
+            )
 
-    def __contains__(self, key):
+    def __contains__(self, key) -> bool:
         # Python falls back to iterating over the entire catalog
         # if this method is not defined. To avoid this, we implement it differently
 
@@ -202,11 +200,11 @@ class esm_datastore(Catalog):
         else:
             return True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Make string representation of object."""
         return f'<{self.esmcol_data["id"]} catalog with {len(self)} dataset(s) from {len(self.df)} asset(s)>'
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         """
         Return an html representation for the catalog object.
         Mainly for IPython notebook
@@ -228,29 +226,21 @@ class esm_datastore(Catalog):
         rv = [
             'df',
             'to_dataset_dict',
-            'from_df',
             'keys',
             'serialize',
             'search',
             'unique',
             'nunique',
-            'update_aggregation',
             'key_template',
-            'groupby_attrs',
-            'variable_column_name',
-            'aggregations',
-            'agg_columns',
-            'aggregation_dict',
-            'path_column_name',
-            'data_format',
-            'format_column_name',
         ]
         return sorted(list(self.__dict__.keys()) + rv)
 
     def _ipython_key_completions_(self):
         return self.__dir__()
 
-    def search(self, require_all_on: Union[str, List] = None, **query):
+    def search(
+        self, require_all_on: typing.Union[str, typing.List[str]] = None, **query
+    ) -> 'esm_datastore':
         """Search for entries in the catalog.
 
         Parameters
@@ -406,24 +396,23 @@ class esm_datastore(Catalog):
 
     def to_dataset_dict(
         self,
-        zarr_kwargs: Dict[str, Any] = None,
-        cdf_kwargs: Dict[str, Any] = None,
-        preprocess: Dict[str, Any] = None,
-        storage_options: Dict[str, Any] = None,
+        xarray_open_kwargs: typing.Dict[str, typing.Any] = None,
+        xarray_combine_by_coords_kwargs: typing.Dict[str, typing.Any] = None,
+        preprocess: typing.Dict[str, typing.Any] = None,
+        storage_options: typing.Dict[str, typing.Any] = None,
         progressbar: bool = None,
         aggregate: bool = None,
-    ) -> Dict[str, xr.Dataset]:
+        **kwargs,
+    ) -> typing.Dict[str, xr.Dataset]:
         """
         Load catalog entries into a dictionary of xarray datasets.
 
         Parameters
         ----------
-        zarr_kwargs : dict
-            Keyword arguments to pass to :py:func:`~xarray.open_zarr` function
-        cdf_kwargs : dict
-            Keyword arguments to pass to :py:func:`~xarray.open_dataset` function.  If specifying chunks, the chunking
-            is applied to each netcdf file.  Therefore, chunks must refer to dimensions that are present in each netcdf
-            file, or chunking will fail.
+        xarray_open_kwargs : dict
+            Keyword arguments to pass to :py:func:`~xarray.open_dataset` function
+        xarray_combine_by_coords_kwargs: : dict
+            Keyword arguments to pass to :py:func:`~xarray.combine_by_coords` function.
         preprocess : callable, optional
             If provided, call this function on each dataset prior to aggregation.
         storage_options : dict, optional
@@ -472,25 +461,47 @@ class esm_datastore(Catalog):
 
         # Return fast
         if not self.keys():
-            warn('There are no datasets to load! Returning an empty dictionary.')
+            warnings.warn(
+                'There are no datasets to load! Returning an empty dictionary.',
+                UserWarning,
+                stacklevel=2,
+            )
             return {}
 
+        xarray_open_kwargs = xarray_open_kwargs or {}
+        xarray_combine_by_coords_kwargs = xarray_combine_by_coords_kwargs or {}
+
+        cdf_kwargs = kwargs.get('cdf_kwargs')
+        zarr_kwargs = kwargs.get('zarr_kwargs')
+
+        if cdf_kwargs or zarr_kwargs:
+            warnings.warn(
+                'cdf_kwargs and zarr_kwargs are deprecated and will be removed in a future version. '
+                'Please use xarray_open_kwargs instead.',
+                UserWarning,
+                stacklevel=2,
+            )
+            if cdf_kwargs:
+                xarray_open_kwargs.update(cdf_kwargs)
+            if zarr_kwargs:
+                xarray_open_kwargs.update(zarr_kwargs)
+
         source_kwargs = OrderedDict(
-            zarr_kwargs=zarr_kwargs,
-            cdf_kwargs=cdf_kwargs,
+            xarray_open_kwargs=xarray_open_kwargs,
+            xarray_combine_by_coords_kwargs=xarray_combine_by_coords_kwargs,
             preprocess=preprocess,
             storage_options=storage_options,
         )
+
+        if aggregate is not None and not aggregate:
+            self = deepcopy(self)
+            self.esmcat.aggregation_control.groupby_attrs = []
 
         if progressbar is not None:
             self.progressbar = progressbar
 
         if preprocess is not None and not callable(preprocess):
             raise ValueError('preprocess argument must be callable')
-
-        if aggregate is not None and not aggregate:
-            self = deepcopy(self)
-            self.groupby_attrs = []
 
         if self.progressbar:
             print(
@@ -519,62 +530,3 @@ class esm_datastore(Catalog):
             if self.progressbar:
                 progress.update(total)
             return self._datasets
-
-
-def _make_entry(key: str, driver: str, args: dict):
-    entry = intake.catalog.local.LocalCatalogEntry(
-        name=key, description='', driver=driver, args=args, metadata={}
-    )
-    return entry.get()
-
-
-def _construct_agg_info(aggregations: List[Dict]) -> Tuple[List[Dict], Dict, List]:
-    """
-    Helper function used to determine aggregation columns information and their
-    respective settings.
-
-    Examples
-    --------
-
-    >>> a = [
-    ...     {"type": "union", "attribute_name": "variable_id"},
-    ...     {
-    ...         "type": "join_new",
-    ...         "attribute_name": "member_id",
-    ...         "options": {"coords": "minimal", "compat": "override"},
-    ...     },
-    ...     {
-    ...         "type": "join_new",
-    ...         "attribute_name": "dcpp_init_year",
-    ...         "options": {"coords": "minimal", "compat": "override"},
-    ...     },
-    ... ]
-    >>> aggregations, aggregation_dict, agg_columns = _construct_agg_info(a)
-    >>> agg_columns
-    ['variable_id', 'member_id', 'dcpp_init_year']
-    >>> aggregation_dict
-    {'variable_id': {'type': 'union'},
-    'member_id': {'type': 'join_new',
-    'options': {'coords': 'minimal', 'compat': 'override'}},
-    'dcpp_init_year': {'type': 'join_new',
-    'options': {'coords': 'minimal', 'compat': 'override'}}}
-    """
-    agg_columns = []
-    aggregation_dict = {}
-    if aggregations:
-        # Sort aggregations to make sure join_existing is always done before join_new
-        aggregations = sorted(aggregations, key=lambda i: i['type'], reverse=True)
-        for agg in aggregations:
-            key = agg['attribute_name']
-            if agg['type'] == 'join_existing' and 'dim' not in agg['options']:
-                message = f"""
-            Missing `dim` option for `join_existing` operation across `{key}` attribute.
-            For `join_existing` to properly work, `options` must contain the name of the existing dimension
-            to use (for e.g.: something like {{'dim': 'time'}}).
-                """
-                warn(message)
-            rest = agg.copy()
-            del rest['attribute_name']
-            aggregation_dict[key] = rest
-        agg_columns = list(aggregation_dict.keys())
-    return aggregations, aggregation_dict, agg_columns
