@@ -99,6 +99,7 @@ class ESMDataSource(DataSource):
     name = 'esm_datasource'
     partition_access = True
 
+    @pydantic.validate_arguments
     def __init__(
         self,
         key: pydantic.StrictStr,
@@ -114,7 +115,7 @@ class ESMDataSource(DataSource):
         xarray_open_kwargs: typing.Dict[str, typing.Any] = None,
         xarray_combine_by_coords_kwargs: typing.Dict[str, typing.Any] = None,
         intake_kwargs: typing.Dict[str, typing.Any] = None,
-    ) -> 'ESMDataSource':
+    ):
 
         intake_kwargs = intake_kwargs or {}
         super().__init__(**intake_kwargs)

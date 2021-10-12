@@ -2,6 +2,7 @@ import ast
 
 import intake
 import pandas as pd
+import pydantic
 import pytest
 import xarray as xr
 
@@ -257,5 +258,5 @@ def test_to_dataset_dict_cdf_zarr_kwargs_deprecation():
 
 def test_to_dataset_dict_w_preprocess_error():
     cat = intake.open_esm_datastore(cdf_col_sample_cmip5)
-    with pytest.raises(ValueError, match=r'preprocess argument must be callable'):
+    with pytest.raises(pydantic.ValidationError):
         cat.to_dataset_dict(preprocess='foo')
