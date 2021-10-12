@@ -84,6 +84,7 @@ class esm_datastore(Catalog):
                 obj, storage_options=self.storage_options, read_csv_kwargs=read_csv_kwargs
             )
         self._entries = {}
+        self._requested_variables = []
 
     def keys(self) -> typing.List:
         """
@@ -295,7 +296,16 @@ class esm_datastore(Catalog):
         """
 
         results = self.esmcat.search(require_all_on=require_all_on, **query)
-        return esm_datastore({'esmcat': self.esmcat.dict(), 'df': results})
+        cat = esm_datastore({'esmcat': self.esmcat.dict(), 'df': results})
+        if self.esmcat.has_multiple_variable_assets:
+            requested_variables = query.get(
+                self.esmcat.aggregation_control.variable_column_name, []
+            )
+        else:
+            requested_variables = []
+
+        cat._requested_variables = requested_variables
+        return cat
 
     def serialize(self, name: str, directory: str = None, catalog_type: str = 'dict') -> None:
         """Serialize collection/catalog to corresponding json and csv files.
@@ -443,7 +453,7 @@ class esm_datastore(Catalog):
             warnings.warn(
                 'cdf_kwargs and zarr_kwargs are deprecated and will be removed in a future version. '
                 'Please use xarray_open_kwargs instead.',
-                UserWarning,
+                DeprecationWarning,
                 stacklevel=2,
             )
             if cdf_kwargs:
@@ -456,6 +466,7 @@ class esm_datastore(Catalog):
             xarray_combine_by_coords_kwargs=xarray_combine_by_coords_kwargs,
             preprocess=preprocess,
             storage_options=storage_options,
+            requested_variables=self._requested_variables,
         )
 
         if aggregate is not None and not aggregate:

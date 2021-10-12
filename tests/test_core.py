@@ -156,6 +156,25 @@ def test_getitem(key, decode_times):
 
 
 @pytest.mark.parametrize(
+    'query', [dict(variable=['O2', 'TEMP']), dict(variable=['SHF']), dict(experiment='CTRL')]
+)
+def test_multi_variable_catalog(query):
+    import ast
+
+    cat = intake.open_esm_datastore(
+        multi_variable_col, read_csv_kwargs={'converters': {'variable': ast.literal_eval}}
+    )
+    assert cat.esmcat.has_multiple_variable_assets
+
+    cat_sub = cat.search(**query)
+    assert set(cat_sub._requested_variables) == set(query.pop('variable', []))
+
+    _, ds = cat_sub.to_dataset_dict().popitem()
+    if cat_sub._requested_variables:
+        assert set(ds.data_vars) == set(cat_sub._requested_variables)
+
+
+@pytest.mark.parametrize(
     'path, query, xarray_open_kwargs',
     [
         (
@@ -199,3 +218,44 @@ def test_to_dataset_dict_aggfalse(path, query):
     nds = len(cat.df)
     dsets = cat.to_dataset_dict(xarray_open_kwargs={'chunks': {'time': 1}}, aggregate=False)
     assert len(dsets.keys()) == nds
+
+
+@pytest.mark.parametrize(
+    'path, query',
+    [
+        (
+            cdf_col_sample_cmip6,
+            dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_id=['tasmax']),
+        )
+    ],
+)
+def test_to_dataset_dict_w_preprocess(path, query):
+    def rename_coords(ds):
+        return ds.rename({'lon': 'longitude', 'lat': 'latitude'})
+
+    cat = intake.open_esm_datastore(path)
+    cat_sub = cat.search(**query)
+    dsets = cat_sub.to_dataset_dict(
+        xarray_open_kwargs={'chunks': {'time': 1}}, preprocess=rename_coords
+    )
+    _, ds = dsets.popitem()
+    assert 'latitude' in ds.dims
+    assert 'longitude' in ds.dims
+
+
+def test_to_dataset_dict_cdf_zarr_kwargs_deprecation():
+    cat = intake.open_esm_datastore(cdf_col_sample_cmip6)
+    cat_sub = cat.search(
+        **dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_id=['tasmax'])
+    )
+    with pytest.warns(
+        DeprecationWarning,
+        match=r'cdf_kwargs and zarr_kwargs are deprecated and will be removed in a future version. Please use xarray_open_kwargs instead.',
+    ):
+        cat_sub.to_dataset_dict(cdf_kwargs={'chunks': {'time': 1}})
+
+
+def test_to_dataset_dict_w_preprocess_error():
+    cat = intake.open_esm_datastore(cdf_col_sample_cmip5)
+    with pytest.raises(ValueError, match=r'preprocess argument must be callable'):
+        cat.to_dataset_dict(preprocess='foo')
