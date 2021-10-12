@@ -453,7 +453,7 @@ class esm_datastore(Catalog):
             warnings.warn(
                 'cdf_kwargs and zarr_kwargs are deprecated and will be removed in a future version. '
                 'Please use xarray_open_kwargs instead.',
-                UserWarning,
+                DeprecationWarning,
                 stacklevel=2,
             )
             if cdf_kwargs:

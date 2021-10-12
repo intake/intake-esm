@@ -243,6 +243,18 @@ def test_to_dataset_dict_w_preprocess(path, query):
     assert 'longitude' in ds.dims
 
 
+def test_to_dataset_dict_cdf_zarr_kwargs_deprecation():
+    cat = intake.open_esm_datastore(cdf_col_sample_cmip6)
+    cat_sub = cat.search(
+        **dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_id=['tasmax'])
+    )
+    with pytest.warns(
+        DeprecationWarning,
+        match=r'cdf_kwargs and zarr_kwargs are deprecated and will be removed in a future version. Please use xarray_open_kwargs instead.',
+    ):
+        cat_sub.to_dataset_dict(cdf_kwargs={'chunks': {'time': 1}})
+
+
 def test_to_dataset_dict_w_preprocess_error():
     cat = intake.open_esm_datastore(cdf_col_sample_cmip5)
     with pytest.raises(ValueError, match=r'preprocess argument must be callable'):
