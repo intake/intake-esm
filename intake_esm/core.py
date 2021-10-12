@@ -1,8 +1,6 @@
 import concurrent.futures
-import json
 import typing
 import warnings
-from collections import OrderedDict
 from copy import deepcopy
 
 import dask
@@ -327,42 +325,9 @@ class esm_datastore(Catalog):
         ...     experiment_id="historical",
         ... )
         >>> col_subset.serialize(name="cmip6_bcc_esm1", catalog_type="file")
-        Writing csv catalog to: cmip6_bcc_esm1.csv.gz
-        Writing ESM collection json file to: cmip6_bcc_esm1.json
         """
 
-        def _clear_old_catalog(catalog_data):
-            """Remove any old references to the catalog."""
-            for key in {'catalog_dict', 'catalog_file'}:
-                _ = catalog_data.pop(key, None)
-            return catalog_data
-
-        from pathlib import Path
-
-        csv_file_name = Path(f'{name}.csv.gz')
-        json_file_name = Path(f'{name}.json')
-        if directory:
-            directory = Path(directory)
-            directory.mkdir(parents=True, exist_ok=True)
-            csv_file_name = directory / csv_file_name
-            json_file_name = directory / json_file_name
-
-        collection_data = self.esmcol_data.copy()
-        collection_data = _clear_old_catalog(collection_data)
-        collection_data['id'] = name
-
-        catalog_length = len(self.df)
-        if catalog_type == 'file':
-            collection_data['catalog_file'] = csv_file_name.as_posix()
-            print(f'Writing csv catalog with {catalog_length} entries to: {csv_file_name}')
-            self.df.to_csv(csv_file_name, compression='gzip', index=False)
-        else:
-            print(f'Writing catalog with {catalog_length} entries into: {json_file_name}')
-            collection_data['catalog_dict'] = self.df.to_dict(orient='records')
-
-        print(f'Writing ESM collection json file to: {json_file_name}')
-        with open(json_file_name, 'w') as outfile:
-            json.dump(collection_data, outfile)
+        self.esmcat.save(name, directory=directory, catalog_type=catalog_type)
 
     def nunique(self) -> pd.Series:
         """Count distinct observations across dataframe columns
@@ -486,7 +451,7 @@ class esm_datastore(Catalog):
             if zarr_kwargs:
                 xarray_open_kwargs.update(zarr_kwargs)
 
-        source_kwargs = OrderedDict(
+        source_kwargs = dict(
             xarray_open_kwargs=xarray_open_kwargs,
             xarray_combine_by_coords_kwargs=xarray_combine_by_coords_kwargs,
             preprocess=preprocess,
