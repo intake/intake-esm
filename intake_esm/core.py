@@ -310,7 +310,7 @@ class esm_datastore(Catalog):
         if variables:
             if isinstance(variables, str):
                 variables = [variables]
-            for key, value in self.derivedcat._registry.items():
+            for key, value in self.derivedcat.items():
                 if key in variables:
                     _derived.append(key)
                     variables.remove(key)

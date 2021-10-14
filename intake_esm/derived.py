@@ -26,8 +26,26 @@ class DerivedVariableRegistry:
         )
         return func
 
+    def __contains__(self, item: str) -> bool:
+        return item in self._registry
+
+    def __getitem__(self, item: str) -> DerivedVariable:
+        return self._registry[item]
+
+    def __iter__(self) -> typing.Iterator[DerivedVariable]:
+        return iter(self._registry.values())
+
+    def __repr__(self) -> str:
+        return f'DerivedVariableRegistry({self._registry})'
+
+    def __len__(self) -> int:
+        return len(self._registry)
+
+    def items(self) -> typing.List[typing.Tuple[str, DerivedVariable]]:
+        return list(self._registry.items())
+
     def keys(self) -> typing.List[str]:
-        return self._registry.keys()
+        return list(self._registry.keys())
 
     def search(
         self, variable: typing.Union[str, typing.List[str]]
