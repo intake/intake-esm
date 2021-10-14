@@ -65,7 +65,7 @@ def test_catalog_unique(obj, sep, read_csv_kwargs):
     nuniques = cat.nunique()
     assert isinstance(uniques, pd.Series)
     assert isinstance(nuniques, pd.Series)
-    assert set(uniques.keys()) == set(cat.df.columns)
+    assert len(uniques.keys()) == len(cat.df.columns) + 1  # for derived_variable entry
 
 
 def test_catalog_contains():
