@@ -11,7 +11,7 @@ from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
 from ._types import ESMCatalogModel
-from .derived import registry
+from .derived import DerivedVariableRegistry, default_registry
 from .source import ESMDataSource
 
 
@@ -31,6 +31,8 @@ class esm_datastore(Catalog):
         be a Pandas DataFrame containing content that would otherwise be in a CSV file.
     sep : str, optional
         Delimiter to use when constructing a key for a query, by default '.'
+    registry : DerivedVariableRegistry, optional
+        Registry of derived variables to use, by default None. If not provided, uses the default registry.
     read_csv_kwargs : dict, optional
         Additional keyword arguments passed through to the :py:func:`~pandas.read_csv` function.
     storage_options : dict, optional
@@ -66,6 +68,7 @@ class esm_datastore(Catalog):
         *,
         progressbar: bool = True,
         sep: str = '.',
+        registry: typing.Optional[DerivedVariableRegistry] = None,
         read_csv_kwargs: typing.Dict[str, typing.Any] = None,
         storage_options: typing.Dict[str, typing.Any] = None,
         intake_kwargs: typing.Dict[str, typing.Any] = None,
@@ -85,7 +88,7 @@ class esm_datastore(Catalog):
                 obj, storage_options=self.storage_options, read_csv_kwargs=read_csv_kwargs
             )
 
-        self.derivedcat = registry
+        self.derivedcat = registry or default_registry
         self._entries = {}
         self._requested_variables = []
 

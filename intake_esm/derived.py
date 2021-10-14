@@ -41,4 +41,4 @@ class DerivedVariableRegistry:
         return reg
 
 
-registry = DerivedVariableRegistry()
+default_registry = DerivedVariableRegistry()
