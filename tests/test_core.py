@@ -9,6 +9,19 @@ import xarray as xr
 import intake_esm
 from intake_esm.source import ESMDataSource
 
+registry = intake_esm.DerivedVariableRegistry()
+
+
+@registry.register(variable='FOO', dependent_variables=['FLNS', 'FLUT'])
+def func(ds):
+    return ds + 1
+
+
+@registry.register(variable='BAR', dependent_variables=['FLUT'])
+def funcs(ds):
+    return ds + 1
+
+
 from .utils import (
     catalog_dict_records,
     cdf_col_sample_cesmle,
@@ -89,6 +102,16 @@ def test_catalog_search(path, query, expected_size):
     cat = intake.open_esm_datastore(path)
     new_cat = cat.search(**query)
     assert len(new_cat) == expected_size
+
+
+def test_catalog_with_registry_search():
+    cat = intake.open_esm_datastore(catalog_dict_records, registry=registry)
+    new_cat = cat.search(variable='FOO')
+    assert len(cat) == 1
+    assert len(new_cat) == 1
+
+    assert len(cat.derivedcat) == 2
+    assert len(new_cat.derivedcat) == 1
 
 
 @pytest.mark.parametrize('key', ['ocn.20C.pop.h', 'ocn.CTRL.pop.h', 'ocn.RCP85.pop.h'])
