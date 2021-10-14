@@ -3,6 +3,10 @@
 import importlib
 import sys
 
+INTAKE_ESM_ATTRS_PREFIX = 'intake_esm_attrs'
+INTAKE_ESM_DATASET_KEY = 'intake_esm_dataset_key'
+INTAKE_ESM_VARS_KEY = 'intake_esm_vars'
+
 
 def _allnan_or_nonan(df, column: str) -> bool:
     """Check if all values in a column are NaN or not NaN

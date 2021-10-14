@@ -91,6 +91,7 @@ class esm_datastore(Catalog):
         self.derivedcat = registry or default_registry
         self._entries = {}
         self._requested_variables = []
+        self.datasets = {}
 
     def keys(self) -> typing.List:
         """
@@ -234,6 +235,7 @@ class esm_datastore(Catalog):
             'to_dataset_dict',
             'keys',
             'serialize',
+            'datasets',
             'search',
             'unique',
             'nunique',
@@ -482,6 +484,15 @@ class esm_datastore(Catalog):
             )
             return {}
 
+        if (
+            self.esmcat.aggregation_control.variable_column_name
+            in self.esmcat.aggregation_control.groupby_attrs
+        ) and len(self.derivedcat) > 0:
+            raise NotImplementedError(
+                f'The `{self.esmcat.aggregation_control.variable_column_name}` column name is used as a groupby attribute: {self.esmcat.aggregation_control.groupby_attrs}. '
+                'This is not yet supported when computing derived variables.'
+            )
+
         xarray_open_kwargs = xarray_open_kwargs or {}
         xarray_combine_by_coords_kwargs = xarray_combine_by_coords_kwargs or {}
 
@@ -529,16 +540,20 @@ class esm_datastore(Catalog):
             total = len(sources)
             progress = progress_bar(range(total))
 
-        self._datasets = {}
+        datasets = {}
         with concurrent.futures.ThreadPoolExecutor(max_workers=dask.system.CPU_COUNT) as executor:
             future_tasks = [
                 executor.submit(_load_source, key, source) for key, source in sources.items()
             ]
             for i, task in enumerate(concurrent.futures.as_completed(future_tasks)):
                 key, ds = task.result()
-                self._datasets[key] = ds
+                datasets[key] = ds
                 if self.progressbar:
                     progress.update(i)
             if self.progressbar:
                 progress.update(total)
-            return self._datasets
+
+        if len(self.derivedcat) > 0:
+            datasets = self.derivedcat.update_datasets(datasets)
+        self.datasets = datasets
+        return self.datasets

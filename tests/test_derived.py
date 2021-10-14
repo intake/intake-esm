@@ -1,3 +1,5 @@
+import xarray as xr
+
 from intake_esm.derived import DerivedVariable, DerivedVariableRegistry
 
 
@@ -40,3 +42,19 @@ def test_registry_search():
     subset = dvr.search(variable='BAZ')
     assert len(subset) == 1
     assert subset['BAZ'].func == func_b
+
+
+def test_registry_derive_variables():
+    ds = xr.tutorial.open_dataset('air_temperature')
+
+    dvr = DerivedVariableRegistry()
+
+    @dvr.register(variable='FOO', dependent_variables=['air'])
+    def func(ds):
+        ds['FOO'] = ds.air // 100
+        return ds
+
+    dsets = dvr.update_datasets({'test': ds})
+    assert 'test' in dsets
+    assert 'FOO' in dsets['test']
+    assert isinstance(dsets['test']['FOO'], xr.DataArray)

@@ -283,3 +283,28 @@ def test_to_dataset_dict_w_preprocess_error():
     cat = intake.open_esm_datastore(cdf_col_sample_cmip5)
     with pytest.raises(pydantic.ValidationError):
         cat.to_dataset_dict(preprocess='foo')
+
+
+def test_to_dataset_dict_with_registry():
+
+    registry = intake_esm.DerivedVariableRegistry()
+
+    @registry.register(variable='FOO', dependent_variables=['FLNS', 'FLUT'])
+    def func(ds):
+        ds['FOO'] = ds.FLNS + ds.FLUT
+        return ds
+
+    @registry.register(variable='BAR', dependent_variables=['FLUT'])
+    def funcs(ds):
+        ds['BAR'] = ds.FLUT * 1000
+        return ds
+
+    cat = intake.open_esm_datastore(catalog_dict_records, registry=registry)
+    new_cat = cat.search(variable=['FOO', 'BAR'])
+    _, ds = new_cat.to_dataset_dict(
+        xarray_open_kwargs={'backend_kwargs': {'storage_options': {'anon': True}}}
+    ).popitem()
+
+    assert 'FOO' in ds.data_vars
+    assert 'BAR' in ds.data_vars
+    assert len(ds.data_vars) == 4
