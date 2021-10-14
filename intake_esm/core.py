@@ -89,30 +89,6 @@ class esm_datastore(Catalog):
         self._entries = {}
         self._requested_variables = []
 
-    def validate_derivedcat(self):
-        """
-        Validate the derived catalog.
-
-        Raises
-        ------
-        ValueError
-            If the derived catalog is invalid.
-        """
-
-        for key, entry in self.derivedcat.items():
-            for req in entry.required:
-                for col in req:
-                    if col not in self.esmcat.df.columns:
-                        raise ValueError(
-                            f'{key} requires {col} to be in the ESM catalog columns: {self.esmcat.df.columns.tolist()}'
-                        )
-                if self.esmcat.aggregation_control.variable_column_name not in req.keys():
-                    raise ValueError(
-                        f'Variable derivation requires *{self.esmcat.aggregation_control.variable_column_name}* key to be in the dictionary of requirements: {req}'
-                    )
-        else:
-            print('Looks good!')
-
     def keys(self) -> typing.List:
         """
         Get keys for the catalog entries
