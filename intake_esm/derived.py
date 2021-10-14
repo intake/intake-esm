@@ -32,8 +32,8 @@ class DerivedVariableRegistry:
     def __getitem__(self, item: str) -> DerivedVariable:
         return self._registry[item]
 
-    def __iter__(self) -> typing.Iterator[DerivedVariable]:
-        return iter(self._registry.values())
+    def __iter__(self) -> typing.Iterator[str]:
+        return iter(self._registry.keys())
 
     def __repr__(self) -> str:
         return f'DerivedVariableRegistry({self._registry})'
