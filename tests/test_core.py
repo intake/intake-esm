@@ -7,7 +7,6 @@ import pytest
 import xarray as xr
 
 import intake_esm
-from intake_esm.source import ESMDataSource
 
 registry = intake_esm.DerivedVariableRegistry()
 
@@ -118,7 +117,7 @@ def test_catalog_with_registry_search():
 def test_catalog_getitem(key):
     cat = intake.open_esm_datastore(cdf_col_sample_cesmle)
     entry = cat[key]
-    assert isinstance(entry, ESMDataSource)
+    assert isinstance(entry, intake_esm.source.ESMDataSource)
 
 
 def test_catalog_getitem_error():
@@ -173,7 +172,7 @@ def test_empty_queries():
 def test_getitem(key, decode_times):
     col = intake.open_esm_datastore(cdf_col_sample_cmip6)
     x = col[key]
-    assert isinstance(x, ESMDataSource)
+    assert isinstance(x, intake_esm.source.ESMDataSource)
     ds = x(xarray_open_kwargs={'chunks': {}, 'decode_times': decode_times}).to_dask()
     assert isinstance(ds, xr.Dataset)
     assert set(x.df['member_id']) == set(ds['member_id'].values)
@@ -308,3 +307,9 @@ def test_to_dataset_dict_with_registry():
     assert 'FOO' in ds.data_vars
     assert 'BAR' in ds.data_vars
     assert len(ds.data_vars) == 4
+
+    with pytest.raises(NotImplementedError):
+        new_cat.esmcat.aggregation_control.groupby_attrs += ['variable']
+        new_cat.to_dataset_dict(
+            xarray_open_kwargs={'backend_kwargs': {'storage_options': {'anon': True}}}
+        )

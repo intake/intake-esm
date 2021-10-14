@@ -1,6 +1,7 @@
+import pytest
 import xarray as xr
 
-from intake_esm.derived import DerivedVariable, DerivedVariableRegistry
+from intake_esm.derived import DerivedVariable, DerivedVariableError, DerivedVariableRegistry
 
 
 def test_registry_init():
@@ -58,3 +59,7 @@ def test_registry_derive_variables():
     assert 'test' in dsets
     assert 'FOO' in dsets['test']
     assert isinstance(dsets['test']['FOO'], xr.DataArray)
+
+    # Test for errors/ invalid inputs, wrong return type
+    with pytest.raises(DerivedVariableError):
+        dvr['FOO']({})
