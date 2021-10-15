@@ -2,7 +2,7 @@ import pandas as pd
 import pydantic
 import pytest
 
-from intake_esm._types import Assets, ESMCatalogModel, QueryModel
+from intake_esm.cat import Assets, ESMCatalogModel, QueryModel
 
 from .utils import (
     catalog_dict_records,

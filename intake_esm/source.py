@@ -7,7 +7,7 @@ import pydantic
 import xarray as xr
 from intake.source.base import DataSource, Schema
 
-from ._types import Aggregation, DataFormat
+from .cat import Aggregation, DataFormat
 from .utils import INTAKE_ESM_ATTRS_PREFIX, INTAKE_ESM_DATASET_KEY, INTAKE_ESM_VARS_KEY
 
 

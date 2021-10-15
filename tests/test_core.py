@@ -49,7 +49,7 @@ from .utils import (
 def test_catalog_init(capsys, obj, sep, read_csv_kwargs):
     """Test that the catalog can be initialized."""
     cat = intake.open_esm_datastore(obj, sep=sep, read_csv_kwargs=read_csv_kwargs)
-    assert isinstance(cat.esmcat, intake_esm._types.ESMCatalogModel)
+    assert isinstance(cat.esmcat, intake_esm.cat.ESMCatalogModel)
     assert isinstance(cat.df, pd.DataFrame)
     assert len(cat) > 0
 
