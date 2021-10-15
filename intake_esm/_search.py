@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 if typing.TYPE_CHECKING:
-    from ._types import QueryModel
+    from .cat import QueryModel
 
 import warnings
 

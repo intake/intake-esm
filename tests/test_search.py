@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from intake_esm._search import is_pattern, search, search_apply_require_all_on
-from intake_esm._types import QueryModel
+from intake_esm.cat import QueryModel
 
 
 @pytest.mark.parametrize(
