@@ -11,7 +11,7 @@ pyupgrade = 1
 pyupgrade = ["--py36-plus"]
 
 [build-system]
-requires = ["setuptools>=30.3.0", "wheel", "setuptools_scm"]
+requires = ["setuptools>=45", "wheel", "setuptools_scm>=6.2"]
 
 
 # pyproject.toml
