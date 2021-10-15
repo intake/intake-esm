@@ -8,10 +8,7 @@ import xarray as xr
 from intake.source.base import DataSource, Schema
 
 from ._types import Aggregation, DataFormat
-
-INTAKE_ESM_ATTRS_PREFIX = 'intake_esm_attrs'
-INTAKE_ESM_DATASET_KEY = 'intake_esm_dataset_key'
-INTAKE_ESM_VARS_KEY = 'intake_esm_vars'
+from .utils import INTAKE_ESM_ATTRS_PREFIX, INTAKE_ESM_DATASET_KEY, INTAKE_ESM_VARS_KEY
 
 
 def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None):

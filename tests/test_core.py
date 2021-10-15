@@ -7,7 +7,19 @@ import pytest
 import xarray as xr
 
 import intake_esm
-from intake_esm.source import ESMDataSource
+
+registry = intake_esm.DerivedVariableRegistry()
+
+
+@registry.register(variable='FOO', dependent_variables=['FLNS', 'FLUT'])
+def func(ds):
+    return ds + 1
+
+
+@registry.register(variable='BAR', dependent_variables=['FLUT'])
+def funcs(ds):
+    return ds + 1
+
 
 from .utils import (
     catalog_dict_records,
@@ -65,7 +77,7 @@ def test_catalog_unique(obj, sep, read_csv_kwargs):
     nuniques = cat.nunique()
     assert isinstance(uniques, pd.Series)
     assert isinstance(nuniques, pd.Series)
-    assert set(uniques.keys()) == set(cat.df.columns)
+    assert len(uniques.keys()) == len(cat.df.columns) + 1  # for derived_variable entry
 
 
 def test_catalog_contains():
@@ -91,11 +103,21 @@ def test_catalog_search(path, query, expected_size):
     assert len(new_cat) == expected_size
 
 
+def test_catalog_with_registry_search():
+    cat = intake.open_esm_datastore(catalog_dict_records, registry=registry)
+    new_cat = cat.search(variable='FOO')
+    assert len(cat) == 1
+    assert len(new_cat) == 1
+
+    assert len(cat.derivedcat) == 2
+    assert len(new_cat.derivedcat) == 1
+
+
 @pytest.mark.parametrize('key', ['ocn.20C.pop.h', 'ocn.CTRL.pop.h', 'ocn.RCP85.pop.h'])
 def test_catalog_getitem(key):
     cat = intake.open_esm_datastore(cdf_col_sample_cesmle)
     entry = cat[key]
-    assert isinstance(entry, ESMDataSource)
+    assert isinstance(entry, intake_esm.source.ESMDataSource)
 
 
 def test_catalog_getitem_error():
@@ -150,7 +172,7 @@ def test_empty_queries():
 def test_getitem(key, decode_times):
     col = intake.open_esm_datastore(cdf_col_sample_cmip6)
     x = col[key]
-    assert isinstance(x, ESMDataSource)
+    assert isinstance(x, intake_esm.source.ESMDataSource)
     ds = x(xarray_open_kwargs={'chunks': {}, 'decode_times': decode_times}).to_dask()
     assert isinstance(ds, xr.Dataset)
     assert set(x.df['member_id']) == set(ds['member_id'].values)
@@ -260,3 +282,34 @@ def test_to_dataset_dict_w_preprocess_error():
     cat = intake.open_esm_datastore(cdf_col_sample_cmip5)
     with pytest.raises(pydantic.ValidationError):
         cat.to_dataset_dict(preprocess='foo')
+
+
+def test_to_dataset_dict_with_registry():
+
+    registry = intake_esm.DerivedVariableRegistry()
+
+    @registry.register(variable='FOO', dependent_variables=['FLNS', 'FLUT'])
+    def func(ds):
+        ds['FOO'] = ds.FLNS + ds.FLUT
+        return ds
+
+    @registry.register(variable='BAR', dependent_variables=['FLUT'])
+    def funcs(ds):
+        ds['BAR'] = ds.FLUT * 1000
+        return ds
+
+    cat = intake.open_esm_datastore(catalog_dict_records, registry=registry)
+    new_cat = cat.search(variable=['FOO', 'BAR'])
+    _, ds = new_cat.to_dataset_dict(
+        xarray_open_kwargs={'backend_kwargs': {'storage_options': {'anon': True}}}
+    ).popitem()
+
+    assert 'FOO' in ds.data_vars
+    assert 'BAR' in ds.data_vars
+    assert len(ds.data_vars) == 4
+
+    with pytest.raises(NotImplementedError):
+        new_cat.esmcat.aggregation_control.groupby_attrs += ['variable']
+        new_cat.to_dataset_dict(
+            xarray_open_kwargs={'backend_kwargs': {'storage_options': {'anon': True}}}
+        )

@@ -11,6 +11,7 @@ from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
 from ._types import ESMCatalogModel
+from .derived import DerivedVariableRegistry, default_registry
 from .source import ESMDataSource
 
 
@@ -30,6 +31,8 @@ class esm_datastore(Catalog):
         be a Pandas DataFrame containing content that would otherwise be in a CSV file.
     sep : str, optional
         Delimiter to use when constructing a key for a query, by default '.'
+    registry : DerivedVariableRegistry, optional
+        Registry of derived variables to use, by default None. If not provided, uses the default registry.
     read_csv_kwargs : dict, optional
         Additional keyword arguments passed through to the :py:func:`~pandas.read_csv` function.
     storage_options : dict, optional
@@ -65,6 +68,7 @@ class esm_datastore(Catalog):
         *,
         progressbar: bool = True,
         sep: str = '.',
+        registry: typing.Optional[DerivedVariableRegistry] = None,
         read_csv_kwargs: typing.Dict[str, typing.Any] = None,
         storage_options: typing.Dict[str, typing.Any] = None,
         intake_kwargs: typing.Dict[str, typing.Any] = None,
@@ -83,8 +87,11 @@ class esm_datastore(Catalog):
             self.esmcat = ESMCatalogModel.load(
                 obj, storage_options=self.storage_options, read_csv_kwargs=read_csv_kwargs
             )
+
+        self.derivedcat = registry or default_registry
         self._entries = {}
         self._requested_variables = []
+        self.datasets = {}
 
     def keys(self) -> typing.List:
         """
@@ -228,10 +235,12 @@ class esm_datastore(Catalog):
             'to_dataset_dict',
             'keys',
             'serialize',
+            'datasets',
             'search',
             'unique',
             'nunique',
             'key_template',
+            'validate_derivedcat',
         ]
         return sorted(list(self.__dict__.keys()) + rv)
 
@@ -297,6 +306,19 @@ class esm_datastore(Catalog):
         4    landCoverFrac
         """
 
+        # step 1: Ensure that the query includes the dependent variables
+        variables = query.get(self.esmcat.aggregation_control.variable_column_name, [])
+        _derived = []
+        if variables:
+            if isinstance(variables, str):
+                variables = [variables]
+            for key, value in self.derivedcat.items():
+                if key in variables:
+                    _derived.append(key)
+                    variables.remove(key)
+                    variables.extend(value.dependent_variables)
+            query[self.esmcat.aggregation_control.variable_column_name] = variables
+        # step 2: Search in the base/main catalog
         results = self.esmcat.search(require_all_on=require_all_on, **query)
         cat = esm_datastore({'esmcat': self.esmcat.dict(), 'df': results})
         if self.esmcat.has_multiple_variable_assets:
@@ -305,8 +327,11 @@ class esm_datastore(Catalog):
             )
         else:
             requested_variables = []
-
         cat._requested_variables = requested_variables
+
+        # step 3: Subset the derived catalog
+        derivat_cat_subset = self.derivedcat.search(variable=_derived)
+        cat.derivedcat = derivat_cat_subset
         return cat
 
     @pydantic.validate_arguments
@@ -368,14 +393,21 @@ class esm_datastore(Catalog):
         dcpp_init_year       59
         dtype: int64
         """
-        return self.esmcat.nunique()
+        nunique = self.esmcat.nunique()
+        nunique[f'derived_{self.esmcat.aggregation_control.variable_column_name}'] = len(
+            self.derivedcat.keys()
+        )
+        return nunique
 
     def unique(self) -> pd.Series:
         """Return unique values for given columns in the
         catalog.
         """
-
-        return self.esmcat.unique()
+        unique = self.esmcat.unique()
+        unique[f'derived_{self.esmcat.aggregation_control.variable_column_name}'] = list(
+            self.derivedcat.keys()
+        )
+        return unique
 
     @pydantic.validate_arguments
     def to_dataset_dict(
@@ -452,6 +484,15 @@ class esm_datastore(Catalog):
             )
             return {}
 
+        if (
+            self.esmcat.aggregation_control.variable_column_name
+            in self.esmcat.aggregation_control.groupby_attrs
+        ) and len(self.derivedcat) > 0:
+            raise NotImplementedError(
+                f'The `{self.esmcat.aggregation_control.variable_column_name}` column name is used as a groupby attribute: {self.esmcat.aggregation_control.groupby_attrs}. '
+                'This is not yet supported when computing derived variables.'
+            )
+
         xarray_open_kwargs = xarray_open_kwargs or {}
         xarray_combine_by_coords_kwargs = xarray_combine_by_coords_kwargs or {}
 
@@ -499,16 +540,20 @@ class esm_datastore(Catalog):
             total = len(sources)
             progress = progress_bar(range(total))
 
-        self._datasets = {}
+        datasets = {}
         with concurrent.futures.ThreadPoolExecutor(max_workers=dask.system.CPU_COUNT) as executor:
             future_tasks = [
                 executor.submit(_load_source, key, source) for key, source in sources.items()
             ]
             for i, task in enumerate(concurrent.futures.as_completed(future_tasks)):
                 key, ds = task.result()
-                self._datasets[key] = ds
+                datasets[key] = ds
                 if self.progressbar:
                     progress.update(i)
             if self.progressbar:
                 progress.update(total)
-            return self._datasets
+
+        if len(self.derivedcat) > 0:
+            datasets = self.derivedcat.update_datasets(datasets)
+        self.datasets = datasets
+        return self.datasets
