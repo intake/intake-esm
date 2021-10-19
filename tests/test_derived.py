@@ -1,7 +1,11 @@
+import sys
+
 import pytest
 import xarray as xr
 
 from intake_esm.derived import DerivedVariable, DerivedVariableError, DerivedVariableRegistry
+
+from .utils import here
 
 
 def test_registry_init():
@@ -12,6 +16,18 @@ def test_registry_init():
 
     assert dvr._registry == {}
     assert len(dvr.keys()) == 0
+
+
+def test_registry_load():
+
+    sys.path.insert(0, f'{here}/')
+    dvr = DerivedVariableRegistry.load('my_registry')
+    assert len(dvr) > 0
+    assert 'FOO' in dvr
+
+    # Test for errors/ invalid inputs, wrong return type
+    with pytest.raises(ValueError):
+        DerivedVariableRegistry.load('utils')
 
 
 def test_registry_register():

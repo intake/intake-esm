@@ -1,3 +1,5 @@
+import importlib
+import inspect
 import typing
 
 import pydantic
@@ -33,6 +35,43 @@ class DerivedVariable(pydantic.BaseModel):
 class DerivedVariableRegistry:
     def __post_init_post_parse__(self):
         self._registry = {}
+
+    @classmethod
+    def load(cls, name: str, package: str = None) -> 'DerivedVariableRegistry':
+        """Load a DerivedVariableRegistry from a Python module/file
+
+        Parameters
+        ----------
+        name : str
+            The name of the module to load the DerivedVariableRegistry from.
+        package : str, optional
+            The package to load the module from. This argument is
+            required when performing a relative import. It specifies the package
+            to use as the anchor point from which to resolve the relative import
+            to an absolute import.
+
+        Returns
+        -------
+        DerivedVariableRegistry
+            A DerivedVariableRegistry loaded from the Python module.
+
+        Notes
+        -----
+        If you have a folder: /home/foo/pythonfiles, and you want to load a registry
+        defined in registry.py, located in that directory, ensure to add your folder to the
+        $PYTHONPATH before calling this function.
+
+        >>> import sys
+        >>> sys.path.insert(0, "/home/foo/pythonfiles")
+        >>> from intake_esm.derived import DerivedVariableRegistry
+        >>> registsry = DerivedVariableRegistry.load("registry")
+        """
+        modname = importlib.import_module(name, package=package)
+        candidates = inspect.getmembers(modname, lambda x: isinstance(x, DerivedVariableRegistry))
+        if candidates:
+            return candidates[0][1]
+        else:
+            raise ValueError(f'No DerivedVariableRegistry found in {name} module')
 
     @tlz.curry
     def register(
