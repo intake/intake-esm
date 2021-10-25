@@ -135,6 +135,9 @@ class DerivedVariableRegistry:
     def keys(self) -> typing.List[str]:
         return list(self._registry.keys())
 
+    def values(self) -> typing.List[DerivedVariable]:
+        return list(self._registry.values())
+
     def search(self, variable: typing.Union[str, typing.List[str]]) -> 'DerivedVariableRegistry':
         """Search for a derived variable by name or list of names
         Parameters

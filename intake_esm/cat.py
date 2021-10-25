@@ -281,28 +281,40 @@ class ESMCatalogModel(pydantic.BaseModel):
         return pd.Series(tlz.valmap(len, self._unique()))
 
     def search(
-        self, require_all_on: typing.Union[str, typing.List[str]] = None, **query
+        self,
+        *,
+        query: typing.Union['QueryModel', typing.Dict[str, typing.Any]],
+        require_all_on: typing.Union[str, typing.List[str]] = None,
     ) -> 'ESMCatalogModel':
         """
         Search for entries in the catalog.
 
         Parameters
         ----------
+        query: dict, optional
+            A dictionary of query parameters to execute against the dataframe.
         require_all_on : list, str, optional
             A dataframe column or a list of dataframe columns across
             which all entries must satisfy the query criteria.
             If None, return entries that fulfill any of the criteria specified
             in the query, by default None.
-        **query:
-            keyword arguments corresponding to user's query to execute against the dataframe.
+
         """
 
-        _query = QueryModel(
-            query=query, require_all_on=require_all_on, columns=self.df.columns.tolist()
+        if not isinstance(query, QueryModel):
+            _query = QueryModel(
+                query=query, require_all_on=require_all_on, columns=self.df.columns.tolist()
+            )
+        else:
+            _query = query
+
+        results = search(
+            df=self.df, query=_query.query, columns_with_iterables=self.columns_with_iterables
         )
-        results = search(self.df, _query, self.columns_with_iterables)
         if _query.require_all_on is not None and results:
-            results = search_apply_require_all_on(results, _query)
+            results = search_apply_require_all_on(
+                df=results, query=_query.query, require_all_on=_query.require_all_on
+            )
         return results
 
 

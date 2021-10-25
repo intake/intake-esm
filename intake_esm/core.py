@@ -1,3 +1,4 @@
+import collections
 import concurrent.futures
 import typing
 import warnings
@@ -10,7 +11,7 @@ import xarray as xr
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
-from .cat import ESMCatalogModel
+from .cat import ESMCatalogModel, QueryModel
 from .derived import DerivedVariableRegistry, default_registry
 from .source import ESMDataSource
 
@@ -320,20 +321,19 @@ class esm_datastore(Catalog):
         4    landCoverFrac
         """
 
-        # step 1: Ensure that the query includes the dependent variables
-        variables = query.get(self.esmcat.aggregation_control.variable_column_name, [])
-        _derived = []
-        if variables:
-            if isinstance(variables, str):
-                variables = [variables]
-            for key, value in self.derivedcat.items():
-                if key in variables:
-                    _derived.append(key)
-                    variables.remove(key)
-                    variables.extend(value.dependent_variables)
-            query[self.esmcat.aggregation_control.variable_column_name] = variables
+        # Step 1: Merge queries
+        esmcat_query = QueryModel(
+            query=query, require_all_on=require_all_on, columns=self.df.columns.tolist()
+        ).query
+        derivedcat_queries = [value.query for value in self.derivedcat.values()]
+        queries = [esmcat_query, *derivedcat_queries]
+        unified_query = collections.defaultdict(list)
+        for query in queries:
+            for key, value in query.items():
+                unified_query[key].extend(value)
+
         # step 2: Search in the base/main catalog
-        results = self.esmcat.search(require_all_on=require_all_on, **query)
+        results = self.esmcat.search(require_all_on=require_all_on, query=unified_query)
         cat = esm_datastore({'esmcat': self.esmcat.dict(), 'df': results})
         if self.esmcat.has_multiple_variable_assets:
             requested_variables = query.get(
@@ -344,7 +344,9 @@ class esm_datastore(Catalog):
         cat._requested_variables = requested_variables
 
         # step 3: Subset the derived catalog
-        derivat_cat_subset = self.derivedcat.search(variable=_derived)
+        derivat_cat_subset = self.derivedcat.search(
+            variable=unified_query.get(self.esmcat.aggregation_control.variable_column_name, [])
+        )
         cat.derivedcat = derivat_cat_subset
         return cat
 

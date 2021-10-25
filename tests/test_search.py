@@ -132,10 +132,12 @@ def test_search(query, require_all_on, expected):
     query_model = QueryModel(
         query=query, columns=df.columns.tolist(), require_all_on=require_all_on
     )
-    results = search(df, query_model, set())
+    results = search(df=df, query=query_model.query, columns_with_iterables=set())
     assert isinstance(results, pd.DataFrame)
     if require_all_on:
-        results = search_apply_require_all_on(results, query_model)
+        results = search_apply_require_all_on(
+            df=results, query=query_model.query, require_all_on=query_model.require_all_on
+        )
     assert results.to_dict(orient='records') == expected
 
 
@@ -165,7 +167,7 @@ def test_search_columns_with_iterables(query, expected):
         }
     )
     query_model = QueryModel(query=query, columns=df.columns.tolist())
-    results = search(df, query_model, columns_with_iterables={'variable', 'random'}).to_dict(
-        orient='records'
-    )
+    results = search(
+        df=df, query=query_model.query, columns_with_iterables={'variable', 'random'}
+    ).to_dict(orient='records')
     assert results == expected

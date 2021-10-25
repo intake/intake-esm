@@ -1,13 +1,9 @@
 import itertools
 import typing
+import warnings
 
 import numpy as np
 import pandas as pd
-
-if typing.TYPE_CHECKING:
-    from .cat import QueryModel
-
-import warnings
 
 
 def is_pattern(value):
@@ -24,10 +20,10 @@ def is_pattern(value):
 
 
 def search(
-    df: pd.DataFrame, query_model: 'QueryModel', columns_with_iterables: set
+    *, df: pd.DataFrame, query: typing.Dict[str, typing.Any], columns_with_iterables: set
 ) -> pd.DataFrame:
     """Search for entries in the catalog."""
-    query = query_model.query
+
     if not query:
         warnings.warn(f'Empty query: {query} returned zero results.', UserWarning, stacklevel=2)
         return pd.DataFrame(columns=df.columns)
@@ -53,9 +49,13 @@ def search(
     return results
 
 
-def search_apply_require_all_on(results: pd.DataFrame, query_model: 'QueryModel') -> pd.DataFrame:
-    _query = query_model.query.copy()
-    require_all_on = query_model.require_all_on
+def search_apply_require_all_on(
+    *,
+    df: pd.DataFrame,
+    query: typing.Dict[str, typing.Any],
+    require_all_on: typing.Union[str, typing.List[typing.Any]],
+) -> pd.DataFrame:
+    _query = query.copy()
     # Make sure to remove columns that were already
     # specified in the query when specified in `require_all_on`. For example,
     # if query = dict(variable_id=["A", "B"], source_id=["FOO", "BAR"])
@@ -65,7 +65,7 @@ def search_apply_require_all_on(results: pd.DataFrame, query_model: 'QueryModel'
         _query.pop(column, None)
 
     keys = list(_query.keys())
-    grouped = results.groupby(require_all_on)
+    grouped = df.groupby(require_all_on)
     values = [tuple(v) for v in _query.values()]
     condition = set(itertools.product(*values))
     query_results = []
@@ -81,5 +81,5 @@ def search_apply_require_all_on(results: pd.DataFrame, query_model: 'QueryModel'
     if query_results:
         return pd.concat(query_results)
 
-    warnings.warn(f'Query: {query_model.query} returned zero results.', UserWarning, stacklevel=2)
-    return pd.DataFrame(columns=results.columns)
+    warnings.warn(f'Query: {query} returned zero results.', UserWarning, stacklevel=2)
+    return pd.DataFrame(columns=df.columns)

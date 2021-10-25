@@ -288,12 +288,12 @@ def test_to_dataset_dict_with_registry():
 
     registry = intake_esm.DerivedVariableRegistry()
 
-    @registry.register(variable='FOO', dependent_variables=['FLNS', 'FLUT'])
+    @registry.register(variable='FOO', query={'variable': ['FLNS', 'FLUT']})
     def func(ds):
         ds['FOO'] = ds.FLNS + ds.FLUT
         return ds
 
-    @registry.register(variable='BAR', dependent_variables=['FLUT'])
+    @registry.register(variable='BAR', query={'variable': ['FLUT']})
     def funcs(ds):
         ds['BAR'] = ds.FLUT * 1000
         return ds
