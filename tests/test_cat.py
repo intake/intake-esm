@@ -68,14 +68,13 @@ def test_esmcatmodel_from_dict():
 )
 def test_query_model(query, columns, require_all_on):
     q = QueryModel(query=query, columns=columns, require_all_on=require_all_on)
-    assert q.query == query
     assert q.columns == columns
     if not isinstance(require_all_on, str):
         assert q.require_all_on == require_all_on
     else:
         assert q.require_all_on == [require_all_on]
 
-    assert set(q.normalize_query().keys()) == set(query.keys())
+    assert set(q.query.keys()) == set(query.keys())
 
 
 @pytest.mark.parametrize(

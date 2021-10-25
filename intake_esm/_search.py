@@ -27,7 +27,7 @@ def search(
     df: pd.DataFrame, query_model: 'QueryModel', columns_with_iterables: set
 ) -> pd.DataFrame:
     """Search for entries in the catalog."""
-    query = query_model.normalize_query()
+    query = query_model.query
     if not query:
         warnings.warn(f'Empty query: {query} returned zero results.', UserWarning, stacklevel=2)
         return pd.DataFrame(columns=df.columns)
@@ -54,7 +54,7 @@ def search(
 
 
 def search_apply_require_all_on(results: pd.DataFrame, query_model: 'QueryModel') -> pd.DataFrame:
-    _query = query_model.normalize_query().copy()
+    _query = query_model.query.copy()
     require_all_on = query_model.require_all_on
     # Make sure to remove columns that were already
     # specified in the query when specified in `require_all_on`. For example,
@@ -81,7 +81,5 @@ def search_apply_require_all_on(results: pd.DataFrame, query_model: 'QueryModel'
     if query_results:
         return pd.concat(query_results)
 
-    warnings.warn(
-        f'Query: {query_model.normalize_query()} returned zero results.', UserWarning, stacklevel=2
-    )
+    warnings.warn(f'Query: {query_model.query} returned zero results.', UserWarning, stacklevel=2)
     return pd.DataFrame(columns=results.columns)

@@ -331,11 +331,10 @@ class QueryModel(pydantic.BaseModel):
             for key in values['require_all_on']:
                 if key not in columns:
                     raise ValueError(f'Column {key} not in columns {columns}')
-        return values
-
-    def normalize_query(self) -> typing.Dict[pydantic.StrictStr, typing.List[typing.Any]]:
-        _query = self.query.copy()
+        _query = query.copy()
         for key, value in _query.items():
-            if isinstance(value, str):
+            if isinstance(value, (str, int, float, bool)):
                 _query[key] = [value]
-        return _query
+
+        values['query'] = _query
+        return values

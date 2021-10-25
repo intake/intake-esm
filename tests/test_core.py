@@ -11,12 +11,12 @@ import intake_esm
 registry = intake_esm.DerivedVariableRegistry()
 
 
-@registry.register(variable='FOO', dependent_variables=['FLNS', 'FLUT'])
+@registry.register(variable='FOO', query={'variable': ['FLNS', 'FLUT']})
 def func(ds):
     return ds + 1
 
 
-@registry.register(variable='BAR', dependent_variables=['FLUT'])
+@registry.register(variable='BAR', query={'variable': ['FLUT']})
 def funcs(ds):
     return ds + 1
 

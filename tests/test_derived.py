@@ -33,7 +33,7 @@ def test_registry_load():
 def test_registry_register():
     dvr = DerivedVariableRegistry()
 
-    @dvr.register(variable='FOO', dependent_variables=['BAR'])
+    @dvr.register(variable='FOO', query={'variable': ['BAR']})
     def func(ds):
         return ds.x + ds.y
 
@@ -48,11 +48,11 @@ def test_registry_register():
 def test_registry_search():
     dvr = DerivedVariableRegistry()
 
-    @dvr.register(variable='FOO', dependent_variables=['BAR'])
+    @dvr.register(variable='FOO', query={'variable': ['BAR']})
     def func(ds):
         return ds.x + ds.y
 
-    @dvr.register(variable='BAZ', dependent_variables=['foo', 'bar'])
+    @dvr.register(variable='BAZ', query={'variable': ['BAR']})
     def func_b(ds):
         return ds.x + ds.y
 
@@ -66,12 +66,12 @@ def test_registry_derive_variables():
 
     dvr = DerivedVariableRegistry()
 
-    @dvr.register(variable='FOO', dependent_variables=['air'])
+    @dvr.register(variable='FOO', query={'variable': 'air'})
     def func(ds):
         ds['FOO'] = ds.air // 100
         return ds
 
-    dsets = dvr.update_datasets({'test': ds})
+    dsets = dvr.update_datasets(datasets={'test': ds}, variable_key_name='variable')
     assert 'test' in dsets
     assert 'FOO' in dsets['test']
     assert isinstance(dsets['test']['FOO'], xr.DataArray)
