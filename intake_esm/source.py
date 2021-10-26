@@ -11,6 +11,10 @@ from .cat import Aggregation, DataFormat
 from .utils import INTAKE_ESM_ATTRS_PREFIX, INTAKE_ESM_DATASET_KEY, INTAKE_ESM_VARS_KEY
 
 
+class ESMDataSourceError(Exception):
+    pass
+
+
 def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None):
     xarray_open_kwargs = (xarray_open_kwargs or {}).copy()
     _default_open_kwargs = {
@@ -155,43 +159,55 @@ class ESMDataSource(DataSource):
     def _open_dataset(self):
         """Open dataset with xarray"""
 
-        datasets = [
-            _open_dataset(
-                record[self.path_column_name],
-                record[self.variable_column_name],
-                xarray_open_kwargs=self.xarray_open_kwargs,
-                preprocess=self.preprocess,
-                expand_dims={
-                    agg.attribute_name: [record[agg.attribute_name]]
-                    for agg in self.aggregations
-                    if agg.type.value == 'join_new'
-                },
-                requested_variables=self.requested_variables,
-                additional_attrs=record.to_dict(),
-            )
-            for _, record in self.df.iterrows()
-        ]
+        try:
 
-        datasets = dask.compute(*datasets)
-        if len(datasets) == 1:
-            self._ds = datasets[0]
-        else:
-            datasets = sorted(
-                datasets,
-                key=lambda ds: tuple(
-                    f'{INTAKE_ESM_ATTRS_PREFIX}/{agg.attribute_name}' for agg in self.aggregations
-                ),
-            )
-            with dask.config.set(
-                {'scheduler': 'single-threaded', 'array.slicing.split_large_chunks': True}
-            ):  # Use single-threaded scheduler
-                datasets = [
-                    ds.set_coords(set(ds.variables) - set(ds.attrs[INTAKE_ESM_VARS_KEY]))
-                    for ds in datasets
-                ]
-                self._ds = xr.combine_by_coords(datasets, **self.xarray_combine_by_coords_kwargs)
+            datasets = [
+                _open_dataset(
+                    record[self.path_column_name],
+                    record[self.variable_column_name],
+                    xarray_open_kwargs=self.xarray_open_kwargs,
+                    preprocess=self.preprocess,
+                    expand_dims={
+                        agg.attribute_name: [record[agg.attribute_name]]
+                        for agg in self.aggregations
+                        if agg.type.value == 'join_new'
+                    },
+                    requested_variables=self.requested_variables,
+                    additional_attrs=record.to_dict(),
+                )
+                for _, record in self.df.iterrows()
+            ]
 
-        self._ds.attrs[INTAKE_ESM_DATASET_KEY] = self.key
+            datasets = dask.compute(*datasets)
+            if len(datasets) == 1:
+                self._ds = datasets[0]
+            else:
+                datasets = sorted(
+                    datasets,
+                    key=lambda ds: tuple(
+                        f'{INTAKE_ESM_ATTRS_PREFIX}/{agg.attribute_name}'
+                        for agg in self.aggregations
+                    ),
+                )
+                with dask.config.set(
+                    {'scheduler': 'single-threaded', 'array.slicing.split_large_chunks': True}
+                ):  # Use single-threaded scheduler
+                    datasets = [
+                        ds.set_coords(set(ds.variables) - set(ds.attrs[INTAKE_ESM_VARS_KEY]))
+                        for ds in datasets
+                    ]
+                    self._ds = xr.combine_by_coords(
+                        datasets, **self.xarray_combine_by_coords_kwargs
+                    )
+
+            self._ds.attrs[INTAKE_ESM_DATASET_KEY] = self.key
+
+        except Exception as exc:
+            raise ESMDataSourceError(
+                f"""Failed to load dataset with key='{self.key}'
+                 You can use `cat['{self.key}'].df` to inspect the assets/files for this key.
+                 """
+            ) from exc
 
     def to_dask(self):
         """Return xarray object (which will have chunks)"""
