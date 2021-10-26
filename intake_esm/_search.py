@@ -1,6 +1,5 @@
 import itertools
 import typing
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -25,7 +24,6 @@ def search(
     """Search for entries in the catalog."""
 
     if not query:
-        warnings.warn(f'Empty query: {query} returned zero results.', UserWarning, stacklevel=2)
         return pd.DataFrame(columns=df.columns)
     global_mask = np.ones(len(df), dtype=bool)
     for column, values in query.items():
@@ -44,9 +42,7 @@ def search(
             local_mask = local_mask | mask
         global_mask = global_mask & local_mask
     results = df.loc[global_mask]
-    if results.empty:
-        warnings.warn(f'Query: {query} returned zero results.', UserWarning, stacklevel=2)
-    return results
+    return results.reset_index(drop=True)
 
 
 def search_apply_require_all_on(
@@ -79,7 +75,6 @@ def search_apply_require_all_on(
             query_results.append(group)
 
     if query_results:
-        return pd.concat(query_results)
+        return pd.concat(query_results).reset_index(drop=True)
 
-    warnings.warn(f'Query: {query} returned zero results.', UserWarning, stacklevel=2)
     return pd.DataFrame(columns=df.columns)

@@ -144,12 +144,6 @@ def test_catalog_serialize(tmp_path, catalog_type):
 
 def test_empty_queries():
     col = intake.open_esm_datastore(cdf_col_sample_cmip6)
-    with pytest.warns(UserWarning, match=r'Empty query: {} returned zero results.'):
-        _ = col.search()
-
-    with pytest.warns(UserWarning, match=r'Query:'):
-        _ = col.search(variable_id='DONT_EXIST')
-
     cat = col.search()
     with pytest.warns(
         UserWarning, match=r'There are no datasets to load! Returning an empty dictionary.'
