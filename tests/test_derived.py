@@ -71,7 +71,7 @@ def test_registry_derive_variables():
         ds['FOO'] = ds.air // 100
         return ds
 
-    dsets = dvr.update_datasets(datasets={'test': ds}, variable_key_name='variable')
+    dsets = dvr.update_datasets(datasets={'test': ds.copy()}, variable_key_name='variable')
     assert 'test' in dsets
     assert 'FOO' in dsets['test']
     assert isinstance(dsets['test']['FOO'], xr.DataArray)
@@ -86,5 +86,7 @@ def test_registry_derive_variables():
         return ds
 
     dsets = dvr.update_datasets(
-        datasets={'test': ds}, variable_key_name='variable', skip_on_error=True
+        datasets={'test': ds.copy()}, variable_key_name='variable', skip_on_error=True
     )
+
+    assert 'FOO' not in dsets['test']
