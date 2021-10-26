@@ -94,7 +94,7 @@ class esm_datastore(Catalog):
         self.datasets = {}
         self._validate_derivedcat()
 
-    def _validate_derivedcat(self):
+    def _validate_derivedcat(self) -> None:
         for key, entry in self.derivedcat.items():
             if self.esmcat.aggregation_control.variable_column_name not in entry.query.keys():
                 raise ValueError(
@@ -107,7 +107,7 @@ class esm_datastore(Catalog):
                         f'Derived variable {key} depends on unknown column {col} in query: {entry.query}. Valid ESM catalog columns: {self.esmcat.df.columns.tolist()}.'
                     )
 
-    def keys(self) -> typing.List:
+    def keys(self) -> typing.List[str]:
         """
         Get keys for the catalog entries
 
@@ -165,7 +165,7 @@ class esm_datastore(Catalog):
 
         Returns
         -------
-        intake_esm.source.ESMGroupDataSource
+        intake_esm.source.ESMDataSource
              A data source by name (key)
 
         Raises
@@ -243,7 +243,7 @@ class esm_datastore(Catalog):
         contents = self._repr_html_()
         display(HTML(contents))
 
-    def __dir__(self):
+    def __dir__(self) -> typing.List[str]:
         rv = [
             'df',
             'to_dataset_dict',
@@ -322,7 +322,8 @@ class esm_datastore(Catalog):
         # step 1: Search in the base/main catalog
         esmcat_results = self.esmcat.search(require_all_on=require_all_on, query=query)
 
-        # step 2: Search for entries required to derived varibles in the derived catalogs
+        # step 2: Search for entries required to derive variables in the derived catalogs
+        # This requires a bit of a hack i.e. the user has to specify the variable in the query
         derivedcat_results = []
         variables = query.get(self.esmcat.aggregation_control.variable_column_name, [])
         if variables:
@@ -333,7 +334,7 @@ class esm_datastore(Catalog):
                     )
 
         if derivedcat_results:
-            # Merge the results from the main catalog and the derived catalogs
+            # Merge results from the main and the derived catalogs
             esmcat_results = (
                 pd.concat([esmcat_results, *derivedcat_results])
                 .drop_duplicates()
