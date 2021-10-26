@@ -272,7 +272,11 @@ class ESMCatalogModel(pydantic.BaseModel):
                 values = tlz.concat(values)
             return list(tlz.unique(values))
 
-        return self.df[self.df.columns].apply(_find_unique, result_type='reduce').to_dict()
+        data = self.df[self.df.columns]
+        if data.empty:
+            return {col: [] for col in self.df.columns}
+        else:
+            return data.apply(_find_unique, result_type='reduce').to_dict()
 
     def unique(self) -> pd.Series:
         return pd.Series(self._unique())
