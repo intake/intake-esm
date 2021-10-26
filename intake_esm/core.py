@@ -98,13 +98,13 @@ class esm_datastore(Catalog):
         for key, entry in self.derivedcat.items():
             if self.esmcat.aggregation_control.variable_column_name not in entry.query.keys():
                 raise ValueError(
-                    f'Variable derivation requires `{self.esmcat.aggregation_control.variable_column_name}` to be specified in the query {entry.query}'
+                    f'Variable derivation requires `{self.esmcat.aggregation_control.variable_column_name}` to be specified in query: {entry.query} for derived variable {key}.'
                 )
 
             for col in entry.query:
                 if col not in self.esmcat.df.columns:
                     raise ValueError(
-                        f'Derived variable {key} depends on unknown column {col}. Valid ESM catalog columns: {self.esmcat.df.columns.tolist()}'
+                        f'Derived variable {key} depends on unknown column {col} in query: {entry.query}. Valid ESM catalog columns: {self.esmcat.df.columns.tolist()}.'
                     )
 
     def keys(self) -> typing.List:
