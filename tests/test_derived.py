@@ -71,11 +71,37 @@ def test_registry_derive_variables():
         ds['FOO'] = ds.air // 100
         return ds
 
-    dsets = dvr.update_datasets(datasets={'test': ds}, variable_key_name='variable')
+    dsets = dvr.update_datasets(datasets={'test': ds.copy()}, variable_key_name='variable')
     assert 'test' in dsets
     assert 'FOO' in dsets['test']
     assert isinstance(dsets['test']['FOO'], xr.DataArray)
 
+
+def test_registry_derive_variables_error():
+    ds = xr.tutorial.open_dataset('air_temperature')
+    dvr = DerivedVariableRegistry()
+
+    @dvr.register(variable='FOO', query={'variable': 'air'})
+    def func(ds):
+        ds['FOO'] = ds.air // 100
+        return ds
+
     # Test for errors/ invalid inputs, wrong return type
     with pytest.raises(DerivedVariableError):
         dvr['FOO']({})
+
+    @dvr.register(variable='FOO', query={'variable': 'air'})
+    def funcb(ds):
+        ds['FOO'] = 1 / 0
+        return ds
+
+    dsets = dvr.update_datasets(
+        datasets={'test': ds.copy()}, variable_key_name='variable', skip_on_error=True
+    )
+
+    assert 'FOO' not in dsets['test']
+
+    with pytest.raises(DerivedVariableError):
+        dsets = dvr.update_datasets(
+            datasets={'test': ds.copy()}, variable_key_name='variable', skip_on_error=False
+        )

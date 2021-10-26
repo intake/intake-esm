@@ -297,6 +297,22 @@ def test_to_dataset_dict_w_preprocess_error():
         cat.to_dataset_dict(preprocess='foo')
 
 
+def test_to_dataset_dict_skip_error():
+    cat = intake.open_esm_datastore(catalog_dict_records)
+    with pytest.raises(intake_esm.source.ESMDataSourceError):
+        dsets = cat.to_dataset_dict(
+            xarray_open_kwargs={'backend_kwargsd': {'storage_options': {'anon': True}}},
+            skip_on_error=False,
+        )
+
+    dsets = cat.to_dataset_dict(
+        xarray_open_kwargs={'backend_kwargsd': {'storage_options': {'anon': True}}},
+        skip_on_error=True,
+    )
+
+    assert len(dsets.keys()) == 0
+
+
 def test_to_dataset_dict_with_registry():
 
     registry = intake_esm.DerivedVariableRegistry()
