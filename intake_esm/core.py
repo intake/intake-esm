@@ -92,8 +92,22 @@ class esm_datastore(Catalog):
         self._entries = {}
         self._requested_variables = []
         self.datasets = {}
+        self._validate_derivedcat()
 
-    def keys(self) -> typing.List:
+    def _validate_derivedcat(self) -> None:
+        for key, entry in self.derivedcat.items():
+            if self.esmcat.aggregation_control.variable_column_name not in entry.query.keys():
+                raise ValueError(
+                    f'Variable derivation requires `{self.esmcat.aggregation_control.variable_column_name}` to be specified in query: {entry.query} for derived variable {key}.'
+                )
+
+            for col in entry.query:
+                if col not in self.esmcat.df.columns:
+                    raise ValueError(
+                        f'Derived variable {key} depends on unknown column {col} in query: {entry.query}. Valid ESM catalog columns: {self.esmcat.df.columns.tolist()}.'
+                    )
+
+    def keys(self) -> typing.List[str]:
         """
         Get keys for the catalog entries
 
@@ -151,7 +165,7 @@ class esm_datastore(Catalog):
 
         Returns
         -------
-        intake_esm.source.ESMGroupDataSource
+        intake_esm.source.ESMDataSource
              A data source by name (key)
 
         Raises
@@ -229,7 +243,7 @@ class esm_datastore(Catalog):
         contents = self._repr_html_()
         display(HTML(contents))
 
-    def __dir__(self):
+    def __dir__(self) -> typing.List[str]:
         rv = [
             'df',
             'to_dataset_dict',
@@ -240,7 +254,6 @@ class esm_datastore(Catalog):
             'unique',
             'nunique',
             'key_template',
-            'validate_derivedcat',
         ]
         return sorted(list(self.__dict__.keys()) + rv)
 
@@ -306,21 +319,29 @@ class esm_datastore(Catalog):
         4    landCoverFrac
         """
 
-        # step 1: Ensure that the query includes the dependent variables
+        # step 1: Search in the base/main catalog
+        esmcat_results = self.esmcat.search(require_all_on=require_all_on, query=query)
+
+        # step 2: Search for entries required to derive variables in the derived catalogs
+        # This requires a bit of a hack i.e. the user has to specify the variable in the query
+        derivedcat_results = []
         variables = query.get(self.esmcat.aggregation_control.variable_column_name, [])
-        _derived = []
         if variables:
-            if isinstance(variables, str):
-                variables = [variables]
             for key, value in self.derivedcat.items():
                 if key in variables:
-                    _derived.append(key)
-                    variables.remove(key)
-                    variables.extend(value.dependent_variables)
-            query[self.esmcat.aggregation_control.variable_column_name] = variables
-        # step 2: Search in the base/main catalog
-        results = self.esmcat.search(require_all_on=require_all_on, **query)
-        cat = esm_datastore({'esmcat': self.esmcat.dict(), 'df': results})
+                    derivedcat_results.append(
+                        self.esmcat.search(require_all_on=require_all_on, query=value.query)
+                    )
+
+        if derivedcat_results:
+            # Merge results from the main and the derived catalogs
+            esmcat_results = (
+                pd.concat([esmcat_results, *derivedcat_results])
+                .drop_duplicates()
+                .reset_index(drop=True)
+            )
+
+        cat = esm_datastore({'esmcat': self.esmcat.dict(), 'df': esmcat_results})
         if self.esmcat.has_multiple_variable_assets:
             requested_variables = query.get(
                 self.esmcat.aggregation_control.variable_column_name, []
@@ -330,7 +351,7 @@ class esm_datastore(Catalog):
         cat._requested_variables = requested_variables
 
         # step 3: Subset the derived catalog
-        derivat_cat_subset = self.derivedcat.search(variable=_derived)
+        derivat_cat_subset = self.derivedcat.search(variable=variables)
         cat.derivedcat = derivat_cat_subset
         return cat
 
@@ -554,6 +575,9 @@ class esm_datastore(Catalog):
                 progress.update(total)
 
         if len(self.derivedcat) > 0:
-            datasets = self.derivedcat.update_datasets(datasets)
+            datasets = self.derivedcat.update_datasets(
+                datasets=datasets,
+                variable_key_name=self.esmcat.aggregation_control.variable_column_name,
+            )
         self.datasets = datasets
         return self.datasets

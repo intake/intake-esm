@@ -16,9 +16,22 @@ class DerivedVariableError(Exception):
 class DerivedVariable(pydantic.BaseModel):
     func: typing.Callable
     variable: pydantic.StrictStr
-    dependent_variables: typing.List[pydantic.StrictStr]
+    query: typing.Dict[pydantic.StrictStr, typing.Union[typing.Any, typing.List[typing.Any]]]
+
+    @pydantic.validator('query')
+    def validate_query(cls, values):
+        _query = values.copy()
+        for key, value in _query.items():
+            if isinstance(value, (str, int, float, bool)):
+                _query[key] = [value]
+        return _query
+
+    def dependent_variables(self, variable_key_name: str) -> typing.List[pydantic.StrictStr]:
+        """Return a list of dependent variables for a given variable"""
+        return self.query[variable_key_name]
 
     def __call__(self, *args, **kwargs) -> xr.Dataset:
+        """Call the function and return the result"""
         try:
             ds = self.func(*args, **kwargs)
             ds[self.variable].attrs[
@@ -33,6 +46,8 @@ class DerivedVariable(pydantic.BaseModel):
 
 @pydantic.dataclasses.dataclass
 class DerivedVariableRegistry:
+    """Registry of derived variables"""
+
     def __post_init_post_parse__(self):
         self._registry = {}
 
@@ -75,7 +90,11 @@ class DerivedVariableRegistry:
 
     @tlz.curry
     def register(
-        self, func: typing.Callable, *, variable: str, dependent_variables: typing.List[str]
+        self,
+        func: typing.Callable,
+        *,
+        variable: str,
+        query: typing.Dict[pydantic.StrictStr, typing.Union[typing.Any, typing.List[typing.Any]]],
     ) -> typing.Callable:
         """Register a derived variable
         Parameters
@@ -84,17 +103,15 @@ class DerivedVariableRegistry:
             The function to apply to the dependent variables.
         variable : str
             The name of the variable to derive.
-        dependent_variables : typing.List[str]
-            The list of dependent variables required to derive `variable`.
+        query : typing.Dict[str, typing.Union[typing.Any, typing.List[typing.Any]]]
+            The query to use to retrieve dependent variables required to derive `variable`.
 
         Returns
         -------
         typing.Callable
             The function that was registered.
         """
-        self._registry[variable] = DerivedVariable(
-            func=func, variable=variable, dependent_variables=dependent_variables
-        )
+        self._registry[variable] = DerivedVariable(func=func, variable=variable, query=query)
         return func
 
     def __contains__(self, item: str) -> bool:
@@ -118,6 +135,9 @@ class DerivedVariableRegistry:
     def keys(self) -> typing.List[str]:
         return list(self._registry.keys())
 
+    def values(self) -> typing.List[DerivedVariable]:
+        return list(self._registry.values())
+
     def search(self, variable: typing.Union[str, typing.List[str]]) -> 'DerivedVariableRegistry':
         """Search for a derived variable by name or list of names
         Parameters
@@ -138,7 +158,7 @@ class DerivedVariableRegistry:
         return reg
 
     def update_datasets(
-        self, datasets: typing.Dict[str, xr.Dataset]
+        self, *, datasets: typing.Dict[str, xr.Dataset], variable_key_name: str
     ) -> typing.Dict[str, xr.Dataset]:
         """Given a dictionary of datasets, return a dictionary of datasets with the derived variables
 
@@ -146,6 +166,8 @@ class DerivedVariableRegistry:
         ----------
         datasets : typing.Dict[str, xr.Dataset]
             A dictionary of datasets to apply the derived variables to.
+        variable_key_name : str
+            The name of the variable key used in the derived variable query
 
         Returns
         -------
@@ -155,7 +177,9 @@ class DerivedVariableRegistry:
 
         for dset_key, dataset in datasets.items():
             for _, derived_variable in self.items():
-                if set(dataset.variables).intersection(derived_variable.dependent_variables):
+                if set(dataset.variables).intersection(
+                    derived_variable.dependent_variables(variable_key_name)
+                ):
                     # Assumes all dependent variables are in the same dataset
                     # TODO: Make this more robust to support datasets with variables from different datasets
                     datasets[dset_key] = derived_variable(dataset)
