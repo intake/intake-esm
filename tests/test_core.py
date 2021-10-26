@@ -61,6 +61,25 @@ def test_catalog_init(capsys, obj, sep, read_csv_kwargs):
 
 
 @pytest.mark.parametrize(
+    'query,regex',
+    [
+        ({'variables': ['FLNS', 'FLUT']}, r'Variable derivation requires'),
+        ({'variable': ['FLNS', 'FLUT'], 'testing': 'foo'}, r'Derived variable'),
+    ],
+)
+def test_invalid_derivedcat(query, regex):
+    registry = intake_esm.DerivedVariableRegistry()
+
+    @registry.register(variable='FOO', query=query)
+    def func(ds):
+        ds['FOO'] = ds.FLNS + ds.FLUT
+        return ds
+
+    with pytest.raises(ValueError, match=regex):
+        intake.open_esm_datastore(catalog_dict_records, registry=registry)
+
+
+@pytest.mark.parametrize(
     'obj, sep, read_csv_kwargs',
     [
         (multi_variable_col, '.', {'converters': {'variable': ast.literal_eval}}),
