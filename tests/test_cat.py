@@ -68,23 +68,20 @@ def test_esmcatmodel_from_dict():
         (
             {},
             {
-                'component': ['atm'],
-                'frequency': ['daily'],
-                'experiment': ['20C'],
-                'variable': ['FLNS', 'FLNSC'],
-                'path': [
-                    's3://ncar-cesm-lens/atm/daily/cesmLE-20C-FLNS.zarr',
-                    's3://ncar-cesm-lens/atm/daily/cesmLE-20C-FLNSC.zarr',
-                ],
-                'format': ['zarr'],
+                'component': [],
+                'frequency': [],
+                'experiment': [],
+                'variable': [],
+                'path': [],
+                'format': [],
             },
             {
-                'component': 1,
-                'frequency': 1,
-                'experiment': 1,
-                'variable': 2,
-                'path': 2,
-                'format': 1,
+                'component': 0,
+                'frequency': 0,
+                'experiment': 0,
+                'variable': 0,
+                'path': 0,
+                'format': 0,
             },
         ),
         (
@@ -110,7 +107,7 @@ def test_esmcatmodel_from_dict():
 )
 def test_esmcatmodel_unique_and_nunique(query, expected_unique_vals, expected_nunique_vals):
     cat = ESMCatalogModel.from_dict({'esmcat': sample_esmcol_data, 'df': sample_df})
-    df_sub = sample_df if not query else cat.search(query=query)
+    df_sub = cat.search(query=query)
     cat_sub = ESMCatalogModel.from_dict({'esmcat': sample_esmcol_data, 'df': df_sub})
     assert cat_sub.unique().to_dict() == expected_unique_vals
     assert cat_sub.nunique().to_dict() == expected_nunique_vals
