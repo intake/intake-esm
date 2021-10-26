@@ -439,6 +439,7 @@ class esm_datastore(Catalog):
         storage_options: typing.Dict[pydantic.StrictStr, typing.Any] = None,
         progressbar: pydantic.StrictBool = None,
         aggregate: pydantic.StrictBool = None,
+        skip_on_error: pydantic.StrictBool = False,
         **kwargs,
     ) -> typing.Dict[str, xr.Dataset]:
         """
@@ -460,6 +461,8 @@ class esm_datastore(Catalog):
             when loading assets into :py:class:`~xarray.Dataset`.
         aggregate : bool, optional
             If False, no aggregation will be done.
+        skip_on_error : bool, optional
+            If True, skip datasets that cannot be loaded and/or variables we are unable to derive.
 
         Returns
         -------
@@ -516,9 +519,7 @@ class esm_datastore(Catalog):
 
         xarray_open_kwargs = xarray_open_kwargs or {}
         xarray_combine_by_coords_kwargs = xarray_combine_by_coords_kwargs or {}
-
-        cdf_kwargs = kwargs.get('cdf_kwargs')
-        zarr_kwargs = kwargs.get('zarr_kwargs')
+        cdf_kwargs, zarr_kwargs = kwargs.get('cdf_kwargs'), kwargs.get('zarr_kwargs')
 
         if cdf_kwargs or zarr_kwargs:
             warnings.warn(
@@ -527,10 +528,10 @@ class esm_datastore(Catalog):
                 DeprecationWarning,
                 stacklevel=2,
             )
-            if cdf_kwargs:
-                xarray_open_kwargs.update(cdf_kwargs)
-            if zarr_kwargs:
-                xarray_open_kwargs.update(zarr_kwargs)
+        if cdf_kwargs:
+            xarray_open_kwargs.update(cdf_kwargs)
+        if zarr_kwargs:
+            xarray_open_kwargs.update(zarr_kwargs)
 
         source_kwargs = dict(
             xarray_open_kwargs=xarray_open_kwargs,
@@ -552,9 +553,6 @@ class esm_datastore(Catalog):
                 f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{self.key_template}'"""
             )
 
-        def _load_source(key, source):
-            return key, source.to_dask()
-
         sources = {key: source(**source_kwargs) for key, source in self.items()}
         progress, total = None, None
         if self.progressbar:
@@ -567,17 +565,31 @@ class esm_datastore(Catalog):
                 executor.submit(_load_source, key, source) for key, source in sources.items()
             ]
             for i, task in enumerate(concurrent.futures.as_completed(future_tasks)):
-                key, ds = task.result()
-                datasets[key] = ds
-                if self.progressbar:
-                    progress.update(i)
-            if self.progressbar:
-                progress.update(total)
+                try:
+                    key, ds = task.result()
+                    datasets[key] = ds
+                except Exception as exc:
+                    if not skip_on_error:
+                        raise exc
+                finally:
+                    if self.progressbar:
+                        progress.update(i)
 
+        if self.progressbar:
+            progress.update(total)
+
+        self.datasets = self._create_derived_variables(datasets, skip_on_error)
+        return self.datasets
+
+    def _create_derived_variables(self, datasets, skip_on_error):
         if len(self.derivedcat) > 0:
             datasets = self.derivedcat.update_datasets(
                 datasets=datasets,
                 variable_key_name=self.esmcat.aggregation_control.variable_column_name,
+                skip_on_error=skip_on_error,
             )
-        self.datasets = datasets
-        return self.datasets
+        return datasets
+
+
+def _load_source(key, source):
+    return key, source.to_dask()

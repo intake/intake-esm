@@ -79,3 +79,12 @@ def test_registry_derive_variables():
     # Test for errors/ invalid inputs, wrong return type
     with pytest.raises(DerivedVariableError):
         dvr['FOO']({})
+
+    @dvr.register(variable='FOO', query={'variable': 'air'})
+    def funcb(ds):
+        ds['FOO'] = 1 / 0
+        return ds
+
+    dsets = dvr.update_datasets(
+        datasets={'test': ds}, variable_key_name='variable', skip_on_error=True
+    )

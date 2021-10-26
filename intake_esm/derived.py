@@ -6,8 +6,6 @@ import pydantic
 import tlz
 import xarray as xr
 
-from .utils import INTAKE_ESM_ATTRS_PREFIX
-
 
 class DerivedVariableError(Exception):
     pass
@@ -30,17 +28,16 @@ class DerivedVariable(pydantic.BaseModel):
         """Return a list of dependent variables for a given variable"""
         return self.query[variable_key_name]
 
-    def __call__(self, *args, **kwargs) -> xr.Dataset:
+    def __call__(self, *args, variable_key_name: str = None, **kwargs) -> xr.Dataset:
         """Call the function and return the result"""
         try:
-            ds = self.func(*args, **kwargs)
-            ds[self.variable].attrs[
-                f'{INTAKE_ESM_ATTRS_PREFIX}/derivation'
-            ] = f'dependent_variables: {self.dependent_variables}'
-            return ds
+            return self.func(*args, **kwargs)
         except Exception as exc:
+            dependent_variables = (
+                self.dependent_variables(variable_key_name) if variable_key_name else []
+            )
             raise DerivedVariableError(
-                f'Unable to derived variable: {self.variable} with dependent: {self.dependent_variables} using args:{args} and kwargs:{kwargs}'
+                f'Unable to derived variable: {self.variable} with dependent: {dependent_variables} using args:{args} and kwargs:{kwargs}'
             ) from exc
 
 
@@ -158,7 +155,11 @@ class DerivedVariableRegistry:
         return reg
 
     def update_datasets(
-        self, *, datasets: typing.Dict[str, xr.Dataset], variable_key_name: str
+        self,
+        *,
+        datasets: typing.Dict[str, xr.Dataset],
+        variable_key_name: str,
+        skip_on_error: bool = False,
     ) -> typing.Dict[str, xr.Dataset]:
         """Given a dictionary of datasets, return a dictionary of datasets with the derived variables
 
@@ -168,6 +169,8 @@ class DerivedVariableRegistry:
             A dictionary of datasets to apply the derived variables to.
         variable_key_name : str
             The name of the variable key used in the derived variable query
+        skip_on_error : bool, optional
+            If True, skip variables that fail variable derivation.
 
         Returns
         -------
@@ -180,9 +183,15 @@ class DerivedVariableRegistry:
                 if set(dataset.variables).intersection(
                     derived_variable.dependent_variables(variable_key_name)
                 ):
-                    # Assumes all dependent variables are in the same dataset
-                    # TODO: Make this more robust to support datasets with variables from different datasets
-                    datasets[dset_key] = derived_variable(dataset)
+                    try:
+                        # Assumes all dependent variables are in the same dataset
+                        # TODO: Make this more robust to support datasets with variables from different datasets
+                        datasets[dset_key] = derived_variable(
+                            dataset, variable_key_name=variable_key_name
+                        )
+                    except Exception as exc:
+                        if not skip_on_error:
+                            raise exc
         return datasets
 
 
