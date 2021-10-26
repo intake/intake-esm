@@ -63,6 +63,60 @@ def test_esmcatmodel_from_dict():
 
 
 @pytest.mark.parametrize(
+    'query, expected_unique_vals, expected_nunique_vals',
+    [
+        (
+            {},
+            {
+                'component': ['atm'],
+                'frequency': ['daily'],
+                'experiment': ['20C'],
+                'variable': ['FLNS', 'FLNSC'],
+                'path': [
+                    's3://ncar-cesm-lens/atm/daily/cesmLE-20C-FLNS.zarr',
+                    's3://ncar-cesm-lens/atm/daily/cesmLE-20C-FLNSC.zarr',
+                ],
+                'format': ['zarr'],
+            },
+            {
+                'component': 1,
+                'frequency': 1,
+                'experiment': 1,
+                'variable': 2,
+                'path': 2,
+                'format': 1,
+            },
+        ),
+        (
+            {'variable': ['FLNS']},
+            {
+                'component': ['atm'],
+                'frequency': ['daily'],
+                'experiment': ['20C'],
+                'variable': ['FLNS'],
+                'path': ['s3://ncar-cesm-lens/atm/daily/cesmLE-20C-FLNS.zarr'],
+                'format': ['zarr'],
+            },
+            {
+                'component': 1,
+                'frequency': 1,
+                'experiment': 1,
+                'variable': 1,
+                'path': 1,
+                'format': 1,
+            },
+        ),
+    ],
+)
+def test_esmcatmodel_unique_and_nunique(query, expected_unique_vals, expected_nunique_vals):
+    cat = ESMCatalogModel.from_dict({'esmcat': sample_esmcol_data, 'df': sample_df})
+    df_sub = sample_df if not query else cat.search(query=query)
+    cat_sub = ESMCatalogModel.from_dict({'esmcat': sample_esmcol_data, 'df': df_sub})
+    assert cat_sub.unique().to_dict() == expected_unique_vals
+    assert cat_sub.nunique().to_dict() == expected_nunique_vals
+
+
+@pytest.mark.parametrize(
     'query, columns, require_all_on',
     [({'foo': 1}, ['foo', 'bar'], ['bar']), ({'bar': 1}, ['foo', 'bar'], 'foo')],
 )
