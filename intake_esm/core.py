@@ -254,7 +254,6 @@ class esm_datastore(Catalog):
             'unique',
             'nunique',
             'key_template',
-            'validate_derivedcat',
         ]
         return sorted(list(self.__dict__.keys()) + rv)
 
