@@ -544,40 +544,31 @@ class esm_datastore(Catalog):
         if aggregate is not None and not aggregate:
             self = deepcopy(self)
             self.esmcat.aggregation_control.groupby_attrs = []
-
         if progressbar is not None:
             self.progressbar = progressbar
-
         if self.progressbar:
             print(
                 f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{self.key_template}'"""
             )
-
         sources = {key: source(**source_kwargs) for key, source in self.items()}
-        progress, total = None, None
-        if self.progressbar:
-            total = len(sources)
-            progress = progress_bar(range(total))
-
         datasets = {}
         with concurrent.futures.ThreadPoolExecutor(max_workers=dask.system.CPU_COUNT) as executor:
             future_tasks = [
                 executor.submit(_load_source, key, source) for key, source in sources.items()
             ]
-            for i, task in enumerate(concurrent.futures.as_completed(future_tasks)):
+            if self.progressbar:
+                gen = progress_bar(
+                    concurrent.futures.as_completed(future_tasks), total=len(sources)
+                )
+            else:
+                gen = concurrent.futures.as_completed(future_tasks)
+            for task in gen:
                 try:
                     key, ds = task.result()
                     datasets[key] = ds
                 except Exception as exc:
                     if not skip_on_error:
                         raise exc
-                finally:
-                    if self.progressbar:
-                        progress.update(i)
-
-        if self.progressbar:
-            progress.update(total)
-
         self.datasets = self._create_derived_variables(datasets, skip_on_error)
         return self.datasets
 
