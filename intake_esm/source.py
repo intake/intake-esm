@@ -52,10 +52,10 @@ def _open_dataset(
         url = fsspec.open(urlpath, **storage_options).open()
 
     # Handle multi-file datasets with `xr.open_mfdataset()`
-    if "*" in url or isinstance(url, list):
-         _open_dataset = xr.open_mfdataset
+    if '*' in url or isinstance(url, list):
+        _open_dataset = xr.open_mfdataset
     else:
-         _open_dataset = xr.open_dataset
+        _open_dataset = xr.open_dataset
 
     ds = _open_dataset(url, **xarray_open_kwargs)
 
