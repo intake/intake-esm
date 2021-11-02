@@ -43,7 +43,7 @@ def _open_dataset(
 ):
 
     _can_be_local = fsspec.utils.can_be_local(urlpath)
-    storage_options = xarray_open_kwargs['backend_kwargs'].get('storage_options', {})
+    storage_options = xarray_open_kwargs.get('backend_kwargs', {}).get('storage_options', {})
     if xarray_open_kwargs['engine'] == 'zarr':
         url = urlpath
     elif _can_be_local:
@@ -51,7 +51,13 @@ def _open_dataset(
     else:
         url = fsspec.open(urlpath, **storage_options).open()
 
-    ds = xr.open_dataset(url, **xarray_open_kwargs)
+    # Handle multi-file datasets with `xr.open_mfdataset()`
+    if "*" in url or isinstance(url, list):
+         _open_dataset = xr.open_mfdataset
+    else:
+         _open_dataset = xr.open_dataset
+
+    ds = _open_dataset(url, **xarray_open_kwargs)
 
     if preprocess is not None:
         ds = preprocess(ds)
