@@ -53,14 +53,15 @@ def _open_dataset(
 
     # Handle multi-file datasets with `xr.open_mfdataset()`
     if '*' in url or isinstance(url, list):
-        _open_dataset = xr.open_mfdataset
+        # How should we handle concat_dim, and other xr.open_mfdataset kwargs?
+        xarray_open_kwargs.update(preprocess=preprocess)
+        xarray_open_kwargs.update(parallel=True)
+        ds = xr.open_mfdataset(url, **xarray_open_kwargs)
     else:
-        _open_dataset = xr.open_dataset
+        ds = xr.open_dataset(url, **xarray_open_kwargs)
+        if preprocess is not None:
+            ds = preprocess(ds)
 
-    ds = _open_dataset(url, **xarray_open_kwargs)
-
-    if preprocess is not None:
-        ds = preprocess(ds)
     if varname and isinstance(varname, str):
         varname = [varname]
     if requested_variables:
