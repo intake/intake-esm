@@ -1,0 +1,6 @@
+experiment,case,component,stream,variable,member_id,path,time_range
+CTRL,b.e11.B1850C5CN.f09_g16.005,ocn,pop.h,"['SHF', 'REGION_MASK', 'ANGLE', 'DXU', 'KMT', 'NO2', 'O2']",5,../../../tests/sample_data/cesm-multi-variables/b.e11.B1850C5CN.f09_g16.005.pop.h.SHF-NO2-O2.050001-050012.nc,050001-050012
+CTRL,b.e11.B1850C5CN.f09_g16.005,ocn,pop.h,"['SHF', 'REGION_MASK', 'ANGLE', 'DXU', 'KMT', 'NO2', 'O2']",5,../../../tests/sample_data/cesm-multi-variables/b.e11.B1850C5CN.f09_g16.005.pop.h.SHF-NO2-O2.050101-050112.nc,050101-050112
+CTRL,b.e11.B1850C5CN.f09_g16.005,ocn,pop.h,"['SHF', 'REGION_MASK', 'ANGLE', 'DXU', 'KMT', 'NO2', 'PO4']",5,../../../tests/sample_data/cesm-multi-variables/b.e11.B1850C5CN.f09_g16.005.pop.h.SHF-NO2-PO4.050001-050012.nc,050001-050012
+CTRL,b.e11.B1850C5CN.f09_g16.005,ocn,pop.h,"['SHF', 'REGION_MASK', 'ANGLE', 'DXU', 'KMT', 'NO2', 'PO4']",5,../../../tests/sample_data/cesm-multi-variables/b.e11.B1850C5CN.f09_g16.005.pop.h.SHF-NO2-PO4.050101-050112.nc,050101-050112
+CTRL,b.e11.B1850C5CN.f09_g16.005,ocn,pop.h,"['SHF', 'REGION_MASK', 'ANGLE', 'DXU', 'KMT', 'TEMP', 'SiO3']",5,../../../tests/sample_data/cesm-multi-variables/b.e11.B1850C5CN.f09_g16.005.pop.h.SHF-TEMP-SiO3.050001-050012.nc,050001-050012

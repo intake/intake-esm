@@ -1,36 +1,29 @@
 import re
 
-import numpy as np
 import pandas as pd
 import pytest
 
-from intake_esm.search import _is_pattern, _normalize_query, _unique, search
+from intake_esm._search import is_pattern, search, search_apply_require_all_on
+from intake_esm.cat import QueryModel
 
 
-def test_unique():
-    df = pd.DataFrame(
-        {
-            'path': ['file1', 'file2', 'file3', 'file4'],
-            'variable': [['A', 'B'], ['A', 'B', 'C'], ['C', 'D', 'A'], 'C'],
-            'attr': [1, 2, 3, np.nan],
-            'random': [set(['bx', 'by']), set(['bx', 'bz']), set(['bx', 'by']), None],
-        }
-    )
-    expected = {
-        'path': {'count': 4, 'values': ['file1', 'file2', 'file3', 'file4']},
-        'variable': {'count': 4, 'values': ['A', 'B', 'C', 'D']},
-        'attr': {'count': 3, 'values': [1.0, 2.0, 3.0]},
-        'random': {'count': 3, 'values': ['bx', 'by', 'bz']},
-    }
-    actual = _unique(df, df.columns.tolist())
-    assert actual == expected
-
-    actual = _unique(df)
-    assert actual == expected
-
-    actual = _unique(df, columns='random')
-    expected = {'random': {'count': 3, 'values': ['bx', 'by', 'bz']}}
-    assert actual == expected
+@pytest.mark.parametrize(
+    'value, expected',
+    [
+        (2, False),
+        ('foo', False),
+        ('foo\\**bar', True),
+        ('foo\\?*bar', True),
+        ('foo\\?\\*bar', False),
+        ('foo\\*bar', False),
+        (r'foo\*bar*', True),
+        ('^foo', True),
+        ('^foo.*bar$', True),
+        (re.compile('hist.*', flags=re.IGNORECASE), True),
+    ],
+)
+def test_is_pattern(value, expected):
+    assert is_pattern(value) == expected
 
 
 params = [
@@ -136,40 +129,45 @@ def test_search(query, require_all_on, expected):
             'D': ['O2', 'O2', 'O2', 'O2', 'NO2', 'O2', 'O2', 'TA', 'tAs'],
         }
     )
-
-    x = search(df, require_all_on=require_all_on, **query).to_dict(orient='records')
-    assert x == expected
-
-
-def test_normalize_query():
-    query = {
-        'experiment_id': ['historical', 'piControl'],
-        'variable_id': 'tas',
-        'table_id': 'Amon',
-    }
-    expected = {
-        'experiment_id': ['historical', 'piControl'],
-        'variable_id': ['tas'],
-        'table_id': ['Amon'],
-    }
-    actual = _normalize_query(query)
-    assert actual == expected
+    query_model = QueryModel(
+        query=query, columns=df.columns.tolist(), require_all_on=require_all_on
+    )
+    results = search(df=df, query=query_model.query, columns_with_iterables=set())
+    assert isinstance(results, pd.DataFrame)
+    if require_all_on:
+        results = search_apply_require_all_on(
+            df=results, query=query_model.query, require_all_on=query_model.require_all_on
+        )
+    assert results.to_dict(orient='records') == expected
 
 
 @pytest.mark.parametrize(
-    'value, expected',
+    'query,expected',
     [
-        (2, False),
-        ('foo', False),
-        ('foo\\**bar', True),
-        ('foo\\?*bar', True),
-        ('foo\\?\\*bar', False),
-        ('foo\\*bar', False),
-        (r'foo\*bar*', True),
-        ('^foo', True),
-        ('^foo.*bar$', True),
-        (re.compile('hist.*', flags=re.IGNORECASE), True),
+        (
+            dict(variable=['A', 'C'], random='bz'),
+            [{'path': 'file2', 'variable': ['A', 'B', 'C'], 'attr': 2, 'random': {'bx', 'bz'}}],
+        ),
+        (
+            dict(variable=['A', 'C'], attr=[1, 2]),
+            [
+                {'path': 'file1', 'variable': ['A', 'B'], 'attr': 1, 'random': {'bx', 'by'}},
+                {'path': 'file2', 'variable': ['A', 'B', 'C'], 'attr': 2, 'random': {'bx', 'bz'}},
+            ],
+        ),
     ],
 )
-def test_is_pattern(value, expected):
-    assert _is_pattern(value) == expected
+def test_search_columns_with_iterables(query, expected):
+    df = pd.DataFrame(
+        {
+            'path': ['file1', 'file2', 'file3'],
+            'variable': [['A', 'B'], ['A', 'B', 'C'], ['C', 'D', 'A']],
+            'attr': [1, 2, 3],
+            'random': [set(['bx', 'by']), set(['bx', 'bz']), set(['bx', 'by'])],
+        }
+    )
+    query_model = QueryModel(query=query, columns=df.columns.tolist())
+    results = search(
+        df=df, query=query_model.query, columns_with_iterables={'variable', 'random'}
+    ).to_dict(orient='records')
+    assert results == expected

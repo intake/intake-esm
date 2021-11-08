@@ -1,8 +1,9 @@
-include CHANGELOG.rst
-include CONTRIBUTING.rst
+include CHANGELOG.md
+include CONTRIBUTING.md
 include LICENSE
-include README.rst
+include README.md
 include requirements.txt
+include pyproject.toml
 
 recursive-include docs/source *
 include docs/Makefile docs/make.bat

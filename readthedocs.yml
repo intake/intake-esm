@@ -1,6 +1,5 @@
+conda:
+  file: docs/environment.yml
 python:
-  version: 3
+  version: 3.8
   setup_py_install: true
-  system_packages: true
-  install:
-    - requirements: docs/requirements.txt

@@ -1,21 +1,30 @@
 name: intake-esm-dev
 channels:
   - conda-forge
+  - nodefaults
 dependencies:
   - cftime
   - codecov
-  - fastprogress
-  - fsspec
+  - fastprogress>= 1.0.0
+  - fsspec>=0.8.0
   - gcsfs
-  - intake
+  - h5netcdf>=0.8.1
+  - intake>=0.6.0
   - ipython
-  - netcdf4
+  - netcdf4>=1.5.5
   - pip
+  - pooch
   - pre-commit
+  - pydantic
   - pytest
   - pytest-cov
   - pytest-icdiff
+  - pytest-sugar
   - pytest-xdist
+  - python=*=*cp*
   - s3fs
-  - xarray
-  - zarr
+  - scipy
+  - xarray>=0.19
+  - zarr >=2.5
+  - pip:
+      - -r ../requirements.txt

@@ -1,6 +1,9 @@
-xarray>=0.16
-intake>=0.6.0
+dask[complete] >=2021.9
+fastprogress>=1.0.0
 fsspec>=0.8.0
-requests
-fastprogress>=0.2.6
-dask[complete]
+intake>=0.6.0
+netCDF4>=1.5.5
+requests>=2.24.0
+xarray>=0.19
+zarr>=2.5
+pydantic>=1.8.2
