@@ -7,6 +7,7 @@ import dask
 import pandas as pd
 import pydantic
 import xarray as xr
+import xcollection as xc
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
@@ -441,9 +442,9 @@ class esm_datastore(Catalog):
         aggregate: pydantic.StrictBool = None,
         skip_on_error: pydantic.StrictBool = False,
         **kwargs,
-    ) -> typing.Dict[str, xr.Dataset]:
+    ) -> typing.Collection[str, xc.Collection]:
         """
-        Load catalog entries into a dictionary of xarray datasets.
+        Load catalog entries into a Collection of xarray datasets.
 
         Parameters
         ----------
@@ -466,8 +467,8 @@ class esm_datastore(Catalog):
 
         Returns
         -------
-        dsets : dict
-           A dictionary of xarray :py:class:`~xarray.Dataset`.
+        dsets : Collection
+           A Collection of xarray :py:class:`~xarray.Dataset`.
 
         Examples
         --------
@@ -481,7 +482,7 @@ class esm_datastore(Catalog):
         ...     grid_label="gn",
         ... )
         >>> dsets = cat.to_dataset_dict()
-        >>> dsets.keys()
+        >>> dsets.keys()  ## change this and the following line!!
         dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
         >>> dsets["CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn"]
         <xarray.Dataset>
@@ -506,7 +507,7 @@ class esm_datastore(Catalog):
                 UserWarning,
                 stacklevel=2,
             )
-            return {}
+            return xc.Collection({})
 
         if (
             self.esmcat.aggregation_control.variable_column_name
