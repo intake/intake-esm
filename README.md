@@ -8,12 +8,12 @@
 
 ## Badges
 
-| CI           | [![GitHub Workflow Status][github-ci-badge]][github-ci-link] [![GitHub Workflow Status][github-lint-badge]][github-lint-link] [![Code Coverage Status][codecov-badge]][codecov-link] |
-| :----------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-| **Docs**     |                                                                    [![Documentation Status][rtd-badge]][rtd-link]                                                                    |
-| **Package**  |                                                         [![Conda][conda-badge]][conda-link] [![PyPI][pypi-badge]][pypi-link]                                                         |
-| **License**  |                                                                        [![License][license-badge]][repo-link]                                                                        |
-| **Citation** |                                                                        [![Zenodo][zenodo-badge]][zenodo-link]                                                                        |
+| CI           | [![GitHub Workflow Status][github-ci-badge]][github-ci-link] [![Code Coverage Status][codecov-badge]][codecov-link] |
+| :----------- | :-----------------------------------------------------------------------------------------------------------------: |
+| **Docs**     |                                   [![Documentation Status][rtd-badge]][rtd-link]                                    |
+| **Package**  |                        [![Conda][conda-badge]][conda-link] [![PyPI][pypi-badge]][pypi-link]                         |
+| **License**  |                                       [![License][license-badge]][repo-link]                                        |
+| **Citation** |                                       [![Zenodo][zenodo-badge]][zenodo-link]                                        |
 
 ## Motivation
 
@@ -94,9 +94,7 @@ conda install -c conda-forge intake-esm
 ```
 
 [github-ci-badge]: https://img.shields.io/github/workflow/status/intake/intake-esm/CI?label=CI&logo=github&style=for-the-badge
-[github-lint-badge]: https://img.shields.io/github/workflow/status/intake/intake-esm/linting?label=linting&logo=github&style=for-the-badge
 [github-ci-link]: https://github.com/intake/intake-esm/actions?query=workflow%3ACI
-[github-lint-link]: https://github.com/intake/intake-esm/actions?query=workflow%3Alinting
 [codecov-badge]: https://img.shields.io/codecov/c/github/intake/intake-esm.svg?logo=codecov&style=for-the-badge
 [codecov-link]: https://codecov.io/gh/intake/intake-esm
 [rtd-badge]: https://img.shields.io/readthedocs/intake-esm/latest.svg?style=for-the-badge
