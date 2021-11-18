@@ -21,7 +21,6 @@ dependencies:
   - pytest-icdiff
   - pytest-sugar
   - pytest-xdist
-  - python=*=*cp*
   - s3fs
   - scipy
   - xarray>=0.19
