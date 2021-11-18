@@ -83,10 +83,10 @@ class ESMCatalogModel(pydantic.BaseModel):
     """
 
     esmcat_version: pydantic.StrictStr
-    id: str
     attributes: typing.List[Attribute]
     assets: Assets
     aggregation_control: AggregationControl
+    id: typing.Optional[str] = ''
     catalog_dict: typing.Optional[typing.List[typing.Dict]] = None
     catalog_file: pydantic.StrictStr = None
     description: pydantic.StrictStr = None
