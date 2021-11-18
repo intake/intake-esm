@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9']
+        python-version: ['3.7', '3.8', '3.9', '3.10']
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.9.1
@@ -81,7 +81,7 @@ jobs:
           channel-priority: strict
           activate-environment: intake-esm-dev
           auto-update-conda: false
-          python-version: 3.8
+          python-version: 3.9
           environment-file: ci/environment-upstream-dev.yml
           mamba-version: '*'
           use-mamba: true
