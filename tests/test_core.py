@@ -11,12 +11,12 @@ import intake_esm
 registry = intake_esm.DerivedVariableRegistry()
 
 
-@registry.register(variable='FOO', dependent_variables=['FLNS', 'FLUT'])
+@registry.register(variable='FOO', query={'variable': ['FLNS', 'FLUT']})
 def func(ds):
     return ds + 1
 
 
-@registry.register(variable='BAR', dependent_variables=['FLUT'])
+@registry.register(variable='BAR', query={'variable': ['FLUT']})
 def funcs(ds):
     return ds + 1
 
@@ -58,6 +58,25 @@ def test_catalog_init(capsys, obj, sep, read_csv_kwargs):
     # https://docs.pytest.org/en/latest/capture.html#accessing-captured-output-from-a-test-function
     captured = capsys.readouterr()
     assert 'catalog with' in captured.out
+
+
+@pytest.mark.parametrize(
+    'query,regex',
+    [
+        ({'variables': ['FLNS', 'FLUT']}, r'Variable derivation requires'),
+        ({'variable': ['FLNS', 'FLUT'], 'testing': 'foo'}, r'Derived variable'),
+    ],
+)
+def test_invalid_derivedcat(query, regex):
+    registry = intake_esm.DerivedVariableRegistry()
+
+    @registry.register(variable='FOO', query=query)
+    def func(ds):
+        ds['FOO'] = ds.FLNS + ds.FLUT
+        return ds
+
+    with pytest.raises(ValueError, match=regex):
+        intake.open_esm_datastore(catalog_dict_records, registry=registry)
 
 
 @pytest.mark.parametrize(
@@ -144,12 +163,6 @@ def test_catalog_serialize(tmp_path, catalog_type):
 
 def test_empty_queries():
     col = intake.open_esm_datastore(cdf_col_sample_cmip6)
-    with pytest.warns(UserWarning, match=r'Empty query: {} returned zero results.'):
-        _ = col.search()
-
-    with pytest.warns(UserWarning, match=r'Query:'):
-        _ = col.search(variable_id='DONT_EXIST')
-
     cat = col.search()
     with pytest.warns(
         UserWarning, match=r'There are no datasets to load! Returning an empty dictionary.'
@@ -284,16 +297,32 @@ def test_to_dataset_dict_w_preprocess_error():
         cat.to_dataset_dict(preprocess='foo')
 
 
+def test_to_dataset_dict_skip_error():
+    cat = intake.open_esm_datastore(catalog_dict_records)
+    with pytest.raises(intake_esm.source.ESMDataSourceError):
+        dsets = cat.to_dataset_dict(
+            xarray_open_kwargs={'backend_kwargsd': {'storage_options': {'anon': True}}},
+            skip_on_error=False,
+        )
+
+    dsets = cat.to_dataset_dict(
+        xarray_open_kwargs={'backend_kwargsd': {'storage_options': {'anon': True}}},
+        skip_on_error=True,
+    )
+
+    assert len(dsets.keys()) == 0
+
+
 def test_to_dataset_dict_with_registry():
 
     registry = intake_esm.DerivedVariableRegistry()
 
-    @registry.register(variable='FOO', dependent_variables=['FLNS', 'FLUT'])
+    @registry.register(variable='FOO', query={'variable': ['FLNS', 'FLUT']})
     def func(ds):
         ds['FOO'] = ds.FLNS + ds.FLUT
         return ds
 
-    @registry.register(variable='BAR', dependent_variables=['FLUT'])
+    @registry.register(variable='BAR', query={'variable': ['FLUT']})
     def funcs(ds):
         ds['BAR'] = ds.FLUT * 1000
         return ds
