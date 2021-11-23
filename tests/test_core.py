@@ -240,6 +240,7 @@ def test_to_dataset_dict(path, query, xarray_open_kwargs):
     assert len(ds.__dask_keys__()) > 0
     assert ds.time.encoding
 
+
 @pytest.mark.parametrize(
     'path, query, xarray_open_kwargs',
     [

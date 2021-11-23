@@ -572,9 +572,7 @@ class esm_datastore(Catalog):
         self.datasets = self._create_derived_variables(datasets, skip_on_error)
         return self.datasets
 
-    def to_dask(
-        self,
-        **kwargs) -> xr.Dataset:
+    def to_dask(self, **kwargs) -> xr.Dataset:
         """
         Convert result to dataset.
 
@@ -589,10 +587,10 @@ class esm_datastore(Catalog):
         :py:class:`~xarray.Dataset`
         """
         if len(self) != 1:  # quick check to fail more quickly if there are many results
-            raise ValueError("not exactly one result")
-        res = self.to_dataset_dict(**{**kwargs, "progressbar": False})
+            raise ValueError('not exactly one result')
+        res = self.to_dataset_dict(**{**kwargs, 'progressbar': False})
         if len(res) != 1:  # extra check in case kwargs did modify something
-            raise ValueError("not exactly one result")
+            raise ValueError('not exactly one result')
         return next(iter(res.values()))
 
     def _create_derived_variables(self, datasets, skip_on_error):
