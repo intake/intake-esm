@@ -247,6 +247,7 @@ class esm_datastore(Catalog):
         rv = [
             'df',
             'to_dataset_dict',
+            'to_dask',
             'keys',
             'serialize',
             'datasets',
