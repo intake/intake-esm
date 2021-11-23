@@ -258,7 +258,11 @@ def test_to_dataset_dict(path, query, xarray_open_kwargs):
         ),
         (
             cdf_col_sample_cmip6,
-            dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_id=['tasmax']),
+            dict(
+                source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'],
+                variable_id=['tasmax'],
+                experiment_id='piControl',
+            ),
             {'chunks': {'time': 1}},
         ),
     ],
