@@ -581,7 +581,7 @@ class esm_datastore(Catalog):
 
         Parameters
         ----------
-        all parameters are forwarded to :py:method:`to_dataset_dict()`.
+        all parameters are forwarded to :py:func:`~intake_esm.esm_datastore.to_dataset_dict`.
 
         Returns
         -------
