@@ -7,8 +7,11 @@ from os.path import exists
 from setuptools import find_packages, setup
 
 with open('requirements.txt') as f:
-    install_requires = f.read().strip().split('\n')
-
+    install_requires = []
+    for line in f:
+        line = line.split('/')[-1]
+        line = line.replace('.git', '')
+        install_requires.append(line)
 
 if exists('README.md'):
     with open('README.md') as f:
