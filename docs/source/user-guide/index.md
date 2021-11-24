@@ -8,6 +8,7 @@ maxdepth: 2
 caption: Core Guide
 ---
 overview.ipynb
+ecgtools-history-files-example.ipynb
 search.ipynb
 multi-variable-assets.ipynb
 intake-esm-derived-variables.ipynb
