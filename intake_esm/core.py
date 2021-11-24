@@ -592,8 +592,8 @@ class esm_datastore(Catalog):
         res = self.to_dataset_dict(**{**kwargs, 'progressbar': False})
         if len(res) != 1:  # extra check in case kwargs did modify something
             raise ValueError(f'Expected exactly one dataset. Received {len(self)} datasets. Please refine your search or use `.to_dataset_dict()`.')
-       _, ds = res.popitem()
-       return ds
+        _, ds = res.popitem()
+        return ds
 
     def _create_derived_variables(self, datasets, skip_on_error):
         if len(self.derivedcat) > 0:
