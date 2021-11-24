@@ -7,6 +7,7 @@ import dask
 import pandas as pd
 import pydantic
 import xcollection as xc
+import xarray as xr
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
