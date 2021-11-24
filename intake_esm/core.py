@@ -442,7 +442,7 @@ class esm_datastore(Catalog):
         aggregate: pydantic.StrictBool = None,
         skip_on_error: pydantic.StrictBool = False,
         **kwargs,
-    ) -> typing.Collection[str, xc.Collection]:
+    ) -> xc.Collection:
         """
         Load catalog entries into a Collection of xarray datasets.
 
