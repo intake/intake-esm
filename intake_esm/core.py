@@ -6,8 +6,8 @@ from copy import deepcopy
 import dask
 import pandas as pd
 import pydantic
-import xcollection as xc
 import xarray as xr
+import xcollection as xc
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
@@ -248,8 +248,7 @@ class esm_datastore(Catalog):
         rv = [
             'df',
             'to_dataset_dict',
-            'to_collection'
-            'to_dask',
+            'to_collection' 'to_dask',
             'keys',
             'serialize',
             'datasets',
@@ -644,14 +643,16 @@ class esm_datastore(Catalog):
             pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
         """
 
-        self.datasets = self.to_dataset_dict(xarray_open_kwargs = xarray_open_kwargs, 
-            xarray_combine_by_coords_kwargs = xarray_combine_by_coords_kwargs,
-            preprocess =  preprocess,
-            storage_options = storage_options,
-            progressbar = progressbar,
-            aggregate = aggregate, 
-            skip_on_error = skip_on_error,
-            **kwargs,)
+        self.datasets = self.to_dataset_dict(
+            xarray_open_kwargs=xarray_open_kwargs,
+            xarray_combine_by_coords_kwargs=xarray_combine_by_coords_kwargs,
+            preprocess=preprocess,
+            storage_options=storage_options,
+            progressbar=progressbar,
+            aggregate=aggregate,
+            skip_on_error=skip_on_error,
+            **kwargs,
+        )
         self.datasets = xc.Collection(self.datasets)
         return self.datasets
 
