@@ -6,8 +6,8 @@ from copy import deepcopy
 import dask
 import pandas as pd
 import pydantic
-import xarray as xr
 import xcollection as xc
+import xarray as xr
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
@@ -248,6 +248,7 @@ class esm_datastore(Catalog):
         rv = [
             'df',
             'to_dataset_dict',
+            'to_collection'
             'keys',
             'serialize',
             'datasets',
@@ -442,9 +443,151 @@ class esm_datastore(Catalog):
         aggregate: pydantic.StrictBool = None,
         skip_on_error: pydantic.StrictBool = False,
         **kwargs,
+    ) -> typing.Dict[str, xr.Dataset]:
+        """
+        Load catalog entries into a dictionary of xarray datasets.
+
+        Parameters
+        ----------
+        xarray_open_kwargs : dict
+            Keyword arguments to pass to :py:func:`~xarray.open_dataset` function
+        xarray_combine_by_coords_kwargs: : dict
+            Keyword arguments to pass to :py:func:`~xarray.combine_by_coords` function.
+        preprocess : callable, optional
+            If provided, call this function on each dataset prior to aggregation.
+        storage_options : dict, optional
+            Parameters passed to the backend file-system such as Google Cloud Storage,
+            Amazon Web Service S3.
+        progressbar : bool
+            If True, will print a progress bar to standard error (stderr)
+            when loading assets into :py:class:`~xarray.Dataset`.
+        aggregate : bool, optional
+            If False, no aggregation will be done.
+        skip_on_error : bool, optional
+            If True, skip datasets that cannot be loaded and/or variables we are unable to derive.
+
+        Returns
+        -------
+        dsets : dict
+           A dictionary of xarray :py:class:`~xarray.Dataset`.
+
+        Examples
+        --------
+        >>> import intake
+        >>> col = intake.open_esm_datastore("glade-cmip6.json")
+        >>> cat = col.search(
+        ...     source_id=["BCC-CSM2-MR", "CNRM-CM6-1", "CNRM-ESM2-1"],
+        ...     experiment_id=["historical", "ssp585"],
+        ...     variable_id="pr",
+        ...     table_id="Amon",
+        ...     grid_label="gn",
+        ... )
+        >>> dsets = cat.to_dataset_dict()
+        >>> dsets.keys()
+        dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
+        >>> dsets["CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn"]
+        <xarray.Dataset>
+        Dimensions:    (bnds: 2, lat: 160, lon: 320, member_id: 3, time: 1980)
+        Coordinates:
+        * lon        (lon) float64 0.0 1.125 2.25 3.375 ... 355.5 356.6 357.8 358.9
+        * lat        (lat) float64 -89.14 -88.03 -86.91 -85.79 ... 86.91 88.03 89.14
+        * time       (time) object 1850-01-16 12:00:00 ... 2014-12-16 12:00:00
+        * member_id  (member_id) <U8 'r1i1p1f1' 'r2i1p1f1' 'r3i1p1f1'
+        Dimensions without coordinates: bnds
+        Data variables:
+            lat_bnds   (lat, bnds) float64 dask.array<chunksize=(160, 2), meta=np.ndarray>
+            lon_bnds   (lon, bnds) float64 dask.array<chunksize=(320, 2), meta=np.ndarray>
+            time_bnds  (time, bnds) object dask.array<chunksize=(1980, 2), meta=np.ndarray>
+            pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
+        """
+
+        # Return fast
+        if not self.keys():
+            warnings.warn(
+                'There are no datasets to load! Returning an empty dictionary.',
+                UserWarning,
+                stacklevel=2,
+            )
+            return {}
+
+        if (
+            self.esmcat.aggregation_control.variable_column_name
+            in self.esmcat.aggregation_control.groupby_attrs
+        ) and len(self.derivedcat) > 0:
+            raise NotImplementedError(
+                f'The `{self.esmcat.aggregation_control.variable_column_name}` column name is used as a groupby attribute: {self.esmcat.aggregation_control.groupby_attrs}. '
+                'This is not yet supported when computing derived variables.'
+            )
+
+        xarray_open_kwargs = xarray_open_kwargs or {}
+        xarray_combine_by_coords_kwargs = xarray_combine_by_coords_kwargs or {}
+        cdf_kwargs, zarr_kwargs = kwargs.get('cdf_kwargs'), kwargs.get('zarr_kwargs')
+
+        if cdf_kwargs or zarr_kwargs:
+            warnings.warn(
+                'cdf_kwargs and zarr_kwargs are deprecated and will be removed in a future version. '
+                'Please use xarray_open_kwargs instead.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        if cdf_kwargs:
+            xarray_open_kwargs.update(cdf_kwargs)
+        if zarr_kwargs:
+            xarray_open_kwargs.update(zarr_kwargs)
+
+        source_kwargs = dict(
+            xarray_open_kwargs=xarray_open_kwargs,
+            xarray_combine_by_coords_kwargs=xarray_combine_by_coords_kwargs,
+            preprocess=preprocess,
+            storage_options=storage_options,
+            requested_variables=self._requested_variables,
+        )
+
+        if aggregate is not None and not aggregate:
+            self = deepcopy(self)
+            self.esmcat.aggregation_control.groupby_attrs = []
+        if progressbar is not None:
+            self.progressbar = progressbar
+        if self.progressbar:
+            print(
+                f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{self.key_template}'"""
+            )
+        sources = {key: source(**source_kwargs) for key, source in self.items()}
+        datasets = {}
+        with concurrent.futures.ThreadPoolExecutor(max_workers=dask.system.CPU_COUNT) as executor:
+            future_tasks = [
+                executor.submit(_load_source, key, source) for key, source in sources.items()
+            ]
+            if self.progressbar:
+                gen = progress_bar(
+                    concurrent.futures.as_completed(future_tasks), total=len(sources)
+                )
+            else:
+                gen = concurrent.futures.as_completed(future_tasks)
+            for task in gen:
+                try:
+                    key, ds = task.result()
+                    datasets[key] = ds
+                except Exception as exc:
+                    if not skip_on_error:
+                        raise exc
+        self.datasets = self._create_derived_variables(datasets, skip_on_error)
+        return self.datasets
+
+    @pydantic.validate_arguments
+    def to_collection(
+        self,
+        xarray_open_kwargs: typing.Dict[str, typing.Any] = None,
+        xarray_combine_by_coords_kwargs: typing.Dict[str, typing.Any] = None,
+        preprocess: typing.Callable = None,
+        storage_options: typing.Dict[pydantic.StrictStr, typing.Any] = None,
+        progressbar: pydantic.StrictBool = None,
+        aggregate: pydantic.StrictBool = None,
+        skip_on_error: pydantic.StrictBool = False,
+        **kwargs,
     ) -> xc.Collection:
         """
-        Load catalog entries into a Collection of xarray datasets.
+        Load a dictionary of datasets into a Collection of xarray datasets.
 
         Parameters
         ----------
@@ -481,10 +624,10 @@ class esm_datastore(Catalog):
         ...     table_id="Amon",
         ...     grid_label="gn",
         ... )
-        >>> dsets = cat.to_dataset_dict()
-        >>> dsets.keys()
+        >>> dset_dict = cat.to_datset_dic()
+        >>> dset_dict.keys()
         dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
-        >>> dsets["CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn"]
+        >>> dset_dict["CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn"]
         <xarray.Dataset>
         Dimensions:    (bnds: 2, lat: 160, lon: 320, member_id: 3, time: 1980)
         Coordinates:
@@ -498,12 +641,13 @@ class esm_datastore(Catalog):
             lon_bnds   (lon, bnds) float64 dask.array<chunksize=(320, 2), meta=np.ndarray>
             time_bnds  (time, bnds) object dask.array<chunksize=(1980, 2), meta=np.ndarray>
             pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
+        >>> dset_coll = dset_dict.to_collection()
         """
 
         # Return fast
         if not self.keys():
             warnings.warn(
-                'There are no datasets to load! Returning an empty dictionary.',
+                'There are no datasets to load! Returning an empty Collection.',
                 UserWarning,
                 stacklevel=2,
             )
