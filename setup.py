@@ -7,7 +7,7 @@ from os.path import exists
 from setuptools import find_packages, setup
 
 with open('requirements.txt') as f:
-    install_requires = f.read().strip().split('\n')[0:-1]
+    install_requires = f.read().strip().split('\n')
 
 
 if exists('README.md'):
