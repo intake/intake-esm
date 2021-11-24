@@ -6,7 +6,6 @@ from copy import deepcopy
 import dask
 import pandas as pd
 import pydantic
-import xarray as xr
 import xcollection as xc
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
