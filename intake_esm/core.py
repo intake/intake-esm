@@ -587,7 +587,7 @@ class esm_datastore(Catalog):
         **kwargs,
     ) -> xc.Collection:
         """
-        Load a dictionary of datasets into a Collection of xarray datasets.
+        Load catalog entries into a Collection of xarray datasets.
 
         Parameters
         ----------
