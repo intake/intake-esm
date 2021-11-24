@@ -249,6 +249,7 @@ class esm_datastore(Catalog):
             'df',
             'to_dataset_dict',
             'to_collection'
+            'to_dask',
             'keys',
             'serialize',
             'datasets',
@@ -653,6 +654,32 @@ class esm_datastore(Catalog):
             **kwargs,)
         self.datasets = xc.Collection(self.datasets)
         return self.datasets
+
+    def to_dask(self, **kwargs) -> xr.Dataset:
+        """
+        Convert result to dataset.
+
+        This is only possible if the search returned exactly one result.
+
+        Parameters
+        ----------
+        all parameters are forwarded to :py:func:`~intake_esm.esm_datastore.to_dataset_dict`.
+
+        Returns
+        -------
+        :py:class:`~xarray.Dataset`
+        """
+        if len(self) != 1:  # quick check to fail more quickly if there are many results
+            raise ValueError(
+                f'Expected exactly one dataset. Received {len(self)} datasets. Please refine your search or use `.to_dataset_dict()`.'
+            )
+        res = self.to_dataset_dict(**{**kwargs, 'progressbar': False})
+        if len(res) != 1:  # extra check in case kwargs did modify something
+            raise ValueError(
+                f'Expected exactly one dataset. Received {len(self)} datasets. Please refine your search or use `.to_dataset_dict()`.'
+            )
+        _, ds = res.popitem()
+        return ds
 
     def _create_derived_variables(self, datasets, skip_on_error):
         if len(self.derivedcat) > 0:
