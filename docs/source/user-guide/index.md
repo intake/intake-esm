@@ -22,5 +22,6 @@ caption: Tutorials & Examples
 cmip6-tutorial.ipynb
 manipulating-dataframe.ipynb
 intake_cmip6_debug.md
+graphviz_example.ipynb
 
 ```
