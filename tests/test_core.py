@@ -241,6 +241,7 @@ def test_to_dataset_dict(path, query, xarray_open_kwargs):
     assert len(ds.__dask_keys__()) > 0
     assert ds.time.encoding
 
+
 def test_to_collection(path, query, xarray_open_kwargs):
     cat = intake.open_esm_datastore(path)
     cat_sub = cat.search(**query)
@@ -250,6 +251,7 @@ def test_to_collection(path, query, xarray_open_kwargs):
     assert len(ds.__dask_keys__()) > 0
     assert ds.time.encoding
     assert isinstance(coll, xc.Collection)
+
 
 @pytest.mark.parametrize(
     'path, query, xarray_open_kwargs',
