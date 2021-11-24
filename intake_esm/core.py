@@ -624,7 +624,7 @@ class esm_datastore(Catalog):
         ...     table_id="Amon",
         ...     grid_label="gn",
         ... )
-        >>> dsetw = cat.to_collection()
+        >>> dsets = cat.to_collection()
         >>> dsets.keys()
         dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
         >>> dsets["CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn"]
@@ -643,7 +643,14 @@ class esm_datastore(Catalog):
             pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
         """
 
-        self.datasets = self.to_dataset_dict()
+        self.datasets = self.to_dataset_dict(xarray_open_kwargs = xarray_open_kwargs, 
+            xarray_combine_by_coords_kwargs = xarray_combine_by_coords_kwargs,
+            preprocess =  preprocess,
+            storage_options = storage_options,
+            progressbar = progressbar,
+            aggregate = aggregate, 
+            skip_on_error = skip_on_error,
+            **kwargs,)
         self.datasets = xc.Collection(self.datasets)
         return self.datasets
 
