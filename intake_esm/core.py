@@ -482,7 +482,7 @@ class esm_datastore(Catalog):
         ...     grid_label="gn",
         ... )
         >>> dsets = cat.to_dataset_dict()
-        >>> dsets.keys()  ## change this and the following line!!
+        >>> dsets.keys()
         dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
         >>> dsets["CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn"]
         <xarray.Dataset>
@@ -549,7 +549,7 @@ class esm_datastore(Catalog):
             self.progressbar = progressbar
         if self.progressbar:
             print(
-                f"""\n--> The keys in the returned dictionary of datasets are constructed as follows:\n\t'{self.key_template}'"""
+                f"""\n--> The keys in the returned Collection of datasets are constructed as follows:\n\t'{self.key_template}'"""
             )
         sources = {key: source(**source_kwargs) for key, source in self.items()}
         datasets = {}
@@ -571,6 +571,7 @@ class esm_datastore(Catalog):
                     if not skip_on_error:
                         raise exc
         self.datasets = self._create_derived_variables(datasets, skip_on_error)
+        self.datasets = xc.Collection(self.datasets)
         return self.datasets
 
     def _create_derived_variables(self, datasets, skip_on_error):
