@@ -624,10 +624,10 @@ class esm_datastore(Catalog):
         ...     table_id="Amon",
         ...     grid_label="gn",
         ... )
-        >>> dset_dict = cat.to_datset_dic()
-        >>> dset_dict.keys()
+        >>> dsetw = cat.to_collection()
+        >>> dsets.keys()
         dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
-        >>> dset_dict["CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn"]
+        >>> dsets["CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn"]
         <xarray.Dataset>
         Dimensions:    (bnds: 2, lat: 160, lon: 320, member_id: 3, time: 1980)
         Coordinates:
@@ -641,80 +641,9 @@ class esm_datastore(Catalog):
             lon_bnds   (lon, bnds) float64 dask.array<chunksize=(320, 2), meta=np.ndarray>
             time_bnds  (time, bnds) object dask.array<chunksize=(1980, 2), meta=np.ndarray>
             pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
-        >>> dset_coll = dset_dict.to_collection()
         """
 
-        # Return fast
-        if not self.keys():
-            warnings.warn(
-                'There are no datasets to load! Returning an empty Collection.',
-                UserWarning,
-                stacklevel=2,
-            )
-            return xc.Collection({})
-
-        if (
-            self.esmcat.aggregation_control.variable_column_name
-            in self.esmcat.aggregation_control.groupby_attrs
-        ) and len(self.derivedcat) > 0:
-            raise NotImplementedError(
-                f'The `{self.esmcat.aggregation_control.variable_column_name}` column name is used as a groupby attribute: {self.esmcat.aggregation_control.groupby_attrs}. '
-                'This is not yet supported when computing derived variables.'
-            )
-
-        xarray_open_kwargs = xarray_open_kwargs or {}
-        xarray_combine_by_coords_kwargs = xarray_combine_by_coords_kwargs or {}
-        cdf_kwargs, zarr_kwargs = kwargs.get('cdf_kwargs'), kwargs.get('zarr_kwargs')
-
-        if cdf_kwargs or zarr_kwargs:
-            warnings.warn(
-                'cdf_kwargs and zarr_kwargs are deprecated and will be removed in a future version. '
-                'Please use xarray_open_kwargs instead.',
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        if cdf_kwargs:
-            xarray_open_kwargs.update(cdf_kwargs)
-        if zarr_kwargs:
-            xarray_open_kwargs.update(zarr_kwargs)
-
-        source_kwargs = dict(
-            xarray_open_kwargs=xarray_open_kwargs,
-            xarray_combine_by_coords_kwargs=xarray_combine_by_coords_kwargs,
-            preprocess=preprocess,
-            storage_options=storage_options,
-            requested_variables=self._requested_variables,
-        )
-
-        if aggregate is not None and not aggregate:
-            self = deepcopy(self)
-            self.esmcat.aggregation_control.groupby_attrs = []
-        if progressbar is not None:
-            self.progressbar = progressbar
-        if self.progressbar:
-            print(
-                f"""\n--> The keys in the returned Collection of datasets are constructed as follows:\n\t'{self.key_template}'"""
-            )
-        sources = {key: source(**source_kwargs) for key, source in self.items()}
-        datasets = {}
-        with concurrent.futures.ThreadPoolExecutor(max_workers=dask.system.CPU_COUNT) as executor:
-            future_tasks = [
-                executor.submit(_load_source, key, source) for key, source in sources.items()
-            ]
-            if self.progressbar:
-                gen = progress_bar(
-                    concurrent.futures.as_completed(future_tasks), total=len(sources)
-                )
-            else:
-                gen = concurrent.futures.as_completed(future_tasks)
-            for task in gen:
-                try:
-                    key, ds = task.result()
-                    datasets[key] = ds
-                except Exception as exc:
-                    if not skip_on_error:
-                        raise exc
-        self.datasets = self._create_derived_variables(datasets, skip_on_error)
+        self.datasets = self.to_dataset_dict()
         self.datasets = xc.Collection(self.datasets)
         return self.datasets
 
