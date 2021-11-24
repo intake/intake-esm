@@ -10,6 +10,7 @@ caption: Core Guide
 overview.ipynb
 search.ipynb
 multi-variable-assets.ipynb
+intake-esm-derived-variables.ipynb
 ```
 
 ```{toctree}
