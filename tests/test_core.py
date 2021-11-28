@@ -5,6 +5,7 @@ import pandas as pd
 import pydantic
 import pytest
 import xarray as xr
+import xcollection as xc
 
 import intake_esm
 
@@ -239,6 +240,39 @@ def test_to_dataset_dict(path, query, xarray_open_kwargs):
     assert 'member_id' in ds.dims
     assert len(ds.__dask_keys__()) > 0
     assert ds.time.encoding
+
+
+@pytest.mark.parametrize(
+    'path, query, xarray_open_kwargs',
+    [
+        (
+            zarr_col_pangeo_cmip6,
+            dict(
+                variable_id=['pr'],
+                experiment_id='ssp370',
+                activity_id='AerChemMIP',
+                source_id='BCC-ESM1',
+                table_id='Amon',
+                grid_label='gn',
+            ),
+            {'consolidated': True, 'backend_kwargs': {'storage_options': {'token': 'anon'}}},
+        ),
+        (
+            cdf_col_sample_cmip6,
+            dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_id=['tasmax']),
+            {'chunks': {'time': 1}},
+        ),
+    ],
+)
+def test_to_collection(path, query, xarray_open_kwargs):
+    cat = intake.open_esm_datastore(path)
+    cat_sub = cat.search(**query)
+    coll = cat_sub.to_collection(xarray_open_kwargs=xarray_open_kwargs)
+    _, ds = coll.popitem()
+    assert 'member_id' in ds.dims
+    assert len(ds.__dask_keys__()) > 0
+    assert ds.time.encoding
+    assert isinstance(coll, xc.Collection)
 
 
 @pytest.mark.parametrize(
