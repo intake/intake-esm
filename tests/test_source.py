@@ -1,7 +1,7 @@
 import os
 
 import xarray
-
+import pytest 
 from intake_esm.source import _get_xarray_open_kwargs, _open_dataset
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -24,19 +24,8 @@ def _common_open(fpath, varname='tasmax'):
     return _open_dataset(fpath, varname, xarray_open_kwargs=_xarray_open_kwargs).compute()
 
 
-def test_open_dataset_single():
-    ds1 = _common_open(f1)
-    ds2 = _common_open(f2)
-
-    assert isinstance(ds1, xarray.Dataset)
-    assert ds1.time.values[0].isoformat() == '2005-11-16T00:00:00'
-    assert ds2.time.values[-1].isoformat() == '2006-02-16T00:00:00'
-
-
-def test_open_dataset_multi():
-    ds = _common_open(multi_path)
-
+@pytest.mark.parametrize('fpath,expected_time_size', [(f1, 2), (f2, 2), (multi_path, 4)])
+def test_open_dataset(fpath, expected_time_size):
+    ds = _common_open(fpath)
     assert isinstance(ds, xarray.Dataset)
-    assert len(ds.time) == 4
-    assert ds.time.values[0].isoformat() == '2005-11-16T00:00:00'
-    assert ds.time.values[-1].isoformat() == '2006-02-16T00:00:00'
+    assert len(ds.time)== expected_time_size
