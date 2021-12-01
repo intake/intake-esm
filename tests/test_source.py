@@ -1,7 +1,8 @@
 import os
 
+import pytest
 import xarray
-import pytest 
+
 from intake_esm.source import _get_xarray_open_kwargs, _open_dataset
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -28,4 +29,4 @@ def _common_open(fpath, varname='tasmax'):
 def test_open_dataset(fpath, expected_time_size):
     ds = _common_open(fpath)
     assert isinstance(ds, xarray.Dataset)
-    assert len(ds.time)== expected_time_size
+    assert len(ds.time) == expected_time_size
