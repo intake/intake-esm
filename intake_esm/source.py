@@ -47,7 +47,7 @@ def _open_dataset(
 ):
 
     _can_be_local = fsspec.utils.can_be_local(urlpath)
-    storage_options = xarray_open_kwargs['backend_kwargs'].get('storage_options', {})
+    storage_options = xarray_open_kwargs.get('backend_kwargs', {}).get('storage_options', {})
     if xarray_open_kwargs['engine'] == 'zarr':
         url = urlpath
     elif _can_be_local:
@@ -55,10 +55,17 @@ def _open_dataset(
     else:
         url = fsspec.open(urlpath, **storage_options).open()
 
-    ds = xr.open_dataset(url, **xarray_open_kwargs)
+    # Handle multi-file datasets with `xr.open_mfdataset()`
+    if '*' in url or isinstance(url, list):
+        # How should we handle concat_dim, and other xr.open_mfdataset kwargs?
+        xarray_open_kwargs.update(preprocess=preprocess)
+        xarray_open_kwargs.update(parallel=True)
+        ds = xr.open_mfdataset(url, **xarray_open_kwargs)
+    else:
+        ds = xr.open_dataset(url, **xarray_open_kwargs)
+        if preprocess is not None:
+            ds = preprocess(ds)
 
-    if preprocess is not None:
-        ds = preprocess(ds)
     if varname and isinstance(varname, str):
         varname = [varname]
     if requested_variables:
