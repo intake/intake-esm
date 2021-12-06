@@ -8,8 +8,10 @@ maxdepth: 2
 caption: Core Guide
 ---
 overview.ipynb
+ecgtools-history-files-example.ipynb
 search.ipynb
 multi-variable-assets.ipynb
+intake-esm-derived-variables.ipynb
 ```
 
 ```{toctree}
@@ -19,4 +21,7 @@ caption: Tutorials & Examples
 ---
 cmip6-tutorial.ipynb
 manipulating-dataframe.ipynb
+intake_cmip6_debug.md
+graphviz_example.ipynb
+
 ```

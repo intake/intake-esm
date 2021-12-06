@@ -13,6 +13,7 @@ dependencies:
   - sphinx-copybutton
   - sqlalchemy==1.3.12
   - watermark
+  - python-graphviz
   - zarr
   - pip:
       - gcsfs

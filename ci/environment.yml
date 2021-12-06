@@ -11,6 +11,7 @@ dependencies:
   - h5netcdf>=0.8.1
   - intake>=0.6.0
   - ipython
+  - matplotlib
   - netcdf4>=1.5.5
   - pip
   - pooch
