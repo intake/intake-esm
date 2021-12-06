@@ -118,7 +118,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'sphinx_book_theme'
+html_theme = 'furo'
 html_title = ''
 
 
@@ -131,22 +131,7 @@ html_context = {
     'github_version': 'main',
     'doc_path': 'docs',
 }
-html_theme_options = dict(
-    # analytics_id=''  this is configured in rtfd.io
-    # canonical_url="",
-    repository_url='https://github.com/intake/intake-esm',
-    repository_branch='main',
-    path_to_docs='docs',
-    use_edit_page_button=True,
-    use_repository_button=True,
-    use_issues_button=True,
-    home_page_in_toc=False,
-    github_url='https://github.com/intake/intake-esm',
-    twitter_url='https://twitter.com/NCARXDev',
-    extra_navbar='',
-    navbar_footer_text='',
-    extra_footer="""Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>""",
-)
+html_theme_options = {}
 
 
 # The name of an image file (within the static path) to use as favicon of the
