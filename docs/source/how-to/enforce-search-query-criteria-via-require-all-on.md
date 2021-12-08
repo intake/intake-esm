@@ -31,8 +31,8 @@ multiple experiment_ids from the Omon table_id, all from 3 different source_ids:
 ```{code-cell} ipython3
 # Define our query
 query = dict(
-    variable_id=["thetao", "o2"],
-    experiment_id=["historical", "ssp245", "ssp585"],
+    variable_id=["tos", "o2"],
+    experiment_id=["historical", "ssp585"],
     table_id=["Omon"],
     source_id=["ACCESS-ESM1-5", "AWI-CM-1-1-MR", "FGOALS-f3-L"],
 )
@@ -54,11 +54,11 @@ cat_subset.df.groupby("source_id")[["experiment_id", "variable_id", "table_id"]]
 ```
 
 As you can see, the search results above include source_ids for which we only
-have one of the two variables, and one or two of the three experiments.
+have one of the two variables, and one or two of the two
 
 We can tell intake-esm to discard any source_id that doesn’t have both variables
-`["thetao", "o2"]` and all three experiments
-`["historical", "ssp245", "ssp585"]` by passing `require_all_on=["source_id"]`
+`["tos", "o2"]` and both experiments
+`["historical", "ssp585"]` by passing `require_all_on=["source_id"]`
 to the search method:
 
 ```{code-cell} ipython3

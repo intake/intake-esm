@@ -86,7 +86,7 @@ df.groupby("source_id")["member_id"].nunique()
 ### Step 3: Attach the new dataframe to our catalog object
 
 ```{code-cell} ipython3
-cat_subset.esmcat.df = df
+cat_subset.esmcat._df = df
 cat_subset
 ```
 

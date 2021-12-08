@@ -7,7 +7,7 @@ kernelspec:
   name: python3
 ---
 
-# Filter a Catalog by Substring and Regular Expression Criteria
+# Filter a Catalog by Substring and/or Regular Expression Criteria
 
 ## Exact Match Keywords
 
