@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-import os
 
 import yaml
 
@@ -14,7 +13,7 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.extlinks',
-    # 'sphinx.ext.linkcode',
+    'sphinx.ext.linkcode',
     'sphinx.ext.intersphinx',
     'IPython.sphinxext.ipython_console_highlighting',
     'IPython.sphinxext.ipython_directive',
@@ -22,7 +21,6 @@ extensions = [
     'myst_nb',
     'sphinxext.opengraph',
     'sphinx_copybutton',
-    'sphinx_comments',
 ]
 
 
@@ -33,11 +31,6 @@ myst_url_schemes = ['http', 'https', 'mailto']
 # sphinx-copybutton configurations
 copybutton_prompt_text = r'>>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: '
 copybutton_prompt_is_regexp = True
-
-comments_config = {
-    'utterances': {'repo': 'intake/intake-esm', 'optional': 'config', 'label': '💬 comment'},
-    'hypothesis': False,
-}
 
 
 jupyter_execute_notebooks = 'cache'
@@ -124,14 +117,7 @@ html_static_path = ['../_static']
 # Sometimes the savefig directory doesn't exist and needs to be created
 # https://github.com/ipython/ipython/issues/8733
 # becomes obsolete when we can pin ipython>=5.2; see ci/requirements/doc.yml
-ipython_savefig_dir = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), '_build', 'html', '_static'
-)
 
-savefig_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'source', '_static')
-
-os.makedirs(ipython_savefig_dir, exist_ok=True)
-os.makedirs(savefig_dir, exist_ok=True)
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -200,15 +186,8 @@ def rstjinja(app, docname, source):
     source[0] = rendered
 
 
-def html_page_context(app, pagename, templatename, context, doctree):
-    # Disable edit button for docstring generated pages
-    if 'generated' in pagename:
-        context['theme_use_edit_page_button'] = False
-
-
 def setup(app):
     app.connect('source-read', rstjinja)
-    app.connect('html-page-context', html_page_context)
 
 
 with open('catalogs.yaml') as f:

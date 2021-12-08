@@ -18,6 +18,5 @@ dependencies:
   - zarr
   - pip:
       - sphinxext-opengraph
-      - sphinx-comments
       - -r ../requirements.txt
       - -e ..

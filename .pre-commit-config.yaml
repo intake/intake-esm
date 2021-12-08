@@ -9,13 +9,13 @@ repos:
       - id: check-yaml
       - id: double-quote-string-fixer
 
-  - repo: https://github.com/mwouts/jupytext
-    rev: v1.13.3
-    hooks:
-      - id: jupytext
-        args: [--pipe, black, --warn-only]
-        additional_dependencies:
-          - black==21.12b0 # Matches hook
+  # - repo: https://github.com/mwouts/jupytext
+  #   rev: v1.13.3
+  #   hooks:
+  #     - id: jupytext
+  #       args: [--pipe, black, --warn-only]
+  #       additional_dependencies:
+  #         - black==21.12b0 # Matches hook
 
   - repo: https://github.com/psf/black
     rev: 21.12b0
