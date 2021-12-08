@@ -124,6 +124,37 @@ class ESMDataSource(DataSource):
         xarray_combine_by_coords_kwargs: typing.Dict[str, typing.Any] = None,
         intake_kwargs: typing.Dict[str, typing.Any] = None,
     ):
+        """An intake compatible Data Source for ESM data.
+
+        Parameters
+        ----------
+        key: str
+            The key of the data source.
+        records: list of dict
+            A list of records, each of which is a dictionary
+            mapping column names to values.
+        variable_column_name: str
+            The column name of the variable name.
+        path_column_name: str
+            The column name of the path.
+        data_format: DataFormat
+            The data format of the data.
+        aggregations: list of Aggregation, optional
+            A list of aggregations to apply to the data.
+        requested_variables: list of str, optional
+            A list of variables to load.
+        preprocess: callable, optional
+            A preprocessing function to apply to the data.
+        storage_options: dict, optional
+            fsspec parameters passed to the backend file-system such as Google Cloud Storage,
+            Amazon Web Service S3.
+        xarray_open_kwargs: dict, optional
+            Keyword arguments to pass to :py:func:`~xarray.open_dataset` function.
+        xarray_combine_by_coords_kwargs: dict, optional
+            Keyword arguments to pass to :py:func:`~xarray.combine_by_coords` function.
+        intake_kwargs: dict, optional
+            Additional keyword arguments are passed through to the :py:class:`~intake.source.base.DataSource` base class.
+        """
 
         intake_kwargs = intake_kwargs or {}
         super().__init__(**intake_kwargs)

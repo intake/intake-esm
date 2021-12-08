@@ -209,7 +209,7 @@ def helper_func(ds):
 ```
 
 ```{code-cell} ipython3
-dset_dict_fixed = cat_pp.to_dataset_dict(zarr_kwargs={"consolidated": True}, preprocess=helper_func)
+dset_dict_fixed = cat_pp.to_dataset_dict(xarray_open_kwargs={"consolidated": True}, preprocess=helper_func)
 
 for k, ds in dset_dict_fixed.items():
     print(f"dataset key={k}\n\tdimensions={sorted(list(ds.dims))}\n")

@@ -18,5 +18,6 @@ dependencies:
   - zarr
   - pip:
       - sphinxext-opengraph
+      - autodoc_pydantic
       - -r ../requirements.txt
       - -e ..

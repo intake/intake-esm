@@ -13,14 +13,12 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.extlinks',
-    'sphinx.ext.linkcode',
     'sphinx.ext.intersphinx',
-    'IPython.sphinxext.ipython_console_highlighting',
-    'IPython.sphinxext.ipython_directive',
     'sphinx.ext.napoleon',
     'myst_nb',
     'sphinxext.opengraph',
     'sphinx_copybutton',
+    'sphinxcontrib.autodoc_pydantic',
 ]
 
 
@@ -32,6 +30,8 @@ myst_url_schemes = ['http', 'https', 'mailto']
 copybutton_prompt_text = r'>>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: '
 copybutton_prompt_is_regexp = True
 
+autodoc_pydantic_model_show_json = True
+autodoc_pydantic_model_show_config = False
 
 jupyter_execute_notebooks = 'cache'
 execution_timeout = 600

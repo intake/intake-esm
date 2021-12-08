@@ -37,10 +37,10 @@ class esm_datastore(Catalog):
     read_csv_kwargs : dict, optional
         Additional keyword arguments passed through to the :py:func:`~pandas.read_csv` function.
     storage_options : dict, optional
-            Parameters passed to the backend file-system such as Google Cloud Storage,
-            Amazon Web Service S3.
+        Parameters passed to the backend file-system such as Google Cloud Storage,
+        Amazon Web Service S3.
     intake_kwargs: dict, optional
-            Additional keyword arguments are passed through to the :py:class:`~intake.catalog.Catalog` base class.
+        Additional keyword arguments are passed through to the :py:class:`~intake.catalog.Catalog` base class.
 
     Examples
     --------
@@ -457,7 +457,7 @@ class esm_datastore(Catalog):
         preprocess : callable, optional
             If provided, call this function on each dataset prior to aggregation.
         storage_options : dict, optional
-            Parameters passed to the backend file-system such as Google Cloud Storage,
+            fsspec Parameters passed to the backend file-system such as Google Cloud Storage,
             Amazon Web Service S3.
         progressbar : bool
             If True, will print a progress bar to standard error (stderr)
@@ -659,13 +659,14 @@ class esm_datastore(Catalog):
 
     def to_dask(self, **kwargs) -> xr.Dataset:
         """
-        Convert result to dataset.
+        Convert result to an xarray dataset.
 
         This is only possible if the search returned exactly one result.
 
         Parameters
         ----------
-        all parameters are forwarded to :py:func:`~intake_esm.esm_datastore.to_dataset_dict`.
+        kwargs: dict
+          Parameters forwarded to :py:func:`~intake_esm.esm_datastore.to_dataset_dict`.
 
         Returns
         -------

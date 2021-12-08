@@ -6,6 +6,45 @@ For more details and examples, refer to the relevant chapters in the main part o
 ## ESM Datastore (`intake.open_esm_datastore`)
 
 ```{eval-rst}
-.. automodule:: intake_esm.core
+.. autoclass:: intake_esm.core.esm_datastore
     :members:
+    :noindex:
+    :special-members: __getitem__, __contains__, __len__
+```
+
+## ESM DataSource
+
+```{eval-rst}
+.. autoclass:: intake_esm.source.ESMDataSource
+    :members:
+    :noindex:
+    :special-members: __init__
+```
+
+## ESM Catalog
+
+```{eval-rst}
+.. autopydantic_model:: intake_esm.cat.ESMCatalogModel
+```
+
+## Query Model
+
+```{eval-rst}
+.. autopydantic_model:: intake_esm.cat.QueryModel
+```
+
+## Derived Variable Registry
+
+```{eval-rst}
+.. autoclass:: intake_esm.derived.DerivedVariableRegistry
+    :members:
+    :noindex:
+```
+
+## Derived Variable
+
+```{eval-rst}
+.. autoclass:: intake_esm.derived.DerivedVariable
+    :members:
+    :noindex:
 ```
