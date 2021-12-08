@@ -49,7 +49,7 @@ Now, let's search for:
 - all entries whose variable long name **starts** with `wind`
 
 ```{code-cell} ipython3
-col.search(experiment="20C", long_name="^wind").df
+cat.search(experiment="20C", long_name="^wind").df
 ```
 
 ```{code-cell} ipython3

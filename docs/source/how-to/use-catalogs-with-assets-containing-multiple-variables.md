@@ -61,7 +61,7 @@ cat_subset.df
 When loading the data files into xarray datasets, `intake-esm` will load only **data variables** that were requested. For example, if a data file contains ten data variables and the user requests for two variables, intake-esm will load the two requested variables plus necessary coordinates information.
 
 ```{code-cell} ipython3
-dsets = col_subset.to_dataset_dict()
+dsets = cat_subset.to_dataset_dict()
 dsets
 ```
 
