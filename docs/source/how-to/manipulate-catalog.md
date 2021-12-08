@@ -7,7 +7,7 @@ kernelspec:
   name: python3
 ---
 
-# How to Manipulate Catalog's DataFrame
+# Manipulate Catalog's DataFrame
 
 ```{code-cell} ipython3
 import intake

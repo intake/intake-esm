@@ -7,7 +7,7 @@ kernelspec:
   name: python3
 ---
 
-# How to Enforce Search Query Criteria via `require_all_on` Argument
+# Enforce Search Query Criteria via `require_all_on` Argument
 
 ```{code-cell} ipython3
 import intake
