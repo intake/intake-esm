@@ -43,22 +43,6 @@ catalog by looking at the underlying dataframe created when we load the catalog:
 cat.df.head()
 ```
 
-The first data asset listed in the catalog contains:
-
-- the ambient aerosol optical thickness at 550nm (`variable_id='od550aer'`), as
-  a function of latitude, longitude, time,
-- in an individual climate model experiment with the Taiwan Earth System Model
-  1.0 model (`source_id='TaiESM1'`),
-- forced by the _Historical transient with SSTs prescribed from historical_
-  experiment (`experiment_id='histSST'`),
-- developed by the Taiwan Research Center for Environmental Changes
-  (`instution_id='AS-RCEC'`),
-- run as part of the Aerosols and Chemistry Model Intercomparison Project
-  (`activity_id='AerChemMIP'`)
-
-And is located in Google Cloud Storage at
-`gs://cmip6/AerChemMIP/AS-RCEC/TaiESM1/histSST/r1i1p1f1/AERmon/od550aer/gn/`.
-
 ## Finding unique entries
 
 To get unique values for given columns in the catalog, intake-esm provides a
