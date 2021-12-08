@@ -39,6 +39,7 @@ For more details and examples, refer to the relevant chapters in the main part o
 .. autoclass:: intake_esm.derived.DerivedVariableRegistry
     :members:
     :noindex:
+    :special-members: __init__
 ```
 
 ## Derived Variable
@@ -47,4 +48,5 @@ For more details and examples, refer to the relevant chapters in the main part o
 .. autoclass:: intake_esm.derived.DerivedVariable
     :members:
     :noindex:
+    :special-members: __init__
 ```
