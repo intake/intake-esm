@@ -1,7 +1,4 @@
 ---
-jupytext:
-  text_representation:
-    format_name: myst
 ---
 
 # Welcome to Intake-esm's documentation!
@@ -14,8 +11,11 @@ jupytext:
 - If you have a question like “How do I find x?”, ask on [GitHub discussions](https://github.com/intake/intake-esm/discussions). Please include a self-contained reproducible example if possible.
 
 ```{toctree}
+
 maxdepth: 1
 hidden:
+
+---
 
 tutorials/index.md
 how-to/index.md
@@ -37,9 +37,5 @@ contributing.md
 changelog.md
 GitHub Repo <https://github.com/intake/intake-esm>
 GitHub discussions <https://github.com/intake/intake-esm/discussions>
-
-```
-
-```
 
 ```
