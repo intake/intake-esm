@@ -30,7 +30,7 @@ At import time, intake-esm plugin is available in intake’s registry as
 
 ```{code-cell} ipython3
 
-url = "https://storage.googleapis.com/cmip6/pangeo-cmip6.json"
+url = "https://gist.githubusercontent.com/andersy005/7f416e57acd8319b20fc2b88d129d2b8/raw/987b4b336d1a8a4f9abec95c23eed3bd7c63c80e/pangeo-gcp-subset.json"
 cat = intake.open_esm_datastore(url)
 cat
 ```
