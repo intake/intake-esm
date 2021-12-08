@@ -4,4 +4,5 @@
 ---
 maxdepth: 1
 ---
+esm-collection-spec.md
 ```
