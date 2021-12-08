@@ -106,9 +106,9 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-
 # Sphinx
 docs/_build
+_build/
 .vscode/
 notes/
 docs/source/collections/*

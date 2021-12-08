@@ -1,6 +1,12 @@
-```{include} ../../README.md
+---
+jupytext:
+  text_representation:
+    format_name: myst
+---
 
-```
+# Welcome to Intake-esm's documentation!
+
+`intake-esm` is a data cataloging utility built on top of [intake](https://github.com/intake/intake), [pandas](https://pandas.pydata.org/), and [xarray](https://xarray.pydata.org/en/stable/), and it's pretty awesome!
 
 ## Get in touch
 
@@ -8,25 +14,32 @@
 - If you have a question like “How do I find x?”, ask on [GitHub discussions](https://github.com/intake/intake-esm/discussions). Please include a self-contained reproducible example if possible.
 
 ```{toctree}
----
-maxdepth: 2
-caption: Using intake-esm
+maxdepth: 1
 hidden:
----
-installation.md
-user-guide/index.md
-supplemental-guide/index.md
-api.md
+
+tutorials/index.md
+how-to/index.md
+explanation/index.md
+reference/index.md
+
 ```
 
 ```{toctree}
 ---
+
 maxdepth: 2
 caption: Contribute to intake-esm
 hidden:
+
 ---
+
 contributing.md
 changelog.md
 GitHub Repo <https://github.com/intake/intake-esm>
 GitHub discussions <https://github.com/intake/intake-esm/discussions>
+
+```
+
+```
+
 ```

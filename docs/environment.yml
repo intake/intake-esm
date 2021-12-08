@@ -11,7 +11,7 @@ dependencies:
   - myst-nb
   - pip
   - python-graphviz
-  - python=3.8
+  - python=3.9
   - s3fs
   - sphinx-copybutton
   - watermark

@@ -1,31 +1,12 @@
 # -*- coding: utf-8 -*-
 
-# import inspect
 import datetime
 import os
-import sys
 
 import yaml
 
 import intake_esm
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-# sys.path.insert(0, os.path.abspath('.'))
-
-cwd = os.getcwd()
-parent = os.path.dirname(cwd)
-sys.path.insert(0, parent)
-
-
-# -- General configuration -----------------------------------------------------
-
-# If your documentation needs a minimal Sphinx version, state it here.
-# needs_sphinx = '1.0'
-
-# Add any Sphinx extension module names here, as strings. They can be extensions
-# coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
@@ -47,7 +28,7 @@ extensions = [
 
 # MyST config
 myst_enable_extensions = ['amsmath', 'colon_fence', 'deflist', 'html_image']
-myst_url_schemes = ('http', 'https', 'mailto')
+myst_url_schemes = ['http', 'https', 'mailto']
 
 # sphinx-copybutton configurations
 copybutton_prompt_text = r'>>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: '
@@ -59,6 +40,7 @@ comments_config = {
 }
 
 
+jupyter_execute_notebooks = 'off'
 execution_timeout = 600
 
 extlinks = {
@@ -134,11 +116,6 @@ html_context = {
 html_theme_options = {}
 
 
-# The name of an image file (within the static path) to use as favicon of the
-# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
-# pixels large.
-# html_favicon = None
-
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
@@ -207,63 +184,8 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'xarray': ('http://xarray.pydata.org/en/stable/', None),
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
-    'intake': ('https://intake.readthedocs.io/en/latest/', None),
+    'intake': ('https://intake.readthedocs.io/en/stable/', None),
 }
-
-
-# based on numpy doc/source/conf.py
-
-
-# def linkcode_resolve(domain, info):
-#     """
-#     Determine the URL corresponding to Python object
-#     """
-#     if domain != 'py':
-#         return None
-
-#     modname = info['module']
-#     fullname = info['fullname']
-
-#     submod = sys.modules.get(modname)
-#     if submod is None:
-#         return None
-
-#     obj = submod
-#     for part in fullname.split('.'):
-#         try:
-#             obj = getattr(obj, part)
-#         except AttributeError:
-#             return None
-
-#     try:
-#         fn = inspect.getsourcefile(inspect.unwrap(obj))
-#     except TypeError:
-#         fn = None
-#     if not fn:
-#         return None
-
-#     try:
-#         source, lineno = inspect.getsourcelines(obj)
-#     except OSError:
-#         lineno = None
-
-#     if lineno:
-#         linespec = f'#L{lineno}-L{lineno + len(source) - 1}'
-#     else:
-#         linespec = ''
-
-#     fn = os.path.relpath(fn, start=os.path.dirname(intake_esm.__file__))
-
-#     if '+' in intake_esm.__version__:
-#         return f'https://github.com/intake/intake-esm/blob/master/intake_esm/{fn}{linespec}'
-#     else:
-#         return (
-#             f'https://github.com/intake/intake-esm/blob/'
-#             f'v{intake_esm.__version__}/intake_esm/{fn}{linespec}'
-#         )
-
-
-# https://www.ericholscher.com/blog/2016/jul/25/integrating-jinja-rst-sphinx/
 
 
 def rstjinja(app, docname, source):
