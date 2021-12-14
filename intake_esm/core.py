@@ -202,6 +202,7 @@ class esm_datastore(Catalog):
                     variable_column_name=self.esmcat.aggregation_control.variable_column_name,
                     path_column_name=self.esmcat.assets.column_name,
                     data_format=self.esmcat.assets.format,
+                    format_column_name=self.esmcat.assets.format_column_name,
                     aggregations=self.esmcat.aggregation_control.aggregations,
                     intake_kwargs={'metadata': {}},
                 )

@@ -114,7 +114,8 @@ class ESMDataSource(DataSource):
         records: typing.List[typing.Dict[str, typing.Any]],
         variable_column_name: pydantic.StrictStr,
         path_column_name: pydantic.StrictStr,
-        data_format: DataFormat,
+        data_format: typing.Optional[DataFormat],
+        format_column_name: typing.Optional[pydantic.StrictStr],
         *,
         aggregations: typing.Optional[typing.List[Aggregation]] = None,
         requested_variables: typing.List[str] = None,
@@ -131,12 +132,11 @@ class ESMDataSource(DataSource):
         self.storage_options = storage_options or {}
         self.preprocess = preprocess
         self.requested_variables = requested_variables or []
-        self.data_format = data_format.value
         self.path_column_name = path_column_name
         self.variable_column_name = variable_column_name
         self.aggregations = aggregations
         self.df = pd.DataFrame.from_records(records)
-        self.xarray_open_kwargs = _get_xarray_open_kwargs(self.data_format, xarray_open_kwargs)
+        self.xarray_open_kwargs = xarray_open_kwargs
         self.xarray_combine_by_coords_kwargs = dict(combine_attrs='drop_conflicts')
         if xarray_combine_by_coords_kwargs is None:
             xarray_combine_by_coords_kwargs = {}
@@ -145,6 +145,11 @@ class ESMDataSource(DataSource):
             **xarray_combine_by_coords_kwargs,
         }
         self._ds = None
+
+        if data_format is not None:
+            self.df['_data_format_'] = data_format.value
+        else:
+            self.df = self.df.rename(columns={format_column_name: '_data_format_'})
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}  (name: {self.key}, asset(s): {len(self.df)})>'
@@ -172,7 +177,9 @@ class ESMDataSource(DataSource):
                 _open_dataset(
                     record[self.path_column_name],
                     record[self.variable_column_name],
-                    xarray_open_kwargs=self.xarray_open_kwargs,
+                    xarray_open_kwargs=_get_xarray_open_kwargs(
+                        record['_data_format_'], self.xarray_open_kwargs
+                    ),
                     preprocess=self.preprocess,
                     expand_dims={
                         agg.attribute_name: [record[agg.attribute_name]]

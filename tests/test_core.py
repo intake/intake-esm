@@ -27,6 +27,7 @@ from .utils import (
     cdf_col_sample_cesmle,
     cdf_col_sample_cmip5,
     cdf_col_sample_cmip6,
+    mixed_col_sample_cmip6,
     multi_variable_col,
     sample_df,
     sample_esmcol_data,
@@ -231,6 +232,7 @@ def test_multi_variable_catalog(query):
             dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_id=['tasmax']),
             {'chunks': {'time': 1}},
         ),
+        (mixed_col_sample_cmip6, dict(institution_id='BCC'), {}),
     ],
 )
 def test_to_dataset_dict(path, query, xarray_open_kwargs):
