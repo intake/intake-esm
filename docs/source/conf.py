@@ -1,31 +1,11 @@
 # -*- coding: utf-8 -*-
 
-# import inspect
 import datetime
-import os
-import sys
 
 import yaml
 
 import intake_esm
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-# sys.path.insert(0, os.path.abspath('.'))
-
-cwd = os.getcwd()
-parent = os.path.dirname(cwd)
-sys.path.insert(0, parent)
-
-
-# -- General configuration -----------------------------------------------------
-
-# If your documentation needs a minimal Sphinx version, state it here.
-# needs_sphinx = '1.0'
-
-# Add any Sphinx extension module names here, as strings. They can be extensions
-# coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
@@ -33,32 +13,27 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.extlinks',
-    # 'sphinx.ext.linkcode',
     'sphinx.ext.intersphinx',
-    'IPython.sphinxext.ipython_console_highlighting',
-    'IPython.sphinxext.ipython_directive',
     'sphinx.ext.napoleon',
     'myst_nb',
     'sphinxext.opengraph',
     'sphinx_copybutton',
-    'sphinx_comments',
+    'sphinxcontrib.autodoc_pydantic',
 ]
 
 
 # MyST config
 myst_enable_extensions = ['amsmath', 'colon_fence', 'deflist', 'html_image']
-myst_url_schemes = ('http', 'https', 'mailto')
+myst_url_schemes = ['http', 'https', 'mailto']
 
 # sphinx-copybutton configurations
 copybutton_prompt_text = r'>>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: '
 copybutton_prompt_is_regexp = True
 
-comments_config = {
-    'utterances': {'repo': 'intake/intake-esm', 'optional': 'config', 'label': '💬 comment'},
-    'hypothesis': False,
-}
+autodoc_pydantic_model_show_json = True
+autodoc_pydantic_model_show_config = False
 
-
+jupyter_execute_notebooks = 'cache'
 execution_timeout = 600
 
 extlinks = {
@@ -134,11 +109,6 @@ html_context = {
 html_theme_options = {}
 
 
-# The name of an image file (within the static path) to use as favicon of the
-# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
-# pixels large.
-# html_favicon = None
-
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
@@ -147,14 +117,7 @@ html_static_path = ['../_static']
 # Sometimes the savefig directory doesn't exist and needs to be created
 # https://github.com/ipython/ipython/issues/8733
 # becomes obsolete when we can pin ipython>=5.2; see ci/requirements/doc.yml
-ipython_savefig_dir = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), '_build', 'html', '_static'
-)
 
-savefig_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'source', '_static')
-
-os.makedirs(ipython_savefig_dir, exist_ok=True)
-os.makedirs(savefig_dir, exist_ok=True)
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -207,63 +170,8 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'xarray': ('http://xarray.pydata.org/en/stable/', None),
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
-    'intake': ('https://intake.readthedocs.io/en/latest/', None),
+    'intake': ('https://intake.readthedocs.io/en/stable/', None),
 }
-
-
-# based on numpy doc/source/conf.py
-
-
-# def linkcode_resolve(domain, info):
-#     """
-#     Determine the URL corresponding to Python object
-#     """
-#     if domain != 'py':
-#         return None
-
-#     modname = info['module']
-#     fullname = info['fullname']
-
-#     submod = sys.modules.get(modname)
-#     if submod is None:
-#         return None
-
-#     obj = submod
-#     for part in fullname.split('.'):
-#         try:
-#             obj = getattr(obj, part)
-#         except AttributeError:
-#             return None
-
-#     try:
-#         fn = inspect.getsourcefile(inspect.unwrap(obj))
-#     except TypeError:
-#         fn = None
-#     if not fn:
-#         return None
-
-#     try:
-#         source, lineno = inspect.getsourcelines(obj)
-#     except OSError:
-#         lineno = None
-
-#     if lineno:
-#         linespec = f'#L{lineno}-L{lineno + len(source) - 1}'
-#     else:
-#         linespec = ''
-
-#     fn = os.path.relpath(fn, start=os.path.dirname(intake_esm.__file__))
-
-#     if '+' in intake_esm.__version__:
-#         return f'https://github.com/intake/intake-esm/blob/master/intake_esm/{fn}{linespec}'
-#     else:
-#         return (
-#             f'https://github.com/intake/intake-esm/blob/'
-#             f'v{intake_esm.__version__}/intake_esm/{fn}{linespec}'
-#         )
-
-
-# https://www.ericholscher.com/blog/2016/jul/25/integrating-jinja-rst-sphinx/
 
 
 def rstjinja(app, docname, source):
@@ -278,15 +186,8 @@ def rstjinja(app, docname, source):
     source[0] = rendered
 
 
-def html_page_context(app, pagename, templatename, context, doctree):
-    # Disable edit button for docstring generated pages
-    if 'generated' in pagename:
-        context['theme_use_edit_page_button'] = False
-
-
 def setup(app):
     app.connect('source-read', rstjinja)
-    app.connect('html-page-context', html_page_context)
 
 
 with open('catalogs.yaml') as f:
