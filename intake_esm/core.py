@@ -344,7 +344,7 @@ class esm_datastore(Catalog):
                 .reset_index(drop=True)
             )
 
-        cat = esm_datastore({'esmcat': self.esmcat.dict(), 'df': esmcat_results})
+        cat = self.__class__({'esmcat': self.esmcat.dict(), 'df': esmcat_results})
         if self.esmcat.has_multiple_variable_assets:
             requested_variables = query.get(
                 self.esmcat.aggregation_control.variable_column_name, []
