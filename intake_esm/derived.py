@@ -94,6 +94,7 @@ class DerivedVariableRegistry:
         query: typing.Dict[pydantic.StrictStr, typing.Union[typing.Any, typing.List[typing.Any]]],
     ) -> typing.Callable:
         """Register a derived variable
+
         Parameters
         ----------
         func : typing.Callable
@@ -137,6 +138,7 @@ class DerivedVariableRegistry:
 
     def search(self, variable: typing.Union[str, typing.List[str]]) -> 'DerivedVariableRegistry':
         """Search for a derived variable by name or list of names
+
         Parameters
         ----------
         variable : typing.Union[str, typing.List[str]]
