@@ -42,7 +42,7 @@ class Attribute(pydantic.BaseModel):
 
 class Assets(pydantic.BaseModel):
     column_name: pydantic.StrictStr
-    format: DataFormat
+    format: typing.Optional[DataFormat]
     format_column_name: typing.Optional[pydantic.StrictStr]
 
     class Config:
@@ -54,6 +54,8 @@ class Assets(pydantic.BaseModel):
         data_format, format_column_name = values.get('format'), values.get('format_column_name')
         if data_format is not None and format_column_name is not None:
             raise ValueError('Cannot set both format and format_column_name')
+        elif data_format is None and format_column_name is None:
+            raise ValueError('Must set one of format or format_column_name')
         return values
 
 
