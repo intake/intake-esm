@@ -411,3 +411,13 @@ def test_to_dataset_dict_with_registry():
         new_cat.to_dataset_dict(
             xarray_open_kwargs={'backend_kwargs': {'storage_options': {'anon': True}}}
         )
+
+
+def test_subclassing_catalog():
+
+    class ChildCatalog(intake_esm.esm_datastore):
+        pass
+
+    cat = ChildCatalog(catalog_dict_records)
+    scat = cat.search(variable=['FOO', 'BAR'])
+    assert type(scat) is ChildCatalog
