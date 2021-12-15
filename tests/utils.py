@@ -12,6 +12,7 @@ catalog_dict_records = os.path.join(here, 'sample-collections/catalog-dict-recor
 zarr_col_aws_cesm = (
     'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json'
 )
+mixed_col_sample_cmip6 = os.path.join(here, 'sample-collections/cmip6-bcc-mixed-formats.json')
 
 
 sample_df = pd.DataFrame(
