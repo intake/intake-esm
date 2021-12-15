@@ -414,7 +414,6 @@ def test_to_dataset_dict_with_registry():
 
 
 def test_subclassing_catalog():
-
     class ChildCatalog(intake_esm.esm_datastore):
         pass
 
