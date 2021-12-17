@@ -115,7 +115,15 @@ class ESMCatalogModel(pydantic.BaseModel):
         cat._df = df
         return cat
 
-    def save(self, name: str, *, directory: str = None, catalog_type: str = 'dict') -> None:
+    def save(
+        self,
+        name: str,
+        *,
+        directory: str = None,
+        catalog_type: str = 'dict',
+        to_csv_kwargs: dict = None,
+        json_dump_kwargs: dict = None,
+    ) -> None:
         """
         Save the catalog to a file.
 
@@ -128,6 +136,10 @@ class ESMCatalogModel(pydantic.BaseModel):
         catalog_type: str
             The type of catalog to save. Whether to save the catalog table as a dictionary
             in the JSON file or as a separate CSV file. Valid options are 'dict' and 'file'.
+        to_csv_kwargs : dict, optional
+            Additional keyword arguments passed through to the :py:meth:`~pandas.DataFrame.to_csv` method.
+        json_dump_kwargs : dict, optional
+            Additional keyword arguments passed through to the :py:func:`~json.dump` function.
 
         Notes
         -----
@@ -154,13 +166,17 @@ class ESMCatalogModel(pydantic.BaseModel):
         data['id'] = name
 
         if catalog_type == 'file':
+            csv_kwargs = {'compression': 'gzip', 'index': False}
+            csv_kwargs.update(to_csv_kwargs or {})
             data['catalog_file'] = str(csv_file_name)
-            self.df.to_csv(csv_file_name, compression='gzip', index=False)
+            self.df.to_csv(csv_file_name, **csv_kwargs)
         else:
             data['catalog_dict'] = self.df.to_dict(orient='records')
 
         with open(json_file_name, 'w') as outfile:
-            json.dump(data, outfile, indent=2)
+            json_kwargs = {'indent': 2}
+            json_kwargs.update(json_dump_kwargs or {})
+            json.dump(data, outfile, **json_kwargs)
 
         print(f'Successfully wrote ESM collection json file to: {json_file_name}')
 
