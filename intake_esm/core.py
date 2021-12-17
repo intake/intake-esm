@@ -365,6 +365,8 @@ class esm_datastore(Catalog):
         name: pydantic.StrictStr,
         directory: typing.Union[pydantic.DirectoryPath, pydantic.StrictStr] = None,
         catalog_type: str = 'dict',
+        to_csv_kwargs: typing.Dict[typing.Any, typing.Any] = None,
+        json_dump_kwargs: typing.Dict[typing.Any, typing.Any] = None,
     ) -> None:
         """Serialize collection/catalog to corresponding json and csv files.
 
@@ -376,6 +378,10 @@ class esm_datastore(Catalog):
             The path to the local directory. If None, use the current directory
         catalog_type: str, default 'dict'
             Whether to save the catalog table as a dictionary in the JSON file or as a separate CSV file.
+        to_csv_kwargs : dict, optional
+            Additional keyword arguments passed through to the :py:meth:`~pandas.DataFrame.to_csv` method.
+        json_dump_kwargs : dict, optional
+            Additional keyword arguments passed through to the :py:func:`~json.dump` function.
 
         Notes
         -----
@@ -395,7 +401,13 @@ class esm_datastore(Catalog):
         >>> col_subset.serialize(name="cmip6_bcc_esm1", catalog_type="file")
         """
 
-        self.esmcat.save(name, directory=directory, catalog_type=catalog_type)
+        self.esmcat.save(
+            name,
+            directory=directory,
+            catalog_type=catalog_type,
+            to_csv_kwargs=to_csv_kwargs,
+            json_dump_kwargs=json_dump_kwargs,
+        )
 
     def nunique(self) -> pd.Series:
         """Count distinct observations across dataframe columns
