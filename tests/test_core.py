@@ -147,15 +147,24 @@ def test_catalog_getitem_error():
         cat['foo']
 
 
-@pytest.mark.parametrize('catalog_type', ['file', 'dict'])
-def test_catalog_serialize(tmp_path, catalog_type):
+@pytest.mark.parametrize(
+    'catalog_type, to_csv_kwargs, json_dump_kwargs',
+    [('file', {'compression': 'bz2'}, {}), ('file', {'compression': 'gzip'}, {}), ('dict', {}, {})],
+)
+def test_catalog_serialize(tmp_path, catalog_type, to_csv_kwargs, json_dump_kwargs):
     cat = intake.open_esm_datastore(cdf_col_sample_cmip6)
     local_store = tmp_path
     cat_subset = cat.search(
         source_id='MRI-ESM2-0',
     )
     name = 'CMIP6-MRI-ESM2-0'
-    cat_subset.serialize(name=name, directory=local_store, catalog_type=catalog_type)
+    cat_subset.serialize(
+        name=name,
+        directory=local_store,
+        catalog_type=catalog_type,
+        to_csv_kwargs=to_csv_kwargs,
+        json_dump_kwargs=json_dump_kwargs,
+    )
     cat = intake.open_esm_datastore(f'{local_store}/{name}.json')
     pd.testing.assert_frame_equal(
         cat_subset.df.reset_index(drop=True), cat.df.reset_index(drop=True)
