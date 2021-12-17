@@ -152,7 +152,7 @@ class ESMCatalogModel(pydantic.BaseModel):
             raise ValueError(
                 f'catalog_type must be either "dict" or "file". Received catalog_type={catalog_type}'
             )
-        csv_file_name = pathlib.Path(f'{name}.csv.gz')
+        csv_file_name = pathlib.Path(f'{name}.csv')
         json_file_name = pathlib.Path(f'{name}.json')
         if directory:
             directory = pathlib.Path(directory)
@@ -166,8 +166,11 @@ class ESMCatalogModel(pydantic.BaseModel):
         data['id'] = name
 
         if catalog_type == 'file':
-            csv_kwargs = {'compression': 'gzip', 'index': False}
+            csv_kwargs = {'index': False}
             csv_kwargs.update(to_csv_kwargs or {})
+            compression = csv_kwargs.get('compression')
+            extensions = {'gzip': '.gz', 'bz2': '.bz2', 'zip': '.zip', 'xz': '.xz', None: ''}
+            csv_file_name = f'{csv_file_name}{extensions[compression]}'
             data['catalog_file'] = str(csv_file_name)
             self.df.to_csv(csv_file_name, **csv_kwargs)
         else:
