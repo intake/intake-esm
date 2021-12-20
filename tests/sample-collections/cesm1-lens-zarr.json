@@ -1,6 +1,6 @@
 {
   "esmcat_version": "0.1.0",
-  "id": "sample-cesm1-lens-aws",
+  "id": null,
   "description": "This is a sample ESM collection for CESM1-LENS data in zarr format",
   "catalog_file": "./tests/sample-collections/cesm1-lens-aws-zarr.csv",
   "attributes": [

@@ -1,0 +1,5 @@
+activity_id,institution_id,source_id,experiment_id,member_id,table_id,variable_id,grid_label,format,path,time_range,dcpp_init_year
+CMIP,BCC,BCC-ESM1,piControl,r1i1p1f1,Amon,tasmax,gn,netcdf,./tests/sample_data/cmip/CMIP6/CMIP/BCC/BCC-ESM1/piControl/r1i1p1f1/Amon/tasmax/gn/v20181214/tasmax/tasmax_Amon_BCC-ESM1_piControl_r1i1p1f1_gn_185001-230012.nc,185001-230012,
+CMIP,BCC,BCC-ESM1,piControl,r1i1p1f1,Amon,tasmin,gn,zarr,gs://cmip6/CMIP6/CMIP/BCC/BCC-ESM1/piControl/r1i1p1f1/Amon/tasmin/gn/v20181214/,185001-230012,
+CMIP,BCC,BCC-CSM2-MR,abrupt-4xCO2,r1i1p1f1,Amon,tasmax,gn,netcdf,./tests/sample_data/cmip/CMIP6/CMIP/BCC/BCC-CSM2-MR/abrupt-4xCO2/r1i1p1f1/Amon/tasmax/gn/v20181016/tasmax/tasmax_Amon_BCC-CSM2-MR_abrupt-4xCO2_r1i1p1f1_gn_185001-200012.nc,185001-200012,
+CMIP,BCC,BCC-CSM2-MR,abrupt-4xCO2,r1i1p1f1,Amon,tasmin,gn,zarr,gs://cmip6/CMIP6/CMIP/BCC/BCC-CSM2-MR/abrupt-4xCO2/r1i1p1f1/Amon/tasmin/gn/v20181016/,185001-200012,

@@ -11,6 +11,7 @@ dependencies:
   - h5netcdf>=0.8.1
   - intake>=0.6.0
   - ipython
+  - matplotlib
   - netcdf4>=1.5.5
   - pip
   - pooch
@@ -18,13 +19,13 @@ dependencies:
   - pydantic
   - pytest
   - pytest-cov
-  - pytest-icdiff
+  # - pytest-icdiff
   - pytest-sugar
   - pytest-xdist
   - python=*=*cp*
   - s3fs
   - scipy
-  - xarray>=0.19
+  - xarray>=0.19,!=0.20.0,!=0.20.1
   - zarr >=2.5
   - pip:
       - -r ../requirements.txt

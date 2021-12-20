@@ -5,6 +5,7 @@ import pandas as pd
 import pydantic
 import pytest
 import xarray as xr
+import xcollection as xc
 
 import intake_esm
 
@@ -26,6 +27,7 @@ from .utils import (
     cdf_col_sample_cesmle,
     cdf_col_sample_cmip5,
     cdf_col_sample_cmip6,
+    mixed_col_sample_cmip6,
     multi_variable_col,
     sample_df,
     sample_esmcol_data,
@@ -145,15 +147,24 @@ def test_catalog_getitem_error():
         cat['foo']
 
 
-@pytest.mark.parametrize('catalog_type', ['file', 'dict'])
-def test_catalog_serialize(tmp_path, catalog_type):
+@pytest.mark.parametrize(
+    'catalog_type, to_csv_kwargs, json_dump_kwargs',
+    [('file', {'compression': 'bz2'}, {}), ('file', {'compression': 'gzip'}, {}), ('dict', {}, {})],
+)
+def test_catalog_serialize(tmp_path, catalog_type, to_csv_kwargs, json_dump_kwargs):
     cat = intake.open_esm_datastore(cdf_col_sample_cmip6)
     local_store = tmp_path
     cat_subset = cat.search(
         source_id='MRI-ESM2-0',
     )
     name = 'CMIP6-MRI-ESM2-0'
-    cat_subset.serialize(name=name, directory=local_store, catalog_type=catalog_type)
+    cat_subset.serialize(
+        name=name,
+        directory=local_store,
+        catalog_type=catalog_type,
+        to_csv_kwargs=to_csv_kwargs,
+        json_dump_kwargs=json_dump_kwargs,
+    )
     cat = intake.open_esm_datastore(f'{local_store}/{name}.json')
     pd.testing.assert_frame_equal(
         cat_subset.df.reset_index(drop=True), cat.df.reset_index(drop=True)
@@ -230,12 +241,81 @@ def test_multi_variable_catalog(query):
             dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_id=['tasmax']),
             {'chunks': {'time': 1}},
         ),
+        (mixed_col_sample_cmip6, dict(institution_id='BCC'), {}),
     ],
 )
 def test_to_dataset_dict(path, query, xarray_open_kwargs):
     cat = intake.open_esm_datastore(path)
     cat_sub = cat.search(**query)
     _, ds = cat_sub.to_dataset_dict(xarray_open_kwargs=xarray_open_kwargs).popitem()
+    assert 'member_id' in ds.dims
+    assert len(ds.__dask_keys__()) > 0
+    assert ds.time.encoding
+
+
+@pytest.mark.parametrize(
+    'path, query, xarray_open_kwargs',
+    [
+        (
+            zarr_col_pangeo_cmip6,
+            dict(
+                variable_id=['pr'],
+                experiment_id='ssp370',
+                activity_id='AerChemMIP',
+                source_id='BCC-ESM1',
+                table_id='Amon',
+                grid_label='gn',
+            ),
+            {'consolidated': True, 'backend_kwargs': {'storage_options': {'token': 'anon'}}},
+        ),
+        (
+            cdf_col_sample_cmip6,
+            dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_id=['tasmax']),
+            {'chunks': {'time': 1}},
+        ),
+    ],
+)
+def test_to_collection(path, query, xarray_open_kwargs):
+    cat = intake.open_esm_datastore(path)
+    cat_sub = cat.search(**query)
+    coll = cat_sub.to_collection(xarray_open_kwargs=xarray_open_kwargs)
+    _, ds = coll.popitem()
+    assert 'member_id' in ds.dims
+    assert len(ds.__dask_keys__()) > 0
+    assert ds.time.encoding
+    assert isinstance(coll, xc.Collection)
+
+
+@pytest.mark.parametrize(
+    'path, query, xarray_open_kwargs',
+    [
+        (
+            zarr_col_pangeo_cmip6,
+            dict(
+                variable_id=['pr'],
+                experiment_id='ssp370',
+                activity_id='AerChemMIP',
+                source_id='BCC-ESM1',
+                table_id='Amon',
+                grid_label='gn',
+            ),
+            {'consolidated': True, 'backend_kwargs': {'storage_options': {'token': 'anon'}}},
+        ),
+        (
+            cdf_col_sample_cmip6,
+            dict(
+                source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'],
+                variable_id=['tasmax'],
+                experiment_id='piControl',
+            ),
+            {'chunks': {'time': 1}},
+        ),
+    ],
+)
+def test_to_dask(path, query, xarray_open_kwargs):
+    cat = intake.open_esm_datastore(path)
+    cat_sub = cat.search(**query)
+    ds = cat_sub.to_dask(xarray_open_kwargs=xarray_open_kwargs)
     assert 'member_id' in ds.dims
     assert len(ds.__dask_keys__()) > 0
     assert ds.time.encoding
@@ -342,3 +422,12 @@ def test_to_dataset_dict_with_registry():
         new_cat.to_dataset_dict(
             xarray_open_kwargs={'backend_kwargs': {'storage_options': {'anon': True}}}
         )
+
+
+def test_subclassing_catalog():
+    class ChildCatalog(intake_esm.esm_datastore):
+        pass
+
+    cat = ChildCatalog(catalog_dict_records)
+    scat = cat.search(variable=['FOO', 'BAR'])
+    assert type(scat) is ChildCatalog

@@ -7,6 +7,7 @@ import dask
 import pandas as pd
 import pydantic
 import xarray as xr
+import xcollection as xc
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
@@ -36,10 +37,10 @@ class esm_datastore(Catalog):
     read_csv_kwargs : dict, optional
         Additional keyword arguments passed through to the :py:func:`~pandas.read_csv` function.
     storage_options : dict, optional
-            Parameters passed to the backend file-system such as Google Cloud Storage,
-            Amazon Web Service S3.
+        Parameters passed to the backend file-system such as Google Cloud Storage,
+        Amazon Web Service S3.
     intake_kwargs: dict, optional
-            Additional keyword arguments are passed through to the :py:class:`~intake.catalog.Catalog` base class.
+        Additional keyword arguments are passed through to the :py:class:`~intake.catalog.Catalog` base class.
 
     Examples
     --------
@@ -201,6 +202,7 @@ class esm_datastore(Catalog):
                     variable_column_name=self.esmcat.aggregation_control.variable_column_name,
                     path_column_name=self.esmcat.assets.column_name,
                     data_format=self.esmcat.assets.format,
+                    format_column_name=self.esmcat.assets.format_column_name,
                     aggregations=self.esmcat.aggregation_control.aggregations,
                     intake_kwargs={'metadata': {}},
                 )
@@ -247,6 +249,8 @@ class esm_datastore(Catalog):
         rv = [
             'df',
             'to_dataset_dict',
+            'to_collection',
+            'to_dask',
             'keys',
             'serialize',
             'datasets',
@@ -341,7 +345,7 @@ class esm_datastore(Catalog):
                 .reset_index(drop=True)
             )
 
-        cat = esm_datastore({'esmcat': self.esmcat.dict(), 'df': esmcat_results})
+        cat = self.__class__({'esmcat': self.esmcat.dict(), 'df': esmcat_results})
         if self.esmcat.has_multiple_variable_assets:
             requested_variables = query.get(
                 self.esmcat.aggregation_control.variable_column_name, []
@@ -361,6 +365,8 @@ class esm_datastore(Catalog):
         name: pydantic.StrictStr,
         directory: typing.Union[pydantic.DirectoryPath, pydantic.StrictStr] = None,
         catalog_type: str = 'dict',
+        to_csv_kwargs: typing.Dict[typing.Any, typing.Any] = None,
+        json_dump_kwargs: typing.Dict[typing.Any, typing.Any] = None,
     ) -> None:
         """Serialize collection/catalog to corresponding json and csv files.
 
@@ -372,6 +378,10 @@ class esm_datastore(Catalog):
             The path to the local directory. If None, use the current directory
         catalog_type: str, default 'dict'
             Whether to save the catalog table as a dictionary in the JSON file or as a separate CSV file.
+        to_csv_kwargs : dict, optional
+            Additional keyword arguments passed through to the :py:meth:`~pandas.DataFrame.to_csv` method.
+        json_dump_kwargs : dict, optional
+            Additional keyword arguments passed through to the :py:func:`~json.dump` function.
 
         Notes
         -----
@@ -391,7 +401,13 @@ class esm_datastore(Catalog):
         >>> col_subset.serialize(name="cmip6_bcc_esm1", catalog_type="file")
         """
 
-        self.esmcat.save(name, directory=directory, catalog_type=catalog_type)
+        self.esmcat.save(
+            name,
+            directory=directory,
+            catalog_type=catalog_type,
+            to_csv_kwargs=to_csv_kwargs,
+            json_dump_kwargs=json_dump_kwargs,
+        )
 
     def nunique(self) -> pd.Series:
         """Count distinct observations across dataframe columns
@@ -454,7 +470,7 @@ class esm_datastore(Catalog):
         preprocess : callable, optional
             If provided, call this function on each dataset prior to aggregation.
         storage_options : dict, optional
-            Parameters passed to the backend file-system such as Google Cloud Storage,
+            fsspec Parameters passed to the backend file-system such as Google Cloud Storage,
             Amazon Web Service S3.
         progressbar : bool
             If True, will print a progress bar to standard error (stderr)
@@ -571,6 +587,115 @@ class esm_datastore(Catalog):
                         raise exc
         self.datasets = self._create_derived_variables(datasets, skip_on_error)
         return self.datasets
+
+    @pydantic.validate_arguments
+    def to_collection(
+        self,
+        xarray_open_kwargs: typing.Dict[str, typing.Any] = None,
+        xarray_combine_by_coords_kwargs: typing.Dict[str, typing.Any] = None,
+        preprocess: typing.Callable = None,
+        storage_options: typing.Dict[pydantic.StrictStr, typing.Any] = None,
+        progressbar: pydantic.StrictBool = None,
+        aggregate: pydantic.StrictBool = None,
+        skip_on_error: pydantic.StrictBool = False,
+        **kwargs,
+    ) -> xc.Collection:
+        """
+        Load catalog entries into a Collection of xarray datasets.
+
+        Parameters
+        ----------
+        xarray_open_kwargs : dict
+            Keyword arguments to pass to :py:func:`~xarray.open_dataset` function
+        xarray_combine_by_coords_kwargs: : dict
+            Keyword arguments to pass to :py:func:`~xarray.combine_by_coords` function.
+        preprocess : callable, optional
+            If provided, call this function on each dataset prior to aggregation.
+        storage_options : dict, optional
+            Parameters passed to the backend file-system such as Google Cloud Storage,
+            Amazon Web Service S3.
+        progressbar : bool
+            If True, will print a progress bar to standard error (stderr)
+            when loading assets into :py:class:`~xarray.Dataset`.
+        aggregate : bool, optional
+            If False, no aggregation will be done.
+        skip_on_error : bool, optional
+            If True, skip datasets that cannot be loaded and/or variables we are unable to derive.
+
+        Returns
+        -------
+        dsets : Collection
+           A Collection of xarray :py:class:`~xarray.Dataset`.
+
+        Examples
+        --------
+        >>> import intake
+        >>> col = intake.open_esm_datastore("glade-cmip6.json")
+        >>> cat = col.search(
+        ...     source_id=["BCC-CSM2-MR", "CNRM-CM6-1", "CNRM-ESM2-1"],
+        ...     experiment_id=["historical", "ssp585"],
+        ...     variable_id="pr",
+        ...     table_id="Amon",
+        ...     grid_label="gn",
+        ... )
+        >>> dsets = cat.to_collection()
+        >>> dsets.keys()
+        dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
+        >>> dsets["CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn"]
+        <xarray.Dataset>
+        Dimensions:    (bnds: 2, lat: 160, lon: 320, member_id: 3, time: 1980)
+        Coordinates:
+        * lon        (lon) float64 0.0 1.125 2.25 3.375 ... 355.5 356.6 357.8 358.9
+        * lat        (lat) float64 -89.14 -88.03 -86.91 -85.79 ... 86.91 88.03 89.14
+        * time       (time) object 1850-01-16 12:00:00 ... 2014-12-16 12:00:00
+        * member_id  (member_id) <U8 'r1i1p1f1' 'r2i1p1f1' 'r3i1p1f1'
+        Dimensions without coordinates: bnds
+        Data variables:
+            lat_bnds   (lat, bnds) float64 dask.array<chunksize=(160, 2), meta=np.ndarray>
+            lon_bnds   (lon, bnds) float64 dask.array<chunksize=(320, 2), meta=np.ndarray>
+            time_bnds  (time, bnds) object dask.array<chunksize=(1980, 2), meta=np.ndarray>
+            pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
+        """
+
+        self.datasets = self.to_dataset_dict(
+            xarray_open_kwargs=xarray_open_kwargs,
+            xarray_combine_by_coords_kwargs=xarray_combine_by_coords_kwargs,
+            preprocess=preprocess,
+            storage_options=storage_options,
+            progressbar=progressbar,
+            aggregate=aggregate,
+            skip_on_error=skip_on_error,
+            **kwargs,
+        )
+        self.datasets = xc.Collection(self.datasets)
+        return self.datasets
+
+    def to_dask(self, **kwargs) -> xr.Dataset:
+        """
+        Convert result to an xarray dataset.
+
+        This is only possible if the search returned exactly one result.
+
+        Parameters
+        ----------
+        kwargs: dict
+          Parameters forwarded to :py:func:`~intake_esm.esm_datastore.to_dataset_dict`.
+
+        Returns
+        -------
+        :py:class:`~xarray.Dataset`
+        """
+        if len(self) != 1:  # quick check to fail more quickly if there are many results
+            raise ValueError(
+                f'Expected exactly one dataset. Received {len(self)} datasets. Please refine your search or use `.to_dataset_dict()`.'
+            )
+        res = self.to_dataset_dict(**{**kwargs, 'progressbar': False})
+        if len(res) != 1:  # extra check in case kwargs did modify something
+            raise ValueError(
+                f'Expected exactly one dataset. Received {len(self)} datasets. Please refine your search or use `.to_dataset_dict()`.'
+            )
+        _, ds = res.popitem()
+        return ds
 
     def _create_derived_variables(self, datasets, skip_on_error):
         if len(self.derivedcat) > 0:

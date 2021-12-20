@@ -42,7 +42,7 @@ class Attribute(pydantic.BaseModel):
 
 class Assets(pydantic.BaseModel):
     column_name: pydantic.StrictStr
-    format: DataFormat
+    format: typing.Optional[DataFormat]
     format_column_name: typing.Optional[pydantic.StrictStr]
 
     class Config:
@@ -54,6 +54,8 @@ class Assets(pydantic.BaseModel):
         data_format, format_column_name = values.get('format'), values.get('format_column_name')
         if data_format is not None and format_column_name is not None:
             raise ValueError('Cannot set both format and format_column_name')
+        elif data_format is None and format_column_name is None:
+            raise ValueError('Must set one of format or format_column_name')
         return values
 
 
@@ -83,10 +85,10 @@ class ESMCatalogModel(pydantic.BaseModel):
     """
 
     esmcat_version: pydantic.StrictStr
-    id: str
     attributes: typing.List[Attribute]
     assets: Assets
     aggregation_control: AggregationControl
+    id: typing.Optional[str] = ''
     catalog_dict: typing.Optional[typing.List[typing.Dict]] = None
     catalog_file: pydantic.StrictStr = None
     description: pydantic.StrictStr = None
@@ -113,7 +115,15 @@ class ESMCatalogModel(pydantic.BaseModel):
         cat._df = df
         return cat
 
-    def save(self, name: str, *, directory: str = None, catalog_type: str = 'dict') -> None:
+    def save(
+        self,
+        name: str,
+        *,
+        directory: str = None,
+        catalog_type: str = 'dict',
+        to_csv_kwargs: dict = None,
+        json_dump_kwargs: dict = None,
+    ) -> None:
         """
         Save the catalog to a file.
 
@@ -126,6 +136,10 @@ class ESMCatalogModel(pydantic.BaseModel):
         catalog_type: str
             The type of catalog to save. Whether to save the catalog table as a dictionary
             in the JSON file or as a separate CSV file. Valid options are 'dict' and 'file'.
+        to_csv_kwargs : dict, optional
+            Additional keyword arguments passed through to the :py:meth:`~pandas.DataFrame.to_csv` method.
+        json_dump_kwargs : dict, optional
+            Additional keyword arguments passed through to the :py:func:`~json.dump` function.
 
         Notes
         -----
@@ -138,7 +152,7 @@ class ESMCatalogModel(pydantic.BaseModel):
             raise ValueError(
                 f'catalog_type must be either "dict" or "file". Received catalog_type={catalog_type}'
             )
-        csv_file_name = pathlib.Path(f'{name}.csv.gz')
+        csv_file_name = pathlib.Path(f'{name}.csv')
         json_file_name = pathlib.Path(f'{name}.json')
         if directory:
             directory = pathlib.Path(directory)
@@ -152,13 +166,20 @@ class ESMCatalogModel(pydantic.BaseModel):
         data['id'] = name
 
         if catalog_type == 'file':
+            csv_kwargs = {'index': False}
+            csv_kwargs.update(to_csv_kwargs or {})
+            compression = csv_kwargs.get('compression')
+            extensions = {'gzip': '.gz', 'bz2': '.bz2', 'zip': '.zip', 'xz': '.xz', None: ''}
+            csv_file_name = f'{csv_file_name}{extensions[compression]}'
             data['catalog_file'] = str(csv_file_name)
-            self.df.to_csv(csv_file_name, compression='gzip', index=False)
+            self.df.to_csv(csv_file_name, **csv_kwargs)
         else:
             data['catalog_dict'] = self.df.to_dict(orient='records')
 
         with open(json_file_name, 'w') as outfile:
-            json.dump(data, outfile, indent=2)
+            json_kwargs = {'indent': 2}
+            json_kwargs.update(json_dump_kwargs or {})
+            json.dump(data, outfile, **json_kwargs)
 
         print(f'Successfully wrote ESM collection json file to: {json_file_name}')
 
@@ -171,6 +192,17 @@ class ESMCatalogModel(pydantic.BaseModel):
     ) -> 'ESMCatalogModel':
         """
         Loads the catalog from a file
+
+        Parameters
+        -----------
+        json_file: str or pathlib.Path
+            The path to the json file containing the catalog
+        storage_options: dict
+            fsspec parameters passed to the backend file-system such as Google Cloud Storage,
+            Amazon Web Service S3.
+        read_csv_kwargs: dict
+            Additional keyword arguments passed through to the :py:func:`~pandas.read_csv` function.
+
         """
         storage_options = storage_options if storage_options is not None else {}
         read_csv_kwargs = read_csv_kwargs or {}
@@ -279,9 +311,11 @@ class ESMCatalogModel(pydantic.BaseModel):
             return data.apply(_find_unique, result_type='reduce').to_dict()
 
     def unique(self) -> pd.Series:
+        """Return a series of unique values for each column in the catalog."""
         return pd.Series(self._unique())
 
     def nunique(self) -> pd.Series:
+        """Return a series of the number of unique values for each column in the catalog."""
         return pd.Series(tlz.valmap(len, self._unique()))
 
     def search(
@@ -303,6 +337,11 @@ class ESMCatalogModel(pydantic.BaseModel):
             If None, return entries that fulfill any of the criteria specified
             in the query, by default None.
 
+        Returns
+        -------
+        catalog: ESMCatalogModel
+            A new catalog with the entries satisfying the query criteria.
+
         """
 
         if not isinstance(query, QueryModel):
@@ -323,6 +362,8 @@ class ESMCatalogModel(pydantic.BaseModel):
 
 
 class QueryModel(pydantic.BaseModel):
+    """A Pydantic model to represent a query to be executed against a catalog."""
+
     query: typing.Dict[pydantic.StrictStr, typing.Union[typing.Any, typing.List[typing.Any]]]
     columns: typing.List[str]
     require_all_on: typing.Union[str, typing.List[typing.Any]] = None
