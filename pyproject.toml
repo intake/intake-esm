@@ -3,22 +3,5 @@ line-length = 100
 target-version = ['py38']
 skip-string-normalization = true
 
-[tool.nbqa.mutate]
-isort = 1
-pyupgrade = 1
-
-[tool.nbqa.addopts]
-pyupgrade = ["--py36-plus"]
-
 [build-system]
 requires = ["setuptools>=45", "wheel", "setuptools_scm>=6.2"]
-
-
-# pyproject.toml
-[tool.pytest.ini_options]
-filterwarnings = [
-    "error",
-    "ignore::UserWarning",
-    # note the use of single quote below to denote "raw" strings in TOML
-    'ignore:function ham\(\) is deprecated:DeprecationWarning',
-]
