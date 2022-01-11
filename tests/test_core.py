@@ -244,7 +244,7 @@ def test_multi_variable_catalog_derived_cat():
         read_csv_kwargs={'converters': {'variable': ast.literal_eval}},
         registry=registry_multivar,
     )
-    cat_sub = cat.search(variable='FOO')
+    cat_sub = cat.search(variable=['FOO'])
     assert set(cat_sub._requested_variables) == {'TEMP', 'FOO'}
 
 
