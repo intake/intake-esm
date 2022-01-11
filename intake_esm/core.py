@@ -331,6 +331,8 @@ class esm_datastore(Catalog):
         derivedcat_results = []
         variables = query.pop(self.esmcat.aggregation_control.variable_column_name, None)
         if variables:
+            if isinstance(variables, str):
+                variables = [variables]
             dependents = []
             for key, value in self.derivedcat.items():
                 if key in variables:

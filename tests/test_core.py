@@ -22,6 +22,14 @@ def funcs(ds):
     return ds + 1
 
 
+registry_multivar = intake_esm.DerivedVariableRegistry()
+
+
+@registry_multivar.register(variable='FOO', query={'variable': ['TEMP']})
+def func_multivar(ds):
+    return ds + 1
+
+
 from .utils import (
     catalog_dict_records,
     cdf_col_sample_cesmle,
@@ -125,13 +133,20 @@ def test_catalog_search(path, query, expected_size):
 
 
 def test_catalog_with_registry_search():
-    cat = intake.open_esm_datastore(catalog_dict_records, registry=registry)
+    cat = intake.open_esm_datastore(zarr_col_aws_cesm, registry=registry)
     new_cat = cat.search(variable='FOO')
-    assert len(cat) == 1
-    assert len(new_cat) == 1
+    assert len(cat) == 56
+    assert len(new_cat) == 11
 
     assert len(cat.derivedcat) == 2
     assert len(new_cat.derivedcat) == 1
+
+    new_cat = cat.search(variable='FOO', frequency='daily')
+    assert len(new_cat) == 4
+    assert len(new_cat.derivedcat) == 1
+
+    new_cat = cat.search(frequency='daily')
+    assert len(new_cat.derivedcat) == 2
 
 
 @pytest.mark.parametrize('key', ['ocn.20C.pop.h', 'ocn.CTRL.pop.h', 'ocn.RCP85.pop.h'])
@@ -219,6 +234,18 @@ def test_multi_variable_catalog(query):
     _, ds = cat_sub.to_dataset_dict().popitem()
     if cat_sub._requested_variables:
         assert set(ds.data_vars) == set(cat_sub._requested_variables)
+
+
+def test_multi_variable_catalog_derived_cat():
+    import ast
+
+    cat = intake.open_esm_datastore(
+        multi_variable_col,
+        read_csv_kwargs={'converters': {'variable': ast.literal_eval}},
+        registry=registry_multivar,
+    )
+    cat_sub = cat.search(variable='FOO')
+    assert set(cat_sub._requested_variables) == {'TEMP', 'FOO'}
 
 
 @pytest.mark.parametrize(
