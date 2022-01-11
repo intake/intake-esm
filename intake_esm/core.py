@@ -329,13 +329,25 @@ class esm_datastore(Catalog):
         # step 2: Search for entries required to derive variables in the derived catalogs
         # This requires a bit of a hack i.e. the user has to specify the variable in the query
         derivedcat_results = []
-        variables = query.get(self.esmcat.aggregation_control.variable_column_name, [])
+        variables = query.pop(self.esmcat.aggregation_control.variable_column_name, None)
         if variables:
+            if isinstance(variables, str):
+                variables = [variables]
+            dependents = []
             for key, value in self.derivedcat.items():
                 if key in variables:
-                    derivedcat_results.append(
-                        self.esmcat.search(require_all_on=require_all_on, query=value.query)
+                    res = self.esmcat.search(
+                        require_all_on=require_all_on, query={**value.query, **query}
                     )
+                    if not res.empty:
+                        derivedcat_results.append(res)
+                        dependents.extend(
+                            value.dependent_variables(
+                                self.esmcat.aggregation_control.variable_column_name
+                            )
+                        )
+            # Update variable list with dependent variables.
+            variables = list(set(variables).union(dependents))
 
         if derivedcat_results:
             # Merge results from the main and the derived catalogs
@@ -347,16 +359,18 @@ class esm_datastore(Catalog):
 
         cat = self.__class__({'esmcat': self.esmcat.dict(), 'df': esmcat_results})
         if self.esmcat.has_multiple_variable_assets:
-            requested_variables = query.get(
-                self.esmcat.aggregation_control.variable_column_name, []
-            )
+            requested_variables = variables or []
         else:
             requested_variables = []
         cat._requested_variables = requested_variables
 
-        # step 3: Subset the derived catalog
-        derivat_cat_subset = self.derivedcat.search(variable=variables)
-        cat.derivedcat = derivat_cat_subset
+        # step 3: Subset the derived catalog,
+        # but only if variables were looked up, otherwise transfer the whole catalog.
+        if variables is not None:
+            derivat_cat_subset = self.derivedcat.search(variable=variables)
+            cat.derivedcat = derivat_cat_subset
+        else:
+            cat.derivedcat = self.derivedcat
         return cat
 
     @pydantic.validate_arguments
