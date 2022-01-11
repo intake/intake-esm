@@ -24,7 +24,6 @@ dependencies:
   - pytest-icdiff
   - pytest-sugar
   - pytest-xdist
-  - python=*=*cp*
   - regionmask
   - scipy
   - toolz
