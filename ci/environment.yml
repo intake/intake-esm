@@ -6,10 +6,10 @@ dependencies:
   - cftime
   - codecov
   - fastprogress>= 1.0.0
-  - fsspec>=0.8.0
+  - fsspec>=2021.7.0
   - gcsfs
   - h5netcdf>=0.8.1
-  - intake>=0.6.0
+  - intake>=0.6.5
   - ipython
   - matplotlib
   - netcdf4>=1.5.5
