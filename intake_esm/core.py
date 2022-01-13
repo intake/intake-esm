@@ -77,7 +77,7 @@ class esm_datastore(Catalog):
 
         """Intake Catalog representing an ESM Collection."""
         intake_kwargs = intake_kwargs or {}
-        super(esm_datastore, self).__init__(**intake_kwargs)
+        super().__init__(**intake_kwargs)
         self.storage_options = storage_options or {}
         self.read_csv_kwargs = read_csv_kwargs or {}
         self.progressbar = progressbar
