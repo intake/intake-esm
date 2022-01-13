@@ -163,7 +163,7 @@ def test_search_columns_with_iterables(query, expected):
             'path': ['file1', 'file2', 'file3'],
             'variable': [['A', 'B'], ['A', 'B', 'C'], ['C', 'D', 'A']],
             'attr': [1, 2, 3],
-            'random': [set(['bx', 'by']), set(['bx', 'bz']), set(['bx', 'by'])],
+            'random': [{'bx', 'by'}, {'bx', 'bz'}, {'bx', 'by'}],
         }
     )
     query_model = QueryModel(query=query, columns=df.columns.tolist())
