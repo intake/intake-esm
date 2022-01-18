@@ -171,3 +171,42 @@ def test_search_columns_with_iterables(query, expected):
         df=df, query=query_model.query, columns_with_iterables={'variable', 'random'}
     ).to_dict(orient='records')
     assert results == expected
+
+
+@pytest.mark.parametrize(
+    'query,expected',
+    [
+        (
+            dict(variable=['A', 'B'], random='bx'),
+            [
+                {'path': 'file1', 'variable': ['A', 'B'], 'attr': 1, 'random': {'bx', 'by'}},
+                {'path': 'file3', 'variable': ['A'], 'attr': 2, 'random': {'bx', 'bz'}},
+                {'path': 'file4', 'variable': ['B', 'C'], 'attr': 2, 'random': {'bx', 'bz'}},
+            ],
+        ),
+    ],
+)
+def test_search_require_all_on_columns_with_iterables(query, expected):
+    df = pd.DataFrame(
+        {
+            'path': ['file1', 'file2', 'file3', 'file4', 'file5'],
+            'variable': [['A', 'B'], ['C', 'D'], ['A'], ['B', 'C'], ['C', 'D', 'A']],
+            'attr': [1, 1, 2, 2, 3],
+            'random': [
+                {'bx', 'by'},
+                {'bx', 'by'},
+                {'bx', 'bz'},
+                {'bx', 'bz'},
+                {'bx', 'by'},
+            ],
+        }
+    )
+    query_model = QueryModel(query=query, columns=df.columns.tolist(), require_all_on=['attr'])
+    results = search(df=df, query=query_model.query, columns_with_iterables={'variable', 'random'})
+    results = search_apply_require_all_on(
+        df=results,
+        query=query_model.query,
+        require_all_on=query_model.require_all_on,
+        columns_with_iterables={'variable', 'random'},
+    ).to_dict(orient='records')
+    assert results == expected

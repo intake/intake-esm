@@ -356,7 +356,10 @@ class ESMCatalogModel(pydantic.BaseModel):
         )
         if _query.require_all_on is not None and not results.empty:
             results = search_apply_require_all_on(
-                df=results, query=_query.query, require_all_on=_query.require_all_on
+                df=results,
+                query=_query.query,
+                require_all_on=_query.require_all_on,
+                columns_with_iterables=self.columns_with_iterables,
             )
         return results
 
