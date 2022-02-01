@@ -1,3 +1,4 @@
+import datetime
 import enum
 import json
 import os
@@ -93,6 +94,7 @@ class ESMCatalogModel(pydantic.BaseModel):
     catalog_file: pydantic.StrictStr = None
     description: pydantic.StrictStr = None
     title: pydantic.StrictStr = None
+    last_updated: typing.Optional[typing.Union[datetime.datetime, datetime.date]] = (None,)
     _df: typing.Optional[pd.DataFrame] = pydantic.PrivateAttr()
 
     class Config:
@@ -113,6 +115,8 @@ class ESMCatalogModel(pydantic.BaseModel):
     def from_dict(cls, data: typing.Dict) -> 'ESMCatalogModel':
         esmcat = data['esmcat']
         df = data['df']
+        if 'last_updated' not in esmcat:
+            esmcat['last_updated'] = None
         cat = cls.parse_obj(esmcat)
         cat._df = df
         return cat
@@ -166,6 +170,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         for key in {'catalog_dict', 'catalog_file'}:
             data.pop(key, None)
         data['id'] = name
+        data['last_updated'] = datetime.datetime.now().utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
 
         if catalog_type == 'file':
             csv_kwargs = {'index': False}
@@ -211,7 +216,10 @@ class ESMCatalogModel(pydantic.BaseModel):
         _mapper = fsspec.get_mapper(json_file, **storage_options)
 
         with fsspec.open(json_file, **storage_options) as fobj:
-            cat = cls.parse_raw(fobj.read())
+            data = json.loads(fobj.read())
+            if 'last_updated' not in data:
+                data['last_updated'] = None
+            cat = cls.parse_obj(data)
             if cat.catalog_file:
                 if _mapper.fs.exists(cat.catalog_file):
                     csv_path = cat.catalog_file
