@@ -5,8 +5,7 @@ Useful for:
 """
 import os
 import pathlib
-
-import numpy as np
+import intake
 
 _default_cache_dir_name = 'intake_esm_tutorial_data'
 base_url = 'https://github.com/ncar/intake-esm'
@@ -25,19 +24,17 @@ def _construct_cache_dir(path):
 
 
 sample_catalogues = {
-    cesm1_lens_netcdf: 'tests/sample-collections/cesm1-lens-netcdf.csv/cesm1-lens-netcdf.json',
-    cmip5_netcdf: 'tests/sample-collections/cmip5-netcdf.csv/cmip5-netcdf.json',
-    cmip6_netcdf: 'tests/sample-collections/cmip6-netcdf-test.csv/cmip6-netcdf.json',
-    multi
-    - variable
-    - catalog: 'tests/sample-collections/multi-variable-catalog.csv/multi-variable-catalog.json',
+    "cesm1_lens_netcdf": 'tests/sample-collections/cesm1-lens-netcdf.csv/cesm1-lens-netcdf.json',
+    "cmip5_netcdf": 'tests/sample-collections/cmip5-netcdf.csv/cmip5-netcdf.json',
+    "cmip6_netcdf": 'tests/sample-collections/cmip6-netcdf-test.csv/cmip6-netcdf.json',
+    "multi_variable_catalog": 'tests/sample-collections/multi-variable-catalog.csv/multi-variable-catalog.json',
 }
 
 sample_data = {
-    cesm_le: 'tests/sample-data/cesm-le/*.nc',
-    cmip5: 'tests/sample-data/cmip/cmip5/*',
-    cmip6: 'tests/sample-data/cmip/CMIP6/*',
-    cesm_multi_variables: 'tests/sample-data/cesm-multi-variables/*.nc',
+    "cesm_le": 'tests/sample-data/cesm-le/*.nc',
+    "cmip5": 'tests/sample-data/cmip/cmip5/*',
+    "cmip6": 'tests/sample-data/cmip/CMIP6/*',
+    "cesm_multi_variables": 'tests/sample-data/cesm-multi-variables/*.nc',
 }
 
 # idea borrowed from Seaborn and Xarray
@@ -68,25 +65,16 @@ def open_catalogue(
     logger.setLevel('WARNING')
 
     cache_dir = _construct_cache_dir(cache_dir)
-    if name in external_urls:
-        url = external_urls[name]
+    if name in sample_catalogues:
+        url = sample_catalogues[name]
     else:
         path = pathlib.Path(name)
-        if not path.suffix:
-            # process the name
-            default_extension = '.nc'
-            if engine is None:
-                _check_netcdf_engine_installed(name)
-            path = path.with_suffix(default_extension)
-        elif path.suffix == '.grib':
-            if engine is None:
-                engine = 'cfgrib'
 
         url = f'{base_url}/raw/{version}/{path.name}'
 
     # retrieve the file
     filepath = pooch.retrieve(url=url, known_hash=None, path=cache_dir)
-    cat = intake.open_esm_datastore(filepath, engine=engine, **kws)
+    cat = intake.open_esm_datastore(filepath, **kws)
     if not cache:
         cat = cat.load()
         pathlib.Path(filepath).unlink()
