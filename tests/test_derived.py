@@ -71,6 +71,11 @@ def test_registry_derive_variables():
         ds['FOO'] = ds.air // 100
         return ds
 
+    @dvr.register(variable='lon', query={'variable': 'air'})
+    def func2(ds):
+        ds['lon'] = ds.air.lon // 100
+        return ds
+
     dsets = dvr.update_datasets(datasets={'test': ds.copy()}, variable_key_name='variable')
     assert 'test' in dsets
     assert 'FOO' in dsets['test']
@@ -98,10 +103,28 @@ def test_registry_derive_variables_error():
     dsets = dvr.update_datasets(
         datasets={'test': ds.copy()}, variable_key_name='variable', skip_on_error=True
     )
-
     assert 'FOO' not in dsets['test']
 
     with pytest.raises(DerivedVariableError):
         dsets = dvr.update_datasets(
             datasets={'test': ds.copy()}, variable_key_name='variable', skip_on_error=False
         )
+
+    @dvr.register(variable='BAR', query={'variable': ['air', 'water']})
+    def funcc(ds):
+        ds['BAR'] = ds.air / ds.water
+        return ds
+
+    @dvr.register(variable='FOO', query={'variable': ['air']})
+    def funcd(ds):
+        ds['FOO'] = ds.air * 2
+        return ds
+
+    # No error, nothing is done.
+    dsets = dvr.update_datasets(
+        datasets={'test': ds.assign(FOO=ds.air).copy()},
+        variable_key_name='variable',
+        skip_on_error=False,
+    )
+    assert {'air', 'FOO'} == dsets['test'].data_vars.keys()
+    assert ds.air.equals(dsets['test'].FOO)

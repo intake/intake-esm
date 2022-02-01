@@ -182,8 +182,11 @@ class DerivedVariableRegistry:
 
         for dset_key, dataset in datasets.items():
             for _, derived_variable in self.items():
-                if set(dataset.variables).intersection(
-                    derived_variable.dependent_variables(variable_key_name)
+                if (
+                    set(dataset.variables).issuperset(
+                        derived_variable.dependent_variables(variable_key_name)
+                    )
+                    and derived_variable.variable not in dataset.variables
                 ):
                     try:
                         # Assumes all dependent variables are in the same dataset
