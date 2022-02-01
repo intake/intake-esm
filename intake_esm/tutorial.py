@@ -8,10 +8,9 @@ import pathlib
 
 import numpy as np
 
-
-_default_cache_dir_name = "intake_esm_tutorial_data"
-base_url = "https://github.com/ncar/intake-esm"
-version = "main"
+_default_cache_dir_name = 'intake_esm_tutorial_data'
+base_url = 'https://github.com/ncar/intake-esm'
+version = 'main'
 
 
 def _construct_cache_dir(path):
@@ -24,6 +23,7 @@ def _construct_cache_dir(path):
 
     return path
 
+<<<<<<< HEAD
 sample_catalogues = {
     cesm1_lens_netcdf: "tests/sample-collections/cesm1-lens-netcdf.csv/cesm1-lens-netcdf.json",
     cmip5_netcdf: "tests/sample-collections/cmip5-netcdf.csv/cmip5-netcdf.json",
@@ -36,6 +36,23 @@ sample_data = {
     cmip5: "tests/sample-data/cmip/cmip5/*",
     cmip6: "tests/sample-data/cmip/CMIP6/*",
     cesm_multi_variables: "tests/sample-data/cesm-multi-variables/*.nc"
+=======
+
+sample_collections = {
+    cesm1_lens_netcdf: 'sample-collections/cesm1-lens-netcdf.csv/cesm1-lens-netcdf.json',
+    cmip5_netcdf: 'sample-collections/cmip5-netcdf.csv/cmip5-netcdf.json',
+    cmip6_netcdf: 'sample-collections/cmip6-netcdf-test.csv/cmip6-netcdf.json',
+    multi
+    - variable
+    - catalog: 'sample-collections/multi-variable-catalog.csv/multi-variable-catalog.json',
+}
+
+sample_data = {
+    cesm_le: 'sample-data/cesm-le/*.nc',
+    cmip5: 'sample-data/cmip/cmip5/*',
+    CMIP6: 'sample-data/cmip/CMIP6/*',
+    cesm_multi_variables: 'sample-data/cesm-multi-variables/*.nc',
+>>>>>>> dbc336623882380abe64b5ffd881662a311c70a6
 }
 
 # idea borrowed from Seaborn and Xarray
@@ -76,12 +93,12 @@ def open_dataset(
         import pooch
     except ImportError as e:
         raise ImportError(
-            "tutorial.open_dataset depends on pooch to download and manage datasets."
-            " To proceed please install pooch."
+            'tutorial.open_dataset depends on pooch to download and manage datasets.'
+            ' To proceed please install pooch.'
         ) from e
 
     logger = pooch.get_logger()
-    logger.setLevel("WARNING")
+    logger.setLevel('WARNING')
 
     cache_dir = _construct_cache_dir(cache_dir)
     if name in external_urls:
@@ -90,15 +107,15 @@ def open_dataset(
         path = pathlib.Path(name)
         if not path.suffix:
             # process the name
-            default_extension = ".nc"
+            default_extension = '.nc'
             if engine is None:
                 _check_netcdf_engine_installed(name)
             path = path.with_suffix(default_extension)
-        elif path.suffix == ".grib":
+        elif path.suffix == '.grib':
             if engine is None:
-                engine = "cfgrib"
+                engine = 'cfgrib'
 
-        url = f"{base_url}/raw/{version}/{path.name}"
+        url = f'{base_url}/raw/{version}/{path.name}'
 
     # retrieve the file
     filepath = pooch.retrieve(url=url, known_hash=None, path=cache_dir)
@@ -108,6 +125,64 @@ def open_dataset(
         pathlib.Path(filepath).unlink()
 
     return ds
+
+
+def open_rasterio(
+    name,
+    engine=None,
+    cache=True,
+    cache_dir=None,
+    **kws,
+):
+    """
+    Open a rasterio dataset from the online repository (requires internet).
+    If a local copy is found then always use that to avoid network traffic.
+    Available datasets:
+    * ``"RGB.byte"``: TIFF file derived from USGS Landsat 7 ETM imagery.
+    * ``"shade"``: TIFF file derived from from USGS SRTM 90 data
+    ``RGB.byte`` and ``shade`` are downloaded from the ``rasterio`` repository [1]_.
+    Parameters
+    ----------
+    name : str
+        Name of the file containing the dataset.
+        e.g. 'RGB.byte'
+    cache_dir : path-like, optional
+        The directory in which to search for and write cached data.
+    cache : bool, optional
+        If True, then cache data locally for use on subsequent calls
+    **kws : dict, optional
+        Passed to xarray.open_rasterio
+    See Also
+    --------
+    xarray.open_rasterio
+    References
+    ----------
+    .. [1] https://github.com/mapbox/rasterio
+    """
+    try:
+        import pooch
+    except ImportError as e:
+        raise ImportError(
+            'tutorial.open_rasterio depends on pooch to download and manage datasets.'
+            ' To proceed please install pooch.'
+        ) from e
+
+    logger = pooch.get_logger()
+    logger.setLevel('WARNING')
+
+    cache_dir = _construct_cache_dir(cache_dir)
+    url = external_rasterio_urls.get(name)
+    if url is None:
+        raise ValueError(f'unknown rasterio dataset: {name}')
+
+    # retrieve the file
+    filepath = pooch.retrieve(url=url, known_hash=None, path=cache_dir)
+    arr = _open_rasterio(filepath, **kws)
+    if not cache:
+        arr = arr.load()
+        pathlib.Path(filepath).unlink()
+
+    return arr
 
 
 def load_dataset(*args, **kwargs):
