@@ -52,7 +52,7 @@ def open_catalogue(
     Available catalogues:
     * ``""``:
     Parameters
-   """
+    """
     try:
         import pooch
     except ImportError as e:
