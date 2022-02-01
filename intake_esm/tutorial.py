@@ -135,13 +135,52 @@ def open_catalogue(
     """
     Open a cataloguefrom the online repository (requires internet).
     If a local copy is found then always use that to avoid network traffic.
-    Available datasets:
+    Available catalogues:
     * ``""``: 
     Parameters
    """
+       try:
+        import pooch
+    except ImportError as e:
+        raise ImportError(
+            'tutorial.open_catalogue depends on pooch to download and manage catalogues.'
+            ' To proceed please install pooch.'
+        ) from e
+
+    logger = pooch.get_logger()
+    logger.setLevel('WARNING')
+
+    cache_dir = _construct_cache_dir(cache_dir)
+    if name in external_urls:
+        url = external_urls[name]
+    else:
+        path = pathlib.Path(name)
+        if not path.suffix:
+            # process the name
+            default_extension = '.nc'
+            if engine is None:
+                _check_netcdf_engine_installed(name)
+            path = path.with_suffix(default_extension)
+        elif path.suffix == '.grib':
+            if engine is None:
+                engine = 'cfgrib'
+
+        url = f'{base_url}/raw/{version}/{path.name}'
+
+    # retrieve the file
+    filepath = pooch.retrieve(url=url, known_hash=None, path=cache_dir)
+    cat = _open_catalogue(filepath, engine=engine, **kws)
+    if not cache:
+        cat = cat.load()
+        pathlib.Path(filepath).unlink()
+
+    return cat
+
 
 def load_catalogue(*args, **kwargs):
     """
     Open, load into memory, and close a catalogue from the online repository
     (requires internet)
     """
+    with open_catalogue(*args, **kwargs) as cat:
+        return cat.load()
