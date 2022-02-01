@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """ Helper functions for fetching and loading catalog"""
 import importlib
 import sys

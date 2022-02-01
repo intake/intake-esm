@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import datetime
 
 import yaml
@@ -68,9 +66,9 @@ master_doc = 'index'
 
 # General information about the project.
 current_year = datetime.datetime.now().year
-project = u'Intake-ESM'
+project = 'Intake-ESM'
 copyright = f'2018-{current_year}, Intake-ESM development team'
-author = u'Intake-ESM developers'
+author = 'Intake-ESM developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -140,15 +138,15 @@ latex_elements = {
 }
 
 
-latex_documents = [('index', 'intake-esm.tex', u'intake-esm Documentation', author, 'manual')]
+latex_documents = [('index', 'intake-esm.tex', 'intake-esm Documentation', author, 'manual')]
 
-man_pages = [('index', 'intake-esm', u'intake-esm Documentation', [author], 1)]
+man_pages = [('index', 'intake-esm', 'intake-esm Documentation', [author], 1)]
 
 texinfo_documents = [
     (
         'index',
         'intake-esm',
-        u'intake-esm Documentation',
+        'intake-esm Documentation',
         author,
         'intake-esm',
         'One line description of project.',
