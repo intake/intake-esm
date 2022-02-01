@@ -41,89 +41,6 @@ sample_data = {
 }
 
 # idea borrowed from Seaborn and Xarray
-def open_dataset(
-    name,
-    cache=True,
-    cache_dir=None,
-    *,
-    engine=None,
-    **kws,
-):
-    """
-    Open a dataset from the online repository (requires internet).
-    If a local copy is found then always use that to avoid network traffic.
-    Available datasets:
-    * ``"air_temperature"``: NCEP reanalysis subset
-    * ``"rasm"``: Output of the Regional Arctic System Model (RASM)
-    * ``"ROMS_example"``: Regional Ocean Model System (ROMS) output
-    * ``"tiny"``: small synthetic dataset with a 1D data variable
-    * ``"era5-2mt-2019-03-uk.grib"``: ERA5 temperature data over the UK
-    * ``"eraint_uvz"``: data from ERA-Interim reanalysis, monthly averages of upper level data
-    Parameters
-    ----------
-    name : str
-        Name of the file containing the dataset.
-        e.g. 'air_temperature'
-    cache_dir : path-like, optional
-        The directory in which to search for and write cached data.
-    cache : bool, optional
-        If True, then cache data locally for use on subsequent calls
-    **kws : dict, optional
-        Passed to xarray.open_dataset
-    See Also
-    --------
-    xarray.open_dataset
-    """
-    try:
-        import pooch
-    except ImportError as e:
-        raise ImportError(
-            'tutorial.open_dataset depends on pooch to download and manage datasets.'
-            ' To proceed please install pooch.'
-        ) from e
-
-    logger = pooch.get_logger()
-    logger.setLevel('WARNING')
-
-    cache_dir = _construct_cache_dir(cache_dir)
-    if name in external_urls:
-        url = external_urls[name]
-    else:
-        path = pathlib.Path(name)
-        if not path.suffix:
-            # process the name
-            default_extension = '.nc'
-            if engine is None:
-                _check_netcdf_engine_installed(name)
-            path = path.with_suffix(default_extension)
-        elif path.suffix == '.grib':
-            if engine is None:
-                engine = 'cfgrib'
-
-        url = f'{base_url}/raw/{version}/{path.name}'
-
-    # retrieve the file
-    filepath = pooch.retrieve(url=url, known_hash=None, path=cache_dir)
-    ds = _open_dataset(filepath, engine=engine, **kws)
-    if not cache:
-        ds = ds.load()
-        pathlib.Path(filepath).unlink()
-
-    return ds
-
-
-def load_dataset(*args, **kwargs):
-    """
-    Open, load into memory, and close a dataset from the online repository
-    (requires internet).
-    See Also
-    --------
-    open_dataset
-    """
-    with open_dataset(*args, **kwargs) as ds:
-        return ds.load()
-
-
 def open_catalogue(
     name,
     cache=True,
@@ -169,7 +86,7 @@ def open_catalogue(
 
     # retrieve the file
     filepath = pooch.retrieve(url=url, known_hash=None, path=cache_dir)
-    cat = _open_catalogue(filepath, engine=engine, **kws)
+    cat = intake.open_esm_datastore(filepath, engine=engine, **kws)
     if not cache:
         cat = cat.load()
         pathlib.Path(filepath).unlink()
