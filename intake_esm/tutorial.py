@@ -38,6 +38,7 @@ sample_data = {
     'cesm_multi_variables': 'tests/sample-data/cesm-multi-variables/*.nc',
 }
 
+
 # idea borrowed from Seaborn and Xarray
 def open_catalogue(
     name,
