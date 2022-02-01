@@ -93,9 +93,11 @@ class ESMCatalogModel(pydantic.BaseModel):
     catalog_file: pydantic.StrictStr = None
     description: pydantic.StrictStr = None
     title: pydantic.StrictStr = None
-    _df: typing.Optional[typing.Any] = pydantic.PrivateAttr()
+    _df: typing.Optional[pd.DataFrame] = None
 
     class Config:
+        arbitrary_types_allowed = True
+        underscore_attrs_are_private = True
         validate_all = True
         validate_assignment = True
 
@@ -243,18 +245,14 @@ class ESMCatalogModel(pydantic.BaseModel):
         return {column for column, check in has_iterables.items() if check}
 
     @property
-    def has_multiple_variable_assets(self) -> bool:
-        """Return True if the catalog has multiple variable assets."""
-        return self.aggregation_control.variable_column_name in self.columns_with_iterables
-
-    @property
     def df(self) -> pd.DataFrame:
         """Return the dataframe."""
         return self._df
 
-    @df.setter
-    def df(self, value: pd.DataFrame) -> None:
-        self._df = value
+    @property
+    def has_multiple_variable_assets(self) -> bool:
+        """Return True if the catalog has multiple variable assets."""
+        return self.aggregation_control.variable_column_name in self.columns_with_iterables
 
     def _cast_agg_columns_with_iterables(self) -> None:
         """Cast all agg_columns with iterables to tuple values so as
