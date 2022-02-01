@@ -5,6 +5,17 @@ import numpy as np
 import pandas as pd
 
 
+def unpack_iterable_column(df: pd.DataFrame, column: str) -> pd.DataFrame:
+    """Return a DataFrame where elements of a given iterable column have been unpacked into multiple lines."""
+    rows = []
+    for _, row in df.iterrows():
+        for val in row[column]:
+            new_row = row.copy()
+            new_row[column] = val
+            rows.append(new_row)
+    return pd.DataFrame(rows)
+
+
 def is_pattern(value):
     if isinstance(value, typing.Pattern):
         return True
@@ -50,6 +61,7 @@ def search_apply_require_all_on(
     df: pd.DataFrame,
     query: typing.Dict[str, typing.Any],
     require_all_on: typing.Union[str, typing.List[typing.Any]],
+    columns_with_iterables: set = None,
 ) -> pd.DataFrame:
     _query = query.copy()
     # Make sure to remove columns that were already
@@ -66,12 +78,17 @@ def search_apply_require_all_on(
     condition = set(itertools.product(*values))
     query_results = []
     for _, group in grouped:
-        index = group.set_index(keys).index
+        group_for_index = group
+        # Unpack iterables to get testable index.
+        for column in (columns_with_iterables or set()).intersection(keys):
+            group_for_index = unpack_iterable_column(group_for_index, column)
+
+        index = group_for_index.set_index(keys).index
         if not isinstance(index, pd.MultiIndex):
             index = {(element,) for element in index.to_list()}
         else:
             index = set(index.to_list())
-        if index == condition:
+        if condition.issubset(index):  # with iterables we could have more then requested
             query_results.append(group)
 
     if query_results:
