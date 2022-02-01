@@ -94,7 +94,7 @@ class ESMCatalogModel(pydantic.BaseModel):
     catalog_file: pydantic.StrictStr = None
     description: pydantic.StrictStr = None
     title: pydantic.StrictStr = None
-    last_updated: typing.Optional[typing.Union[datetime.datetime, datetime.date]] = (None,)
+    last_updated: typing.Optional[typing.Union[datetime.datetime, datetime.date]] = None
     _df: typing.Optional[pd.DataFrame] = pydantic.PrivateAttr()
 
     class Config:
