@@ -56,7 +56,7 @@ def open_catalogue(
     * ``""``:
     Parameters
    """
-       try:
+    try:
         import pooch
     except ImportError as e:
         raise ImportError(
