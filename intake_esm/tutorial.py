@@ -8,10 +8,9 @@ import pathlib
 
 import numpy as np
 
-
-_default_cache_dir_name = "intake_esm_tutorial_data"
-base_url = "https://github.com/ncar/intake-esm"
-version = "main"
+_default_cache_dir_name = 'intake_esm_tutorial_data'
+base_url = 'https://github.com/ncar/intake-esm'
+version = 'main'
 
 
 def _construct_cache_dir(path):
@@ -24,18 +23,21 @@ def _construct_cache_dir(path):
 
     return path
 
+
 sample_collections = {
-    cesm1_lens_netcdf: "sample-collections/cesm1-lens-netcdf.csv/cesm1-lens-netcdf.json",
-    cmip5_netcdf: "sample-collections/cmip5-netcdf.csv/cmip5-netcdf.json",
-    cmip6_netcdf: "sample-collections/cmip6-netcdf-test.csv/cmip6-netcdf.json",
-    multi-variable-catalog: "sample-collections/multi-variable-catalog.csv/multi-variable-catalog.json"
+    cesm1_lens_netcdf: 'sample-collections/cesm1-lens-netcdf.csv/cesm1-lens-netcdf.json',
+    cmip5_netcdf: 'sample-collections/cmip5-netcdf.csv/cmip5-netcdf.json',
+    cmip6_netcdf: 'sample-collections/cmip6-netcdf-test.csv/cmip6-netcdf.json',
+    multi
+    - variable
+    - catalog: 'sample-collections/multi-variable-catalog.csv/multi-variable-catalog.json',
 }
 
 sample_data = {
-    cesm_le: "sample-data/cesm-le/*.nc",
-    cmip5: "sample-data/cmip/cmip5/*",
-    CMIP6: "sample-data/cmip/CMIP6/*",
-    cesm_multi_variables: "sample-data/cesm-multi-variables/*.nc"
+    cesm_le: 'sample-data/cesm-le/*.nc',
+    cmip5: 'sample-data/cmip/cmip5/*',
+    CMIP6: 'sample-data/cmip/CMIP6/*',
+    cesm_multi_variables: 'sample-data/cesm-multi-variables/*.nc',
 }
 
 # idea borrowed from Seaborn and Xarray
@@ -76,12 +78,12 @@ def open_dataset(
         import pooch
     except ImportError as e:
         raise ImportError(
-            "tutorial.open_dataset depends on pooch to download and manage datasets."
-            " To proceed please install pooch."
+            'tutorial.open_dataset depends on pooch to download and manage datasets.'
+            ' To proceed please install pooch.'
         ) from e
 
     logger = pooch.get_logger()
-    logger.setLevel("WARNING")
+    logger.setLevel('WARNING')
 
     cache_dir = _construct_cache_dir(cache_dir)
     if name in external_urls:
@@ -90,15 +92,15 @@ def open_dataset(
         path = pathlib.Path(name)
         if not path.suffix:
             # process the name
-            default_extension = ".nc"
+            default_extension = '.nc'
             if engine is None:
                 _check_netcdf_engine_installed(name)
             path = path.with_suffix(default_extension)
-        elif path.suffix == ".grib":
+        elif path.suffix == '.grib':
             if engine is None:
-                engine = "cfgrib"
+                engine = 'cfgrib'
 
-        url = f"{base_url}/raw/{version}/{path.name}"
+        url = f'{base_url}/raw/{version}/{path.name}'
 
     # retrieve the file
     filepath = pooch.retrieve(url=url, known_hash=None, path=cache_dir)
@@ -146,17 +148,17 @@ def open_rasterio(
         import pooch
     except ImportError as e:
         raise ImportError(
-            "tutorial.open_rasterio depends on pooch to download and manage datasets."
-            " To proceed please install pooch."
+            'tutorial.open_rasterio depends on pooch to download and manage datasets.'
+            ' To proceed please install pooch.'
         ) from e
 
     logger = pooch.get_logger()
-    logger.setLevel("WARNING")
+    logger.setLevel('WARNING')
 
     cache_dir = _construct_cache_dir(cache_dir)
     url = external_rasterio_urls.get(name)
     if url is None:
-        raise ValueError(f"unknown rasterio dataset: {name}")
+        raise ValueError(f'unknown rasterio dataset: {name}')
 
     # retrieve the file
     filepath = pooch.retrieve(url=url, known_hash=None, path=cache_dir)
@@ -191,25 +193,25 @@ def scatter_example_dataset(*, seed=None) -> Dataset:
     rng = np.random.default_rng(seed)
     A = DataArray(
         np.zeros([3, 11, 4, 4]),
-        dims=["x", "y", "z", "w"],
+        dims=['x', 'y', 'z', 'w'],
         coords={
-            "x": np.arange(3),
-            "y": np.linspace(0, 1, 11),
-            "z": np.arange(4),
-            "w": 0.1 * rng.standard_normal(4),
+            'x': np.arange(3),
+            'y': np.linspace(0, 1, 11),
+            'z': np.arange(4),
+            'w': 0.1 * rng.standard_normal(4),
         },
     )
     B = 0.1 * A.x**2 + A.y**2.5 + 0.1 * A.z * A.w
     A = -0.1 * A.x + A.y / (5 + A.z) + A.w
-    ds = Dataset({"A": A, "B": B})
-    ds["w"] = ["one", "two", "three", "five"]
+    ds = Dataset({'A': A, 'B': B})
+    ds['w'] = ['one', 'two', 'three', 'five']
 
-    ds.x.attrs["units"] = "xunits"
-    ds.y.attrs["units"] = "yunits"
-    ds.z.attrs["units"] = "zunits"
-    ds.w.attrs["units"] = "wunits"
+    ds.x.attrs['units'] = 'xunits'
+    ds.y.attrs['units'] = 'yunits'
+    ds.z.attrs['units'] = 'zunits'
+    ds.w.attrs['units'] = 'wunits'
 
-    ds.A.attrs["units"] = "Aunits"
-    ds.B.attrs["units"] = "Bunits"
+    ds.A.attrs['units'] = 'Aunits'
+    ds.B.attrs['units'] = 'Bunits'
 
     return ds
