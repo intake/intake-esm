@@ -4,7 +4,16 @@ import typing
 import numpy as np
 import pandas as pd
 
-from .utils import unpack_iterable_column
+
+def unpack_iterable_column(df: pd.DataFrame, column: str) -> pd.DataFrame:
+    """Return a DataFrame where elements of a given iterable column have been unpacked into multiple lines."""
+    rows = []
+    for _, row in df.iterrows():
+        for val in row[column]:
+            new_row = row.copy()
+            new_row[column] = val
+            rows.append(new_row)
+    return pd.DataFrame(rows)
 
 
 def is_pattern(value):

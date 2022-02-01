@@ -2,22 +2,9 @@
 import importlib
 import sys
 
-import pandas as pd
-
 INTAKE_ESM_ATTRS_PREFIX = 'intake_esm_attrs'
 INTAKE_ESM_DATASET_KEY = 'intake_esm_dataset_key'
 INTAKE_ESM_VARS_KEY = 'intake_esm_vars'
-
-
-def unpack_iterable_column(df: pd.DataFrame, column: str) -> pd.DataFrame:
-    """Return a DataFrame where elements of a given iterable column have been unpacked into multiple lines."""
-    rows = []
-    for i, row in df.iterrows():
-        for val in row[column]:
-            new_row = row.copy()
-            new_row[column] = val
-            rows.append(new_row)
-    return pd.DataFrame(rows)
 
 
 def _allnan_or_nonan(df, column: str) -> bool:
