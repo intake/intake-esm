@@ -7,8 +7,8 @@ from pkg_resources import DistributionNotFound, get_distribution
 
 from .core import esm_datastore
 from .derived import DerivedVariableRegistry, default_registry
+from .tutorial import sample_collections, sample_data
 from .utils import show_versions
-from .tutorial import sample_data, sample_collections
 
 try:
     __version__ = get_distribution(__name__).version
