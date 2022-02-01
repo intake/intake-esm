@@ -109,64 +109,6 @@ def open_dataset(
     return ds
 
 
-def open_rasterio(
-    name,
-    engine=None,
-    cache=True,
-    cache_dir=None,
-    **kws,
-):
-    """
-    Open a rasterio dataset from the online repository (requires internet).
-    If a local copy is found then always use that to avoid network traffic.
-    Available datasets:
-    * ``"RGB.byte"``: TIFF file derived from USGS Landsat 7 ETM imagery.
-    * ``"shade"``: TIFF file derived from from USGS SRTM 90 data
-    ``RGB.byte`` and ``shade`` are downloaded from the ``rasterio`` repository [1]_.
-    Parameters
-    ----------
-    name : str
-        Name of the file containing the dataset.
-        e.g. 'RGB.byte'
-    cache_dir : path-like, optional
-        The directory in which to search for and write cached data.
-    cache : bool, optional
-        If True, then cache data locally for use on subsequent calls
-    **kws : dict, optional
-        Passed to xarray.open_rasterio
-    See Also
-    --------
-    xarray.open_rasterio
-    References
-    ----------
-    .. [1] https://github.com/mapbox/rasterio
-    """
-    try:
-        import pooch
-    except ImportError as e:
-        raise ImportError(
-            'tutorial.open_rasterio depends on pooch to download and manage datasets.'
-            ' To proceed please install pooch.'
-        ) from e
-
-    logger = pooch.get_logger()
-    logger.setLevel('WARNING')
-
-    cache_dir = _construct_cache_dir(cache_dir)
-    url = external_rasterio_urls.get(name)
-    if url is None:
-        raise ValueError(f'unknown rasterio dataset: {name}')
-
-    # retrieve the file
-    filepath = pooch.retrieve(url=url, known_hash=None, path=cache_dir)
-    arr = _open_rasterio(filepath, **kws)
-    if not cache:
-        arr = arr.load()
-        pathlib.Path(filepath).unlink()
-
-    return arr
-
-
 def load_dataset(*args, **kwargs):
     """
     Open, load into memory, and close a dataset from the online repository
@@ -178,6 +120,22 @@ def load_dataset(*args, **kwargs):
     with open_dataset(*args, **kwargs) as ds:
         return ds.load()
 
+
+def open_catalogue(
+    name,
+    cache=True,
+    cache_dir=None,
+    *,
+    engine=None,
+    **kws,
+):
+    """
+    Open a cataloguefrom the online repository (requires internet).
+    If a local copy is found then always use that to avoid network traffic.
+    Available datasets:
+    * ``""``: 
+    Parameters
+   """
 
 def load_catalogue(*args, **kwargs):
     """
