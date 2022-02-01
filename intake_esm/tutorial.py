@@ -23,18 +23,21 @@ def _construct_cache_dir(path):
 
     return path
 
+
 sample_catalogues = {
-    cesm1_lens_netcdf: "tests/sample-collections/cesm1-lens-netcdf.csv/cesm1-lens-netcdf.json",
-    cmip5_netcdf: "tests/sample-collections/cmip5-netcdf.csv/cmip5-netcdf.json",
-    cmip6_netcdf: "tests/sample-collections/cmip6-netcdf-test.csv/cmip6-netcdf.json",
-    multi-variable-catalog: "tests/sample-collections/multi-variable-catalog.csv/multi-variable-catalog.json"
+    cesm1_lens_netcdf: 'tests/sample-collections/cesm1-lens-netcdf.csv/cesm1-lens-netcdf.json',
+    cmip5_netcdf: 'tests/sample-collections/cmip5-netcdf.csv/cmip5-netcdf.json',
+    cmip6_netcdf: 'tests/sample-collections/cmip6-netcdf-test.csv/cmip6-netcdf.json',
+    multi
+    - variable
+    - catalog: 'tests/sample-collections/multi-variable-catalog.csv/multi-variable-catalog.json',
 }
 
 sample_data = {
-    cesm_le: "tests/sample-data/cesm-le/*.nc",
-    cmip5: "tests/sample-data/cmip/cmip5/*",
-    cmip6: "tests/sample-data/cmip/CMIP6/*",
-    cesm_multi_variables: "tests/sample-data/cesm-multi-variables/*.nc"
+    cesm_le: 'tests/sample-data/cesm-le/*.nc',
+    cmip5: 'tests/sample-data/cmip/cmip5/*',
+    cmip6: 'tests/sample-data/cmip/CMIP6/*',
+    cesm_multi_variables: 'tests/sample-data/cesm-multi-variables/*.nc',
 }
 
 # idea borrowed from Seaborn and Xarray
