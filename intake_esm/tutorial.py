@@ -23,7 +23,6 @@ def _construct_cache_dir(path):
 
     return path
 
-<<<<<<< HEAD
 sample_catalogues = {
     cesm1_lens_netcdf: "tests/sample-collections/cesm1-lens-netcdf.csv/cesm1-lens-netcdf.json",
     cmip5_netcdf: "tests/sample-collections/cmip5-netcdf.csv/cmip5-netcdf.json",
@@ -36,23 +35,6 @@ sample_data = {
     cmip5: "tests/sample-data/cmip/cmip5/*",
     cmip6: "tests/sample-data/cmip/CMIP6/*",
     cesm_multi_variables: "tests/sample-data/cesm-multi-variables/*.nc"
-=======
-
-sample_collections = {
-    cesm1_lens_netcdf: 'sample-collections/cesm1-lens-netcdf.csv/cesm1-lens-netcdf.json',
-    cmip5_netcdf: 'sample-collections/cmip5-netcdf.csv/cmip5-netcdf.json',
-    cmip6_netcdf: 'sample-collections/cmip6-netcdf-test.csv/cmip6-netcdf.json',
-    multi
-    - variable
-    - catalog: 'sample-collections/multi-variable-catalog.csv/multi-variable-catalog.json',
-}
-
-sample_data = {
-    cesm_le: 'sample-data/cesm-le/*.nc',
-    cmip5: 'sample-data/cmip/cmip5/*',
-    CMIP6: 'sample-data/cmip/CMIP6/*',
-    cesm_multi_variables: 'sample-data/cesm-multi-variables/*.nc',
->>>>>>> dbc336623882380abe64b5ffd881662a311c70a6
 }
 
 # idea borrowed from Seaborn and Xarray
