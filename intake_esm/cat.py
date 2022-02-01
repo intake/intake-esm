@@ -93,7 +93,7 @@ class ESMCatalogModel(pydantic.BaseModel):
     catalog_file: pydantic.StrictStr = None
     description: pydantic.StrictStr = None
     title: pydantic.StrictStr = None
-    _df: typing.Optional[pd.DataFrame] = None
+    _df: typing.Optional[pd.DataFrame] = pydantic.PrivateAttr()
 
     class Config:
         arbitrary_types_allowed = True
