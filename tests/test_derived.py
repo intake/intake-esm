@@ -128,3 +128,17 @@ def test_registry_derive_variables_error():
     )
     assert {'air', 'FOO'} == dsets['test'].data_vars.keys()
     assert ds.air.equals(dsets['test'].FOO)
+
+    @dvr.register(variable='FOO', query={'variable': ['air']}, prefer_derived=True)
+    def funce(ds):
+        ds['FOO'] = ds.air * 2
+        return ds
+
+    # No error, FOO is recomputed
+    dsets = dvr.update_datasets(
+        datasets={'test': ds.assign(FOO=ds.air).copy()},
+        variable_key_name='variable',
+        skip_on_error=False,
+    )
+    assert {'air', 'FOO'} == dsets['test'].data_vars.keys()
+    assert ds.air.equals(dsets['test'].FOO / 2)
