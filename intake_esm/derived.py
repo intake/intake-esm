@@ -15,6 +15,7 @@ class DerivedVariable(pydantic.BaseModel):
     func: typing.Callable
     variable: pydantic.StrictStr
     query: typing.Dict[pydantic.StrictStr, typing.Union[typing.Any, typing.List[typing.Any]]]
+    prefer_derived: bool
 
     @pydantic.validator('query')
     def validate_query(cls, values):
@@ -92,6 +93,7 @@ class DerivedVariableRegistry:
         *,
         variable: str,
         query: typing.Dict[pydantic.StrictStr, typing.Union[typing.Any, typing.List[typing.Any]]],
+        prefer_derived: bool = False,
     ) -> typing.Callable:
         """Register a derived variable
 
@@ -103,13 +105,18 @@ class DerivedVariableRegistry:
             The name of the variable to derive.
         query : typing.Dict[str, typing.Union[typing.Any, typing.List[typing.Any]]]
             The query to use to retrieve dependent variables required to derive `variable`.
+        prefer_derived: bool, optional (default=False)
+            Specify whether to compute this variable on datasets that already contain a variable
+            of the same name. Default (False) is to leave the existing variable.
 
         Returns
         -------
         typing.Callable
             The function that was registered.
         """
-        self._registry[variable] = DerivedVariable(func=func, variable=variable, query=query)
+        self._registry[variable] = DerivedVariable(
+            func=func, variable=variable, query=query, prefer_derived=prefer_derived
+        )
         return func
 
     def __contains__(self, item: str) -> bool:
@@ -182,8 +189,11 @@ class DerivedVariableRegistry:
 
         for dset_key, dataset in datasets.items():
             for _, derived_variable in self.items():
-                if set(dataset.variables).intersection(
+                if set(dataset.variables).issuperset(
                     derived_variable.dependent_variables(variable_key_name)
+                ) and (
+                    (derived_variable.variable not in dataset.variables)
+                    or derived_variable.prefer_derived
                 ):
                     try:
                         # Assumes all dependent variables are in the same dataset
