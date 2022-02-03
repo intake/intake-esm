@@ -49,7 +49,7 @@ def open_catalogue(
     **kws,
 ):
     """
-    Open a cataloguefrom the online repository (requires internet).
+    Open a catalogue from the online repository (requires internet).
     If a local copy is found then always use that to avoid network traffic.
     Available catalogues:
     * ``""``:
