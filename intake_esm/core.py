@@ -330,10 +330,11 @@ class esm_datastore(Catalog):
         # This requires a bit of a hack i.e. the user has to specify the variable in the query
         derivedcat_results = []
         variables = query.pop(self.esmcat.aggregation_control.variable_column_name, None)
+        dependents = []
+        derived_cat_subset = {}
         if variables:
             if isinstance(variables, str):
                 variables = [variables]
-            dependents = []
             for key, value in self.derivedcat.items():
                 if key in variables:
                     res = self.esmcat.search(
@@ -346,8 +347,7 @@ class esm_datastore(Catalog):
                                 self.esmcat.aggregation_control.variable_column_name
                             )
                         )
-            # Update variable list with dependent variables.
-            variables = list(set(variables).union(dependents))
+                        derived_cat_subset[key] = value
 
         if derivedcat_results:
             # Merge results from the main and the derived catalogs
@@ -359,7 +359,7 @@ class esm_datastore(Catalog):
 
         cat = self.__class__({'esmcat': self.esmcat.dict(), 'df': esmcat_results})
         if self.esmcat.has_multiple_variable_assets:
-            requested_variables = variables or []
+            requested_variables = list(set(variables or []).union(dependents))
         else:
             requested_variables = []
         cat._requested_variables = requested_variables
@@ -367,8 +367,8 @@ class esm_datastore(Catalog):
         # step 3: Subset the derived catalog,
         # but only if variables were looked up, otherwise transfer the whole catalog.
         if variables is not None:
-            derivat_cat_subset = self.derivedcat.search(variable=variables)
-            cat.derivedcat = derivat_cat_subset
+            cat.derivedcat = DerivedVariableRegistry()
+            cat.derivedcat._registry.update(derived_cat_subset)
         else:
             cat.derivedcat = self.derivedcat
         return cat
