@@ -67,12 +67,8 @@ def open_catalogue(
     logger.setLevel('WARNING')
 
     cache_dir = _construct_cache_dir(cache_dir)
-    if name in sample_catalogues:
-        url = sample_catalogues[name]
-    else:
-        path = pathlib.Path(name)
-
-        url = f'{base_url}/raw/{version}/{path.name}'
+    path = sample_catalogues[name]
+    url = f'{base_url}/raw/{version}/{path}'
 
     # retrieve the file
     filepath = pooch.retrieve(url=url, known_hash=None, path=cache_dir)

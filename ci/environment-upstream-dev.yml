@@ -29,6 +29,7 @@ dependencies:
   - toolz
   - xgcm
   - zarr>=2.5
+  - pooch
   - pip:
       - git+https://github.com/intake/intake.git
       - git+https://github.com/fsspec/gcsfs.git
