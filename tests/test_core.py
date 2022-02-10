@@ -22,6 +22,11 @@ def funcs(ds):
     return ds + 1
 
 
+@registry.register(variable='FLNS', query={'variable': ['FOO', 'FLUT']})
+def func2(ds):
+    return ds - 1
+
+
 registry_multivar = intake_esm.DerivedVariableRegistry()
 
 
@@ -138,7 +143,7 @@ def test_catalog_with_registry_search():
     assert len(cat) == 56
     assert len(new_cat) == 11
 
-    assert len(cat.derivedcat) == 2
+    assert len(cat.derivedcat) == 3
     assert len(new_cat.derivedcat) == 1
 
     new_cat = cat.search(variable='FOO', frequency='daily')
@@ -146,7 +151,7 @@ def test_catalog_with_registry_search():
     assert len(new_cat.derivedcat) == 1
 
     new_cat = cat.search(frequency='daily')
-    assert len(new_cat.derivedcat) == 2
+    assert len(new_cat.derivedcat) == 3
 
 
 @pytest.mark.parametrize('key', ['ocn.20C.pop.h', 'ocn.CTRL.pop.h', 'ocn.RCP85.pop.h'])
