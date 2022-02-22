@@ -73,7 +73,9 @@ def _open_dataset(
             requested_variables = [requested_variables]
         variable_intersection = set(requested_variables).intersection(set(varname))
         variables = [variable for variable in variable_intersection if variable in ds.data_vars]
-        variables.extend(set([ds[v].attrs["grid_mapping"] for v in variables if "grid_mapping" in ds[v].attrs]))
+        variables.extend(
+            {ds[v].attrs['grid_mapping'] for v in variables if 'grid_mapping' in ds[v].attrs}
+        )
         ds = ds[variables]
         ds.attrs[INTAKE_ESM_VARS_KEY] = variables
     else:
