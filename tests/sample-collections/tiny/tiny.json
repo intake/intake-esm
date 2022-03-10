@@ -1,0 +1,27 @@
+#sources:
+#  tiny:
+#    description: tiny cat for testing
+#    driver: csv
+#    args:
+#      urlpath: https://github.com/jukent/intake-esm/blob/tuorialmodule/tests/sample_data/tiny.nc #https://github.com/intake/intake-esm/tree/main/tests/sample_data/tiny.nc
+
+{
+  "esmcat_version": "0.1.0",
+  "id": "tiny",
+  "description": "This is a tiny ESM collection.",
+  "catalog_file": "tiny.csv",
+  "attributes": [
+    {
+      "column_name": "activity_id",
+      "vocabulary": "https://raw.githubusercontent.com/WCRP-CMIP/CMIP6_CVs/master/CMIP6_activity_id.json"
+    },
+    {
+      "column_name": "source_id",
+      "vocabulary": "https://raw.githubusercontent.com/WCRP-CMIP/CMIP6_CVs/master/CMIP6_source_id.json"
+    }
+  ],
+  "assets": {
+    "column_name": "path",
+    "format": "zarr"
+  }
+}

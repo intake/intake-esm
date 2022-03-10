@@ -42,7 +42,7 @@ sample_data = {
 
 
 # idea borrowed from Seaborn and Xarray
-def open_catalogue(
+def open_catalog(
     name,
     cache=True,
     cache_dir=None,
@@ -82,12 +82,12 @@ def open_catalogue(
     return cat
 
 
-def load_catalogue(*args, **kwargs):
+def load_catalog(*args, **kwargs):
     """
     Open, load into memory, and close a catalogue from the online repository
     (requires internet)
     """
-    with open_catalogue(*args, **kwargs) as cat:
+    with open_catalog(*args, **kwargs) as cat:
         return cat.load()
 
 
