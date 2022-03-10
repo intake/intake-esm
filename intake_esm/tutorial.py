@@ -81,4 +81,3 @@ def load_catalog(*args, **kwargs):
     """
     with open_catalog(*args, **kwargs) as cat:
         return cat.load()
-
