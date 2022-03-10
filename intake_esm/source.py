@@ -209,8 +209,7 @@ class ESMDataSource(DataSource):
                     record[self.path_column_name],
                     record[self.variable_column_name],
                     xarray_open_kwargs=_get_xarray_open_kwargs(
-                        record['_data_format_'], self.xarray_open_kwargs,
-                        self.storage_options
+                        record['_data_format_'], self.xarray_open_kwargs, self.storage_options
                     ),
                     preprocess=self.preprocess,
                     expand_dims={
