@@ -1,0 +1,385 @@
+{
+  "esmcat_version": "0.1.0",
+  "attributes": [
+    {
+      "column_name": "component",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "frequency",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "experiment",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "forcing_variant",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "variable",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "long_name",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "vertical_levels",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "start_time",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "end_time",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "units",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "spatial_domain",
+      "vocabulary": ""
+    }
+  ],
+  "assets": {
+    "column_name": "path",
+    "format": "zarr",
+    "format_column_name": null
+  },
+  "aggregation_control": {
+    "variable_column_name": "variable",
+    "groupby_attrs": [
+      "component",
+      "experiment",
+      "frequency",
+      "forcing_variant"
+    ],
+    "aggregations": [
+      {
+        "type": "union",
+        "attribute_name": "variable",
+        "options": {
+          "compat": "override"
+        }
+      }
+    ]
+  },
+  "id": "CESM2-LENS",
+  "description": "This is an ESM collection for CESM2 Large Ensemble Zarr dataset publicly available on Amazon S3 (us-west-2 region)",
+  "title": null,
+  "catalog_dict": [
+    {
+      "variable": "FLNS",
+      "long_name": "net longwave flux at surface",
+      "component": "atm",
+      "experiment": "historical",
+      "forcing_variant": "cmip6",
+      "frequency": "daily",
+      "vertical_levels": 1.0,
+      "spatial_domain": "global",
+      "units": "W/m2",
+      "start_time": "1850-01-01 12:00:00",
+      "end_time": "2014-12-31 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/daily/cesm2LE-historical-cmip6-FLNS.zarr"
+    },
+    {
+      "variable": "PRECC",
+      "long_name": "convective precipitation rate (liq + ice)",
+      "component": "atm",
+      "experiment": "historical",
+      "forcing_variant": "cmip6",
+      "frequency": "daily",
+      "vertical_levels": 1.0,
+      "spatial_domain": "global",
+      "units": "m/s",
+      "start_time": "1850-01-01 12:00:00",
+      "end_time": "2014-12-31 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/daily/cesm2LE-historical-cmip6-PRECC.zarr"
+    },
+    {
+      "variable": "PS",
+      "long_name": "surface pressure",
+      "component": "atm",
+      "experiment": "historical",
+      "forcing_variant": "cmip6",
+      "frequency": "daily",
+      "vertical_levels": 1.0,
+      "spatial_domain": "global",
+      "units": "Pa",
+      "start_time": "1850-01-01 12:00:00",
+      "end_time": "2014-12-31 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/daily/cesm2LE-historical-cmip6-PS.zarr"
+    },
+    {
+      "variable": "U",
+      "long_name": "zonal wind",
+      "component": "atm",
+      "experiment": "historical",
+      "forcing_variant": "cmip6",
+      "frequency": "daily",
+      "vertical_levels": 32.0,
+      "spatial_domain": "global",
+      "units": "m/s",
+      "start_time": "1850-01-01 12:00:00",
+      "end_time": "2014-12-31 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/daily/cesm2LE-historical-cmip6-U.zarr"
+    },
+    {
+      "variable": "V",
+      "long_name": "meridional wind",
+      "component": "atm",
+      "experiment": "historical",
+      "forcing_variant": "cmip6",
+      "frequency": "daily",
+      "vertical_levels": 32.0,
+      "spatial_domain": "global",
+      "units": "m/s",
+      "start_time": "1850-01-01 12:00:00",
+      "end_time": "2014-12-31 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/daily/cesm2LE-historical-cmip6-V.zarr"
+    },
+    {
+      "variable": "FLNS",
+      "long_name": "net longwave flux at surface",
+      "component": "atm",
+      "experiment": "ssp370",
+      "forcing_variant": "cmip6",
+      "frequency": "daily",
+      "vertical_levels": 1.0,
+      "spatial_domain": "global",
+      "units": "W/m2",
+      "start_time": "2015-01-01 12:00:00",
+      "end_time": "2100-12-31 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/daily/cesm2LE-ssp370-cmip6-FLNS.zarr"
+    },
+    {
+      "variable": "PRECC",
+      "long_name": "convective precipitation rate (liq + ice)",
+      "component": "atm",
+      "experiment": "ssp370",
+      "forcing_variant": "cmip6",
+      "frequency": "daily",
+      "vertical_levels": 1.0,
+      "spatial_domain": "global",
+      "units": "m/s",
+      "start_time": "2015-01-01 12:00:00",
+      "end_time": "2100-12-31 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/daily/cesm2LE-ssp370-cmip6-PRECC.zarr"
+    },
+    {
+      "variable": "PS",
+      "long_name": "surface pressure",
+      "component": "atm",
+      "experiment": "ssp370",
+      "forcing_variant": "cmip6",
+      "frequency": "daily",
+      "vertical_levels": 1.0,
+      "spatial_domain": "global",
+      "units": "Pa",
+      "start_time": "2015-01-01 12:00:00",
+      "end_time": "2100-12-31 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/daily/cesm2LE-ssp370-cmip6-PS.zarr"
+    },
+    {
+      "variable": "U",
+      "long_name": "zonal wind",
+      "component": "atm",
+      "experiment": "ssp370",
+      "forcing_variant": "cmip6",
+      "frequency": "daily",
+      "vertical_levels": 32.0,
+      "spatial_domain": "global",
+      "units": "m/s",
+      "start_time": "2015-01-01 12:00:00",
+      "end_time": "2100-12-31 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/daily/cesm2LE-ssp370-cmip6-U.zarr"
+    },
+    {
+      "variable": "V",
+      "long_name": "meridional wind",
+      "component": "atm",
+      "experiment": "ssp370",
+      "forcing_variant": "cmip6",
+      "frequency": "daily",
+      "vertical_levels": 32.0,
+      "spatial_domain": "global",
+      "units": "m/s",
+      "start_time": "2015-01-01 12:00:00",
+      "end_time": "2100-12-31 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/daily/cesm2LE-ssp370-cmip6-V.zarr"
+    },
+    {
+      "variable": "FLNS",
+      "long_name": "net longwave flux at surface",
+      "component": "atm",
+      "experiment": "historical",
+      "forcing_variant": "cmip6",
+      "frequency": "monthly",
+      "vertical_levels": 1.0,
+      "spatial_domain": "global",
+      "units": "W/m2",
+      "start_time": "1850-01-16 12:00:00",
+      "end_time": "2014-12-16 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/monthly/cesm2LE-historical-cmip6-FLNS.zarr"
+    },
+    {
+      "variable": "FSNTOA",
+      "long_name": "net solar flux at top of atmosphere",
+      "component": "atm",
+      "experiment": "historical",
+      "forcing_variant": "cmip6",
+      "frequency": "monthly",
+      "vertical_levels": 1.0,
+      "spatial_domain": "global",
+      "units": "W/m2",
+      "start_time": "1850-01-16 12:00:00",
+      "end_time": "2014-12-16 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/monthly/cesm2LE-historical-cmip6-FSNTOA.zarr"
+    },
+    {
+      "variable": "PRECC",
+      "long_name": "convective precipitation rate (liq + ice)",
+      "component": "atm",
+      "experiment": "historical",
+      "forcing_variant": "cmip6",
+      "frequency": "monthly",
+      "vertical_levels": 1.0,
+      "spatial_domain": "global",
+      "units": "m/s",
+      "start_time": "1850-01-16 12:00:00",
+      "end_time": "2014-12-16 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/monthly/cesm2LE-historical-cmip6-PRECC.zarr"
+    },
+    {
+      "variable": "PS",
+      "long_name": "surface pressure",
+      "component": "atm",
+      "experiment": "historical",
+      "forcing_variant": "cmip6",
+      "frequency": "monthly",
+      "vertical_levels": 1.0,
+      "spatial_domain": "global",
+      "units": "Pa",
+      "start_time": "1850-01-16 12:00:00",
+      "end_time": "2014-12-16 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/monthly/cesm2LE-historical-cmip6-PS.zarr"
+    },
+    {
+      "variable": "U",
+      "long_name": "zonal wind",
+      "component": "atm",
+      "experiment": "historical",
+      "forcing_variant": "cmip6",
+      "frequency": "monthly",
+      "vertical_levels": 32.0,
+      "spatial_domain": "global",
+      "units": "m/s",
+      "start_time": "1850-01-16 12:00:00",
+      "end_time": "2014-12-16 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/monthly/cesm2LE-historical-cmip6-U.zarr"
+    },
+    {
+      "variable": "FLNS",
+      "long_name": "net longwave flux at surface",
+      "component": "atm",
+      "experiment": "ssp370",
+      "forcing_variant": "cmip6",
+      "frequency": "monthly",
+      "vertical_levels": 1.0,
+      "spatial_domain": "global",
+      "units": "W/m2",
+      "start_time": "2015-01-16 12:00:00",
+      "end_time": "2100-12-16 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/monthly/cesm2LE-ssp370-cmip6-FLNS.zarr"
+    },
+    {
+      "variable": "FSNTOA",
+      "long_name": "net solar flux at top of atmosphere",
+      "component": "atm",
+      "experiment": "ssp370",
+      "forcing_variant": "cmip6",
+      "frequency": "monthly",
+      "vertical_levels": 1.0,
+      "spatial_domain": "global",
+      "units": "W/m2",
+      "start_time": "2015-01-16 12:00:00",
+      "end_time": "2100-12-16 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/monthly/cesm2LE-ssp370-cmip6-FSNTOA.zarr"
+    },
+    {
+      "variable": "PRECC",
+      "long_name": "convective precipitation rate (liq + ice)",
+      "component": "atm",
+      "experiment": "ssp370",
+      "forcing_variant": "cmip6",
+      "frequency": "monthly",
+      "vertical_levels": 1.0,
+      "spatial_domain": "global",
+      "units": "m/s",
+      "start_time": "2015-01-16 12:00:00",
+      "end_time": "2100-12-16 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/monthly/cesm2LE-ssp370-cmip6-PRECC.zarr"
+    },
+    {
+      "variable": "PS",
+      "long_name": "surface pressure",
+      "component": "atm",
+      "experiment": "ssp370",
+      "forcing_variant": "cmip6",
+      "frequency": "monthly",
+      "vertical_levels": 1.0,
+      "spatial_domain": "global",
+      "units": "Pa",
+      "start_time": "2015-01-16 12:00:00",
+      "end_time": "2100-12-16 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/monthly/cesm2LE-ssp370-cmip6-PS.zarr"
+    },
+    {
+      "variable": "U",
+      "long_name": "zonal wind",
+      "component": "atm",
+      "experiment": "ssp370",
+      "forcing_variant": "cmip6",
+      "frequency": "monthly",
+      "vertical_levels": 32.0,
+      "spatial_domain": "global",
+      "units": "m/s",
+      "start_time": "2015-01-16 12:00:00",
+      "end_time": "2100-12-16 12:00:00",
+      "path": "s3://ncar-cesm2-lens/atm/monthly/cesm2LE-ssp370-cmip6-U.zarr"
+    },
+    {
+      "variable": "TEMP",
+      "long_name": "potential temperature",
+      "component": "ocn",
+      "experiment": "historical",
+      "forcing_variant": "cmip6",
+      "frequency": "monthly",
+      "vertical_levels": 60.0,
+      "spatial_domain": "global_ocean",
+      "units": "degC",
+      "start_time": "1850-01-16 12:00:00",
+      "end_time": "2014-12-16 12:00:00",
+      "path": "s3://ncar-cesm2-lens/ocn/monthly/cesm2LE-historical-cmip6-TEMP.zarr"
+    },
+    {
+      "variable": "TEMP",
+      "long_name": "potential temperature",
+      "component": "ocn",
+      "experiment": "ssp370",
+      "forcing_variant": "cmip6",
+      "frequency": "monthly",
+      "vertical_levels": 60.0,
+      "spatial_domain": "global_ocean",
+      "units": "degC",
+      "start_time": "2015-01-16 12:00:00",
+      "end_time": "2100-12-16 12:00:00",
+      "path": "s3://ncar-cesm2-lens/ocn/monthly/cesm2LE-ssp370-cmip6-TEMP.zarr"
+    }
+  ]
+}
