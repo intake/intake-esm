@@ -15,7 +15,7 @@ class ESMDataSourceError(Exception):
     pass
 
 
-def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None):
+def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_options=None):
     xarray_open_kwargs = (xarray_open_kwargs or {}).copy()
     _default_open_kwargs = {
         'engine': 'zarr' if data_format == 'zarr' else 'netcdf4',
@@ -30,7 +30,7 @@ def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None):
         xarray_open_kwargs['engine'] == 'zarr'
         and 'storage_options' not in xarray_open_kwargs['backend_kwargs']
     ):
-        xarray_open_kwargs['backend_kwargs']['storage_options'] = {}
+        xarray_open_kwargs['backend_kwargs']['storage_options'] = {} or storage_options
     return xarray_open_kwargs
 
 
@@ -209,7 +209,8 @@ class ESMDataSource(DataSource):
                     record[self.path_column_name],
                     record[self.variable_column_name],
                     xarray_open_kwargs=_get_xarray_open_kwargs(
-                        record['_data_format_'], self.xarray_open_kwargs
+                        record['_data_format_'], self.xarray_open_kwargs,
+                        self.storage_options
                     ),
                     preprocess=self.preprocess,
                     expand_dims={
