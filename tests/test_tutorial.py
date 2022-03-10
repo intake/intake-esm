@@ -1,7 +1,8 @@
+import sys
+
 import intake
 import pytest
 import xarray as xr
-import sys
 
 from intake_esm import tutorial
 
@@ -19,7 +20,7 @@ class TestLoadCatalog:
     def test_download_from_github(self, tmp_path) -> None:
         cache_dir = tmp_path / tutorial._default_cache_dir_name
         cat = tutorial.open_catalog(self.testfile, cache_dir=cache_dir).load()
-        ds = cat['tiny'] # this isn't exact, might have to use col.search()
+        ds = cat['tiny']  # this isn't exact, might have to use col.search()
         tiny = xr.DataArray(range(5), name='tiny').to_dataset()
         xr.testing.assert_identical(ds, tiny)
 
