@@ -1,0 +1,6 @@
+sources:
+  tiny:
+    description: tiny cat for testing
+    driver: csv
+    args: 
+      urlpath: https://github.com/intake/intake-esm/tree/main/tests/sample_data/tiny.nc'
