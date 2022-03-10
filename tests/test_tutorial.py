@@ -31,4 +31,3 @@ class TestLoadCatalog:
     def test_pooch_import_error(self, simulate_importerror):
         with pytest.raises(ImportError):
             tutorial.open_catalog(self.testfile)
-

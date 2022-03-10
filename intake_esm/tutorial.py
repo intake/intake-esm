@@ -29,7 +29,7 @@ sample_catalogues = {
     'cmip5': 'tests/sample-collections/cmip5-netcdf.csv/cmip5-netcdf.json',
     'cmip6': 'tests/sample-collections/cmip6-netcdf-test.csv/cmip6-netcdf.json',
     'multi_variable_catalog': 'tests/sample-collections/multi-variable-catalog.csv/multi-variable-catalog.json',
-    'tiny': 'tests/sample-collections/tiny.nc'
+    'tiny': 'tests/sample-collections/tiny.nc',
 }
 
 sample_data = {
@@ -37,7 +37,7 @@ sample_data = {
     'cmip5': 'tests/sample-data/cmip/cmip5/*',
     'cmip6': 'tests/sample-data/cmip/CMIP6/*',
     'cesm_multi_variables': 'tests/sample-data/cesm-multi-variables/*.nc',
-    'tiny': 'tests/sample-data/tiny.nc'
+    'tiny': 'tests/sample-data/tiny.nc',
 }
 
 
