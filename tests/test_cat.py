@@ -55,7 +55,7 @@ def test_esmcatmodel_load(file):
 
 
 def test_esmcatmodel_from_dict():
-    cat = ESMCatalogModel.from_dict({'esmcat': sample_esmcol_data, 'df': sample_df})
+    cat = ESMCatalogModel.from_dict({'esmcat': sample_esmcat_data, 'df': sample_df})
     assert isinstance(cat, ESMCatalogModel)
     assert isinstance(cat.df, pd.DataFrame)
     assert isinstance(cat.columns_with_iterables, set)
