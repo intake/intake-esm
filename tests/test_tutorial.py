@@ -21,14 +21,14 @@ tutorial_cats = [
 
 
 @pytest.mark.parametrize('name,url', tutorial_cats)
-def test_get_url(self, name, url):
+def test_get_url(name, url):
     cat_url = intake_esm.tutorial.get_url(name)
     assert isinstance(cat_url, str)
     assert cat_url == url
 
 
 @pytest.mark.parametrize('name,url', tutorial_cats)
-def test_open_from_url(self, name, url):
+def test_open_from_url(name, url):
     cat_url = intake_esm.tutorial.get_url(name)
     cat = intake.open_esm_datastore(cat_url)
     assert isinstance(cat, intake_esm.cat.ESMCatalogModel)
