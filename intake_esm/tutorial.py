@@ -32,4 +32,6 @@ def get_url(name, tutorial_catalogs=tutorial_catalogs):
     try:
         return tutorial_catalogs[name]
     except KeyError:
-        print(f'{name} is an unknown key. Only small-catalogs in our `tutorial-catalogs` directory are supported with this method. The supported catalog key names are: "aws_cesm2_le", "aws_cmip6", "google_cmip6".')
+        print(
+            f'{name} is an unknown key. Only small-catalogs in our `tutorial-catalogs` directory are supported with this method. The supported catalog key names are: "aws_cesm2_le", "aws_cmip6", "google_cmip6".'
+        )
