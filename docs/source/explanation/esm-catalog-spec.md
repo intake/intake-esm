@@ -70,17 +70,17 @@ They should be either [URIs](https://en.wikipedia.org/wiki/Uniform_Resource_Iden
 
 ## Catalog fields
 
-| Element             | Type                                                      | Description                                                                                                                                                               |
-| ------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Element             | Type                                                      | Description                                                                                                                                                            |
+| ------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | esmcat_version      | string                                                    | **REQUIRED.** The ESM Catalog version the catalog implements.                                                                                                          |
 | id                  | string                                                    | **REQUIRED.** Identifier for the catalog.                                                                                                                              |
 | title               | string                                                    | A short descriptive one-line title for the catalog.                                                                                                                    |
 | description         | string                                                    | **REQUIRED.** Detailed multi-line description to fully explain the catalog. [CommonMark 0.28](http://commonmark.org/) syntax MAY be used for rich text representation. |
-| catalog_file        | string                                                    | **REQUIRED.** Path to a the CSV file with the catalog contents.                                                                                                           |
-| catalog_dict        | array                                                     | If specified, it is mutually exclusive with `catalog_file`. An array of dictionaries that represents the data that would otherwise be in the csv.                         |
-| attributes          | [[Attribute Object](#attribute-object)]                   | **REQUIRED.** A list of attribute columns in the data set.                                                                                                                |
-| assets              | [Assets Object](#assets-object)                           | **REQUIRED.** Description of how the assets (data files) are referenced in the CSV catalog file.                                                                          |
-| aggregation_control | [Aggregation Control Object](#aggregation-control-object) | **OPTIONAL.** Description of how to support aggregation of multiple assets into a single xarray data set.                                                                 |
+| catalog_file        | string                                                    | **REQUIRED.** Path to a the CSV file with the catalog contents.                                                                                                        |
+| catalog_dict        | array                                                     | If specified, it is mutually exclusive with `catalog_file`. An array of dictionaries that represents the data that would otherwise be in the csv.                      |
+| attributes          | [[Attribute Object](#attribute-object)]                   | **REQUIRED.** A list of attribute columns in the data set.                                                                                                             |
+| assets              | [Assets Object](#assets-object)                           | **REQUIRED.** Description of how the assets (data files) are referenced in the CSV catalog file.                                                                       |
+| aggregation_control | [Aggregation Control Object](#aggregation-control-object) | **OPTIONAL.** Description of how to support aggregation of multiple assets into a single xarray data set.                                                              |
 
 ### Attribute Object
 
