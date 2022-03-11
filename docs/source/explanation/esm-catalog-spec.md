@@ -1,12 +1,12 @@
-# ESM Collection Specification
+# ESM Catalog Specification
 
 ```{note}
-This documents mirrors the [ESM Collection Specification](https://github.com/NCAR/esm-collection-spec/blob/master/collection-spec/collection-spec.md) and is updated as the specification evolves.
+This documents mirrors the [ESM Catalog Specification](https://github.com/NCAR/esm-catalog-spec/blob/master/catalog-spec/catalog-spec.md) and is updated as the specification evolves.
 ```
 
-- [ESM Collection Specification](#esm-collection-specification)
+- [ESM Catalog Specification](#esm-catalog-specification)
   - [Overview](#overview)
-    - [Collection Specification](#collection-specification)
+    - [Catalog Specification](#catalog-specification)
     - [Catalog](#catalog)
     - [Assets (Data Files)](#assets-data-files)
   - [Catalog fields](#catalog-fields)
@@ -17,22 +17,22 @@ This documents mirrors the [ESM Collection Specification](https://github.com/NCA
 
 ## Overview
 
-This document explains the structure and content of an ESM Collection.
-A collection provides metadata about the catalog, telling us what we expect to find inside and how to open it.
-The collection is described is a single json file, inspired by the STAC spec.
+This document explains the structure and content of an ESM Catalog.
+A catalog provides metadata about the catalog, telling us what we expect to find inside and how to open it.
+The catalog is described is a single json file, inspired by the STAC spec.
 
-The ESM Collection specification consists of three parts:
+The ESM Catalog specification consists of three parts:
 
-### Collection Specification
+### Catalog Specification
 
-The _collection_ specification provides metadata about the catalog, telling us what we expect to find inside and how to open it.
+The _catalog_ specification provides metadata about the catalog, telling us what we expect to find inside and how to open it.
 The descriptor is a single json file, inspired by the [STAC spec](https://github.com/radiantearth/stac-spec).
 
 ```json
 {
   "esmcat_version": "0.1.0",
   "id": "sample",
-  "description": "This is a very basic sample ESM collection.",
+  "description": "This is a very basic sample ESM catalog.",
   "catalog_file": "sample_catalog.csv",
   "attributes": [
     {
@@ -72,10 +72,10 @@ They should be either [URIs](https://en.wikipedia.org/wiki/Uniform_Resource_Iden
 
 | Element             | Type                                                      | Description                                                                                                                                                               |
 | ------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| esmcat_version      | string                                                    | **REQUIRED.** The ESM Catalog version the collection implements.                                                                                                          |
-| id                  | string                                                    | **REQUIRED.** Identifier for the collection.                                                                                                                              |
-| title               | string                                                    | A short descriptive one-line title for the collection.                                                                                                                    |
-| description         | string                                                    | **REQUIRED.** Detailed multi-line description to fully explain the collection. [CommonMark 0.28](http://commonmark.org/) syntax MAY be used for rich text representation. |
+| esmcat_version      | string                                                    | **REQUIRED.** The ESM Catalog version the catalog implements.                                                                                                          |
+| id                  | string                                                    | **REQUIRED.** Identifier for the catalog.                                                                                                                              |
+| title               | string                                                    | A short descriptive one-line title for the catalog.                                                                                                                    |
+| description         | string                                                    | **REQUIRED.** Detailed multi-line description to fully explain the catalog. [CommonMark 0.28](http://commonmark.org/) syntax MAY be used for rich text representation. |
 | catalog_file        | string                                                    | **REQUIRED.** Path to a the CSV file with the catalog contents.                                                                                                           |
 | catalog_dict        | array                                                     | If specified, it is mutually exclusive with `catalog_file`. An array of dictionaries that represents the data that would otherwise be in the csv.                         |
 | attributes          | [[Attribute Object](#attribute-object)]                   | **REQUIRED.** A list of attribute columns in the data set.                                                                                                                |

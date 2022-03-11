@@ -1,8 +1,8 @@
 {
   "esmcat_version": "0.1.0",
-  "id": "pangeo-cmip6",
-  "description": "This is an ESM collection for CMIP6 Zarr data residing in Pangeo's Google Storage.",
-  "catalog_file": "gs://cmip6/cmip6-zarr-consolidated-stores.csv",
+  "id": "sample-cmip6-mixed",
+  "description": "This is a sample ESM catalog for CMIP6 data in netcdf AND zarr format, local and remote.",
+  "catalog_file": "cmip6-bcc-mixed-formats.csv",
   "attributes": [
     {
       "column_name": "activity_id",
@@ -29,20 +29,13 @@
     {
       "column_name": "grid_label",
       "vocabulary": "https://raw.githubusercontent.com/WCRP-CMIP/CMIP6_CVs/master/CMIP6_grid_label.json"
-    },
-    {
-      "column_name": "version",
-      "vocabulary": ""
-    },
-    {
-      "column_name": "dcpp_start_year",
-      "vocabulary": ""
     }
   ],
   "assets": {
-    "column_name": "zstore",
-    "format": "zarr"
+    "column_name": "path",
+    "format_column_name": "format"
   },
+
   "aggregation_control": {
     "variable_column_name": "variable_id",
     "groupby_attrs": [
@@ -60,9 +53,9 @@
         "options": { "coords": "minimal", "compat": "override" }
       },
       {
-        "type": "join_new",
-        "attribute_name": "dcpp_init_year",
-        "options": { "coords": "minimal", "compat": "override" }
+        "type": "join_existing",
+        "attribute_name": "time_range",
+        "options": { "dim": "time" }
       },
       {
         "type": "union",

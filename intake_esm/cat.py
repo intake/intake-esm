@@ -188,7 +188,7 @@ class ESMCatalogModel(pydantic.BaseModel):
             json_kwargs.update(json_dump_kwargs or {})
             json.dump(data, outfile, **json_kwargs)
 
-        print(f'Successfully wrote ESM collection json file to: {json_file_name}')
+        print(f'Successfully wrote ESM catalog json file to: {json_file_name}')
 
     @classmethod
     def load(
