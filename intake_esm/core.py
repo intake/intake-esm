@@ -567,7 +567,6 @@ class esm_datastore(Catalog):
             xarray_open_kwargs=xarray_open_kwargs,
             xarray_combine_by_coords_kwargs=xarray_combine_by_coords_kwargs,
             preprocess=preprocess,
-            storage_options=storage_options,
             requested_variables=self._requested_variables,
         )
 
