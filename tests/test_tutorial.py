@@ -18,15 +18,17 @@ tutorial_cats = [
     ),
     pytest.param('bad_key', 'bad_url', marks=pytest.mark.xfail),
 ]
-pytest.mark.paramtrize('name,url', tutorial_cats)
+pytest.mark.parametrize('name,url', tutorial_cats)
 
 
 class TestGetURL:
+    @pytest.fixture
     def test_get_url(self, name, url):
         cat_url = intake_esm.tutorial.get_url(name)
         assert isinstance(cat_url, str)
         assert cat_url == url
 
+    @pytest.fixture
     def test_open_from_url(self, name, url):
         cat_url = intake_esm.tutorial.get_url(name)
         cat = intake.open_esm_datastore(cat_url)
