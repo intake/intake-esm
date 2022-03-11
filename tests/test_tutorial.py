@@ -27,9 +27,10 @@ def test_get_url(name, url):
     assert cat_url == url
 
 
+@pytest.mark.network
 @pytest.mark.parametrize('name,url', tutorial_cats)
 def test_open_from_url(name, url):
     cat_url = intake_esm.tutorial.get_url(name)
     cat = intake.open_esm_datastore(cat_url)
-    assert isinstance(cat, intake_esm.cat.ESMCatalogModel)
+    assert isinstance(cat.esmcat, intake_esm.cat.ESMCatalogModel)
     assert cat == intake.open_esm_datastore(url)
