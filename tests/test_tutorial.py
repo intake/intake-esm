@@ -20,7 +20,9 @@ class TestGetURL:
 
     def test_get_url(self) -> None:
         cat_url = tutorial.get_url(self.testfile)
+        assert isinstance(cat_url, str)
 
     def test_open_from_url(self) -> None:
         cat_url = tutorial.get_url(self.testfile)
         cat = intake.open_esm_datastore(cat_url)
+        assert isinstance(cat, intake_esm.cat.ESMCatalogModel)
