@@ -1,10 +1,6 @@
-import sys
-
 import intake
 import pytest
-import xarray as xr
-
-from intake_esm import tutorial
+import intake_esm
 
 
 @pytest.mark.network
@@ -19,10 +15,10 @@ class TestGetURL:
         self.google_cmip6 = 'https://raw.githubusercontent.com/intake/intake-esm/main/tutorial-catalogs/GOOGLE-CMIP6.json'
 
     def test_get_url(self) -> None:
-        cat_url = tutorial.get_url(self.testfile)
+        cat_url = intake_esm.tutorial.get_url(self.testfile)
         assert isinstance(cat_url, str)
 
     def test_open_from_url(self) -> None:
-        cat_url = tutorial.get_url(self.testfile)
+        cat_url = intake_esm.tutorial.get_url(self.testfile)
         cat = intake.open_esm_datastore(cat_url)
         assert isinstance(cat, intake_esm.cat.ESMCatalogModel)
