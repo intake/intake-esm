@@ -1,0 +1,544 @@
+{
+  "esmcat_version": "0.1.0",
+  "attributes": [
+    {
+      "column_name": "activity_id",
+      "vocabulary": "https://raw.githubusercontent.com/WCRP-CMIP/CMIP6_CVs/master/CMIP6_activity_id.json"
+    },
+    {
+      "column_name": "source_id",
+      "vocabulary": "https://raw.githubusercontent.com/WCRP-CMIP/CMIP6_CVs/master/CMIP6_source_id.json"
+    },
+    {
+      "column_name": "institution_id",
+      "vocabulary": "https://raw.githubusercontent.com/WCRP-CMIP/CMIP6_CVs/master/CMIP6_institution_id.json"
+    },
+    {
+      "column_name": "experiment_id",
+      "vocabulary": "https://raw.githubusercontent.com/WCRP-CMIP/CMIP6_CVs/master/CMIP6_experiment_id.json"
+    },
+    {
+      "column_name": "member_id",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "table_id",
+      "vocabulary": "https://raw.githubusercontent.com/WCRP-CMIP/CMIP6_CVs/master/CMIP6_table_id.json"
+    },
+    {
+      "column_name": "variable_id",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "grid_label",
+      "vocabulary": "https://raw.githubusercontent.com/WCRP-CMIP/CMIP6_CVs/master/CMIP6_grid_label.json"
+    },
+    {
+      "column_name": "version",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "dcpp_start_year",
+      "vocabulary": ""
+    }
+  ],
+  "assets": {
+    "column_name": "zstore",
+    "format": "zarr",
+    "format_column_name": null
+  },
+  "aggregation_control": {
+    "variable_column_name": "variable_id",
+    "groupby_attrs": [
+      "activity_id",
+      "institution_id",
+      "source_id",
+      "experiment_id",
+      "table_id",
+      "grid_label"
+    ],
+    "aggregations": [
+      {
+        "type": "union",
+        "attribute_name": "variable_id",
+        "options": {}
+      },
+      {
+        "type": "join_new",
+        "attribute_name": "member_id",
+        "options": {
+          "coords": "minimal",
+          "compat": "override"
+        }
+      },
+      {
+        "type": "join_new",
+        "attribute_name": "dcpp_init_year",
+        "options": {
+          "coords": "minimal",
+          "compat": "override"
+        }
+      }
+    ]
+  },
+  "id": "AWS-CMIP6",
+  "description": "This is an ESM collection for CMIP6 Zarr data residing in Pangeo's Google Storage.",
+  "title": null,
+  "catalog_dict": [
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r9i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r9i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r7i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r7i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r8i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r8i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r1i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r1i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r20i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r20i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r18i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r18i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r19i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r19i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r5i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r5i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r6i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r6i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r4i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r4i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r2i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r2i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r3i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r3i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r11i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r11i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r12i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r12i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r10i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r10i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r16i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r16i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r15i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r15i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r17i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r17i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r13i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r13i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "CCCma",
+      "source_id": "CanESM5",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r14i1p2f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/CCCma/CanESM5/dcppA-hindcast/s1992-r14i1p2f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190429
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "MIROC",
+      "source_id": "MIROC6",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r1i1p1f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/MIROC/MIROC6/dcppA-hindcast/s1992-r1i1p1f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190821
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "MIROC",
+      "source_id": "MIROC6",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r10i1p1f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/MIROC/MIROC6/dcppA-hindcast/s1992-r10i1p1f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190821
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "MIROC",
+      "source_id": "MIROC6",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r2i1p1f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/MIROC/MIROC6/dcppA-hindcast/s1992-r2i1p1f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190821
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "MIROC",
+      "source_id": "MIROC6",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r9i1p1f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/MIROC/MIROC6/dcppA-hindcast/s1992-r9i1p1f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190821
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "MIROC",
+      "source_id": "MIROC6",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r8i1p1f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/MIROC/MIROC6/dcppA-hindcast/s1992-r8i1p1f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190821
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "MIROC",
+      "source_id": "MIROC6",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r4i1p1f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/MIROC/MIROC6/dcppA-hindcast/s1992-r4i1p1f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190821
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "MIROC",
+      "source_id": "MIROC6",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r3i1p1f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/MIROC/MIROC6/dcppA-hindcast/s1992-r3i1p1f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190821
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "MIROC",
+      "source_id": "MIROC6",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r7i1p1f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/MIROC/MIROC6/dcppA-hindcast/s1992-r7i1p1f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190821
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "MIROC",
+      "source_id": "MIROC6",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r6i1p1f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/MIROC/MIROC6/dcppA-hindcast/s1992-r6i1p1f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190821
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "MIROC",
+      "source_id": "MIROC6",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r5i1p1f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/MIROC/MIROC6/dcppA-hindcast/s1992-r5i1p1f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190821
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "MPI-M",
+      "source_id": "MPI-ESM1-2-HR",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r4i1p1f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/MPI-M/MPI-ESM1-2-HR/dcppA-hindcast/s1992-r4i1p1f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190906
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "MPI-M",
+      "source_id": "MPI-ESM1-2-HR",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r5i1p1f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/MPI-M/MPI-ESM1-2-HR/dcppA-hindcast/s1992-r5i1p1f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190906
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "MPI-M",
+      "source_id": "MPI-ESM1-2-HR",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r3i1p1f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/MPI-M/MPI-ESM1-2-HR/dcppA-hindcast/s1992-r3i1p1f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190906
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "MPI-M",
+      "source_id": "MPI-ESM1-2-HR",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r1i1p1f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/MPI-M/MPI-ESM1-2-HR/dcppA-hindcast/s1992-r1i1p1f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190906
+    },
+    {
+      "activity_id": "DCPP",
+      "institution_id": "MPI-M",
+      "source_id": "MPI-ESM1-2-HR",
+      "experiment_id": "dcppA-hindcast",
+      "member_id": "r2i1p1f1",
+      "table_id": "Amon",
+      "variable_id": "tauv",
+      "grid_label": "gn",
+      "zstore": "s3://cmip6-pds/DCPP/MPI-M/MPI-ESM1-2-HR/dcppA-hindcast/s1992-r2i1p1f1/Amon/tauv/gn/",
+      "dcpp_init_year": 1992.0,
+      "version": 20190906
+    }
+  ]
+}
