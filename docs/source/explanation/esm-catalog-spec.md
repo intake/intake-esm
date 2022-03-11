@@ -1,7 +1,7 @@
 # ESM Catalog Specification
 
 ```{note}
-This documents mirrors the [ESM Catalog Specification](https://github.com/NCAR/esm-catalog-spec/blob/master/catalog-spec/catalog-spec.md) and is updated as the specification evolves.
+This documents mirrors the [ESM Collection Specification](https://github.com/NCAR/esm-collection-spec/blob/master/collection-spec/collection-spec.md) and is updated as the specification evolves.
 ```
 
 - [ESM Catalog Specification](#esm-catalog-specification)
