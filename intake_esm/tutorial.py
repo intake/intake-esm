@@ -11,7 +11,7 @@ tutorial_catalogs = {
 }
 
 
-def get_url(name):
+def get_url(name, tutorial_catalogs=tutorial_catalogs):
     """
     Get a small-catalogue  URL from the online repository (requires internet).
     If a local copy is found then always use that to avoid network traffic.
@@ -25,8 +25,11 @@ def get_url(name):
     name : str
         Name of the catalog.
         e.g. 'aws_cmip6'
+    tutorial_catalogs : dict
+        Catalog of tutorial keys mapping to URLs.
     """
 
-    cat_url = tutorial_catalogs[name]
-
-    return cat_url
+    try:
+        return tutorial_catalogs[name]
+    except KeyError:
+        print(f'{name} is an unknown key. Only small-catalogs in our `tutorial-catalogs` directory are supported with this method. The supported catalog key names are: "aws_cesm2_le", "aws_cmip6", "google_cmip6".')
