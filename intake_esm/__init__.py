@@ -5,6 +5,7 @@
 import intake
 from pkg_resources import DistributionNotFound, get_distribution
 
+from . import tutorial
 from .core import esm_datastore
 from .derived import DerivedVariableRegistry, default_registry
 from .utils import show_versions
