@@ -3,10 +3,11 @@ import pytest
 
 import intake_esm
 
-tutorial_cats = ["aws-cesm2-le", "aws-cmip6", "google-cmip6"]
-@pytest.mark.paramtrize("names", tutorial_cats )
-class TestGetURL:
+tutorial_cats = ['aws-cesm2-le', 'aws-cmip6', 'google-cmip6']
 
+
+@pytest.mark.paramtrize('names', tutorial_cats)
+class TestGetURL:
     def test_get_url(names):
         cat_url = intake_esm.tutorial.get_url(names)
         assert isinstance(cat_url, str)
