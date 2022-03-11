@@ -3,7 +3,7 @@ import pytest
 
 import intake_esm
 
-tutorial_cats = ['aws-cesm2-le', 'aws-cmip6', 'google-cmip6']
+tutorial_cats = ['aws_cesm2_le', 'aws_cmip6', 'google_cmip6']
 
 
 @pytest.mark.paramtrize('names', tutorial_cats)
