@@ -33,7 +33,7 @@ def get_url(name, tutorial_catalogs=tutorial_catalogs):
         return tutorial_catalogs[name]
     except KeyError:
         print(
-            f'{name} is an unknown key. Only small-catalogs in our `tutorial-catalogs` directory are supported with this method. List all supported catalog key nams with `intake_esm.tutorial.get_keys()`.'
+            f'{name} is an unknown key. Only small-catalogs in our `tutorial-catalogs` directory are supported with this method. List all supported catalog key names with `intake_esm.tutorial.get_keys()`.'
         )
 
 
