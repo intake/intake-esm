@@ -456,10 +456,17 @@ def test_to_dataset_dict_with_registry():
         )
 
 
-def test_subclassing_catalog():
+def test_subclassing():
     class ChildCatalog(intake_esm.esm_datastore):
         pass
 
     cat = ChildCatalog(catalog_dict_records)
-    scat = cat.search(variable=['FOO', 'BAR'])
+    scat = cat.search(variable=['FLNS'])
     assert type(scat) is ChildCatalog
+
+    old = intake_esm.utils.INTAKE_ESM_ATTRS_PREFIX[:]
+    intake_esm.utils.INTAKE_ESM_ATTRS_PREFIX = 'mychild'
+
+    _, ds = scat.to_dataset_dict().popitem()
+    assert ds.attrs['mychild/component'] == 'atm'
+    intake_esm.utils.INTAKE_ESM_ATTRS_PREFIX = old
