@@ -40,4 +40,4 @@ def test_open_from_url(name, url):
 def test_get_keys(tutorial_cats):
     tutorial_cats_dict = dict(tutorial_cats[0:3])
     keys = intake_esm.tutorial.get_keys(tutorial_cats_dict)
-    assert keys == tutorial_cats_dict.keys()
+    assert keys == list(tutorial_cats_dict.keys())
