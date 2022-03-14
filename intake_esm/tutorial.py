@@ -38,7 +38,7 @@ def get_url(name, tutorial_catalogs=tutorial_catalogs):
             print(
                 f'KeyError: {name} is an unknown key. Only small-catalogs in our `tutorial-catalogs` directory are supported with this method. List all supported catalog key names with `intake_esm.tutorial.get_keys()`.'
             )
-    
+
     else:
         raise TypeError('TypeError: `tutorial_catalogs` must be of type `dict`.')
 
@@ -53,7 +53,7 @@ def get_keys(tutorial_catalogs=tutorial_catalogs):
         Catalog of tutorial keys mapping to URLs.
     """
     dict_check = isinstance(tutorial_catalogs, dict)
-    
+
     if dict_check:
         return list(tutorial_catalogs.keys())
 
