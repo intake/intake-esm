@@ -34,3 +34,10 @@ def test_open_from_url(name, url):
     cat = intake.open_esm_datastore(cat_url)
     assert isinstance(cat.esmcat, intake_esm.cat.ESMCatalogModel)
     assert cat == intake.open_esm_datastore(url)
+
+
+@pytest.fixture
+def test_get_keys(tutorial_cats):
+    tutorial_cats_dict = dict(tutorial_cats[0:3])
+    keys = intake_esm.tutorial.get_keys(tutorial_cats_dict)
+    assert keys == tutorial_cats_dict.keys()
