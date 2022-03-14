@@ -467,6 +467,8 @@ def test_subclassing():
     old = intake_esm.utils.INTAKE_ESM_ATTRS_PREFIX[:]
     intake_esm.utils.INTAKE_ESM_ATTRS_PREFIX = 'mychild'
 
-    _, ds = scat.to_dataset_dict().popitem()
+    _, ds = scat.to_dataset_dict(
+        xarray_open_kwargs={'backend_kwargsd': {'storage_options': {'anon': True}}},
+    ).popitem()
     assert ds.attrs['mychild/component'] == 'atm'
     intake_esm.utils.INTAKE_ESM_ATTRS_PREFIX = old
