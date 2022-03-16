@@ -475,6 +475,10 @@ class esm_datastore(Catalog):
         """
         Load catalog entries into a dictionary of xarray datasets.
 
+        Column values, dataset keys and requested variables are added as global
+        attributes on the returned datasets. The names of these attributes can be
+        customized with :py:class:`intake_esm.utils.set_options`.
+
         Parameters
         ----------
         xarray_open_kwargs : dict
