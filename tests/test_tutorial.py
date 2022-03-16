@@ -37,7 +37,7 @@ def test_open_from_url(name, url):
 
 
 @pytest.fixture
-def test_get_keys(tutorial_cats):
+def test_get_available_cats(tutorial_cats):
     tutorial_cats_dict = dict(tutorial_cats[0:3])
-    keys = intake_esm.tutorial.get_keys(tutorial_cats_dict)
-    assert keys == list(tutorial_cats_dict.keys())
+    cats = intake_esm.tutorial.get_available_cats(tutorial_cats_dict)
+    assert cats == list(tutorial_cats_dict.keys())
