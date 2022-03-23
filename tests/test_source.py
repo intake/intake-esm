@@ -30,3 +30,9 @@ def test_open_dataset(fpath, expected_time_size):
     ds = _common_open(fpath)
     assert isinstance(ds, xarray.Dataset)
     assert len(ds.time) == expected_time_size
+
+
+@pytest.mark.parametrize('storage_options', [{'anon': True}, {}])
+def test_get_xarray_open_kwargs(storage_options):
+    xarray_open_kwargs = _get_xarray_open_kwargs('zarr', storage_options=storage_options)
+    assert xarray_open_kwargs['backend_kwargs']['storage_options'] == storage_options
