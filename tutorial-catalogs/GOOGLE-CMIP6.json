@@ -82,7 +82,7 @@
     ]
   },
   "id": "GOOGLE-CMIP6",
-  "description": "This is an ESM collection for CMIP6 Zarr data residing in Pangeo's Google Storage.",
+  "description": "This is an ESM catalog for CMIP6 Zarr data residing in Pangeo's Google Storage.",
   "title": null,
   "last_updated": "2022-03-24T18:57:50Z",
   "catalog_dict": [
