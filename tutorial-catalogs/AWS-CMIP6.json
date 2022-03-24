@@ -82,7 +82,7 @@
     ]
   },
   "id": "AWS-CMIP6",
-  "description": "This is an ESM collection for CMIP6 Zarr data residing in Pangeo's Google Storage.",
+  "description": "This is an ESM catalog for CMIP6 Zarr data residing in Pangeo's Google Storage.",
   "title": null,
   "catalog_dict": [
     {
