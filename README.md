@@ -43,12 +43,14 @@ providing necessary functionality for searching, discovering, data access/loadin
 
   In [1]: import intake
 
-  In [2]: cat_url = "https://gist.githubusercontent.com/andersy005/7f416e57acd8319b20fc2b88d129d2b8/raw/987b4b336d1a8a4f9abec95c23eed3bd7c63c80e/pangeo-gcp-subset.json"
+  In [2]: import intake_esm
 
-  In [3]: cat = intake.open_esm_datastore(cat_url)
+  In [3]: cat_url = intake_esm.tutorial.get_url("google_cmip6")
 
-  In [4]: cat
-  Out[4]: <pangeo-cmip6 catalog with 4287 dataset(s) from 282905 asset(s)>
+  In [4]: cat = intake.open_esm_datastore(cat_url)
+
+  In [5]: cat
+  Out[5]: <GOOGLE-CMIP6 catalog with 4 dataset(s) from 261 asset(s>
   ```
 
 - Search and Discovery: `intake-esm` provides functionality to execute queries against the catalog:
@@ -62,7 +64,7 @@ providing necessary functionality for searching, discovering, data access/loadin
      ...: )
 
   In [6]: cat_subset
-  Out[6]: <pangeo-cmip6 catalog with 18 dataset(s) from 138 asset(s)>
+  Out[6]: <GOOGLE-CMIP6 catalog with 4 dataset(s) from 261 asset(s)>
   ```
 
 - Access: when the user is satisfied with the results of their query, they can ask `intake-esm`
@@ -74,7 +76,7 @@ providing necessary functionality for searching, discovering, data access/loadin
 
     --> The keys in the returned dictionary of datasets are constructed as follows:
             'activity_id.institution_id.source_id.experiment_id.table_id.grid_label'
-    |███████████████████████████████████████████████████████████████| 100.00% [18/18 00:10<00:00]
+    |███████████████████████████████████████████████████████████████| 100.00% [2/2 00:18<00:00]
   ```
 
 See [documentation](https://intake-esm.readthedocs.io/en/latest/) for more information.
