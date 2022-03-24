@@ -25,7 +25,7 @@ dataframe column or a list of dataframe columns across which all elements must
 satisfy the query criteria. The `require_all_on` argument is best explained with
 the following example.
 
-Let’s define a query for our collection that requests multiple variable_ids and
+Let’s define a query for our catalog that requests multiple variable_ids and
 multiple experiment_ids from the Omon table_id, all from 3 different source_ids:
 
 ```{code-cell} ipython3
@@ -38,7 +38,7 @@ query = dict(
 )
 ```
 
-Now, let’s use this query to search for all assets in the collection that
+Now, let’s use this query to search for all assets in the catalog that
 satisfy any combination of these requests (i.e., with `require_all_on=None`,
 which is the default):
 

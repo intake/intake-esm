@@ -1,7 +1,7 @@
 {
   "esmcat_version": "0.1.0",
   "id": "aws-cesm1-le",
-  "description": "This is an ESM collection for CESM1 Large Ensemble Zarr dataset publicly available on Amazon S3 (us-west-2 region)",
+  "description": "This is an ESM catalog for CESM1 Large Ensemble Zarr dataset publicly available on Amazon S3 (us-west-2 region)",
   "catalog_dict": [
     {
       "component": "atm",

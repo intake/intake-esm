@@ -1,7 +1,7 @@
 {
   "esmcat_version": "0.1.0",
   "id": "sample-cmip5",
-  "description": "This is a sample ESM collection for CMIP5 data in netcdf format",
+  "description": "This is a sample ESM catalog for CMIP5 data in netcdf format",
   "catalog_file": "cmip5-netcdf.csv",
   "attributes": [
     {

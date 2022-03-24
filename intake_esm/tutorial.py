@@ -13,9 +13,9 @@ tutorial_catalogs = {
 
 def get_url(name, tutorial_catalogs=tutorial_catalogs):
     """
-    Get a small-catalogue  URL from the online repository (requires internet).
+    Get a small-catalog  URL from the online repository (requires internet).
     If a local copy is found then always use that to avoid network traffic.
-    Available catalogues:
+    Available catalog:
     * ``"aws_cesm2_le"``
     * ``"aws_cmip6"``
     * ``"google_cmip6"''

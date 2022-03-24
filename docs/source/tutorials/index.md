@@ -27,21 +27,42 @@ import intake
 
 At import time, intake-esm plugin is available in intake’s registry as
 `esm_datastore` and can be accessed with `intake.open_esm_datastore()` function.
+Use the `intake_esm.tutorial.get_url()` method to access smaller subsetted catalogs for tutorial purposes.
 
 ```{code-cell} ipython3
 
-url = "https://gist.githubusercontent.com/andersy005/7f416e57acd8319b20fc2b88d129d2b8/raw/987b4b336d1a8a4f9abec95c23eed3bd7c63c80e/pangeo-gcp-subset.json"
+import intake_esm
+url = intake_esm.tutorial.get_url('google_cmip6')
+print(url)
+```
+
+```{code-cell} ipython3
+
 cat = intake.open_esm_datastore(url)
 cat
 ```
 
-The summary above tells us that this catalog contains over 268,000 data assets.
+The summary above tells us that this catalog contains 261 data assets.
 We can get more information on the individual data assets contained in the
 catalog by looking at the underlying dataframe created when we load the catalog:
 
 ```{code-cell} ipython3
 cat.df.head()
 ```
+
+The first data asset listed in the catalog contains:
+
+- the Northward Wind (variable_id='va'), as a function of latitude, longitude, time,
+
+- the latest version of the IPSL climate model (source_id='IPSL-CM6A-LR'),
+
+- hindcasts initialized from observations with historical forcing (experiment_id='historical'),
+
+- developed by theInstitut Pierre Simon Laplace (instution_id='IPSL'),
+
+- run as part of the Coupled Model Intercomparison Project (activity_id='CMIP')
+
+And is located in Google Cloud Storage at 'gs://cmip6/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r2i1p1f1/Amon/va/gr/v20180803/'.
 
 ## Finding unique entries
 
@@ -88,12 +109,10 @@ In the example below, we are are going to search for the following:
 
 - variable_d: `o2` which stands for
   `mole_concentration_of_dissolved_molecular_oxygen_in_sea_water`
-- experiment_id: `['historical', 'ssp585']`:
-  - `historical`: all forcing of the recent past.
-  - `ssp585`: emission-driven
-    [RCP8.5](https://en.wikipedia.org/wiki/Representative_Concentration_Pathway)
-    based on SSP5.
-- table_id: `Oyr` which stands for annual mean variables on the ocean grid.
+- experiments: ['historical', 'ssp585']:
+  - historical: all forcing of the recent past.
+  - ssp585: emission-driven RCP8.5 based on SSP5.
+- table_id: `0yr` which stands for annual mean variables on the ocean grid.
 - grid_label: `gn` which stands for data reported on a model's native grid.
 
 ```{note}
@@ -133,6 +152,9 @@ returns a dictionary of aggregate xarray datasets as the name hints.
 dset_dict = cat_subset.to_dataset_dict(
     xarray_open_kwargs={"consolidated": True, "decode_times": True, "use_cftime": True}
 )
+```
+
+```{code-cell} ipython3
 [key for key in dset_dict.keys()]
 ```
 

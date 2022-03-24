@@ -6,14 +6,14 @@ from intake_esm.cat import Assets, ESMCatalogModel, QueryModel
 
 from .utils import (
     catalog_dict_records,
-    cdf_col_sample_cesmle,
-    cdf_col_sample_cmip5,
-    cdf_col_sample_cmip6,
-    multi_variable_col,
+    cdf_cat_sample_cesmle,
+    cdf_cat_sample_cmip5,
+    cdf_cat_sample_cmip6,
+    multi_variable_cat,
     sample_df,
-    sample_esmcol_data,
-    zarr_col_aws_cesm,
-    zarr_col_pangeo_cmip6,
+    sample_esmcat_data,
+    zarr_cat_aws_cesm,
+    zarr_cat_pangeo_cmip6,
 )
 
 
@@ -36,14 +36,14 @@ def test_assets_mutually_exclusive():
     'file',
     [
         catalog_dict_records,
-        cdf_col_sample_cmip6,
-        cdf_col_sample_cmip5,
-        zarr_col_aws_cesm,
-        zarr_col_pangeo_cmip6,
-        cdf_col_sample_cmip5,
-        cdf_col_sample_cmip6,
-        cdf_col_sample_cesmle,
-        multi_variable_col,
+        cdf_cat_sample_cmip6,
+        cdf_cat_sample_cmip5,
+        zarr_cat_aws_cesm,
+        zarr_cat_pangeo_cmip6,
+        cdf_cat_sample_cmip5,
+        cdf_cat_sample_cmip6,
+        cdf_cat_sample_cesmle,
+        multi_variable_cat,
     ],
 )
 def test_esmcatmodel_load(file):
@@ -55,7 +55,7 @@ def test_esmcatmodel_load(file):
 
 
 def test_esmcatmodel_from_dict():
-    cat = ESMCatalogModel.from_dict({'esmcat': sample_esmcol_data, 'df': sample_df})
+    cat = ESMCatalogModel.from_dict({'esmcat': sample_esmcat_data, 'df': sample_df})
     assert isinstance(cat, ESMCatalogModel)
     assert isinstance(cat.df, pd.DataFrame)
     assert isinstance(cat.columns_with_iterables, set)
@@ -106,9 +106,9 @@ def test_esmcatmodel_from_dict():
     ],
 )
 def test_esmcatmodel_unique_and_nunique(query, expected_unique_vals, expected_nunique_vals):
-    cat = ESMCatalogModel.from_dict({'esmcat': sample_esmcol_data, 'df': sample_df})
+    cat = ESMCatalogModel.from_dict({'esmcat': sample_esmcat_data, 'df': sample_df})
     df_sub = cat.search(query=query)
-    cat_sub = ESMCatalogModel.from_dict({'esmcat': sample_esmcol_data, 'df': df_sub})
+    cat_sub = ESMCatalogModel.from_dict({'esmcat': sample_esmcat_data, 'df': df_sub})
     assert cat_sub.unique().to_dict() == expected_unique_vals
     assert cat_sub.nunique().to_dict() == expected_nunique_vals
 
