@@ -461,5 +461,15 @@ def test_subclassing_catalog():
         pass
 
     cat = ChildCatalog(catalog_dict_records)
-    scat = cat.search(variable=['FOO', 'BAR'])
+    scat = cat.search(variable=['FLNS'])
     assert type(scat) is ChildCatalog
+
+
+def test_options():
+    cat = intake.open_esm_datastore(catalog_dict_records)
+    scat = cat.search(variable=['FLNS'])
+    with intake_esm.set_options(attrs_prefix='myprefix'):
+        _, ds = scat.to_dataset_dict(
+            xarray_open_kwargs={'backend_kwargs': {'storage_options': {'anon': True}}},
+        ).popitem()
+        assert ds.attrs['myprefix/component'] == 'atm'

@@ -8,7 +8,7 @@ import xarray as xr
 from intake.source.base import DataSource, Schema
 
 from .cat import Aggregation, DataFormat
-from .utils import INTAKE_ESM_ATTRS_PREFIX, INTAKE_ESM_DATASET_KEY, INTAKE_ESM_VARS_KEY
+from .utils import OPTIONS
 
 
 class ESMDataSourceError(Exception):
@@ -74,9 +74,9 @@ def _open_dataset(
         variable_intersection = set(requested_variables).intersection(set(varname))
         variables = [variable for variable in variable_intersection if variable in ds.data_vars]
         ds = ds[variables]
-        ds.attrs[INTAKE_ESM_VARS_KEY] = variables
+        ds.attrs[OPTIONS['vars_key']] = variables
     else:
-        ds.attrs[INTAKE_ESM_VARS_KEY] = varname
+        ds.attrs[OPTIONS['vars_key']] = varname
 
     ds = _expand_dims(expand_dims, ds)
     ds = _update_attrs(additional_attrs, ds)
@@ -87,7 +87,7 @@ def _update_attrs(additional_attrs, ds):
     additional_attrs = additional_attrs or {}
     if additional_attrs:
         additional_attrs = {
-            f'{INTAKE_ESM_ATTRS_PREFIX}/{key}': value for key, value in additional_attrs.items()
+            f"{OPTIONS['attrs_prefix']}/{key}": value for key, value in additional_attrs.items()
         }
     ds.attrs = {**ds.attrs, **additional_attrs}
     return ds
@@ -95,7 +95,7 @@ def _update_attrs(additional_attrs, ds):
 
 def _expand_dims(expand_dims, ds):
     if expand_dims:
-        for variable in ds.attrs[INTAKE_ESM_VARS_KEY]:
+        for variable in ds.attrs[OPTIONS['vars_key']]:
             ds[variable] = ds[variable].expand_dims(**expand_dims)
 
     return ds
@@ -230,7 +230,7 @@ class ESMDataSource(DataSource):
                 datasets = sorted(
                     datasets,
                     key=lambda ds: tuple(
-                        f'{INTAKE_ESM_ATTRS_PREFIX}/{agg.attribute_name}'
+                        f"{OPTIONS['attrs_prefix']}/{agg.attribute_name}"
                         for agg in self.aggregations
                     ),
                 )
@@ -238,14 +238,14 @@ class ESMDataSource(DataSource):
                     {'scheduler': 'single-threaded', 'array.slicing.split_large_chunks': True}
                 ):  # Use single-threaded scheduler
                     datasets = [
-                        ds.set_coords(set(ds.variables) - set(ds.attrs[INTAKE_ESM_VARS_KEY]))
+                        ds.set_coords(set(ds.variables) - set(ds.attrs[OPTIONS['vars_key']]))
                         for ds in datasets
                     ]
                     self._ds = xr.combine_by_coords(
                         datasets, **self.xarray_combine_by_coords_kwargs
                     )
 
-            self._ds.attrs[INTAKE_ESM_DATASET_KEY] = self.key
+            self._ds.attrs[OPTIONS['dataset_key']] = self.key
 
         except Exception as exc:
             raise ESMDataSourceError(
