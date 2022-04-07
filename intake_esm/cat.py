@@ -105,6 +105,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         underscore_attrs_are_private = True
         validate_all = True
         validate_assignment = True
+        allow_reuse = True
 
     @pydantic.root_validator
     def validate_catalog(cls, values):
