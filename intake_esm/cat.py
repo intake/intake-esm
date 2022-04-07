@@ -51,6 +51,7 @@ class Assets(pydantic.BaseModel):
     class Config:
         validate_all = True
         validate_assignment = True
+        allow_reuse = True
 
     @pydantic.root_validator
     def _validate_data_format(cls, values):
