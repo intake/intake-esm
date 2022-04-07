@@ -1,4 +1,6 @@
 """ Helper functions for fetching and loading catalog"""
+from __future__ import annotations
+
 import importlib
 import sys
 

@@ -3,6 +3,7 @@ Useful for:
 * users learning intake-esm
 * building tutorials in the documentation.
 """
+from __future__ import annotations
 
 tutorial_catalogs = {
     'aws_cesm2_le': 'https://raw.githubusercontent.com/intake/intake-esm/main/tutorial-catalogs/AWS-CESM2-LENS.json',
