@@ -182,7 +182,7 @@ class esm_datastore(Catalog):
         # The canonical unique key is the key of a compatible group of assets
         try:
             return self._entries[key]
-        except KeyError:
+        except KeyError as e:
             if key in self.keys():
                 keys_dict = self.esmcat._construct_group_keys(sep=self.sep)
                 grouped = self.esmcat.grouped
@@ -210,7 +210,7 @@ class esm_datastore(Catalog):
                 return self._entries[key]
             raise KeyError(
                 f'key={key} not found in catalog. You can access the list of valid keys via the .keys() method.'
-            )
+            ) from e
 
     def __contains__(self, key) -> bool:
         # Python falls back to iterating over the entire catalog
@@ -381,6 +381,7 @@ class esm_datastore(Catalog):
         catalog_type: str = 'dict',
         to_csv_kwargs: typing.Dict[typing.Any, typing.Any] = None,
         json_dump_kwargs: typing.Dict[typing.Any, typing.Any] = None,
+        storage_options: typing.Dict[str, typing.Any] = None,
     ) -> None:
         """Serialize catalog to corresponding json and csv files.
 
@@ -396,6 +397,9 @@ class esm_datastore(Catalog):
             Additional keyword arguments passed through to the :py:meth:`~pandas.DataFrame.to_csv` method.
         json_dump_kwargs : dict, optional
             Additional keyword arguments passed through to the :py:func:`~json.dump` function.
+        storage_options: dict
+            fsspec parameters passed to the backend file-system such as Google Cloud Storage,
+            Amazon Web Service S3.
 
         Notes
         -----
