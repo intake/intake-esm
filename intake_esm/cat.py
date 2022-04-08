@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime
 import enum
 import json
@@ -45,28 +43,26 @@ class Attribute(pydantic.BaseModel):
 
 class Assets(pydantic.BaseModel):
     column_name: pydantic.StrictStr
-    format: DataFormat | None
-    format_column_name: pydantic.StrictStr | None
+    format: typing.Optional[DataFormat]
+    format_column_name: typing.Optional[pydantic.StrictStr]
 
     class Config:
         validate_all = True
         validate_assignment = True
-        allow_reuse = True
 
-    @pydantic.root_validator
-    def _validate_data_format(cls, values):
-        data_format, format_column_name = values.get('format'), values.get('format_column_name')
-        if data_format is not None and format_column_name is not None:
-            raise ValueError('Cannot set both format and format_column_name')
-        elif data_format is None and format_column_name is None:
+    @pydantic.validator('format', always=True, allow_reuse=True)
+    def _validate_data_format(cls, v, values):
+        if values['format_column_name'] and v:
+            raise ValueError('`format_column_name` and `format` are mututally exclusive.')
+        elif v is None and values['format_column_name'] is None:
             raise ValueError('Must set one of format or format_column_name')
-        return values
+        return v
 
 
 class Aggregation(pydantic.BaseModel):
     type: AggregationType
     attribute_name: pydantic.StrictStr
-    options: dict | None = {}
+    options: typing.Optional[typing.Dict] = {}
 
     class Config:
         validate_all = True
@@ -89,34 +85,32 @@ class ESMCatalogModel(pydantic.BaseModel):
     """
 
     esmcat_version: pydantic.StrictStr
-    attributes: list[Attribute]
+    attributes: typing.List[Attribute]
     assets: Assets
     aggregation_control: AggregationControl
-    id: str | None = ''
-    catalog_dict: list[dict] | None = None
+    id: typing.Optional[str] = ''
+    catalog_dict: typing.Optional[typing.List[typing.Dict]] = None
     catalog_file: pydantic.StrictStr = None
     description: pydantic.StrictStr = None
     title: pydantic.StrictStr = None
-    last_updated: datetime.datetime | datetime.date | None = None
-    _df: pd.DataFrame | None = pydantic.PrivateAttr()
+    last_updated: typing.Optional[typing.Union[datetime.datetime, datetime.date]] = None
+    _df: typing.Optional[pd.DataFrame] = pydantic.PrivateAttr()
 
     class Config:
         arbitrary_types_allowed = True
         underscore_attrs_are_private = True
         validate_all = True
         validate_assignment = True
-        allow_reuse = True
 
-    @pydantic.root_validator
-    def validate_catalog(cls, values):
-        catalog_dict, catalog_file = values.get('catalog_dict'), values.get('catalog_file')
-        if catalog_dict is not None and catalog_file is not None:
+    @pydantic.validator('catalog_dict', always=True, allow_reuse=True)
+    def validate_catalog(cls, v, values):
+        if values['catalog_file'] and v:
             raise ValueError('catalog_dict and catalog_file cannot be set at the same time')
 
-        return values
+        return v
 
     @classmethod
-    def from_dict(cls, data: dict) -> ESMCatalogModel:
+    def from_dict(cls, data: dict) -> 'ESMCatalogModel':
         esmcat = data['esmcat']
         df = data['df']
         if 'last_updated' not in esmcat:
@@ -197,10 +191,10 @@ class ESMCatalogModel(pydantic.BaseModel):
     @classmethod
     def load(
         cls,
-        json_file: str | pydantic.FilePath | pydantic.AnyUrl,
+        json_file: typing.Union[str, pydantic.FilePath, pydantic.AnyUrl],
         storage_options: dict[str, typing.Any] = None,
         read_csv_kwargs: dict[str, typing.Any] = None,
-    ) -> ESMCatalogModel:
+    ) -> 'ESMCatalogModel':
         """
         Loads the catalog from a file
 
@@ -279,14 +273,16 @@ class ESMCatalogModel(pydantic.BaseModel):
             self._df[columns] = self._df[columns].apply(tuple)
 
     @property
-    def grouped(self) -> pd.core.groupby.DataFrameGroupBy | pd.DataFrame:
+    def grouped(self) -> typing.Union[pd.core.groupby.DataFrameGroupBy, pd.DataFrame]:
         if self.aggregation_control.groupby_attrs and set(
             self.aggregation_control.groupby_attrs
         ) != set(self.df.columns):
             return self.df.groupby(self.aggregation_control.groupby_attrs)
         return self.df
 
-    def _construct_group_keys(self, sep: str = '.') -> dict[str, str | tuple[str]]:
+    def _construct_group_keys(
+        self, sep: str = '.'
+    ) -> typing.Dict[str, typing.Union[str, typing.Tuple[str]]]:
         grouped = self.grouped
         if isinstance(grouped, pd.core.groupby.generic.DataFrameGroupBy):
             internal_keys = grouped.groups.keys()
@@ -329,9 +325,9 @@ class ESMCatalogModel(pydantic.BaseModel):
     def search(
         self,
         *,
-        query: QueryModel | dict[str, typing.Any],
-        require_all_on: str | list[str] = None,
-    ) -> ESMCatalogModel:
+        query: typing.Union['QueryModel', typing.Dict[str, typing.Any]],
+        require_all_on: typing.Union[str, typing.List[str]] = None,
+    ) -> 'ESMCatalogModel':
         """
         Search for entries in the catalog.
 
@@ -352,12 +348,13 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         """
 
-        if not isinstance(query, QueryModel):
-            _query = QueryModel(
+        _query = (
+            query
+            if isinstance(query, QueryModel)
+            else QueryModel(
                 query=query, require_all_on=require_all_on, columns=self.df.columns.tolist()
             )
-        else:
-            _query = query
+        )
 
         results = search(
             df=self.df, query=_query.query, columns_with_iterables=self.columns_with_iterables
@@ -375,15 +372,15 @@ class ESMCatalogModel(pydantic.BaseModel):
 class QueryModel(pydantic.BaseModel):
     """A Pydantic model to represent a query to be executed against a catalog."""
 
-    query: dict[pydantic.StrictStr, typing.Any | list[typing.Any]]
-    columns: list[str]
-    require_all_on: str | list[typing.Any] = None
+    query: typing.Dict[pydantic.StrictStr, typing.Union[typing.Any, typing.List[typing.Any]]]
+    columns: typing.List[str]
+    require_all_on: typing.Union[str, typing.List[typing.Any]] = None
 
     class Config:
         validate_all = True
         validate_assignment = True
 
-    @pydantic.root_validator(pre=False)
+    @pydantic.root_validator(pre=False, allow_reuse=True)
     def validate_query(cls, values):
         query = values.get('query', {})
         columns = values.get('columns')
