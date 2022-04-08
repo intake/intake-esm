@@ -180,7 +180,7 @@ def test_catalog_serialize(tmp_path, catalog_type, to_csv_kwargs, json_dump_kwar
     name = 'CMIP6-MRI-ESM2-0'
     cat_subset.serialize(
         name=name,
-        directory=local_store,
+        directory=str(local_store),
         catalog_type=catalog_type,
         to_csv_kwargs=to_csv_kwargs,
         json_dump_kwargs=json_dump_kwargs,
