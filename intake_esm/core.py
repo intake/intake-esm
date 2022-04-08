@@ -425,6 +425,7 @@ class esm_datastore(Catalog):
             catalog_type=catalog_type,
             to_csv_kwargs=to_csv_kwargs,
             json_dump_kwargs=json_dump_kwargs,
+            storage_options=storage_options,
         )
 
     def nunique(self) -> pd.Series:
