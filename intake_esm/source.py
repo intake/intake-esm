@@ -73,6 +73,8 @@ def _open_dataset(
             requested_variables = [requested_variables]
         variable_intersection = set(requested_variables).intersection(set(varname))
         variables = [variable for variable in variable_intersection if variable in ds.data_vars]
+        scalar_variables = [v for v in ds.data_vars if len(ds[v].dims) == 0]
+        ds = ds.set_coords(scalar_variables)
         ds = ds[variables]
         ds.attrs[OPTIONS['vars_key']] = variables
     else:
