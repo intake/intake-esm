@@ -48,12 +48,12 @@ def _open_dataset(
 ):
 
     _can_be_local = fsspec.utils.can_be_local(urlpath)
-    if 'storage_options' not in xarray_open_kwargs.keys():
-        xarray_open_kwargs['storage_options'] = {}
-    storage_options = xarray_open_kwargs.get('backend_kwargs', {}).get('storage_options')
+    storage_options = xarray_open_kwargs.get('backend_kwargs', {}).get('storage_options', {})
 
     # Support kerchunk datasets, setting the file object (fo) and urlpath
     if data_format == 'reference':
+        if 'storage_options' not in xarray_open_kwargs.keys():
+            xarray_open_kwargs['storage_options'] = {}
         xarray_open_kwargs['storage_options']['fo'] = urlpath
         urlpath = 'reference://'
 
