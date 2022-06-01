@@ -44,10 +44,10 @@ def test_get_xarray_open_kwargs(storage_options):
 
 
 def test_open_dataset_kerchunk(kerchunk_file=kerchunk_file):
-    ds = _open_dataset(data_format="reference",
-                       urlpath=kerchunk_file,
-                       varname=None,
-                       xarray_open_kwargs=dict(engine="zarr",
-                                               consolidated=False)
-                       )
+    ds = _open_dataset(
+        data_format='reference',
+        urlpath=kerchunk_file,
+        varname=None,
+        xarray_open_kwargs=dict(engine='zarr', consolidated=False),
+    )
     assert isinstance(ds, xarray.Dataset)
