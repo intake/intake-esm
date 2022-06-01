@@ -17,6 +17,11 @@ f2 = os.path.join(
     'sample_data/cmip/cmip5/output1/NIMR-KMA/HadGEM2-AO/rcp85/mon/atmos/Amon/r1i1p1/v20130815/tasmax/tasmax_Amon_HadGEM2-AO_rcp85_r1i1p1_200601-210012.nc',
 )
 
+kerchunk_file = os.path.join(
+    here,
+    'sample_data/kerchunk-files/noaa-nwm-test-reference.json',
+)
+
 multi_path = os.path.dirname(f1) + '/*.nc'
 
 
@@ -36,3 +41,13 @@ def test_open_dataset(fpath, expected_time_size):
 def test_get_xarray_open_kwargs(storage_options):
     xarray_open_kwargs = _get_xarray_open_kwargs('zarr', storage_options=storage_options)
     assert xarray_open_kwargs['backend_kwargs']['storage_options'] == storage_options
+
+
+def test_open_dataset_kerchunk(kerchunk_file=kerchunk_file):
+    ds = _open_dataset(data_format="reference",
+                       urlpath=kerchunk_file,
+                       varname=None,
+                       xarray_open_kwargs=dict(engine="zarr",
+                                               consolidated=False)
+                       )
+    assert isinstance(ds, xarray.Dataset)
