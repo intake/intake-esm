@@ -96,11 +96,11 @@ The column names can optionally be associated with a controlled vocabulary, such
 
 An assets object describes the columns in the CSV file relevant for opening the actual data files.
 
-| Element            | Type   | Description                                                                                                                        |
-| ------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| column_name        | string | **REQUIRED.** The name of the column containing the path to the asset. Must be in the header of the CSV file.                      |
-| format             | string | The data format. Valid values are `netcdf` and `zarr`. If specified, it means that all data in the catalog is the same type.       |
-| format_column_name | string | The column name which contains the data format, allowing for variable data types in one catalog. Mutually exclusive with `format`. |
+| Element            | Type   | Description                                                                                                                                                                                                  |
+| ------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| column_name        | string | **REQUIRED.** The name of the column containing the path to the asset. Must be in the header of the CSV file.                                                                                                |
+| format             | string | The data format. Valid values are `netcdf`, `zarr`, or `reference` ([`kerchunk`](https://github.com/fsspec/kerchunk) reference files). If specified, it means that all data in the catalog is the same type. |
+| format_column_name | string | The column name which contains the data format, allowing for variable data types in one catalog. Mutually exclusive with `format`.                                                                           |
 
 ### Aggregation Control Object
 

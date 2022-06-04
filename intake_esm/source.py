@@ -44,10 +44,19 @@ def _open_dataset(
     requested_variables=None,
     additional_attrs=None,
     expand_dims=None,
+    data_format=None,
 ):
 
     _can_be_local = fsspec.utils.can_be_local(urlpath)
     storage_options = xarray_open_kwargs.get('backend_kwargs', {}).get('storage_options', {})
+
+    # Support kerchunk datasets, setting the file object (fo) and urlpath
+    if data_format == 'reference':
+        if 'storage_options' not in xarray_open_kwargs.keys():
+            xarray_open_kwargs['storage_options'] = {}
+        xarray_open_kwargs['storage_options']['fo'] = urlpath
+        urlpath = 'reference://'
+
     if xarray_open_kwargs['engine'] == 'zarr':
         url = urlpath
     elif _can_be_local:
@@ -220,6 +229,7 @@ class ESMDataSource(DataSource):
                         if agg.type.value == 'join_new'
                     },
                     requested_variables=self.requested_variables,
+                    data_format=record['_data_format_'],
                     additional_attrs=record.to_dict(),
                 )
                 for _, record in self.df.iterrows()
