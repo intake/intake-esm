@@ -52,10 +52,10 @@ def _open_dataset(
 
     # Support kerchunk datasets, setting the file object (fo) and urlpath
     if data_format == 'reference':
-        if 'storage_options' not in xarray_open_kwargs["backend_kwargs"].keys():
+        if 'storage_options' not in xarray_open_kwargs['backend_kwargs'].keys():
             xarray_open_kwargs['backend_kwargs']['storage_options'] = {}
-        xarray_open_kwargs["backend_kwargs"]['storage_options']['fo'] = urlpath
-        xarray_open_kwargs["backend_kwargs"]['consolidated'] = False
+        xarray_open_kwargs['backend_kwargs']['storage_options']['fo'] = urlpath
+        xarray_open_kwargs['backend_kwargs']['consolidated'] = False
         urlpath = 'reference://'
 
     if xarray_open_kwargs['engine'] == 'zarr':
