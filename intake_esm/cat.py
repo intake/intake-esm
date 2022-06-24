@@ -26,6 +26,7 @@ class AggregationType(str, enum.Enum):
 class DataFormat(str, enum.Enum):
     netcdf = 'netcdf'
     zarr = 'zarr'
+    reference = 'reference'
 
     class Config:
         validate_all = True

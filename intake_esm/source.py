@@ -18,7 +18,7 @@ class ESMDataSourceError(Exception):
 def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_options=None):
     xarray_open_kwargs = (xarray_open_kwargs or {}).copy()
     _default_open_kwargs = {
-        'engine': 'zarr' if data_format == 'zarr' else 'netcdf4',
+        'engine': 'zarr' if (data_format == 'zarr') or (data_format == 'reference') else 'netcdf4',
         'chunks': {},
         'backend_kwargs': {},
     }
@@ -52,9 +52,10 @@ def _open_dataset(
 
     # Support kerchunk datasets, setting the file object (fo) and urlpath
     if data_format == 'reference':
-        if 'storage_options' not in xarray_open_kwargs.keys():
-            xarray_open_kwargs['storage_options'] = {}
-        xarray_open_kwargs['storage_options']['fo'] = urlpath
+        if 'storage_options' not in xarray_open_kwargs["backend_kwargs"].keys():
+            xarray_open_kwargs['backend_kwargs']['storage_options'] = {}
+        xarray_open_kwargs["backend_kwargs"]['storage_options']['fo'] = urlpath
+        xarray_open_kwargs["backend_kwargs"]['consolidated'] = False
         urlpath = 'reference://'
 
     if xarray_open_kwargs['engine'] == 'zarr':
@@ -214,7 +215,6 @@ class ESMDataSource(DataSource):
         """Open dataset with xarray"""
 
         try:
-
             datasets = [
                 _open_dataset(
                     record[self.path_column_name],
