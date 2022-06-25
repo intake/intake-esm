@@ -44,7 +44,9 @@ def test_get_xarray_open_kwargs(storage_options):
 
 
 def test_open_dataset_kerchunk(kerchunk_file=kerchunk_file):
-    xarray_open_kwargs = _get_xarray_open_kwargs('reference', dict(engine='zarr', consolidated=False), storage_options={})
+    xarray_open_kwargs = _get_xarray_open_kwargs(
+        'reference', dict(engine='zarr', consolidated=False), storage_options={}
+    )
     ds = _open_dataset(
         data_format='reference',
         urlpath=kerchunk_file,

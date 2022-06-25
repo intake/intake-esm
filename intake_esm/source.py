@@ -22,7 +22,11 @@ def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_option
         'chunks': {},
         'backend_kwargs': {},
     }
-    xarray_open_kwargs = {**_default_open_kwargs, **xarray_open_kwargs} if xarray_open_kwargs else _default_open_kwargs
+    xarray_open_kwargs = (
+        {**_default_open_kwargs, **xarray_open_kwargs}
+        if xarray_open_kwargs
+        else _default_open_kwargs
+    )
 
     if (
         xarray_open_kwargs['engine'] == 'zarr'
@@ -55,9 +59,9 @@ def _open_dataset(
     if xarray_open_kwargs['engine'] == 'zarr':
         url = urlpath
     elif fsspec.utils.can_be_local(urlpath):
-        url = fsspec.open_local(urlpath,  **storage_options)
+        url = fsspec.open_local(urlpath, **storage_options)
     else:
-        url = fsspec.open(urlpath,   **storage_options).open()
+        url = fsspec.open(urlpath, **storage_options).open()
 
     # Handle multi-file datasets with `xr.open_mfdataset()`
     if '*' in url or isinstance(url, list):
@@ -72,7 +76,7 @@ def _open_dataset(
 
     if varname and isinstance(varname, str):
         varname = [varname]
-        
+
     if requested_variables:
         if isinstance(requested_variables, str):
             requested_variables = [requested_variables]
