@@ -22,7 +22,7 @@ kerchunk_file = os.path.join(
     'sample_data/kerchunk-files/noaa-nwm-test-reference.json',
 )
 
-multi_path = os.path.dirname(f1) + '/*.nc'
+multi_path = f'{os.path.dirname(f1)}/*.nc'
 
 
 def _common_open(fpath, varname='tasmax'):
@@ -44,10 +44,13 @@ def test_get_xarray_open_kwargs(storage_options):
 
 
 def test_open_dataset_kerchunk(kerchunk_file=kerchunk_file):
+    xarray_open_kwargs = _get_xarray_open_kwargs(
+        'reference', dict(engine='zarr', consolidated=False), storage_options={}
+    )
     ds = _open_dataset(
         data_format='reference',
         urlpath=kerchunk_file,
         varname=None,
-        xarray_open_kwargs=dict(engine='zarr', consolidated=False),
+        xarray_open_kwargs=xarray_open_kwargs,
     ).compute()
     assert isinstance(ds, xarray.Dataset)

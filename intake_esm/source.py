@@ -18,14 +18,16 @@ class ESMDataSourceError(Exception):
 def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_options=None):
     xarray_open_kwargs = (xarray_open_kwargs or {}).copy()
     _default_open_kwargs = {
-        'engine': 'zarr' if data_format == 'zarr' else 'netcdf4',
+        'engine': 'zarr' if data_format in {'zarr', 'reference'} else 'netcdf4',
         'chunks': {},
         'backend_kwargs': {},
     }
-    if not xarray_open_kwargs:
-        xarray_open_kwargs = _default_open_kwargs
-    else:
-        xarray_open_kwargs = {**_default_open_kwargs, **xarray_open_kwargs}
+    xarray_open_kwargs = (
+        {**_default_open_kwargs, **xarray_open_kwargs}
+        if xarray_open_kwargs
+        else _default_open_kwargs
+    )
+
     if (
         xarray_open_kwargs['engine'] == 'zarr'
         and 'storage_options' not in xarray_open_kwargs['backend_kwargs']
@@ -47,19 +49,16 @@ def _open_dataset(
     data_format=None,
 ):
 
-    _can_be_local = fsspec.utils.can_be_local(urlpath)
     storage_options = xarray_open_kwargs.get('backend_kwargs', {}).get('storage_options', {})
-
     # Support kerchunk datasets, setting the file object (fo) and urlpath
     if data_format == 'reference':
-        if 'storage_options' not in xarray_open_kwargs.keys():
-            xarray_open_kwargs['storage_options'] = {}
-        xarray_open_kwargs['storage_options']['fo'] = urlpath
+        xarray_open_kwargs['backend_kwargs']['storage_options']['fo'] = urlpath
+        xarray_open_kwargs['backend_kwargs']['consolidated'] = False
         urlpath = 'reference://'
 
     if xarray_open_kwargs['engine'] == 'zarr':
         url = urlpath
-    elif _can_be_local:
+    elif fsspec.utils.can_be_local(urlpath):
         url = fsspec.open_local(urlpath, **storage_options)
     else:
         url = fsspec.open(urlpath, **storage_options).open()
@@ -77,6 +76,7 @@ def _open_dataset(
 
     if varname and isinstance(varname, str):
         varname = [varname]
+
     if requested_variables:
         if isinstance(requested_variables, str):
             requested_variables = [requested_variables]
@@ -214,7 +214,6 @@ class ESMDataSource(DataSource):
         """Open dataset with xarray"""
 
         try:
-
             datasets = [
                 _open_dataset(
                     record[self.path_column_name],
