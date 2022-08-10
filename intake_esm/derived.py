@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import importlib
 import inspect
 import typing
@@ -14,7 +16,7 @@ class DerivedVariableError(Exception):
 class DerivedVariable(pydantic.BaseModel):
     func: typing.Callable
     variable: pydantic.StrictStr
-    query: typing.Dict[pydantic.StrictStr, typing.Union[typing.Any, typing.List[typing.Any]]]
+    query: dict[pydantic.StrictStr, typing.Any | list[typing.Any]]
     prefer_derived: bool
 
     @pydantic.validator('query')
@@ -25,7 +27,7 @@ class DerivedVariable(pydantic.BaseModel):
                 _query[key] = [value]
         return _query
 
-    def dependent_variables(self, variable_key_name: str) -> typing.List[pydantic.StrictStr]:
+    def dependent_variables(self, variable_key_name: str) -> list[pydantic.StrictStr]:
         """Return a list of dependent variables for a given variable"""
         return self.query[variable_key_name]
 
@@ -50,7 +52,7 @@ class DerivedVariableRegistry:
         self._registry = {}
 
     @classmethod
-    def load(cls, name: str, package: str = None) -> 'DerivedVariableRegistry':
+    def load(cls, name: str, package: str = None) -> DerivedVariableRegistry:
         """Load a DerivedVariableRegistry from a Python module/file
 
         Parameters
@@ -92,7 +94,7 @@ class DerivedVariableRegistry:
         func: typing.Callable,
         *,
         variable: str,
-        query: typing.Dict[pydantic.StrictStr, typing.Union[typing.Any, typing.List[typing.Any]]],
+        query: dict[pydantic.StrictStr, typing.Any | list[typing.Any]],
         prefer_derived: bool = False,
     ) -> typing.Callable:
         """Register a derived variable
@@ -134,16 +136,16 @@ class DerivedVariableRegistry:
     def __len__(self) -> int:
         return len(self._registry)
 
-    def items(self) -> typing.List[typing.Tuple[str, DerivedVariable]]:
+    def items(self) -> list[tuple[str, DerivedVariable]]:
         return list(self._registry.items())
 
-    def keys(self) -> typing.List[str]:
+    def keys(self) -> list[str]:
         return list(self._registry.keys())
 
-    def values(self) -> typing.List[DerivedVariable]:
+    def values(self) -> list[DerivedVariable]:
         return list(self._registry.values())
 
-    def search(self, variable: typing.Union[str, typing.List[str]]) -> 'DerivedVariableRegistry':
+    def search(self, variable: str | list[str]) -> DerivedVariableRegistry:
         """Search for a derived variable by name or list of names
 
         Parameters
@@ -166,10 +168,10 @@ class DerivedVariableRegistry:
     def update_datasets(
         self,
         *,
-        datasets: typing.Dict[str, xr.Dataset],
+        datasets: dict[str, xr.Dataset],
         variable_key_name: str,
         skip_on_error: bool = False,
-    ) -> typing.Dict[str, xr.Dataset]:
+    ) -> dict[str, xr.Dataset]:
         """Given a dictionary of datasets, return a dictionary of datasets with the derived variables
 
         Parameters

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import itertools
 import typing
 
@@ -30,7 +32,7 @@ def is_pattern(value):
 
 
 def search(
-    *, df: pd.DataFrame, query: typing.Dict[str, typing.Any], columns_with_iterables: set
+    *, df: pd.DataFrame, query: dict[str, typing.Any], columns_with_iterables: set
 ) -> pd.DataFrame:
     """Search for entries in the catalog."""
 
@@ -59,8 +61,8 @@ def search(
 def search_apply_require_all_on(
     *,
     df: pd.DataFrame,
-    query: typing.Dict[str, typing.Any],
-    require_all_on: typing.Union[str, typing.List[typing.Any]],
+    query: dict[str, typing.Any],
+    require_all_on: str | list[typing.Any],
     columns_with_iterables: set = None,
 ) -> pd.DataFrame:
     _query = query.copy()

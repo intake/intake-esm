@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import concurrent.futures
 import typing
 import warnings
@@ -65,14 +67,14 @@ class esm_datastore(Catalog):
 
     def __init__(
         self,
-        obj: typing.Union[pydantic.FilePath, pydantic.AnyUrl, typing.Dict[str, typing.Any]],
+        obj: pydantic.FilePath | pydantic.AnyUrl | dict[str, typing.Any],
         *,
         progressbar: bool = True,
         sep: str = '.',
-        registry: typing.Optional[DerivedVariableRegistry] = None,
-        read_csv_kwargs: typing.Dict[str, typing.Any] = None,
-        storage_options: typing.Dict[str, typing.Any] = None,
-        intake_kwargs: typing.Dict[str, typing.Any] = None,
+        registry: DerivedVariableRegistry | None = None,
+        read_csv_kwargs: dict[str, typing.Any] = None,
+        storage_options: dict[str, typing.Any] = None,
+        intake_kwargs: dict[str, typing.Any] = None,
     ):
 
         """Intake Catalog representing an ESM Collection."""
@@ -108,7 +110,7 @@ class esm_datastore(Catalog):
                         f'Derived variable {key} depends on unknown column {col} in query: {entry.query}. Valid ESM catalog columns: {self.esmcat.df.columns.tolist()}.'
                     )
 
-    def keys(self) -> typing.List[str]:
+    def keys(self) -> list[str]:
         """
         Get keys for the catalog entries
 
@@ -144,7 +146,7 @@ class esm_datastore(Catalog):
     def __len__(self) -> int:
         return len(self.keys())
 
-    def _get_entries(self) -> typing.Dict[str, ESMDataSource]:
+    def _get_entries(self) -> dict[str, ESMDataSource]:
         # Due to just-in-time entry creation, we may not have all entries loaded
         # We need to make sure to create entries missing from self._entries
         missing = set(self.keys()) - set(self._entries.keys())
@@ -245,7 +247,7 @@ class esm_datastore(Catalog):
         contents = self._repr_html_()
         display(HTML(contents))
 
-    def __dir__(self) -> typing.List[str]:
+    def __dir__(self) -> list[str]:
         rv = [
             'df',
             'to_dataset_dict',
@@ -265,9 +267,7 @@ class esm_datastore(Catalog):
         return self.__dir__()
 
     @pydantic.validate_arguments
-    def search(
-        self, require_all_on: typing.Union[str, typing.List[str]] = None, **query: typing.Any
-    ):
+    def search(self, require_all_on: str | list[str] = None, **query: typing.Any):
         """Search for entries in the catalog.
 
         Parameters
@@ -377,11 +377,11 @@ class esm_datastore(Catalog):
     def serialize(
         self,
         name: pydantic.StrictStr,
-        directory: typing.Union[pydantic.DirectoryPath, pydantic.StrictStr] = None,
+        directory: pydantic.DirectoryPath | pydantic.StrictStr = None,
         catalog_type: str = 'dict',
-        to_csv_kwargs: typing.Dict[typing.Any, typing.Any] = None,
-        json_dump_kwargs: typing.Dict[typing.Any, typing.Any] = None,
-        storage_options: typing.Dict[str, typing.Any] = None,
+        to_csv_kwargs: dict[typing.Any, typing.Any] = None,
+        json_dump_kwargs: dict[typing.Any, typing.Any] = None,
+        storage_options: dict[str, typing.Any] = None,
     ) -> None:
         """Serialize catalog to corresponding json and csv files.
 
@@ -468,15 +468,15 @@ class esm_datastore(Catalog):
     @pydantic.validate_arguments
     def to_dataset_dict(
         self,
-        xarray_open_kwargs: typing.Dict[str, typing.Any] = None,
-        xarray_combine_by_coords_kwargs: typing.Dict[str, typing.Any] = None,
+        xarray_open_kwargs: dict[str, typing.Any] = None,
+        xarray_combine_by_coords_kwargs: dict[str, typing.Any] = None,
         preprocess: typing.Callable = None,
-        storage_options: typing.Dict[pydantic.StrictStr, typing.Any] = None,
+        storage_options: dict[pydantic.StrictStr, typing.Any] = None,
         progressbar: pydantic.StrictBool = None,
         aggregate: pydantic.StrictBool = None,
         skip_on_error: pydantic.StrictBool = False,
         **kwargs,
-    ) -> typing.Dict[str, xr.Dataset]:
+    ) -> dict[str, xr.Dataset]:
         """
         Load catalog entries into a dictionary of xarray datasets.
 
@@ -613,10 +613,10 @@ class esm_datastore(Catalog):
     @pydantic.validate_arguments
     def to_collection(
         self,
-        xarray_open_kwargs: typing.Dict[str, typing.Any] = None,
-        xarray_combine_by_coords_kwargs: typing.Dict[str, typing.Any] = None,
+        xarray_open_kwargs: dict[str, typing.Any] = None,
+        xarray_combine_by_coords_kwargs: dict[str, typing.Any] = None,
         preprocess: typing.Callable = None,
-        storage_options: typing.Dict[pydantic.StrictStr, typing.Any] = None,
+        storage_options: dict[pydantic.StrictStr, typing.Any] = None,
         progressbar: pydantic.StrictBool = None,
         aggregate: pydantic.StrictBool = None,
         skip_on_error: pydantic.StrictBool = False,
