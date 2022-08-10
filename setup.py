@@ -2,6 +2,8 @@
 
 """The setup script."""
 
+
+import pathlib
 from os.path import exists
 
 from setuptools import find_packages, setup
@@ -11,8 +13,7 @@ with open('requirements.txt') as f:
 
 
 if exists('README.md'):
-    with open('README.md') as f:
-        long_description = f.read()
+    long_description = pathlib.Path('README.md').read_text()
 else:
     long_description = ''
 
@@ -23,18 +24,18 @@ CLASSIFIERS = [
     'Intended Audience :: Science/Research',
     'Programming Language :: Python',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
     'Topic :: Scientific/Engineering',
 ]
 
 setup(
     name='intake-esm',
-    description='An intake plugin for parsing an ESM (Earth System Model) Collection/catalog and loading assets (netCDF files and/or Zarr stores) into xarray datasets.',
+    description='An intake plugin for parsing an Earth System Model (ESM) catalog and loading netCDF files and/or Zarr stores into Xarray datasets.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    python_requires='>=3.7',
+    python_requires='>=3.8',
     maintainer='NCAR XDev Team',
     maintainer_email='xdev@ucar.edu',
     classifiers=CLASSIFIERS,
