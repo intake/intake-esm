@@ -35,4 +35,3 @@ dependencies:
       - git+https://github.com/fsspec/s3fs.git
       - git+https://github.com/pydata/xarray.git
       - git+https://github.com/jbusecke/cmip6_preprocessing.git
-      - -r ../requirements.txt
