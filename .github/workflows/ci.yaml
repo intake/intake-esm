@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.8', '3.9', '3.10']
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.10.0
@@ -41,11 +41,6 @@ jobs:
           mamba-version: '*'
           use-mamba: true
           miniforge-variant: Mambaforge
-
-      - if: matrix.python-version == '3.7' # Should be remove when Python 3.7 is no longer supported
-        name: Pin importlib-metadata to 2.0
-        run: |
-          mamba install importlib-metadata==2.0
 
       - name: Install intake-esm
         run: |
