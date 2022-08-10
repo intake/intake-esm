@@ -8,6 +8,10 @@ on:
     - cron: '0 0 * * *' # Daily “At 00:00”
   workflow_dispatch: # allows you to trigger manually
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: python-${{ matrix.python-version }}
@@ -22,25 +26,18 @@ jobs:
       matrix:
         python-version: ['3.8', '3.9', '3.10']
     steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.10.0
-        with:
-          access_token: ${{ github.token }}
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # Fetch all history for all branches and tags.
 
-      - uses: conda-incubator/setup-miniconda@master
+      - name: Create conda environment
+        uses: mamba-org/provision-with-micromamba@main
         with:
-          channels: conda-forge
-          channel-priority: strict
-          activate-environment: intake-esm-dev
-          auto-update-conda: false
-          python-version: ${{ matrix.python-version }}
+          cache-downloads: true
+          micromamba-version: 'latest'
           environment-file: ci/environment.yml
-          mamba-version: '*'
-          use-mamba: true
-          miniforge-variant: Mambaforge
+          extra-specs: |
+            python=${{ matrix.python-version }}
 
       - name: Install intake-esm
         run: |
@@ -69,25 +66,18 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.10.0
-        with:
-          access_token: ${{ github.token }}
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # Fetch all history for all branches and tags.
 
-      - uses: conda-incubator/setup-miniconda@master
+      - name: Create conda environment
+        uses: mamba-org/provision-with-micromamba@main
         with:
-          channels: conda-forge
-          channel-priority: strict
-          activate-environment: intake-esm-dev
-          auto-update-conda: false
-          python-version: 3.9
+          cache-downloads: true
+          micromamba-version: 'latest'
           environment-file: ci/environment-upstream-dev.yml
-          mamba-version: '*'
-          use-mamba: true
-          miniforge-variant: Mambaforge
+          extra-specs: |
+            python=3.10
 
       - name: Install intake-esm
         run: |
