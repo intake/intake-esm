@@ -17,6 +17,7 @@ extensions = [
     'sphinxext.opengraph',
     'sphinx_copybutton',
     'sphinxcontrib.autodoc_pydantic',
+    'sphinx_design',
 ]
 
 
