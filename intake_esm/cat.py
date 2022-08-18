@@ -28,14 +28,14 @@ class Attribute(pydantic.BaseModel):
 
 class Assets(pydantic.BaseModel):
     column_name: pydantic.StrictStr
-    format: DataFormat | None
-    format_column_name: pydantic.StrictStr | None
+    format: DataFormat | None = None
+    format_column_name: pydantic.StrictStr | None = None
 
     class Config:
         validate_all = True
         validate_assignment = True
 
-    @pydantic.root_validator
+    @pydantic.root_validator(allow_reuse=True)
     def _validate_data_format(cls, values):
         data_format, format_column_name = values.get('format'), values.get('format_column_name')
         if data_format is not None and format_column_name is not None:
