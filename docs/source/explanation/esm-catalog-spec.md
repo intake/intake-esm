@@ -4,17 +4,6 @@
 This documents mirrors the [ESM Collection Specification](https://github.com/NCAR/esm-collection-spec/blob/master/collection-spec/collection-spec.md) and is updated as the specification evolves.
 ```
 
-- [ESM Catalog Specification](#esm-catalog-specification)
-  - [Overview](#overview)
-    - [Catalog Specification](#catalog-specification)
-    - [Catalog](#catalog)
-    - [Assets (Data Files)](#assets-data-files)
-  - [Catalog fields](#catalog-fields)
-    - [Attribute Object](#attribute-object)
-    - [Assets Object](#assets-object)
-    - [Aggregation Control Object](#aggregation-control-object)
-    - [Aggregation Object](#aggregation-object)
-
 ## Overview
 
 This document explains the structure and content of an ESM Catalog.

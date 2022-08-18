@@ -17,6 +17,7 @@ extensions = [
     'sphinxext.opengraph',
     'sphinx_copybutton',
     'sphinxcontrib.autodoc_pydantic',
+    'sphinx_design',
 ]
 
 
@@ -31,8 +32,8 @@ copybutton_prompt_is_regexp = True
 autodoc_pydantic_model_show_json = True
 autodoc_pydantic_model_show_config = False
 
-jupyter_execute_notebooks = 'cache'
-execution_timeout = 600
+nb_execution_mode = 'cache'
+nb_execution_timeout = 600
 
 extlinks = {
     'issue': ('https://github.com/intake/intake-esm/issues/%s', 'GH#'),
