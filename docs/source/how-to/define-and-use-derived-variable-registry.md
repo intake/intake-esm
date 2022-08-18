@@ -132,7 +132,7 @@ Let's look at single dataset from this dictionary of datasets... using the key `
 - `wind_speed`
 
 ```{code-cell} ipython3
-ds = dsets['atm.CTRL.monthly']
+ds = dsets['atm.RCP85.monthly']
 ds
 ```
 
