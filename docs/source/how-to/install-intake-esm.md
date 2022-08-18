@@ -1,21 +1,35 @@
-# Install Intake-esm
+# Install intake-ESM
 
-Intake-esm can be installed from PyPI with pip:
+intake-ESM can be installed in three ways:
 
-```bash
-$ python -m pip install intake-esm
-```
+```{eval-rst}
 
-It is also available from `conda-forge` for conda installations:
+.. tab-set::
 
-```bash
-$ conda install -c conda-forge intake-esm
-```
+    .. tab-item:: pip
 
-To install a development version from source:
+        Using the `pip <https://pypi.org/project/pip/>`__ package manager:
 
-```bash
-$ git clone https://github.com/intake/intake-esm
-$ cd intake-esm
-$ python -m pip install -e .
+        .. code:: bash
+
+            $ python -m pip install intake-esm
+
+    .. tab-item:: conda
+
+        Using the `conda <https://conda.io/>`__ package manager that comes with the
+        Anaconda/Miniconda distribution:
+
+        .. code:: bash
+
+            $ conda install intake-esm --channel conda-forge
+
+    .. tab-item:: Development version
+
+        To install a development version from source:
+
+        .. code:: bash
+
+            $ git clone https://github.com/intake/intake-esm
+            $ cd intake-esm
+            $ python -m pip install -e .
 ```
