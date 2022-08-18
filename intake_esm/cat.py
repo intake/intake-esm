@@ -28,8 +28,8 @@ class Attribute(pydantic.BaseModel):
 
 class Assets(pydantic.BaseModel):
     column_name: pydantic.StrictStr
-    format: DataFormat | None = None
-    format_column_name: pydantic.StrictStr | None = None
+    format: DataFormat = None
+    format_column_name: pydantic.StrictStr = None
 
     class Config:
         validate_all = True
