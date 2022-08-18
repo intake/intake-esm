@@ -13,6 +13,7 @@ dependencies:
   - python-graphviz
   - python=3.9
   - s3fs
+  - sphinx
   - sphinx-copybutton
   - sphinx-design
   - watermark
