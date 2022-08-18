@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime
-import enum
 import json
 import os
 import pathlib
@@ -12,27 +11,10 @@ import pandas as pd
 import pydantic
 import tlz
 
-from ._search import search, search_apply_require_all_on
+from intake_esm._search import search, search_apply_require_all_on
 
-
-class AggregationType(str, enum.Enum):
-    join_new = 'join_new'
-    join_existing = 'join_existing'
-    union = 'union'
-
-    class Config:
-        validate_all = True
-        validate_assignment = True
-
-
-class DataFormat(str, enum.Enum):
-    netcdf = 'netcdf'
-    zarr = 'zarr'
-    reference = 'reference'
-
-    class Config:
-        validate_all = True
-        validate_assignment = True
+AggregationType = typing.Literal['join_new', 'join_existing', 'union']
+DataFormat = typing.Literal['netcdf', 'zarr', 'reference']
 
 
 class Attribute(pydantic.BaseModel):
@@ -161,18 +143,17 @@ class ESMCatalogModel(pydantic.BaseModel):
         `catalog_type='file'` to save catalog as a separate CSV file.
 
         """
-
         if catalog_type not in {'file', 'dict'}:
             raise ValueError(
                 f'catalog_type must be either "dict" or "file". Received catalog_type={catalog_type}'
             )
+
         if isinstance(directory, pathlib.Path):
-            directory = str(directory)
-        mapper = fsspec.get_mapper(directory or '.', storage_options=storage_options)
+            directory = directory
+        mapper = fsspec.get_mapper(f'{directory}' or '.', storage_options=storage_options)
         fs = mapper.fs
         csv_file_name = f'{mapper.fs.protocol}://{mapper.root}/{name}.csv'
         json_file_name = f'{mapper.fs.protocol}://{mapper.root}/{name}.json'
-
         data = self.dict().copy()
         for key in {'catalog_dict', 'catalog_file'}:
             data.pop(key, None)
@@ -181,22 +162,20 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         if catalog_type == 'file':
             csv_kwargs = {'index': False}
-            csv_kwargs.update(to_csv_kwargs or {})
+            csv_kwargs |= to_csv_kwargs or {}
             compression = csv_kwargs.get('compression')
             extensions = {'gzip': '.gz', 'bz2': '.bz2', 'zip': '.zip', 'xz': '.xz', None: ''}
+
             csv_file_name = f'{csv_file_name}{extensions[compression]}'
             data['catalog_file'] = str(csv_file_name)
-
             with fs.open(csv_file_name, 'wb') as csv_outfile:
                 self.df.to_csv(csv_outfile, **csv_kwargs)
         else:
             data['catalog_dict'] = self.df.to_dict(orient='records')
-
         with fs.open(json_file_name, 'w') as outfile:
             json_kwargs = {'indent': 2}
-            json_kwargs.update(json_dump_kwargs or {})
+            json_kwargs |= json_dump_kwargs or {}
             json.dump(data, outfile, **json_kwargs)
-
         print(f'Successfully wrote ESM catalog json file to: {json_file_name}')
 
     @classmethod

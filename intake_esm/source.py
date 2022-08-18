@@ -9,8 +9,8 @@ import pydantic
 import xarray as xr
 from intake.source.base import DataSource, Schema
 
-from .cat import Aggregation, DataFormat
-from .utils import OPTIONS
+from intake_esm.cat import Aggregation, DataFormat
+from intake_esm.utils import OPTIONS
 
 
 class ESMDataSourceError(Exception):
@@ -169,7 +169,6 @@ class ESMDataSource(DataSource):
         intake_kwargs: dict, optional
             Additional keyword arguments are passed through to the :py:class:`~intake.source.base.DataSource` base class.
         """
-
         intake_kwargs = intake_kwargs or {}
         super().__init__(**intake_kwargs)
         self.key = key
@@ -184,14 +183,10 @@ class ESMDataSource(DataSource):
         self.xarray_combine_by_coords_kwargs = dict(combine_attrs='drop_conflicts')
         if xarray_combine_by_coords_kwargs is None:
             xarray_combine_by_coords_kwargs = {}
-        self.xarray_combine_by_coords_kwargs = {
-            **self.xarray_combine_by_coords_kwargs,
-            **xarray_combine_by_coords_kwargs,
-        }
+        self.xarray_combine_by_coords_kwargs |= xarray_combine_by_coords_kwargs
         self._ds = None
-
         if data_format is not None:
-            self.df['_data_format_'] = data_format.value
+            self.df['_data_format_'] = data_format
         else:
             self.df = self.df.rename(columns={format_column_name: '_data_format_'})
 
@@ -227,7 +222,7 @@ class ESMDataSource(DataSource):
                     expand_dims={
                         agg.attribute_name: [record[agg.attribute_name]]
                         for agg in self.aggregations
-                        if agg.type.value == 'join_new'
+                        if agg.type == 'join_new'
                     },
                     requested_variables=self.requested_variables,
                     data_format=record['_data_format_'],
