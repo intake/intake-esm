@@ -8,6 +8,10 @@ on:
     - cron: '0 0 * * *' # Daily “At 00:00”
   workflow_dispatch: # allows you to trigger manually
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: python-${{ matrix.python-version }}
@@ -20,32 +24,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.8', '3.9', '3.10']
     steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.9.1
-        with:
-          access_token: ${{ github.token }}
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # Fetch all history for all branches and tags.
 
-      - uses: conda-incubator/setup-miniconda@master
+      - name: Create conda environment
+        uses: mamba-org/provision-with-micromamba@main
         with:
-          channels: conda-forge
-          channel-priority: strict
-          activate-environment: intake-esm-dev
-          auto-update-conda: false
-          python-version: ${{ matrix.python-version }}
+          cache-downloads: true
+          micromamba-version: 'latest'
           environment-file: ci/environment.yml
-          mamba-version: '*'
-          use-mamba: true
-          miniforge-variant: Mambaforge
-
-      - if: matrix.python-version == '3.7' # Should be remove when Python 3.7 is no longer supported
-        name: Pin importlib-metadata to 2.0
-        run: |
-          mamba install importlib-metadata==2.0
+          extra-specs: |
+            python=${{ matrix.python-version }}
 
       - name: Install intake-esm
         run: |
@@ -57,7 +49,7 @@ jobs:
           python -m pytest
 
       - name: Upload code coverage to Codecov
-        uses: codecov/codecov-action@v2.1.0
+        uses: codecov/codecov-action@v3.1.0
         with:
           file: ./coverage.xml
           flags: unittests
@@ -74,25 +66,18 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.9.1
-        with:
-          access_token: ${{ github.token }}
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # Fetch all history for all branches and tags.
 
-      - uses: conda-incubator/setup-miniconda@master
+      - name: Create conda environment
+        uses: mamba-org/provision-with-micromamba@main
         with:
-          channels: conda-forge
-          channel-priority: strict
-          activate-environment: intake-esm-dev
-          auto-update-conda: false
-          python-version: 3.9
+          cache-downloads: true
+          micromamba-version: 'latest'
           environment-file: ci/environment-upstream-dev.yml
-          mamba-version: '*'
-          use-mamba: true
-          miniforge-variant: Mambaforge
+          extra-specs: |
+            python=3.10
 
       - name: Install intake-esm
         run: |

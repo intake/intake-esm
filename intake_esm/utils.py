@@ -2,10 +2,6 @@
 import importlib
 import sys
 
-INTAKE_ESM_ATTRS_PREFIX = 'intake_esm_attrs'
-INTAKE_ESM_DATASET_KEY = 'intake_esm_dataset_key'
-INTAKE_ESM_VARS_KEY = 'intake_esm_vars'
-
 
 def _allnan_or_nonan(df, column: str) -> bool:
     """Check if all values in a column are NaN or not NaN
@@ -77,3 +73,71 @@ def show_versions(file=sys.stdout):  # pragma: no cover
     print('', file=file)
     for k, stat in sorted(deps_blob):
         print(f'{k}: {stat}', file=file)
+
+
+OPTIONS = {
+    'attrs_prefix': 'intake_esm_attrs',
+    'dataset_key': 'intake_esm_dataset_key',
+    'vars_key': 'intake_esm_vars',
+}
+
+
+class set_options:
+    """Set options for intake_esm in a controlled context.
+
+    Currently-supported options:
+
+    - ``attrs_prefix``:
+      The prefix to use in the names of attributes constructed from the catalog's columns
+      when returning xarray Datasets.
+      Default: ``intake_esm_attrs``.
+    - ``dataset_key``:
+      Name of the global attribute where to store the dataset's key.
+      Default: ``intake_esm_dataset_key``.
+    - ``vars_key``:
+      Name of the global attribute where to store the list of requested variables when
+      opening a dataset. Default: ``intake_esm_vars``.
+
+    Examples
+    --------
+    You can use ``set_options`` either as a context manager:
+
+    >>> import intake
+    >>> import intake_esm
+    >>> cat = intake.open_esm_datastore('catalog.json')
+    >>> with intake_esm.set_options(attrs_prefix='cat'):
+    ...     out = cat.to_dataset_dict()
+    ...
+
+    Or to set global options:
+
+    >>> intake_esm.set_options(attrs_prefix='cat', vars_key='cat_vars')
+    """
+
+    def __init__(self, **kwargs):
+        self.old = {}
+        for k, v in kwargs.items():
+            if k not in OPTIONS:
+                raise ValueError(
+                    f'argument name {k} is not in the set of valid options {set(OPTIONS)}'
+                )
+
+            if not isinstance(v, str):
+                raise ValueError(f'option {k} given an invalid value: {v}')
+
+            self.old[k] = OPTIONS[k]
+
+        self._update(kwargs)
+
+    def __enter__(self):
+        """Context management."""
+        return
+
+    def _update(self, kwargs):
+        """Update values."""
+        for k, v in kwargs.items():
+            OPTIONS[k] = v
+
+    def __exit__(self, type, value, traceback):
+        """Context management."""
+        self._update(self.old)

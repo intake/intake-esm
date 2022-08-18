@@ -35,7 +35,7 @@ import intake
 import ast
 
 cat = intake.open_esm_datastore(
-    "multi-variable-collection.json",
+    "multi-variable-catalog.json",
     read_csv_kwargs={"converters": {"variable": ast.literal_eval}},
 )
 cat

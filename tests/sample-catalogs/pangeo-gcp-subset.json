@@ -82,7 +82,7 @@
     ]
   },
   "id": "pangeo-gcp-subset",
-  "description": "This is an ESM collection for CMIP6 Zarr data residing in Pangeo's Google Storage.",
+  "description": "This is an ESM catalog for CMIP6 Zarr data residing in Pangeo's Google Storage.",
   "title": null,
   "catalog_file": "pangeo-gcp-subset.csv.gz"
 }

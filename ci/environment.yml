@@ -19,12 +19,11 @@ dependencies:
   - pydantic
   - pytest
   - pytest-cov
-  # - pytest-icdiff
   - pytest-sugar
   - pytest-xdist
   - s3fs
   - scipy
   - xarray>=0.19,!=0.20.0,!=0.20.1
+  - xcollection
   - zarr >=2.5
-  - pip:
-      - -r ../requirements.txt
+  # - pytest-icdiff

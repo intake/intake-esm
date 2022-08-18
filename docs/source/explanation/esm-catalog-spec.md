@@ -1,12 +1,12 @@
-# ESM Collection Specification
+# ESM Catalog Specification
 
 ```{note}
 This documents mirrors the [ESM Collection Specification](https://github.com/NCAR/esm-collection-spec/blob/master/collection-spec/collection-spec.md) and is updated as the specification evolves.
 ```
 
-- [ESM Collection Specification](#esm-collection-specification)
+- [ESM Catalog Specification](#esm-catalog-specification)
   - [Overview](#overview)
-    - [Collection Specification](#collection-specification)
+    - [Catalog Specification](#catalog-specification)
     - [Catalog](#catalog)
     - [Assets (Data Files)](#assets-data-files)
   - [Catalog fields](#catalog-fields)
@@ -17,22 +17,22 @@ This documents mirrors the [ESM Collection Specification](https://github.com/NCA
 
 ## Overview
 
-This document explains the structure and content of an ESM Collection.
-A collection provides metadata about the catalog, telling us what we expect to find inside and how to open it.
-The collection is described is a single json file, inspired by the STAC spec.
+This document explains the structure and content of an ESM Catalog.
+A catalog provides metadata about the catalog, telling us what we expect to find inside and how to open it.
+The catalog is described is a single json file, inspired by the STAC spec.
 
-The ESM Collection specification consists of three parts:
+The ESM Catalog specification consists of three parts:
 
-### Collection Specification
+### Catalog Specification
 
-The _collection_ specification provides metadata about the catalog, telling us what we expect to find inside and how to open it.
+The _catalog_ specification provides metadata about the catalog, telling us what we expect to find inside and how to open it.
 The descriptor is a single json file, inspired by the [STAC spec](https://github.com/radiantearth/stac-spec).
 
 ```json
 {
   "esmcat_version": "0.1.0",
   "id": "sample",
-  "description": "This is a very basic sample ESM collection.",
+  "description": "This is a very basic sample ESM catalog.",
   "catalog_file": "sample_catalog.csv",
   "attributes": [
     {
@@ -70,17 +70,17 @@ They should be either [URIs](https://en.wikipedia.org/wiki/Uniform_Resource_Iden
 
 ## Catalog fields
 
-| Element             | Type                                                      | Description                                                                                                                                                               |
-| ------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| esmcat_version      | string                                                    | **REQUIRED.** The ESM Catalog version the collection implements.                                                                                                          |
-| id                  | string                                                    | **REQUIRED.** Identifier for the collection.                                                                                                                              |
-| title               | string                                                    | A short descriptive one-line title for the collection.                                                                                                                    |
-| description         | string                                                    | **REQUIRED.** Detailed multi-line description to fully explain the collection. [CommonMark 0.28](http://commonmark.org/) syntax MAY be used for rich text representation. |
-| catalog_file        | string                                                    | **REQUIRED.** Path to a the CSV file with the catalog contents.                                                                                                           |
-| catalog_dict        | array                                                     | If specified, it is mutually exclusive with `catalog_file`. An array of dictionaries that represents the data that would otherwise be in the csv.                         |
-| attributes          | [[Attribute Object](#attribute-object)]                   | **REQUIRED.** A list of attribute columns in the data set.                                                                                                                |
-| assets              | [Assets Object](#assets-object)                           | **REQUIRED.** Description of how the assets (data files) are referenced in the CSV catalog file.                                                                          |
-| aggregation_control | [Aggregation Control Object](#aggregation-control-object) | **OPTIONAL.** Description of how to support aggregation of multiple assets into a single xarray data set.                                                                 |
+| Element             | Type                                                      | Description                                                                                                                                                            |
+| ------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| esmcat_version      | string                                                    | **REQUIRED.** The ESM Catalog version the catalog implements.                                                                                                          |
+| id                  | string                                                    | **REQUIRED.** Identifier for the catalog.                                                                                                                              |
+| title               | string                                                    | A short descriptive one-line title for the catalog.                                                                                                                    |
+| description         | string                                                    | **REQUIRED.** Detailed multi-line description to fully explain the catalog. [CommonMark 0.28](http://commonmark.org/) syntax MAY be used for rich text representation. |
+| catalog_file        | string                                                    | **REQUIRED.** Path to a the CSV file with the catalog contents.                                                                                                        |
+| catalog_dict        | array                                                     | If specified, it is mutually exclusive with `catalog_file`. An array of dictionaries that represents the data that would otherwise be in the csv.                      |
+| attributes          | [[Attribute Object](#attribute-object)]                   | **REQUIRED.** A list of attribute columns in the data set.                                                                                                             |
+| assets              | [Assets Object](#assets-object)                           | **REQUIRED.** Description of how the assets (data files) are referenced in the CSV catalog file.                                                                       |
+| aggregation_control | [Aggregation Control Object](#aggregation-control-object) | **OPTIONAL.** Description of how to support aggregation of multiple assets into a single xarray data set.                                                              |
 
 ### Attribute Object
 
@@ -96,11 +96,11 @@ The column names can optionally be associated with a controlled vocabulary, such
 
 An assets object describes the columns in the CSV file relevant for opening the actual data files.
 
-| Element            | Type   | Description                                                                                                                        |
-| ------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| column_name        | string | **REQUIRED.** The name of the column containing the path to the asset. Must be in the header of the CSV file.                      |
-| format             | string | The data format. Valid values are `netcdf` and `zarr`. If specified, it means that all data in the catalog is the same type.       |
-| format_column_name | string | The column name which contains the data format, allowing for variable data types in one catalog. Mutually exclusive with `format`. |
+| Element            | Type   | Description                                                                                                                                                                                                  |
+| ------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| column_name        | string | **REQUIRED.** The name of the column containing the path to the asset. Must be in the header of the CSV file.                                                                                                |
+| format             | string | The data format. Valid values are `netcdf`, `zarr`, or `reference` ([`kerchunk`](https://github.com/fsspec/kerchunk) reference files). If specified, it means that all data in the catalog is the same type. |
+| format_column_name | string | The column name which contains the data format, allowing for variable data types in one catalog. Mutually exclusive with `format`.                                                                           |
 
 ### Aggregation Control Object
 

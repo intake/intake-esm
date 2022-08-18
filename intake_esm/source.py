@@ -8,7 +8,7 @@ import xarray as xr
 from intake.source.base import DataSource, Schema
 
 from .cat import Aggregation, DataFormat
-from .utils import INTAKE_ESM_ATTRS_PREFIX, INTAKE_ESM_DATASET_KEY, INTAKE_ESM_VARS_KEY
+from .utils import OPTIONS
 
 
 class ESMDataSourceError(Exception):
@@ -18,14 +18,16 @@ class ESMDataSourceError(Exception):
 def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_options=None):
     xarray_open_kwargs = (xarray_open_kwargs or {}).copy()
     _default_open_kwargs = {
-        'engine': 'zarr' if data_format == 'zarr' else 'netcdf4',
+        'engine': 'zarr' if data_format in {'zarr', 'reference'} else 'netcdf4',
         'chunks': {},
         'backend_kwargs': {},
     }
-    if not xarray_open_kwargs:
-        xarray_open_kwargs = _default_open_kwargs
-    else:
-        xarray_open_kwargs = {**_default_open_kwargs, **xarray_open_kwargs}
+    xarray_open_kwargs = (
+        {**_default_open_kwargs, **xarray_open_kwargs}
+        if xarray_open_kwargs
+        else _default_open_kwargs
+    )
+
     if (
         xarray_open_kwargs['engine'] == 'zarr'
         and 'storage_options' not in xarray_open_kwargs['backend_kwargs']
@@ -44,13 +46,19 @@ def _open_dataset(
     requested_variables=None,
     additional_attrs=None,
     expand_dims=None,
+    data_format=None,
 ):
 
-    _can_be_local = fsspec.utils.can_be_local(urlpath)
     storage_options = xarray_open_kwargs.get('backend_kwargs', {}).get('storage_options', {})
+    # Support kerchunk datasets, setting the file object (fo) and urlpath
+    if data_format == 'reference':
+        xarray_open_kwargs['backend_kwargs']['storage_options']['fo'] = urlpath
+        xarray_open_kwargs['backend_kwargs']['consolidated'] = False
+        urlpath = 'reference://'
+
     if xarray_open_kwargs['engine'] == 'zarr':
         url = urlpath
-    elif _can_be_local:
+    elif fsspec.utils.can_be_local(urlpath):
         url = fsspec.open_local(urlpath, **storage_options)
     else:
         url = fsspec.open(urlpath, **storage_options).open()
@@ -68,15 +76,18 @@ def _open_dataset(
 
     if varname and isinstance(varname, str):
         varname = [varname]
+
     if requested_variables:
         if isinstance(requested_variables, str):
             requested_variables = [requested_variables]
         variable_intersection = set(requested_variables).intersection(set(varname))
         variables = [variable for variable in variable_intersection if variable in ds.data_vars]
+        scalar_variables = [v for v in ds.data_vars if len(ds[v].dims) == 0]
+        ds = ds.set_coords(scalar_variables)
         ds = ds[variables]
-        ds.attrs[INTAKE_ESM_VARS_KEY] = variables
+        ds.attrs[OPTIONS['vars_key']] = variables
     else:
-        ds.attrs[INTAKE_ESM_VARS_KEY] = varname
+        ds.attrs[OPTIONS['vars_key']] = varname
 
     ds = _expand_dims(expand_dims, ds)
     ds = _update_attrs(additional_attrs, ds)
@@ -87,7 +98,7 @@ def _update_attrs(additional_attrs, ds):
     additional_attrs = additional_attrs or {}
     if additional_attrs:
         additional_attrs = {
-            f'{INTAKE_ESM_ATTRS_PREFIX}/{key}': value for key, value in additional_attrs.items()
+            f"{OPTIONS['attrs_prefix']}/{key}": value for key, value in additional_attrs.items()
         }
     ds.attrs = {**ds.attrs, **additional_attrs}
     return ds
@@ -95,7 +106,7 @@ def _update_attrs(additional_attrs, ds):
 
 def _expand_dims(expand_dims, ds):
     if expand_dims:
-        for variable in ds.attrs[INTAKE_ESM_VARS_KEY]:
+        for variable in ds.attrs[OPTIONS['vars_key']]:
             ds[variable] = ds[variable].expand_dims(**expand_dims)
 
     return ds
@@ -203,7 +214,6 @@ class ESMDataSource(DataSource):
         """Open dataset with xarray"""
 
         try:
-
             datasets = [
                 _open_dataset(
                     record[self.path_column_name],
@@ -218,6 +228,7 @@ class ESMDataSource(DataSource):
                         if agg.type.value == 'join_new'
                     },
                     requested_variables=self.requested_variables,
+                    data_format=record['_data_format_'],
                     additional_attrs=record.to_dict(),
                 )
                 for _, record in self.df.iterrows()
@@ -230,7 +241,7 @@ class ESMDataSource(DataSource):
                 datasets = sorted(
                     datasets,
                     key=lambda ds: tuple(
-                        f'{INTAKE_ESM_ATTRS_PREFIX}/{agg.attribute_name}'
+                        f"{OPTIONS['attrs_prefix']}/{agg.attribute_name}"
                         for agg in self.aggregations
                     ),
                 )
@@ -238,14 +249,14 @@ class ESMDataSource(DataSource):
                     {'scheduler': 'single-threaded', 'array.slicing.split_large_chunks': True}
                 ):  # Use single-threaded scheduler
                     datasets = [
-                        ds.set_coords(set(ds.variables) - set(ds.attrs[INTAKE_ESM_VARS_KEY]))
+                        ds.set_coords(set(ds.variables) - set(ds.attrs[OPTIONS['vars_key']]))
                         for ds in datasets
                     ]
                     self._ds = xr.combine_by_coords(
                         datasets, **self.xarray_combine_by_coords_kwargs
                     )
 
-            self._ds.attrs[INTAKE_ESM_DATASET_KEY] = self.key
+            self._ds.attrs[OPTIONS['dataset_key']] = self.key
 
         except Exception as exc:
             raise ESMDataSourceError(

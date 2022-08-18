@@ -50,3 +50,10 @@ For more details and examples, refer to the relevant chapters in the main part o
     :noindex:
     :special-members: __init__
 ```
+
+## Options for dataset attributes
+
+```{eval-rst}
+.. autoclass:: intake_esm.utils.set_options
+    :noindex:
+```

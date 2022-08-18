@@ -1,7 +1,7 @@
 {
   "esmcat_version": "0.1.0",
   "id": "sample-multi-variable-cesm1-lens",
-  "description": "This is a sample ESM collection emulating multi variable/history files for CESM1-LENS",
+  "description": "This is a sample ESM catalog emulating multi variable/history files for CESM1-LENS",
   "catalog_file": "multi-variable-catalog.csv",
   "attributes": [
     {

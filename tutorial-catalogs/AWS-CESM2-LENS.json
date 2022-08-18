@@ -70,7 +70,7 @@
     ]
   },
   "id": "CESM2-LENS",
-  "description": "This is an ESM collection for CESM2 Large Ensemble Zarr dataset publicly available on Amazon S3 (us-west-2 region)",
+  "description": "This is an ESM catalog for CESM2 Large Ensemble Zarr dataset publicly available on Amazon S3 (us-west-2 region)",
   "title": null,
   "catalog_dict": [
     {

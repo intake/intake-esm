@@ -1,8 +1,8 @@
 {
   "esmcat_version": "0.1.0",
-  "id": "sample-cmip6-mixed",
-  "description": "This is a sample ESM collection for CMIP6 data in netcdf AND zarr format, local and remote.",
-  "catalog_file": "cmip6-bcc-mixed-formats.csv",
+  "id": "sample-cmip6",
+  "description": "This is a sample ESM catalog for CMIP6 data in netcdf format",
+  "catalog_file": "cmip6-netcdf-test.csv",
   "attributes": [
     {
       "column_name": "activity_id",
@@ -33,7 +33,7 @@
   ],
   "assets": {
     "column_name": "path",
-    "format_column_name": "format"
+    "format": "netcdf"
   },
 
   "aggregation_control": {

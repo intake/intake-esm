@@ -18,17 +18,17 @@ from .source import ESMDataSource
 
 class esm_datastore(Catalog):
     """
-    An intake plugin for parsing an ESM (Earth System Model) Collection/catalog
+    An intake plugin for parsing an ESM (Earth System Model) Catalog
     and loading assets (netCDF files and/or Zarr stores) into xarray datasets.
     The in-memory representation for the catalog is a Pandas DataFrame.
 
     Parameters
     ----------
     obj : str, dict
-        If string, this must be a path or URL to an ESM collection JSON file.
-        If dict, this must be a dict representation of an ESM collection.
+        If string, this must be a path or URL to an ESM catalog JSON file.
+        If dict, this must be a dict representation of an ESM catalog.
         This dict must have two keys: 'esmcat' and 'df'. The 'esmcat' key must be a
-        dict representation of the ESM collection and the 'df' key must
+        dict representation of the ESM catalog and the 'df' key must
         be a Pandas DataFrame containing content that would otherwise be in a CSV file.
     sep : str, optional
         Delimiter to use when constructing a key for a query, by default '.'
@@ -50,8 +50,8 @@ class esm_datastore(Catalog):
 
     >>> import intake
     >>> url = "https://storage.googleapis.com/cmip6/pangeo-cmip6.json"
-    >>> col = intake.open_esm_datastore(url)
-    >>> col.df.head()
+    >>> cat = intake.open_esm_datastore(url)
+    >>> cat.df.head()
     activity_id institution_id source_id experiment_id  ... variable_id grid_label                                             zstore dcpp_init_year
     0  AerChemMIP            BCC  BCC-ESM1        ssp370  ...          pr         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
     1  AerChemMIP            BCC  BCC-ESM1        ssp370  ...        prsn         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
@@ -176,13 +176,13 @@ class esm_datastore(Catalog):
 
         Examples
         --------
-        >>> col = intake.open_esm_datastore("mycatalog.json")
-        >>> data_source = col["AerChemMIP.BCC.BCC-ESM1.piClim-control.AERmon.gn"]
+        >>> cat = intake.open_esm_datastore("mycatalog.json")
+        >>> data_source = cat["AerChemMIP.BCC.BCC-ESM1.piClim-control.AERmon.gn"]
         """
         # The canonical unique key is the key of a compatible group of assets
         try:
             return self._entries[key]
-        except KeyError:
+        except KeyError as e:
             if key in self.keys():
                 keys_dict = self.esmcat._construct_group_keys(sep=self.sep)
                 grouped = self.esmcat.grouped
@@ -210,7 +210,7 @@ class esm_datastore(Catalog):
                 return self._entries[key]
             raise KeyError(
                 f'key={key} not found in catalog. You can access the list of valid keys via the .keys() method.'
-            )
+            ) from e
 
     def __contains__(self, key) -> bool:
         # Python falls back to iterating over the entire catalog
@@ -288,21 +288,21 @@ class esm_datastore(Catalog):
         Examples
         --------
         >>> import intake
-        >>> col = intake.open_esm_datastore("pangeo-cmip6.json")
-        >>> col.df.head(3)
+        >>> cat = intake.open_esm_datastore("pangeo-cmip6.json")
+        >>> cat.df.head(3)
         activity_id institution_id source_id  ... grid_label                                             zstore dcpp_init_year
         0  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
         1  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
         2  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
 
-        >>> cat = col.search(
+        >>> sub_cat = cat.search(
         ...     source_id=["BCC-CSM2-MR", "CNRM-CM6-1", "CNRM-ESM2-1"],
         ...     experiment_id=["historical", "ssp585"],
         ...     variable_id="pr",
         ...     table_id="Amon",
         ...     grid_label="gn",
         ... )
-        >>> cat.df.head(3)
+        >>> sub_cat.df.head(3)
             activity_id institution_id    source_id  ... grid_label                                             zstore dcpp_init_year
         260        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r1i...            NaN
         346        CMIP            BCC  BCC-CSM2-MR  ...         gn  gs://cmip6/CMIP/BCC/BCC-CSM2-MR/historical/r2i...            NaN
@@ -381,13 +381,14 @@ class esm_datastore(Catalog):
         catalog_type: str = 'dict',
         to_csv_kwargs: typing.Dict[typing.Any, typing.Any] = None,
         json_dump_kwargs: typing.Dict[typing.Any, typing.Any] = None,
+        storage_options: typing.Dict[str, typing.Any] = None,
     ) -> None:
-        """Serialize collection/catalog to corresponding json and csv files.
+        """Serialize catalog to corresponding json and csv files.
 
         Parameters
         ----------
         name : str
-            name to use when creating ESM collection json file and csv catalog.
+            name to use when creating ESM catalog json file and csv catalog.
         directory : str, PathLike, default None
             The path to the local directory. If None, use the current directory
         catalog_type: str, default 'dict'
@@ -396,6 +397,9 @@ class esm_datastore(Catalog):
             Additional keyword arguments passed through to the :py:meth:`~pandas.DataFrame.to_csv` method.
         json_dump_kwargs : dict, optional
             Additional keyword arguments passed through to the :py:func:`~json.dump` function.
+        storage_options: dict
+            fsspec parameters passed to the backend file-system such as Google Cloud Storage,
+            Amazon Web Service S3.
 
         Notes
         -----
@@ -405,14 +409,14 @@ class esm_datastore(Catalog):
         Examples
         --------
         >>> import intake
-        >>> col = intake.open_esm_datastore("pangeo-cmip6.json")
-        >>> col_subset = col.search(
+        >>> cat = intake.open_esm_datastore("pangeo-cmip6.json")
+        >>> cat_subset = cat.search(
         ...     source_id="BCC-ESM1",
         ...     grid_label="gn",
         ...     table_id="Amon",
         ...     experiment_id="historical",
         ... )
-        >>> col_subset.serialize(name="cmip6_bcc_esm1", catalog_type="file")
+        >>> cat_subset.serialize(name="cmip6_bcc_esm1", catalog_type="file")
         """
 
         self.esmcat.save(
@@ -421,6 +425,7 @@ class esm_datastore(Catalog):
             catalog_type=catalog_type,
             to_csv_kwargs=to_csv_kwargs,
             json_dump_kwargs=json_dump_kwargs,
+            storage_options=storage_options,
         )
 
     def nunique(self) -> pd.Series:
@@ -430,8 +435,8 @@ class esm_datastore(Catalog):
         Examples
         --------
         >>> import intake
-        >>> col = intake.open_esm_datastore("pangeo-cmip6.json")
-        >>> col.nunique()
+        >>> cat = intake.open_esm_datastore("pangeo-cmip6.json")
+        >>> cat.nunique()
         activity_id          10
         institution_id       23
         source_id            48
@@ -475,6 +480,10 @@ class esm_datastore(Catalog):
         """
         Load catalog entries into a dictionary of xarray datasets.
 
+        Column values, dataset keys and requested variables are added as global
+        attributes on the returned datasets. The names of these attributes can be
+        customized with :py:class:`intake_esm.utils.set_options`.
+
         Parameters
         ----------
         xarray_open_kwargs : dict
@@ -502,15 +511,15 @@ class esm_datastore(Catalog):
         Examples
         --------
         >>> import intake
-        >>> col = intake.open_esm_datastore("glade-cmip6.json")
-        >>> cat = col.search(
+        >>> cat = intake.open_esm_datastore("glade-cmip6.json")
+        >>> sub_cat = cat.search(
         ...     source_id=["BCC-CSM2-MR", "CNRM-CM6-1", "CNRM-ESM2-1"],
         ...     experiment_id=["historical", "ssp585"],
         ...     variable_id="pr",
         ...     table_id="Amon",
         ...     grid_label="gn",
         ... )
-        >>> dsets = cat.to_dataset_dict()
+        >>> dsets = sub_cat.to_dataset_dict()
         >>> dsets.keys()
         dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
         >>> dsets["CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn"]
@@ -643,15 +652,15 @@ class esm_datastore(Catalog):
         Examples
         --------
         >>> import intake
-        >>> col = intake.open_esm_datastore("glade-cmip6.json")
-        >>> cat = col.search(
+        >>> cat = intake.open_esm_datastore("glade-cmip6.json")
+        >>> sub_cat = cat.search(
         ...     source_id=["BCC-CSM2-MR", "CNRM-CM6-1", "CNRM-ESM2-1"],
         ...     experiment_id=["historical", "ssp585"],
         ...     variable_id="pr",
         ...     table_id="Amon",
         ...     grid_label="gn",
         ... )
-        >>> dsets = cat.to_collection()
+        >>> dsets = sub_cat.to_collection()
         >>> dsets.keys()
         dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
         >>> dsets["CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn"]

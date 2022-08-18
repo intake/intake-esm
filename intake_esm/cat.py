@@ -26,6 +26,7 @@ class AggregationType(str, enum.Enum):
 class DataFormat(str, enum.Enum):
     netcdf = 'netcdf'
     zarr = 'zarr'
+    reference = 'reference'
 
     class Config:
         validate_all = True
@@ -129,6 +130,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         catalog_type: str = 'dict',
         to_csv_kwargs: dict = None,
         json_dump_kwargs: dict = None,
+        storage_options: typing.Dict[str, typing.Any] = None,
     ) -> None:
         """
         Save the catalog to a file.
@@ -138,7 +140,8 @@ class ESMCatalogModel(pydantic.BaseModel):
         name: str
             The name of the file to save the catalog to.
         directory: str
-            The directory to save the catalog to. If None, use the current directory
+            The directory or cloud storage bucket to save the catalog to.
+            If None, use the current directory
         catalog_type: str
             The type of catalog to save. Whether to save the catalog table as a dictionary
             in the JSON file or as a separate CSV file. Valid options are 'dict' and 'file'.
@@ -146,6 +149,9 @@ class ESMCatalogModel(pydantic.BaseModel):
             Additional keyword arguments passed through to the :py:meth:`~pandas.DataFrame.to_csv` method.
         json_dump_kwargs : dict, optional
             Additional keyword arguments passed through to the :py:func:`~json.dump` function.
+        storage_options: dict
+            fsspec parameters passed to the backend file-system such as Google Cloud Storage,
+            Amazon Web Service S3.
 
         Notes
         -----
@@ -158,13 +164,12 @@ class ESMCatalogModel(pydantic.BaseModel):
             raise ValueError(
                 f'catalog_type must be either "dict" or "file". Received catalog_type={catalog_type}'
             )
-        csv_file_name = pathlib.Path(f'{name}.csv')
-        json_file_name = pathlib.Path(f'{name}.json')
-        if directory:
-            directory = pathlib.Path(directory)
-            directory.mkdir(parents=True, exist_ok=True)
-            csv_file_name = directory / csv_file_name
-            json_file_name = directory / json_file_name
+        if isinstance(directory, pathlib.Path):
+            directory = str(directory)
+        mapper = fsspec.get_mapper(directory or '.', storage_options=storage_options)
+        fs = mapper.fs
+        csv_file_name = f'{mapper.fs.protocol}://{mapper.root}/{name}.csv'
+        json_file_name = f'{mapper.fs.protocol}://{mapper.root}/{name}.json'
 
         data = self.dict().copy()
         for key in {'catalog_dict', 'catalog_file'}:
@@ -179,16 +184,18 @@ class ESMCatalogModel(pydantic.BaseModel):
             extensions = {'gzip': '.gz', 'bz2': '.bz2', 'zip': '.zip', 'xz': '.xz', None: ''}
             csv_file_name = f'{csv_file_name}{extensions[compression]}'
             data['catalog_file'] = str(csv_file_name)
-            self.df.to_csv(csv_file_name, **csv_kwargs)
+
+            with fs.open(csv_file_name, 'wb') as csv_outfile:
+                self.df.to_csv(csv_outfile, **csv_kwargs)
         else:
             data['catalog_dict'] = self.df.to_dict(orient='records')
 
-        with open(json_file_name, 'w') as outfile:
+        with fs.open(json_file_name, 'w') as outfile:
             json_kwargs = {'indent': 2}
             json_kwargs.update(json_dump_kwargs or {})
             json.dump(data, outfile, **json_kwargs)
 
-        print(f'Successfully wrote ESM collection json file to: {json_file_name}')
+        print(f'Successfully wrote ESM catalog json file to: {json_file_name}')
 
     @classmethod
     def load(
@@ -350,12 +357,13 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         """
 
-        if not isinstance(query, QueryModel):
-            _query = QueryModel(
+        _query = (
+            query
+            if isinstance(query, QueryModel)
+            else QueryModel(
                 query=query, require_all_on=require_all_on, columns=self.df.columns.tolist()
             )
-        else:
-            _query = query
+        )
 
         results = search(
             df=self.df, query=_query.query, columns_with_iterables=self.columns_with_iterables
