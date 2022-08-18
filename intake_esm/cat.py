@@ -48,7 +48,7 @@ class Assets(pydantic.BaseModel):
 class Aggregation(pydantic.BaseModel):
     type: AggregationType
     attribute_name: pydantic.StrictStr
-    options: dict | None = {}
+    options: dict = {}
 
     class Config:
         validate_all = True
@@ -74,13 +74,13 @@ class ESMCatalogModel(pydantic.BaseModel):
     attributes: list[Attribute]
     assets: Assets
     aggregation_control: AggregationControl
-    id: str | None = ''
-    catalog_dict: list[dict] | None = None
+    id: str = ''
+    catalog_dict: list[dict] = None
     catalog_file: pydantic.StrictStr = None
     description: pydantic.StrictStr = None
     title: pydantic.StrictStr = None
-    last_updated: datetime.datetime | datetime.date | None = None
-    _df: pd.DataFrame | None = pydantic.PrivateAttr()
+    last_updated: datetime.datetime | datetime.date = None
+    _df: pd.DataFrame = pydantic.PrivateAttr(default=None)
 
     class Config:
         arbitrary_types_allowed = True
@@ -88,7 +88,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         validate_all = True
         validate_assignment = True
 
-    @pydantic.root_validator
+    @pydantic.root_validator(allow_reuse=True)
     def validate_catalog(cls, values):
         catalog_dict, catalog_file = values.get('catalog_dict'), values.get('catalog_file')
         if catalog_dict is not None and catalog_file is not None:
