@@ -557,6 +557,7 @@ class esm_datastore(Catalog):
             )
 
         xarray_open_kwargs = xarray_open_kwargs or {}
+
         xarray_combine_by_coords_kwargs = xarray_combine_by_coords_kwargs or {}
         cdf_kwargs, zarr_kwargs = kwargs.get('cdf_kwargs'), kwargs.get('zarr_kwargs')
 
@@ -577,6 +578,7 @@ class esm_datastore(Catalog):
             xarray_combine_by_coords_kwargs=xarray_combine_by_coords_kwargs,
             preprocess=preprocess,
             requested_variables=self._requested_variables,
+            storage_options=storage_options,
         )
 
         if aggregate is not None and not aggregate:
