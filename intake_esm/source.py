@@ -232,7 +232,7 @@ class ESMDataSource(DataSource):
                     },
                     requested_variables=self.requested_variables,
                     data_format=record['_data_format_'],
-                    additional_attrs=record.to_dict(),
+                    additional_attrs=record[~record.isnull()].to_dict(),
                 )
                 for _, record in self.df.iterrows()
             ]
