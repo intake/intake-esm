@@ -69,5 +69,5 @@ def test_update_attrs(tmp_path, data_format, attrs):
         ds.to_zarr(fpath)
 
     _xarray_open_kwargs = _get_xarray_open_kwargs(data_format=data_format)
-    ds_new = _open_dataset(fpath, 'tasmax', xarray_open_kwargs=_xarray_open_kwargs)
+    ds_new = _open_dataset(fpath, 'tasmax', xarray_open_kwargs=_xarray_open_kwargs).compute()
     assert ds_new.attrs == ds.attrs
