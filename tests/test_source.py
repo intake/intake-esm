@@ -3,7 +3,7 @@ import os
 import pytest
 import xarray
 
-from intake_esm.source import _get_xarray_open_kwargs, _open_dataset
+from intake_esm.source import _get_xarray_open_kwargs, _open_dataset, _update_attrs
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -54,3 +54,20 @@ def test_open_dataset_kerchunk(kerchunk_file=kerchunk_file):
         xarray_open_kwargs=xarray_open_kwargs,
     ).compute()
     assert isinstance(ds, xarray.Dataset)
+
+
+@pytest.mark.parametrize('data_format', ['zarr', 'netcdf'])
+@pytest.mark.parametrize('attrs', [{}, {'units': 'K'}, {'variables': ['foo', 'bar']}])
+def test_update_attrs(tmp_path, data_format, attrs):
+    fpath = tmp_path / 'test.nc' if data_format == 'netcdf' else tmp_path / 'test.zarr'
+    fpath = str(fpath)
+    ds = _common_open(f1)
+    ds = _update_attrs(ds=ds, additional_attrs=attrs)
+    if data_format == 'netcdf':
+        ds.to_netcdf(fpath)
+    else:
+        ds.to_zarr(fpath)
+
+    _xarray_open_kwargs = _get_xarray_open_kwargs(data_format=data_format)
+    ds_new = _open_dataset(fpath, 'tasmax', xarray_open_kwargs=_xarray_open_kwargs)
+    assert ds_new.attrs == ds.attrs

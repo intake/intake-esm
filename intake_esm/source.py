@@ -90,11 +90,11 @@ def _open_dataset(
         ds.attrs[OPTIONS['vars_key']] = varname
 
     ds = _expand_dims(expand_dims, ds)
-    ds = _update_attrs(additional_attrs, ds)
+    ds = _update_attrs(additional_attrs=additional_attrs, ds=ds)
     return ds
 
 
-def _update_attrs(additional_attrs, ds):
+def _update_attrs(*, additional_attrs, ds):
     additional_attrs = additional_attrs or {}
     if additional_attrs:
         additional_attrs = {
