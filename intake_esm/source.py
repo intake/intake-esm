@@ -90,15 +90,18 @@ def _open_dataset(
         ds.attrs[OPTIONS['vars_key']] = varname
 
     ds = _expand_dims(expand_dims, ds)
-    ds = _update_attrs(additional_attrs, ds)
+    ds = _update_attrs(additional_attrs=additional_attrs, ds=ds)
     return ds
 
 
-def _update_attrs(additional_attrs, ds):
+def _update_attrs(*, additional_attrs, ds):
     additional_attrs = additional_attrs or {}
     if additional_attrs:
         additional_attrs = {
-            f"{OPTIONS['attrs_prefix']}/{key}": value for key, value in additional_attrs.items()
+            f"{OPTIONS['attrs_prefix']}:{key}": f'{value}'
+            if isinstance(value, str) or not hasattr(value, '__iter__')
+            else ','.join(value)
+            for key, value in additional_attrs.items()
         }
     ds.attrs = {**ds.attrs, **additional_attrs}
     return ds
@@ -229,7 +232,7 @@ class ESMDataSource(DataSource):
                     },
                     requested_variables=self.requested_variables,
                     data_format=record['_data_format_'],
-                    additional_attrs=record.to_dict(),
+                    additional_attrs=record[~record.isnull()].to_dict(),
                 )
                 for _, record in self.df.iterrows()
             ]

@@ -472,4 +472,4 @@ def test_options():
         _, ds = scat.to_dataset_dict(
             xarray_open_kwargs={'backend_kwargs': {'storage_options': {'anon': True}}},
         ).popitem()
-        assert ds.attrs['myprefix/component'] == 'atm'
+        assert ds.attrs['myprefix:component'] == 'atm'
