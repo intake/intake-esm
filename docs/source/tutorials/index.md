@@ -223,8 +223,18 @@ for k, ds in dset_dict_fixed.items():
 
 This was just an example for one dimension.
 
+## Load the data into a datatree
+
+We can also load our data into an xarray-datatree object using the following:
+
+```{code-cell} ipython3
+tree = cat_pp.to_datatree(xarray_open_kwargs={"consolidated": True}, preprocess=helper_func)
+
+tree
+```
+
 ```{note}
-Check out [cmip6-preprocessing package](https://github.com/jbusecke/cmip6_preprocessing)
+Check out [xmip package](https://github.com/jbusecke/xMIP)
 for a full renaming function for all available CMIP6 models and some other
 utilities.
 ```
