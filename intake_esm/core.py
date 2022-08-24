@@ -4,10 +4,10 @@ import warnings
 from copy import deepcopy
 
 import dask
-from datatree import DataTree
 import pandas as pd
 import pydantic
 import xarray as xr
+from datatree import DataTree
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
@@ -748,7 +748,7 @@ class esm_datastore(Catalog):
         """
 
         # Set the separator to a / for datatree
-        self.sep = "/"
+        self.sep = '/'
 
         # Use to dataset dict to access dictionary of datasets
         self.datasets = self.to_dataset_dict(
