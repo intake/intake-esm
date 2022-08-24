@@ -4,10 +4,16 @@ import warnings
 from copy import deepcopy
 
 import dask
+
+try:
+    from datatree import DataTree
+
+    _DATATREE_AVAILABLE = True
+except ImportError:
+    _DATATREE_AVAILABLE = False
 import pandas as pd
 import pydantic
 import xarray as xr
-from datatree import DataTree
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
@@ -677,9 +683,10 @@ class esm_datastore(Catalog):
             time_bnds  (time, bnds) object dask.array<chunksize=(1980, 2), meta=np.ndarray>
             pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
         """
+        from datatree import DataTree
 
-        # Set the separator to a / for datatree
-        self.sep = '/'
+        # Set the separator to a / for datatree temporarily
+        self.sep, old_sep = '/', self.sep
 
         # Use to dataset dict to access dictionary of datasets
         self.datasets = self.to_dataset_dict(
@@ -692,6 +699,9 @@ class esm_datastore(Catalog):
             skip_on_error=skip_on_error,
             **kwargs,
         )
+
+        # Set the separator to the original value
+        self.sep = old_sep
 
         # Convert the dictionary of datasets to a datatree
         self.datasets = DataTree.from_dict(self.datasets)
