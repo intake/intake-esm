@@ -4,10 +4,10 @@ import warnings
 from copy import deepcopy
 
 import dask
+from datatree import DataTree
 import pandas as pd
 import pydantic
 import xarray as xr
-import xcollection as xc
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
@@ -249,7 +249,7 @@ class esm_datastore(Catalog):
         rv = [
             'df',
             'to_dataset_dict',
-            'to_collection',
+            'to_datatree',
             'to_dask',
             'keys',
             'serialize',
@@ -612,7 +612,7 @@ class esm_datastore(Catalog):
         return self.datasets
 
     @pydantic.validate_arguments
-    def to_collection(
+    def to_datatree(
         self,
         xarray_open_kwargs: typing.Dict[str, typing.Any] = None,
         xarray_combine_by_coords_kwargs: typing.Dict[str, typing.Any] = None,
@@ -622,9 +622,9 @@ class esm_datastore(Catalog):
         aggregate: pydantic.StrictBool = None,
         skip_on_error: pydantic.StrictBool = False,
         **kwargs,
-    ) -> xc.Collection:
+    ) -> DataTree:
         """
-        Load catalog entries into a Collection of xarray datasets.
+        Load catalog entries into a tree of xarray datasets.
 
         Parameters
         ----------
@@ -647,8 +647,8 @@ class esm_datastore(Catalog):
 
         Returns
         -------
-        dsets : Collection
-           A Collection of xarray :py:class:`~xarray.Dataset`.
+        dsets : DataTree
+           A tree of xarray :py:class:`~xarray.Dataset`.
 
         Examples
         --------
@@ -661,10 +661,77 @@ class esm_datastore(Catalog):
         ...     table_id="Amon",
         ...     grid_label="gn",
         ... )
-        >>> dsets = sub_cat.to_collection()
-        >>> dsets.keys()
-        dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
-        >>> dsets["CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn"]
+        >>> dsets = sub_cat.to_datatree()
+        >>> KeysView(DataTree('None', parent=None)
+        ├── DataTree('ScenarioMIP')
+        │   └── DataTree('BCC')
+        │       └── DataTree('BCC-CSM2-MR')
+        │           └── DataTree('ssp585')
+        │               └── DataTree('Amon')
+        │                   └── DataTree('gn')
+        │                           Dimensions:         (lat: 160, bnds: 2, lon: 320, member_id: 1,
+        │                                                dcpp_init_year: 1, time: 1032)
+        │                           Coordinates:
+        │                             * lat             (lat) float64 -89.14 -88.03 -86.91 ... 86.91 88.03 89.14
+        │                               lat_bnds        (lat, bnds) float64 dask.array<chunksize=(160, 2), meta=np.ndarray>
+        │                             * lon             (lon) float64 0.0 1.125 2.25 3.375 ... 356.6 357.8 358.9
+        │                               lon_bnds        (lon, bnds) float64 dask.array<chunksize=(320, 2), meta=np.ndarray>
+        │                             * time            (time) object 2015-01-16 12:00:00 ... 2100-12-16 12:00:00
+        │                               time_bnds       (time, bnds) object dask.array<chunksize=(1032, 2), meta=np.ndarray>
+        │                             * member_id       (member_id) object 'r1i1p1f1'
+        │                             * dcpp_init_year  (dcpp_init_year) float64 nan
+        │                           Dimensions without coordinates: bnds
+        │                           Data variables:
+        │                               pr              (member_id, dcpp_init_year, time, lat, lon) float32 dask.array<chunksize=(1, 1, 600, 160, 320), meta=np.ndarray>
+        │                           Attributes: (12/65)
+        │                               Conventions:                      CF-1.7 CMIP-6.2
+        │                               activity_id:                      ScenarioMIP
+        │                               branch_method:                    Standard
+        │                               branch_time_in_child:             0.0
+        │                               branch_time_in_parent:            2015.0
+        │                               cmor_version:                     3.3.2
+        │                               ...                               ...
+        │                               intake_esm_attrs:variable_id:     pr
+        │                               intake_esm_attrs:grid_label:      gn
+        │                               intake_esm_attrs:zstore:          gs://cmip6/CMIP6/ScenarioMIP/BCC/BCC-CS...
+        │                               intake_esm_attrs:version:         20190314
+        │                               intake_esm_attrs:_data_format_:   zarr
+        │                               intake_esm_dataset_key:           ScenarioMIP/BCC/BCC-CSM2-MR/ssp585/Amon/gn
+        └── DataTree('CMIP')
+            └── DataTree('BCC')
+                └── DataTree('BCC-CSM2-MR')
+                    └── DataTree('historical')
+                        └── DataTree('Amon')
+                            └── DataTree('gn')
+                                    Dimensions:         (lat: 160, bnds: 2, lon: 320, member_id: 3,
+                                                        dcpp_init_year: 1, time: 1980)
+                                    Coordinates:
+                                    * lat             (lat) float64 -89.14 -88.03 -86.91 ... 86.91 88.03 89.14
+                                        lat_bnds        (lat, bnds) float64 dask.array<chunksize=(160, 2), meta=np.ndarray>
+                                    * lon             (lon) float64 0.0 1.125 2.25 3.375 ... 356.6 357.8 358.9
+                                        lon_bnds        (lon, bnds) float64 dask.array<chunksize=(320, 2), meta=np.ndarray>
+                                    * time            (time) object 1850-01-16 12:00:00 ... 2014-12-16 12:00:00
+                                        time_bnds       (time, bnds) object dask.array<chunksize=(1980, 2), meta=np.ndarray>
+                                    * member_id       (member_id) object 'r1i1p1f1' 'r2i1p1f1' 'r3i1p1f1'
+                                    * dcpp_init_year  (dcpp_init_year) float64 nan
+                                    Dimensions without coordinates: bnds
+                                    Data variables:
+                                        pr              (member_id, dcpp_init_year, time, lat, lon) float32 dask.array<chunksize=(1, 1, 600, 160, 320), meta=np.ndarray>
+                                    Attributes: (12/51)
+                                        Conventions:                      CF-1.7 CMIP-6.2
+                                        activity_id:                      CMIP
+                                        branch_method:                    Standard
+                                        branch_time_in_child:             0.0
+                                        cmor_version:                     3.3.2
+                                        contact:                          Dr. Tongwen Wu(twwu@cma.gov.cn)
+                                        ...                               ...
+                                        intake_esm_attrs:experiment_id:   historical
+                                        intake_esm_attrs:table_id:        Amon
+                                        intake_esm_attrs:variable_id:     pr
+                                        intake_esm_attrs:grid_label:      gn
+                                        intake_esm_attrs:_data_format_:   zarr
+                                        intake_esm_dataset_key:           CMIP/BCC/BCC-CSM2-MR/historical/Amon/gn)
+        >>> dsets["CMIP/BCC.BCC-CSM2-MR/historical/Amon/gn"].ds
         <xarray.Dataset>
         Dimensions:    (bnds: 2, lat: 160, lon: 320, member_id: 3, time: 1980)
         Coordinates:
@@ -680,6 +747,10 @@ class esm_datastore(Catalog):
             pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
         """
 
+        # Set the separator to a / for datatree
+        self.sep = "/"
+
+        # Use to dataset dict to access dictionary of datasets
         self.datasets = self.to_dataset_dict(
             xarray_open_kwargs=xarray_open_kwargs,
             xarray_combine_by_coords_kwargs=xarray_combine_by_coords_kwargs,
@@ -690,7 +761,9 @@ class esm_datastore(Catalog):
             skip_on_error=skip_on_error,
             **kwargs,
         )
-        self.datasets = xc.Collection(self.datasets)
+
+        # Convert the dictionary of datasets to a datatree
+        self.datasets = DataTree.from_dict(self.datasets)
         return self.datasets
 
     def to_dask(self, **kwargs) -> xr.Dataset:
