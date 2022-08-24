@@ -5,7 +5,6 @@ import pandas as pd
 import pydantic
 import pytest
 import xarray as xr
-import xcollection as xc
 from datatree import DataTree
 
 import intake_esm
