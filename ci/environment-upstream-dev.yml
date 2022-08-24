@@ -27,7 +27,7 @@ dependencies:
   - regionmask
   - scipy
   - toolz
-  - xcollection
+  - xarray-datatree
   - xgcm
   - zarr>=2.5
   - pip:
