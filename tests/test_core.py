@@ -319,11 +319,10 @@ def test_to_datatree(path, query, xarray_open_kwargs):
 
 
 def test_to_datatree_import_error(mocker):
-    cat = intake.open_esm_datastore(zarr_cat_pangeo_cmip6)
-    cat_sub = cat.search(variable_id=['pr'])
+    cat = intake.open_esm_datastore(cdf_cat_sample_cmip6)
     mocker.patch.dict('sys.modules', {'datatree': None})
     with pytest.raises(ImportError):
-        cat_sub.to_datatree()
+        cat.to_datatree()
 
 
 @pytest.mark.parametrize(
