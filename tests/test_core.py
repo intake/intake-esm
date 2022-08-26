@@ -167,6 +167,14 @@ def test_catalog_getitem_error():
         cat['foo']
 
 
+def test_catalog_keys_info():
+    cat = intake.open_esm_datastore(cdf_cat_sample_cesmle)
+    data = cat.keys_info()
+    assert isinstance(data, pd.DataFrame)
+    assert data.index.name == 'key'
+    assert len(data) == len(cat)
+
+
 @pytest.mark.parametrize(
     'catalog_type, to_csv_kwargs, json_dump_kwargs',
     [('file', {'compression': 'bz2'}, {}), ('file', {'compression': 'gzip'}, {}), ('dict', {}, {})],
