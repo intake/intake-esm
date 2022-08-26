@@ -134,6 +134,19 @@ class esm_datastore(Catalog):
         pandas.DataFrame
             keys for the catalog entries and their metadata
 
+        Examples
+        --------
+
+        >>> import intake
+        >>> cat = intake.open_esm_datastore("./tests/sample-catalogs/cesm1-lens-netcdf.json")
+        >>> cat.keys_info()
+                        component experiment stream
+        key
+        ocn.20C.pop.h         ocn        20C  pop.h
+        ocn.CTRL.pop.h        ocn       CTRL  pop.h
+        ocn.RCP85.pop.h       ocn      RCP85  pop.h
+
+
 
         """
         results = self.esmcat._construct_group_keys(sep=self.sep)
