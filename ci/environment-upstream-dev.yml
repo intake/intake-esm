@@ -24,6 +24,7 @@ dependencies:
   - pytest-icdiff
   - pytest-sugar
   - pytest-xdist
+  - pytest-mock
   - regionmask
   - scipy
   - toolz
