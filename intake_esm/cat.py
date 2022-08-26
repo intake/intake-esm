@@ -2,7 +2,6 @@ import datetime
 import enum
 import json
 import os
-import pathlib
 import typing
 
 import fsspec
@@ -164,9 +163,7 @@ class ESMCatalogModel(pydantic.BaseModel):
             raise ValueError(
                 f'catalog_type must be either "dict" or "file". Received catalog_type={catalog_type}'
             )
-        if isinstance(directory, pathlib.Path):
-            directory = str(directory)
-        mapper = fsspec.get_mapper(directory or '.', storage_options=storage_options)
+        mapper = fsspec.get_mapper(f'{directory}' or '.', storage_options=storage_options)
         fs = mapper.fs
         csv_file_name = f'{mapper.fs.protocol}://{mapper.root}/{name}.csv'
         json_file_name = f'{mapper.fs.protocol}://{mapper.root}/{name}.json'

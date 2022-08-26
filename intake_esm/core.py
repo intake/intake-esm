@@ -364,6 +364,7 @@ class esm_datastore(Catalog):
             )
 
         cat = self.__class__({'esmcat': self.esmcat.dict(), 'df': esmcat_results})
+        cat.esmcat.catalog_file = None  # Don't save the catalog file
         if self.esmcat.has_multiple_variable_assets:
             requested_variables = list(set(variables or []).union(dependents))
         else:
