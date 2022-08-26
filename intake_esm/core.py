@@ -628,7 +628,7 @@ class esm_datastore(Catalog):
         aggregate: pydantic.StrictBool = None,
         skip_on_error: pydantic.StrictBool = False,
         **kwargs,
-    ) -> 'DataTree':
+    ):
         """
         Load catalog entries into a tree of xarray datasets.
 
