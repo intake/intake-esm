@@ -24,10 +24,11 @@ dependencies:
   - pytest-icdiff
   - pytest-sugar
   - pytest-xdist
+  - pytest-mock
   - regionmask
   - scipy
   - toolz
-  - xcollection
+  - xarray-datatree
   - xgcm
   - zarr>=2.5
   - pip:

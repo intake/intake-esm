@@ -4,10 +4,16 @@ import warnings
 from copy import deepcopy
 
 import dask
+
+try:
+    from datatree import DataTree
+
+    _DATATREE_AVAILABLE = True
+except ImportError:
+    _DATATREE_AVAILABLE = False
 import pandas as pd
 import pydantic
 import xarray as xr
-import xcollection as xc
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
@@ -249,7 +255,7 @@ class esm_datastore(Catalog):
         rv = [
             'df',
             'to_dataset_dict',
-            'to_collection',
+            'to_datatree',
             'to_dask',
             'keys',
             'serialize',
@@ -612,7 +618,7 @@ class esm_datastore(Catalog):
         return self.datasets
 
     @pydantic.validate_arguments
-    def to_collection(
+    def to_datatree(
         self,
         xarray_open_kwargs: typing.Dict[str, typing.Any] = None,
         xarray_combine_by_coords_kwargs: typing.Dict[str, typing.Any] = None,
@@ -622,9 +628,9 @@ class esm_datastore(Catalog):
         aggregate: pydantic.StrictBool = None,
         skip_on_error: pydantic.StrictBool = False,
         **kwargs,
-    ) -> xc.Collection:
+    ):
         """
-        Load catalog entries into a Collection of xarray datasets.
+        Load catalog entries into a tree of xarray datasets.
 
         Parameters
         ----------
@@ -647,8 +653,8 @@ class esm_datastore(Catalog):
 
         Returns
         -------
-        dsets : Collection
-           A Collection of xarray :py:class:`~xarray.Dataset`.
+        dsets : :py:class:`~datatree.DataTree`
+           A tree of xarray :py:class:`~xarray.Dataset`.
 
         Examples
         --------
@@ -661,10 +667,8 @@ class esm_datastore(Catalog):
         ...     table_id="Amon",
         ...     grid_label="gn",
         ... )
-        >>> dsets = sub_cat.to_collection()
-        >>> dsets.keys()
-        dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
-        >>> dsets["CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn"]
+        >>> dsets = sub_cat.to_datatree()
+        >>> dsets["CMIP/BCC.BCC-CSM2-MR/historical/Amon/gn"].ds
         <xarray.Dataset>
         Dimensions:    (bnds: 2, lat: 160, lon: 320, member_id: 3, time: 1980)
         Coordinates:
@@ -680,6 +684,17 @@ class esm_datastore(Catalog):
             pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
         """
 
+        if not _DATATREE_AVAILABLE:
+            raise ImportError(
+                '.to_datatree() requires the xarray-datatree package to be installed. '
+                'To proceed please install xarray-datatree using: '
+                ' `python -m pip install xarray-datatree` or `conda install -c conda-forge xarray-datatree`.'
+            )
+
+        # Set the separator to a / for datatree temporarily
+        self.sep, old_sep = '/', self.sep
+
+        # Use to dataset dict to access dictionary of datasets
         self.datasets = self.to_dataset_dict(
             xarray_open_kwargs=xarray_open_kwargs,
             xarray_combine_by_coords_kwargs=xarray_combine_by_coords_kwargs,
@@ -690,7 +705,12 @@ class esm_datastore(Catalog):
             skip_on_error=skip_on_error,
             **kwargs,
         )
-        self.datasets = xc.Collection(self.datasets)
+
+        # Set the separator to the original value
+        self.sep = old_sep
+
+        # Convert the dictionary of datasets to a datatree
+        self.datasets = DataTree.from_dict(self.datasets)
         return self.datasets
 
     def to_dask(self, **kwargs) -> xr.Dataset:
