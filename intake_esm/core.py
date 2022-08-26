@@ -125,6 +125,39 @@ class esm_datastore(Catalog):
         """
         return list(self.esmcat._construct_group_keys(sep=self.sep).keys())
 
+    def keys_info(self) -> pd.DataFrame:
+        """
+        Get keys for the catalog entries and their metadata
+
+        Returns
+        -------
+        pandas.DataFrame
+            keys for the catalog entries and their metadata
+
+        Examples
+        --------
+
+        >>> import intake
+        >>> cat = intake.open_esm_datastore("./tests/sample-catalogs/cesm1-lens-netcdf.json")
+        >>> cat.keys_info()
+                        component experiment stream
+        key
+        ocn.20C.pop.h         ocn        20C  pop.h
+        ocn.CTRL.pop.h        ocn       CTRL  pop.h
+        ocn.RCP85.pop.h       ocn      RCP85  pop.h
+
+
+
+        """
+        results = self.esmcat._construct_group_keys(sep=self.sep)
+        data = {
+            key: dict(zip(self.esmcat.aggregation_control.groupby_attrs, results[key]))
+            for key in results
+        }
+        data = pd.DataFrame.from_dict(data, orient='index')
+        data.index.name = 'key'
+        return data
+
     @property
     def key_template(self) -> str:
         """
@@ -258,6 +291,7 @@ class esm_datastore(Catalog):
             'to_datatree',
             'to_dask',
             'keys',
+            'keys_info',
             'serialize',
             'datasets',
             'search',
