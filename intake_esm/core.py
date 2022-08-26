@@ -628,7 +628,7 @@ class esm_datastore(Catalog):
         aggregate: pydantic.StrictBool = None,
         skip_on_error: pydantic.StrictBool = False,
         **kwargs,
-    ) -> DataTree:
+    ) -> 'DataTree':
         """
         Load catalog entries into a tree of xarray datasets.
 
@@ -653,7 +653,7 @@ class esm_datastore(Catalog):
 
         Returns
         -------
-        dsets : DataTree
+        dsets : :py:class:`~datatree.DataTree`
            A tree of xarray :py:class:`~xarray.Dataset`.
 
         Examples
@@ -683,7 +683,13 @@ class esm_datastore(Catalog):
             time_bnds  (time, bnds) object dask.array<chunksize=(1980, 2), meta=np.ndarray>
             pr         (member_id, time, lat, lon) float32 dask.array<chunksize=(1, 600, 160, 320), meta=np.ndarray>
         """
-        from datatree import DataTree
+
+        if not _DATATREE_AVAILABLE:
+            raise ImportError(
+                '.to_datatree() requires the xarray-datatree package to be installed. '
+                'To proceed please install xarray-datatree using: '
+                ' `python -m pip install xarray-datatree` or `conda install -c conda-forge xarray-datatree`.'
+            )
 
         # Set the separator to a / for datatree temporarily
         self.sep, old_sep = '/', self.sep
