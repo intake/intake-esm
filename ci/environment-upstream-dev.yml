@@ -3,11 +3,12 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - boto3
   - cartopy
   - cftime
   - codecov
-  - fastprogress>= 1.0.0
+  - dask>=2022.02.0
+  - fastprogress>=1.0.0
+  - gcsfs
   - h5netcdf>=0.8.1
   - ipython
   - matplotlib
@@ -17,23 +18,21 @@ dependencies:
   - pooch
   - pre-commit
   - psutil
-  - pydantic
+  - pydantic>=1.9
   - pyproj
   - pytest
   - pytest-cov
   - pytest-icdiff
+  - pytest-mock
   - pytest-sugar
   - pytest-xdist
-  - pytest-mock
   - regionmask
+  - s3fs
   - scipy
-  - toolz
   - xarray-datatree
   - xgcm
-  - zarr>=2.5
+  - zarr>=2.10
   - pip:
       - git+https://github.com/intake/intake.git
-      - git+https://github.com/fsspec/gcsfs.git
-      - git+https://github.com/fsspec/s3fs.git
       - git+https://github.com/pydata/xarray.git
-      - git+https://github.com/jbusecke/cmip6_preprocessing.git
+      - git+https://github.com/jbusecke/xmip.git

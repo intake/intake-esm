@@ -13,11 +13,16 @@ dependencies:
   - python-graphviz
   - python=3.9
   - s3fs
+  - fsspec>=2022.7.0
+  - intake>=0.6.6
+  - pydantic>=1.9
   - sphinx
   - sphinx-copybutton
   - sphinx-design
   - watermark
-  - zarr
+  - xarray-datatree
+  - xarray>=2022.06
+  - zarr>=2.12
   - pip:
       - sphinxext-opengraph
       - autodoc_pydantic
