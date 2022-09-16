@@ -7,9 +7,9 @@ kernelspec:
   name: python3
 ---
 
-# Build an Intake-esm Catalog from CESM Timeseries Files
+# Build an intake-ESM catalog from CESM timeseries files
 
-In this example, we will cover how to build a data catalog from Community Earth System Model (CESM) output. One of the requirements for using intake-esm is having a catalog which is comprised of two pieces:
+In this example, we will cover how to build a data catalog from [Community Earth System Model (CESM)](https://www.cesm.ucar.edu/) output. One of the requirements for using intake-esm is having a catalog which is comprised of two pieces:
 
 - A Comma Separated Value (CSV) file with relevant metadata (ex. file path, variable, stream, etc.)
 - A JSON file describing the contents of the CSV file, including how to combine compatible datasets into a single dataset.
@@ -26,23 +26,31 @@ This example provides an overview of using [ecgtools](https://ecgtools.readthedo
 
 You can install [ecgtools](https://github.com/NCAR/ecgtools) through [PyPI](https://pypi.org/project/docs/) or [conda-forge](https://conda-forge.org/docs/). Examples of the syntax are provided below:
 
-### Installing with Conda-Forge
+```{eval-rst}
 
-Within your [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html), run the following:
+.. tab-set::
 
-```bash
-$ conda install -c conda-forge ecgtools
+    .. tab-item:: pip
+
+        Using the `pip <https://pypi.org/project/pip/>`__ package manager:
+
+        .. code:: bash
+
+            $ python -m pip install ecgtools
+
+    .. tab-item:: conda
+
+        Using the `conda <https://conda.io/>`__ package manager that comes with the
+        Anaconda/Miniconda distribution:
+
+        .. code:: bash
+
+            $ conda install ecgtools --channel conda-forge
+
+
 ```
 
-### Installing with Pip
-
-Alternatively, you could use [PyPI](https://pypi.org/project/docs/), with the `pip install` command shown provided below.
-
-```bash
-$ python -m pip install ecgtools
-```
-
-## Imports
+## Import packages
 
 The only parts of ecgtools we need are the `Builder` object and the `parse_cesm_history` parser from the CESM parsers! We import `pathlib` to take a look at the files we are parsing.
 
@@ -54,7 +62,7 @@ from ecgtools import Builder
 from ecgtools.parsers.cesm import parse_cesm_timeseries
 ```
 
-## Understanding the Directory Structure
+## Understanding the directory structure
 
 The first step to setting up the `Builder` object is determining where your files are stored. As mentioned previously, we have a sample dataset of CESM2 model output, which is stored in test directory `/tests/sample_data` directory of this repository.
 
