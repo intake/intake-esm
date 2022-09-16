@@ -34,6 +34,7 @@ autodoc_pydantic_model_show_config = False
 
 nb_execution_mode = 'cache'
 nb_execution_timeout = 600
+nb_execution_raise_on_error = True
 
 extlinks = {
     'issue': ('https://github.com/intake/intake-esm/issues/%s', 'GH#'),

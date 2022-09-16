@@ -7,7 +7,7 @@ kernelspec:
   name: python3
 ---
 
-# Tutorial: loading CMIP6 data with Intake-esm
+# Accessing CMIP6 data with intake-esm
 
 This notebook demonstrates how to access Google Cloud CMIP6 data using intake-esm.
 
@@ -78,23 +78,14 @@ unique
 ```
 
 ```{code-cell} ipython3
----
-tags: [show-input, hide-output]
----
 unique['source_id']
 ```
 
 ```{code-cell} ipython3
----
-tags: [show-input, hide-output]
----
 unique['experiment_id']
 ```
 
 ```{code-cell} ipython3
----
-tags: [show-input, hide-output]
----
 unique['table_id']
 ```
 
@@ -171,7 +162,7 @@ Let’s create a quick plot for a slice of the data:
 ds.o2.isel(time=0, lev=0, member_id=range(1, 24, 4)).plot(col="member_id", col_wrap=3, robust=True)
 ```
 
-## Using custom preprocessing functions
+## Use custom preprocessing functions
 
 When comparing many models it is often necessary to preprocess (e.g. rename
 certain variables) them before running some analysis step. The `preprocess`
@@ -223,20 +214,20 @@ for k, ds in dset_dict_fixed.items():
 
 This was just an example for one dimension.
 
-## Load the data into a datatree
-
-We can also load our data into an xarray-datatree object using the following:
-
-```{code-cell} ipython3
-tree = cat_pp.to_datatree(xarray_open_kwargs={"consolidated": True}, preprocess=helper_func)
-
-tree
-```
-
 ```{note}
 Check out [xmip package](https://github.com/jbusecke/xMIP)
 for a full renaming function for all available CMIP6 models and some other
 utilities.
+```
+
+## Load datasets into an xarray-datatree using `to_datatree()`
+
+We can also load our data into an [xarray-datatree](https://xarray-datatree.readthedocs.io/en/latest/) object using the following:
+
+```{code-cell} ipython3
+tree = cat_pp.to_datatree(xarray_open_kwargs={"consolidated": True}, preprocess=helper_func)
+
+print(tree)
 ```
 
 ```{code-cell} ipython3
