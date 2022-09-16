@@ -13,13 +13,13 @@ Intake-ESM helps with aggregating your datasets using some `keys`. Here, we dig 
 
 ## Import packages and spin up a Dask cluster
 
-We start first with importing `intake` and a `LocalCluster` from `dask.distributed`
+We start first with importing `intake` and a `Client` from `dask.distributed`
 
 ```{code-cell} ipython3
 import intake
 from distributed import Client
 
-cluster = Client()
+client = Client()
 ```
 
 ## Investigate a CMIP6 catalog
