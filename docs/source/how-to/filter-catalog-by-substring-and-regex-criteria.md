@@ -16,6 +16,10 @@ import intake
 
 url = "https://ncar-cesm-lens.s3-us-west-2.amazonaws.com/catalogs/aws-cesm1-le.json"
 cat = intake.open_esm_datastore(url)
+cat
+```
+
+```{code-cell} ipython3
 cat.df.head()
 ```
 
@@ -24,7 +28,7 @@ By default, the
 and is case sensitive:
 
 ```{code-cell} ipython3
-cat.search(experiment="20C", long_name="wind").df
+cat.search(experiment="20C", long_name="wind")
 ```
 
 As you can see, the example above returns an empty catalog.
@@ -40,7 +44,7 @@ a given column. Let's search for:
 - all entries whose variable long name **contains** `wind`
 
 ```{code-cell} ipython3
-cat.search(experiment="20C", long_name="wind*").df
+cat.search(experiment="20C", long_name="wind*")
 ```
 
 Now, let's search for:
@@ -49,7 +53,12 @@ Now, let's search for:
 - all entries whose variable long name **starts** with `wind`
 
 ```{code-cell} ipython3
-cat.search(experiment="20C", long_name="^wind").df
+cat_subset = cat.search(experiment="20C", long_name="^wind")
+cat_subset
+```
+
+```{code-cell} ipython3
+cat_subset.df
 ```
 
 ```{code-cell} ipython3

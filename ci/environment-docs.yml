@@ -4,27 +4,29 @@ channels:
   - nodefaults
 dependencies:
   - cftime
-  - furo
+  - distributed
+  - ecgtools
+  - fsspec>=2022.7.0
   - gcsfs
+  - intake>=0.6.6
   - jupyterlab
   - matplotlib
   - myst-nb
   - pip
-  - python-graphviz
-  - python=3.9
-  - s3fs
-  - fsspec>=2022.7.0
-  - intake>=0.6.6
   - pydantic>=1.9
+  - python-graphviz
+  - python=3.10
+  - s3fs
   - sphinx
   - sphinx-copybutton
   - sphinx-design
   - watermark
-  - xarray-datatree
+  - xarray-datatree>=0.0.9
   - xarray>=2022.06
   - zarr>=2.12
   - pip:
+      - furo>=2022.09.15
+      - tornado>=6.2
       - sphinxext-opengraph
       - autodoc_pydantic
-      - -r ../requirements.txt
       - -e ..

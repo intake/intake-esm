@@ -17,7 +17,7 @@ The in-memory representation of an Earth System Model (ESM) catalog is a pandas
 dataframe, and is accessible via the `.df` property:
 
 ```{code-cell} ipython3
-url = "https://gist.githubusercontent.com/andersy005/7f416e57acd8319b20fc2b88d129d2b8/raw/987b4b336d1a8a4f9abec95c23eed3bd7c63c80e/pangeo-gcp-subset.json"
+url ="https://raw.githubusercontent.com/intake/intake-esm/main/tutorial-catalogs/GOOGLE-CMIP6.json"
 cat = intake.open_esm_datastore(url)
 cat.df.head()
 ```
@@ -31,8 +31,7 @@ Let's say we are interested in datasets with the following attributes:
 
 - `experiment_id=["historical"]`
 - `table_id="Amon"`
-- `variable_id="tas"`
-- `source_id=['TaiESM1', 'AWI-CM-1-1-MR', 'AWI-ESM-1-1-LR', 'BCC-CSM2-MR', 'BCC-ESM1', 'CAMS-CSM1-0', 'CAS-ESM2-0', 'UKESM1-0-LL']`
+- `variable_id="ua"`
 
 In addition to these attributes, **we are interested in the first ensemble
 member (member_id) of each model (source_id) only**.
@@ -47,17 +46,7 @@ We can run a query against the catalog:
 cat_subset = cat.search(
     experiment_id=["historical"],
     table_id="Amon",
-    variable_id="tas",
-    source_id=[
-        "TaiESM1",
-        "AWI-CM-1-1-MR",
-        "AWI-ESM-1-1-LR",
-        "BCC-CSM2-MR",
-        "BCC-ESM1",
-        "CAMS-CSM1-0",
-        "CAS-ESM2-0",
-        "UKESM1-0-LL",
-    ],
+    variable_id="ua",
 )
 cat_subset
 ```
@@ -83,6 +72,10 @@ df = grouped.first().reset_index()
 df.groupby("source_id")["member_id"].nunique()
 ```
 
+```{code-cell} ipython3
+df
+```
+
 ### Step 3: Attach the new dataframe to our catalog object
 
 ```{code-cell} ipython3
@@ -93,18 +86,18 @@ cat_subset
 Let's load the subsetted catalog into a dictionary of datasets:
 
 ```{code-cell} ipython3
-dsets = cat_subset.to_dataset_dict(xarray_open_kwargs={"consolidated": True})
+dsets = cat_subset.to_dataset_dict()
 [key for key in dsets]
 ```
 
 ```{code-cell} ipython3
-dsets["CMIP.CAS.CAS-ESM2-0.historical.Amon.gn"]
+dsets["CMIP.IPSL.IPSL-CM6A-LR.historical.Amon.gr"]
 ```
 
 ```{code-cell} ipython3
 ---
 tags: [hide-input, hide-output]
 ---
-import intake_esm  # just to display version information
+import intake_esm
 intake_esm.show_versions()
 ```
