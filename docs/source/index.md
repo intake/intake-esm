@@ -12,7 +12,7 @@ sd_hide_title: true
 :::{grid-item}
 :columns: 12 4 4 4
 
-```{image} _static/images/NSF_4-Color_bitmap_Logo.png
+```{image} ../_static/images/NSF_4-Color_bitmap_Logo.png
 :width: 200px
 :class: sd-m-auto
 ```
