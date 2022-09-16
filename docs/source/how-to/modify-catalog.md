@@ -98,7 +98,38 @@ dsets = cat_subset.to_dataset_dict()
 dsets["CMIP.IPSL.IPSL-CM6A-LR.historical.Amon.gr"]
 ```
 
-## Use case 2:
+## Use case 2: save a catalog subset as a new catalog
+
+Another use case is to save a subset of the catalog as a new catalog. This is highly useful when you want to share a subset of the catalog or preserve a copy of the catalog for future use.
+
+```{tip}
+We highly recommend that you save the subset of the catalog which you use in your analysis. Remote catalogs can change over time, and you may want to preserve a copy of the original catalog  to ensure reproducibility of your analysis.
+```
+
+To save a subset of the catalog as a new catalog, we can use the `serialize` method:
+
+```{code-cell} ipython3
+import tempfile
+directory = tempfile.gettempdir()
+cat_subset.serialize(directory=directory, name="my_catalog_subset")
+```
+
+By default, the `serialize` method will write a single `JSON` file containing the catalog subset.
+
+```{code-cell} ipython3
+!cat {directory}/my_catalog_subset.json
+```
+
+For large catalogs, we recommend that you write the catalog subset to its own `CSV` file. This can be achieved by setting `catalog_type` to `file`:
+
+```{code-cell} ipython3
+cat_subset.serialize(directory=directory, name="my_catalog_subset", catalog_type="file")
+```
+
+```{code-cell} ipython3
+!cat {directory}/my_catalog_subset.json
+!cat {directory}/my_catalog_subset.csv
+```
 
 ```{code-cell} ipython3
 ---

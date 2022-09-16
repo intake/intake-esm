@@ -90,7 +90,7 @@ how-to/use-catalogs-with-assets-containing-multiple-variables.md
 how-to/filter-catalog-by-substring-and-regex-criteria.md
 how-to/enforce-search-query-criteria-via-require-all-on.md
 how-to/understand-keys-and-how-to-change-them.md
-how-to/madify-catalog.md
+how-to/modify-catalog.md
 ```
 
 ```{toctree}
