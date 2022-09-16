@@ -13,8 +13,7 @@ kernelspec:
 import intake
 ```
 
-The in-memory representation of an Earth System Model (ESM) catalog is a pandas
-dataframe, and is accessible via the `.df` property:
+The in-memory representation of an Earth System Model (ESM) catalog is a Pandas {py:class}`~pandas.DataFrame`, and is accessible via the `.df` property:
 
 ```{code-cell} ipython3
 url ="https://raw.githubusercontent.com/intake/intake-esm/main/tutorial-catalogs/GOOGLE-CMIP6.json"
@@ -133,7 +132,7 @@ cat_subset.serialize(directory=directory, name="my_catalog_subset", catalog_type
 
 ## Conclusion
 
-Intake-ESM provides a powerful search API, however, there are cases where you may want to modify the catalog by using `pandas` directly. In this notebook we showed how to do that and how to attach the modified dataframe to the catalog object and/or save the modified catalog as a new catalog.
+Intake-ESM provides a powerful search API, however, there are cases where you may want to modify the catalog by using [`pandas`](https://pandas.pydata.org/docs/) directly. In this notebook we showed how to do that and how to attach the modified dataframe to the catalog object and/or save the modified catalog as a new catalog.
 
 ```{code-cell} ipython3
 ---
