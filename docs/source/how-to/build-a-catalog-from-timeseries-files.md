@@ -7,9 +7,9 @@ kernelspec:
   name: python3
 ---
 
-# Build an intake-esm catalog from CESM timeseries files
+# Build an intake-ESM catalog from CESM timeseries files
 
-In this example, we will cover how to build a data catalog from Community Earth System Model (CESM) output. One of the requirements for using intake-esm is having a catalog which is comprised of two pieces:
+In this example, we will cover how to build a data catalog from [Community Earth System Model (CESM)](https://www.cesm.ucar.edu/) output. One of the requirements for using intake-esm is having a catalog which is comprised of two pieces:
 
 - A Comma Separated Value (CSV) file with relevant metadata (ex. file path, variable, stream, etc.)
 - A JSON file describing the contents of the CSV file, including how to combine compatible datasets into a single dataset.
