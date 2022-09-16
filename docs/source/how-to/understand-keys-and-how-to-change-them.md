@@ -7,7 +7,7 @@ kernelspec:
   name: python3
 ---
 
-# Understanding Intake-ESM Keys and How to Use Them
+# Understanding intake-ESM keys and how to use them
 
 Intake-ESM helps with aggregating your datasets using some `keys`. Here, we dig into what exactly these keys are, how they are constructed, and how you can change them. Understanding how this work will help you control how your datasets are merged together, and remove the mystery behind these strings of text.
 
