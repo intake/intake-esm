@@ -32,7 +32,7 @@ catalog = intake.open_esm_datastore(url)
 catalog.df.head()
 ```
 
-Typically, the next step would be to search and load your datasets using `.to_dataset_dict()` or `.to_datatree()`
+Typically, the next step would be to search and load your datasets using {py:meth}`~intake_esm.core.esm_datastore.to_dataset_dict` or {py:meth}`~intake_esm.core.esm_datastore.to_datatree`
 
 ```{code-cell} ipython3
 catalog_subset = catalog.search(variable_id='ua')
@@ -62,7 +62,7 @@ catalog_subset.df
 
 ## Using keys_info()
 
-These groupby attributes are columns in our catalog! This means that the datasets which will be merged using the hierarchy:
+These groupby attributes are columns in our catalog! This means that the datasets which will be aggregated using the hierarchy:
 
 ```
 activity_id --> institution_id --> source_id --> experiment_id --> table_id --> grid_label
