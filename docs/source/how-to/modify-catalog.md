@@ -7,7 +7,7 @@ kernelspec:
   name: python3
 ---
 
-# Manipulate Catalog's DataFrame
+# Modify catalog
 
 ```{code-cell} ipython3
 import intake
@@ -22,10 +22,14 @@ cat = intake.open_esm_datastore(url)
 cat.df.head()
 ```
 
-In this notebook we will go through some examples showing how to manipulate this
-dataframe outside of intake-esm.
+In this notebook we will go through some examples showing how to modify this
+dataframe and some of its behavior during data loading steps.
 
-## Use Case 1: Complex Search Queries
+```{note}
+Pandas is a powerful tool for data manipulation. If you are not familiar with it, we recommend you to read the [Pandas documentation](https://pandas.pydata.org/docs/user_guide/index.html).
+```
+
+## Use case 1: complex search queries
 
 Let's say we are interested in datasets with the following attributes:
 
@@ -38,7 +42,7 @@ member (member_id) of each model (source_id) only**.
 
 This can be achieved in two steps:
 
-### Step 1: Run a query against the catalog
+### Step 1: run a query against the catalog
 
 We can run a query against the catalog:
 
@@ -51,7 +55,7 @@ cat_subset = cat.search(
 cat_subset
 ```
 
-### Step 2: Select the first `member_id` for each `source_id`
+### Step 2: select the first `member_id` for each `source_id`
 
 The subsetted catalog contains `source_id` with the following number of
 `member_id` per `source_id`:
@@ -61,7 +65,7 @@ cat_subset.df.groupby("source_id")["member_id"].nunique()
 ```
 
 To get the first `member_id` for each `source_id`, we group the dataframe by
-`source_id` and use the `.first()` function to retrieve the first `member_id`:
+`source_id` and use the `.first()` method to retrieve the first `member_id`:
 
 ```{code-cell} ipython3
 grouped = cat_subset.df.groupby(["source_id"])
@@ -76,7 +80,7 @@ df.groupby("source_id")["member_id"].nunique()
 df
 ```
 
-### Step 3: Attach the new dataframe to our catalog object
+### Step 3: attach the new dataframe to our catalog object
 
 ```{code-cell} ipython3
 cat_subset.esmcat._df = df
@@ -93,6 +97,8 @@ dsets = cat_subset.to_dataset_dict()
 ```{code-cell} ipython3
 dsets["CMIP.IPSL.IPSL-CM6A-LR.historical.Amon.gr"]
 ```
+
+## Use case 2:
 
 ```{code-cell} ipython3
 ---

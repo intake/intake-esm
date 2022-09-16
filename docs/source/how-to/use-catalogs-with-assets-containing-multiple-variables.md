@@ -7,7 +7,7 @@ kernelspec:
   name: python3
 ---
 
-# Use Catalogs with Assets Containing Multiple Variables
+# Use catalogs with assets containing multiple variables
 
 By default, `intake-esm` assumes that the data assets (files) contain a single variable (e.g. `temperature`, `precipitation`, etc..). If you have multiple variables in your data files, intake-esm requires the following:
 

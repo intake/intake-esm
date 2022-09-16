@@ -7,7 +7,7 @@ kernelspec:
   name: python3
 ---
 
-# Build an Intake-esm Catalog from CESM Timeseries Files
+# Build an intake-esm catalog from CESM timeseries files
 
 In this example, we will cover how to build a data catalog from Community Earth System Model (CESM) output. One of the requirements for using intake-esm is having a catalog which is comprised of two pieces:
 
@@ -26,7 +26,39 @@ This example provides an overview of using [ecgtools](https://ecgtools.readthedo
 
 You can install [ecgtools](https://github.com/NCAR/ecgtools) through [PyPI](https://pypi.org/project/docs/) or [conda-forge](https://conda-forge.org/docs/). Examples of the syntax are provided below:
 
-### Installing with Conda-Forge
+```{eval-rst}
+
+.. tab-set::
+
+    .. tab-item:: pip
+
+        Using the `pip <https://pypi.org/project/pip/>`__ package manager:
+
+        .. code:: bash
+
+            $ python -m pip install intake-esm
+
+    .. tab-item:: conda
+
+        Using the `conda <https://conda.io/>`__ package manager that comes with the
+        Anaconda/Miniconda distribution:
+
+        .. code:: bash
+
+            $ conda install intake-esm --channel conda-forge
+
+    .. tab-item:: Development version
+
+        To install a development version from source:
+
+        .. code:: bash
+
+            $ git clone https://github.com/intake/intake-esm
+            $ cd intake-esm
+            $ python -m pip install -e .
+```
+
+### Installing with conda-forge
 
 Within your [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html), run the following:
 
@@ -54,7 +86,7 @@ from ecgtools import Builder
 from ecgtools.parsers.cesm import parse_cesm_timeseries
 ```
 
-## Understanding the Directory Structure
+## Understanding the directory structure
 
 The first step to setting up the `Builder` object is determining where your files are stored. As mentioned previously, we have a sample dataset of CESM2 model output, which is stored in test directory `/tests/sample_data` directory of this repository.
 
