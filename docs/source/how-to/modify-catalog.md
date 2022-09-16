@@ -7,7 +7,7 @@ kernelspec:
   name: python3
 ---
 
-# Modify catalog
+# Modify a catalog
 
 ```{code-cell} ipython3
 import intake
@@ -106,7 +106,7 @@ Another use case is to save a subset of the catalog as a new catalog. This is hi
 We highly recommend that you save the subset of the catalog which you use in your analysis. Remote catalogs can change over time, and you may want to preserve a copy of the original catalog  to ensure reproducibility of your analysis.
 ```
 
-To save a subset of the catalog as a new catalog, we can use the `serialize` method:
+To save a subset of the catalog as a new catalog, we can use the {py:meth}`~intake_esm.core.esm_datastore.serialize` method:
 
 ```{code-cell} ipython3
 import tempfile
@@ -114,7 +114,7 @@ directory = tempfile.gettempdir()
 cat_subset.serialize(directory=directory, name="my_catalog_subset")
 ```
 
-By default, the `serialize` method will write a single `JSON` file containing the catalog subset.
+By default, the {py:meth}`~intake_esm.core.esm_datastore.serialize` method will write a single `JSON` file containing the catalog subset.
 
 ```{code-cell} ipython3
 !cat {directory}/my_catalog_subset.json
@@ -130,6 +130,10 @@ cat_subset.serialize(directory=directory, name="my_catalog_subset", catalog_type
 !cat {directory}/my_catalog_subset.json
 !cat {directory}/my_catalog_subset.csv
 ```
+
+## Conclusion
+
+Intake-ESM provides a powerful search API, however, there are cases where you may want to modify the catalog by using `pandas` directly. In this notebook we showed how to do that and how to attach the modified dataframe to the catalog object and/or save the modified catalog as a new catalog.
 
 ```{code-cell} ipython3
 ---
