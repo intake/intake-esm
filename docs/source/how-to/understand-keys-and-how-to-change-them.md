@@ -17,9 +17,9 @@ We start first with importing `intake` and a `LocalCluster` from `dask.distribut
 
 ```{code-cell} ipython3
 import intake
-from distributed import LocalCluster
+from distributed import Client
 
-cluster = LocalCluster()
+cluster = Client()
 ```
 
 ## Investigate a CMIP6 catalog
@@ -126,7 +126,9 @@ ds
 
 Compare this to our original catalog, which aggregated one level higher, placing all of the `member_id`s into the same dataset.
 
-**Notice how our metadata now mentions there are 65 member_ids in this dataset, compared to 1 in the previous dataset**
+```{note}
+Notice how our metadata now mentions there are 65 member_ids in this dataset, compared to 1 in the previous dataset
+```
 
 ```{code-cell} ipython3
 original_ds = catalog[catalog.keys()[0]].to_dask()
