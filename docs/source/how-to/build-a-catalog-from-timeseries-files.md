@@ -36,7 +36,7 @@ You can install [ecgtools](https://github.com/NCAR/ecgtools) through [PyPI](http
 
         .. code:: bash
 
-            $ python -m pip install intake-esm
+            $ python -m pip install ecgtools
 
     .. tab-item:: conda
 
@@ -45,36 +45,12 @@ You can install [ecgtools](https://github.com/NCAR/ecgtools) through [PyPI](http
 
         .. code:: bash
 
-            $ conda install intake-esm --channel conda-forge
+            $ conda install ecgtools --channel conda-forge
 
-    .. tab-item:: Development version
 
-        To install a development version from source:
-
-        .. code:: bash
-
-            $ git clone https://github.com/intake/intake-esm
-            $ cd intake-esm
-            $ python -m pip install -e .
 ```
 
-### Installing with conda-forge
-
-Within your [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html), run the following:
-
-```bash
-$ conda install -c conda-forge ecgtools
-```
-
-### Installing with Pip
-
-Alternatively, you could use [PyPI](https://pypi.org/project/docs/), with the `pip install` command shown provided below.
-
-```bash
-$ python -m pip install ecgtools
-```
-
-## Imports
+## Import packages
 
 The only parts of ecgtools we need are the `Builder` object and the `parse_cesm_history` parser from the CESM parsers! We import `pathlib` to take a look at the files we are parsing.
 
