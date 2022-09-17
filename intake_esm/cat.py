@@ -168,7 +168,6 @@ class ESMCatalogModel(pydantic.BaseModel):
         if directory is None:
             directory = os.getcwd()
 
-        print(directory)
         # Configure the fsspec mapper and associated filenames
         mapper = fsspec.get_mapper(f'{directory}', storage_options=storage_options)
         fs = mapper.fs
