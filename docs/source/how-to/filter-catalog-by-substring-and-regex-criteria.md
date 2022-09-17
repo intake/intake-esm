@@ -7,9 +7,9 @@ kernelspec:
   name: python3
 ---
 
-# Filter a Catalog by Substring and/or Regular Expression Criteria
+# Filter a catalog by substring and/or regular expression
 
-## Exact Match Keywords
+## Exact match keywords
 
 ```{code-cell} ipython3
 import intake
@@ -33,7 +33,7 @@ cat.search(experiment="20C", long_name="wind")
 
 As you can see, the example above returns an empty catalog.
 
-## Substring Matches
+## Substring matches
 
 In some cases, you may not know the exact term to look for. For such cases,
 inkake-esm supports searching for substring matches. With use of wildcards

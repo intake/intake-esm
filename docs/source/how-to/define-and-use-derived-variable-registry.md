@@ -7,17 +7,18 @@ kernelspec:
   name: python3
 ---
 
-# Define and Use Derived Variable Registry
+# Define and use derived variable registry
 
-## What is a "Derived Variable"
+## What is a derived variable ?
 
-A "derived variable" in this case is a variable that doesn't itself exist in an [intake-esm](https://intake-esm.readthedocs.io/en/latest/) catalog, but can be computed (i.e., "derived") from variables that do exist in the catalog.
-Currently, the derived variable implementation requires variables on the same grid, etc.; i.e., it assumes that all variables involved can be merged within **the same dataset**.
-
-An example of a derived variable could be temperature in degrees Fahrenheit. Often times, climate model models write temperature in Celsius or Kelvin, but the user may want degrees Fahrenheit!
+A derived variable is a variable that is not present in the original dataset, but is computed from one or more variables in the dataset. For example, a derived variable could be temperature in degrees Fahrenheit. Often times, climate model models write temperature in Celsius or Kelvin, but the user may want degrees Fahrenheit!
 This is a really simple example; derived variables could include more sophsticated diagnostic output like aggregations of terms in a tracer budget or gradients in a particular field.
 
-A traditional workflow for "derived variables" might consist of the following:
+```{note}
+Currently, the derived variable implementation requires variables on the same grid, etc.; i.e., it assumes that all variables involved can be merged within **the same dataset**.
+```
+
+A traditional workflow for derived variables might consist of the following:
 
 - Load the data
 - Apply some function to the loaded datasets
@@ -32,11 +33,11 @@ import intake
 from intake_esm import DerivedVariableRegistry
 ```
 
-## How to define a Derived Variable
+## How to define a derived variable
 
 Let's compute a derived variable - wind speed! This can be derived from using the zonal (`U`) and meridional (`V`) components of the wind.
 
-### Step 1: Define a Function to Compute Wind Speed
+### Step 1: define a function to compute `wind speed`
 
 ```{code-cell} ipython3
 import numpy as np
@@ -49,7 +50,7 @@ def calc_wind_speed(ds):
     return ds
 ```
 
-### Step 2: Create our Derived Variable Registry
+### Step 2: create our derived variable registry
 
 We need to instantiate our derived variable registry, which will store our derived variable information! We use the variable `dvr` for this (**D**erived**V**ariable**R**egistry).
 
@@ -57,7 +58,7 @@ We need to instantiate our derived variable registry, which will store our deriv
 dvr = DerivedVariableRegistry()
 ```
 
-In order to register this derived variable we need to add a [decorator](https://www.python.org/dev/peps/pep-0318/) to our function, as seen below. This allows us to define our derived variable, dependent variables, and the function associated with the calculation.
+In order to add our derived variable to the registry, we need to add a [decorator](https://www.python.org/dev/peps/pep-0318/)to our function. This allows us to define our derived variable, dependent variables, and the function associated with the calculation.
 
 ```{note}
 
@@ -87,7 +88,7 @@ dvr
 All fields (keys) specified in the query argument when registering a derived variable must be present in the catalog otherwise you will get a validation error when connecting a derived variable registry to an intake-esm catalog.
 ```
 
-### Step 3: Connect our Derived Variable Registry to an intake-esm Catalog
+### Step 3: connect our derived variable registry to an intake-esm catalog
 
 The derived variable registry is now ready to be used with an intake-esm catalog. To do this, we need to add the registry to the catalog. In this case, we will use data from the CESM Large Ensemble (LENS). This is a climate model ensemble, a subset of which is hosted on the AWS Cloud. If you are interested in learning more about this dataset, check out the [LENS on AWS documentation page](https://ncar.github.io/cesm-lens-aws/).
 
