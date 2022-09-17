@@ -1,4 +1,5 @@
 import ast
+import os
 
 import intake
 import pandas as pd
@@ -176,24 +177,29 @@ def test_catalog_keys_info():
 
 
 @pytest.mark.parametrize(
-    'catalog_type, to_csv_kwargs, json_dump_kwargs',
-    [('file', {'compression': 'bz2'}, {}), ('file', {'compression': 'gzip'}, {}), ('dict', {}, {})],
+    'catalog_type, to_csv_kwargs, json_dump_kwargs, directory',
+    [
+        ('file', {'compression': 'bz2'}, {}, '.'),
+        ('file', {'compression': 'gzip'}, {}, None),
+        ('dict', {}, {}, None),
+    ],
 )
-def test_catalog_serialize(tmp_path, catalog_type, to_csv_kwargs, json_dump_kwargs):
+def test_catalog_serialize(catalog_type, to_csv_kwargs, json_dump_kwargs, directory):
     cat = intake.open_esm_datastore(cdf_cat_sample_cmip6)
-    local_store = tmp_path
     cat_subset = cat.search(
         source_id='MRI-ESM2-0',
     )
     name = 'CMIP6-MRI-ESM2-0'
     cat_subset.serialize(
         name=name,
-        directory=str(local_store),
+        directory=directory,
         catalog_type=catalog_type,
         to_csv_kwargs=to_csv_kwargs,
         json_dump_kwargs=json_dump_kwargs,
     )
-    cat = intake.open_esm_datastore(f'{local_store}/{name}.json')
+    if directory is None:
+        directory = os.getcwd()
+    cat = intake.open_esm_datastore(f'{directory}/{name}.json')
     pd.testing.assert_frame_equal(
         cat_subset.df.reset_index(drop=True), cat.df.reset_index(drop=True)
     )

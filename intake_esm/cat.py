@@ -140,7 +140,7 @@ class ESMCatalogModel(pydantic.BaseModel):
             The name of the file to save the catalog to.
         directory: str
             The directory or cloud storage bucket to save the catalog to.
-            If None, use the current directory
+            If None, use the current directory.
         catalog_type: str
             The type of catalog to save. Whether to save the catalog table as a dictionary
             in the JSON file or as a separate CSV file. Valid options are 'dict' and 'file'.
@@ -163,7 +163,13 @@ class ESMCatalogModel(pydantic.BaseModel):
             raise ValueError(
                 f'catalog_type must be either "dict" or "file". Received catalog_type={catalog_type}'
             )
-        mapper = fsspec.get_mapper(f'{directory}' or '.', storage_options=storage_options)
+
+        # Check if the directory is None, and if it is, set it to the current directory
+        if directory is None:
+            directory = os.getcwd()
+
+        # Configure the fsspec mapper and associated filenames
+        mapper = fsspec.get_mapper(f'{directory}', storage_options=storage_options)
         fs = mapper.fs
         csv_file_name = f'{mapper.fs.protocol}://{mapper.root}/{name}.csv'
         json_file_name = f'{mapper.fs.protocol}://{mapper.root}/{name}.json'
