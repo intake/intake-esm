@@ -1,5 +1,6 @@
 import datetime
 import enum
+import functools
 import json
 import os
 import typing
@@ -10,6 +11,28 @@ import pydantic
 import tlz
 
 from ._search import search, search_apply_require_all_on
+
+
+def _allnan_or_nonan(df, column: str) -> bool:
+    """Check if all values in a column are NaN or not NaN
+
+    Returns
+    -------
+    bool
+        Whether the dataframe column has all NaNs or no NaN valles
+
+    Raises
+    ------
+    ValueError
+        When the column has a mix of NaNs non NaN values
+    """
+    if df[column].isnull().all():
+        return False
+    if df[column].isnull().any():
+        raise ValueError(
+            f'The data in the {column} column should either be all NaN or there should be no NaNs'
+        )
+    return True
 
 
 class AggregationType(str, enum.Enum):
@@ -286,6 +309,15 @@ class ESMCatalogModel(pydantic.BaseModel):
 
     @property
     def grouped(self) -> typing.Union[pd.core.groupby.DataFrameGroupBy, pd.DataFrame]:
+
+        if self.aggregation_control.groupby_attrs:
+            self.aggregation_control.groupby_attrs = list(
+                filter(
+                    functools.partial(_allnan_or_nonan, self.df),
+                    self.aggregation_control.groupby_attrs,
+                )
+            )
+
         if self.aggregation_control.groupby_attrs and set(
             self.aggregation_control.groupby_attrs
         ) != set(self.df.columns):

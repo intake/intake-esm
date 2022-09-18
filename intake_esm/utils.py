@@ -3,28 +3,6 @@ import importlib
 import sys
 
 
-def _allnan_or_nonan(df, column: str) -> bool:
-    """Check if all values in a column are NaN or not NaN
-
-    Returns
-    -------
-    bool
-        Whether the dataframe column has all NaNs or no NaN valles
-
-    Raises
-    ------
-    ValueError
-        When the column has a mix of NaNs non NaN values
-    """
-    if df[column].isnull().all():
-        return False
-    if df[column].isnull().any():
-        raise ValueError(
-            f'The data in the {column} column should either be all NaN or there should be no NaNs'
-        )
-    return True
-
-
 def show_versions(file=sys.stdout):  # pragma: no cover
     """print the versions of intake-esm and its dependencies.
        Adapted from xarray/util/print_versions.py
