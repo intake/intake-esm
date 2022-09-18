@@ -8,12 +8,12 @@
 
 ## Badges
 
-| CI           | [![GitHub Workflow Status][github-ci-badge]][github-ci-link] [![Code Coverage Status][codecov-badge]][codecov-link] |
-| :----------- | :-----------------------------------------------------------------------------------------------------------------: |
-| **Docs**     |                                   [![Documentation Status][rtd-badge]][rtd-link]                                    |
-| **Package**  |                        [![Conda][conda-badge]][conda-link] [![PyPI][pypi-badge]][pypi-link]                         |
-| **License**  |                                       [![License][license-badge]][repo-link]                                        |
-| **Citation** |                                       [![Zenodo][zenodo-badge]][zenodo-link]                                        |
+| CI           | [![GitHub Workflow Status][github-ci-badge]][github-ci-link] [![Code Coverage Status][codecov-badge]][codecov-link] [![pre-commit.ci status][pre-commit.ci-badge]][pre-commit.ci-link] |
+| :----------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| **Docs**     |                                                                     [![Documentation Status][rtd-badge]][rtd-link]                                                                     |
+| **Package**  |                                                          [![Conda][conda-badge]][conda-link] [![PyPI][pypi-badge]][pypi-link]                                                          |
+| **License**  |                                                                         [![License][license-badge]][repo-link]                                                                         |
+| **Citation** |                                                                         [![Zenodo][zenodo-badge]][zenodo-link]                                                                         |
 
 ## Motivation
 
@@ -33,8 +33,8 @@ providing necessary functionality for searching, discovering, data access/loadin
 
 `intake-esm` is a data cataloging utility built on top of [intake](https://github.com/intake/intake), [pandas](https://pandas.pydata.org/), and [xarray](https://xarray.pydata.org/en/stable/), and it's pretty awesome!
 
-- Opening an ESM catalog definition file: An ESM (Earth System Model) catalog file is a JSON file that conforms
-  to the [ESM Collection Specification](https://github.com/NCAR/esm-collection-spec). When provided a link/path to an esm catalog file, `intake-esm` establishes
+- Opening an ESM catalog definition file: An Earth System Model (ESM) catalog file is a JSON file that conforms
+  to the [ESM Collection Specification](./docs/source/reference/esm-catalog-spec.md). When provided a link/path to an esm catalog file, `intake-esm` establishes
   a link to a database (CSV file) that contains data assets locations and associated metadata
   (i.e., which experiment, model, the come from). The catalog JSON file can be stored on a local filesystem
   or can be hosted on a remote server.
@@ -67,12 +67,11 @@ providing necessary functionality for searching, discovering, data access/loadin
   Out[6]: <GOOGLE-CMIP6 catalog with 4 dataset(s) from 261 asset(s)>
   ```
 
-- Access: when the user is satisfied with the results of their query, they can ask `intake-esm`
-  to load data assets (netCDF/HDF files and/or Zarr stores) into xarray datasets:
+- Access: when the user is satisfied with the results of their query, they can load data assets (netCDF and/or Zarr stores) into xarray datasets:
 
   ```python
 
-    In [7]: dset_dict = cat_subset.to_dataset_dict(zarr_kwargs={"consolidated": True})
+    In [7]: dset_dict = cat_subset.to_dataset_dict()
 
     --> The keys in the returned dictionary of datasets are constructed as follows:
             'activity_id.institution_id.source_id.experiment_id.table_id.grid_label'
@@ -95,17 +94,19 @@ It is also available from `conda-forge` for conda installations:
 conda install -c conda-forge intake-esm
 ```
 
-[github-ci-badge]: https://img.shields.io/github/workflow/status/intake/intake-esm/CI?label=CI&logo=github&style=for-the-badge
+[github-ci-badge]: https://img.shields.io/github/workflow/status/intake/intake-esm/CI?label=CI&logo=github
 [github-ci-link]: https://github.com/intake/intake-esm/actions?query=workflow%3ACI
-[codecov-badge]: https://img.shields.io/codecov/c/github/intake/intake-esm.svg?logo=codecov&style=for-the-badge
+[codecov-badge]: https://img.shields.io/codecov/c/github/intake/intake-esm.svg?logo=codecov
 [codecov-link]: https://codecov.io/gh/intake/intake-esm
-[rtd-badge]: https://img.shields.io/readthedocs/intake-esm/latest.svg?style=for-the-badge
+[rtd-badge]: https://img.shields.io/readthedocs/intake-esm/latest.svg
 [rtd-link]: https://intake-esm.readthedocs.io/en/latest/?badge=latest
-[pypi-badge]: https://img.shields.io/pypi/v/intake-esm?logo=pypi&style=for-the-badge
+[pypi-badge]: https://img.shields.io/pypi/v/intake-esm?logo=pypi
 [pypi-link]: https://pypi.org/project/intake-esm
-[conda-badge]: https://img.shields.io/conda/vn/conda-forge/intake-esm?logo=anaconda&style=for-the-badge
+[conda-badge]: https://img.shields.io/conda/vn/conda-forge/intake-esm?logo=anaconda
 [conda-link]: https://anaconda.org/conda-forge/intake-esm
-[zenodo-badge]: https://img.shields.io/badge/DOI-10.5281%20%2F%20zenodo.3491062-blue.svg?style=for-the-badge
+[zenodo-badge]: https://img.shields.io/badge/DOI-10.5281%20%2F%20zenodo.3491062-blue.svg
 [zenodo-link]: https://doi.org/10.5281/zenodo.3491062
-[license-badge]: https://img.shields.io/github/license/intake/intake-esm?style=for-the-badge
+[license-badge]: https://img.shields.io/github/license/intake/intake-esm
 [repo-link]: https://github.com/intake/intake-esm
+[pre-commit.ci-badge]: https://results.pre-commit.ci/badge/github/intake/intake-esm/main.svg
+[pre-commit.ci-link]: https://results.pre-commit.ci/latest/github/intake/intake-esm/main
