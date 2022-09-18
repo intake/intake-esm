@@ -3,7 +3,11 @@ import sys
 import pytest
 import xarray as xr
 
-from intake_esm.derived import DerivedVariable, DerivedVariableError, DerivedVariableRegistry
+from intake_esm.derived import (
+    DerivedVariable,
+    DerivedVariableError,
+    DerivedVariableRegistry,
+)
 
 from .utils import here
 
