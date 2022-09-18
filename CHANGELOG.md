@@ -1,6 +1,141 @@
 # Changelog
 
-## Intake-esm v2021.8.17
+## v2022.9.18
+
+([full changelog](https://github.com/intake/intake-esm/compare/v2021.8.17...3e959d126663f9b8415528bfcee575967c3ef0c1))
+
+### New features added
+
+- Add `to_dask()` method to `esm_datastore` [#403](https://github.com/intake/intake-esm/pull/403) ([@d70-t](https://github.com/d70-t))
+- Add `keys_info()` method [#515](https://github.com/intake/intake-esm/pull/515) ([@andersy005](https://github.com/andersy005))
+
+- Discard `catalog_file` attribute after a search [#514](https://github.com/intake/intake-esm/pull/514) ([@andersy005](https://github.com/andersy005))
+- ENH: Add .to_datatree() method and remove to collection [#512](https://github.com/intake/intake-esm/pull/512) ([@mgrover1](https://github.com/mgrover1))
+- FIX: Add fixes to allow reading kerchunk catalog [#485](https://github.com/intake/intake-esm/pull/485) ([@mgrover1](https://github.com/mgrover1))
+- ENH: Support Kerchunk Files [#480](https://github.com/intake/intake-esm/pull/480) ([@mgrover1](https://github.com/mgrover1))
+- Allow saving catalog via fsspec protocols [#469](https://github.com/intake/intake-esm/pull/469) ([@andersy005](https://github.com/andersy005))
+- Change import to have configurable prefixes via `set_options` [#460](https://github.com/intake/intake-esm/pull/460) ([@aulemahal](https://github.com/aulemahal))
+- Add `get_available_cats()` method to `tutorial.py` [#458](https://github.com/intake/intake-esm/pull/458) ([@jukent](https://github.com/jukent))
+- Add tutorial module [#454](https://github.com/intake/intake-esm/pull/454) ([@jukent](https://github.com/jukent))
+- Support for the grid mapping attribute and variable [#449](https://github.com/intake/intake-esm/pull/449) ([@RondeauG](https://github.com/RondeauG))
+- Subset derived variable registry only with used derived variables [#446](https://github.com/intake/intake-esm/pull/446) ([@aulemahal](https://github.com/aulemahal))
+- Add `last_updated` to the `ESMCatalogModel` [#442](https://github.com/intake/intake-esm/pull/442) ([@andersy005](https://github.com/andersy005))
+- Derived Catalog: test for all needed variables and skip if existing [#441](https://github.com/intake/intake-esm/pull/441) ([@aulemahal](https://github.com/aulemahal))
+- Support iterable columns with `require_all_on` [#435](https://github.com/intake/intake-esm/pull/435) ([@aulemahal](https://github.com/aulemahal))
+- Improve search with derived variables [#428](https://github.com/intake/intake-esm/pull/428) ([@aulemahal](https://github.com/aulemahal))
+- Expose `pd.DataFrame.to_csv` and `json.dump` keyword arguments [#421](https://github.com/intake/intake-esm/pull/421) ([@andersy005](https://github.com/andersy005))
+- Search returns same class as self - allowing subclassing [#417](https://github.com/intake/intake-esm/pull/417) ([@aulemahal](https://github.com/aulemahal))
+- Added detection of "\*" to enable opening of multi-file datasets. [#395](https://github.com/intake/intake-esm/pull/395) ([@andersy005](https://github.com/andersy005))
+- Add `skip_on_error` option when loading datasets [#390](https://github.com/intake/intake-esm/pull/390) ([@andersy005](https://github.com/andersy005))
+- Add query to derived variables [#389](https://github.com/intake/intake-esm/pull/389) ([@andersy005](https://github.com/andersy005))
+- Add method for loading registry from a Python module [#386](https://github.com/intake/intake-esm/pull/386) ([@andersy005](https://github.com/andersy005))
+- Add functionality for derived variables [#379](https://github.com/intake/intake-esm/pull/379) ([@andersy005](https://github.com/andersy005))
+- Use pydantic.validate_arguments decorator to validate individual functions [#377](https://github.com/intake/intake-esm/pull/377) ([@andersy005](https://github.com/andersy005))
+- Ensure multi variable catalogs are parsed properly [#375](https://github.com/intake/intake-esm/pull/375) ([@andersy005](https://github.com/andersy005))
+- Fix `__repr__` and `__repr_html__` [#374](https://github.com/intake/intake-esm/pull/374) ([@andersy005](https://github.com/andersy005))
+- Fix catalog serialization [#373](https://github.com/intake/intake-esm/pull/373) ([@andersy005](https://github.com/andersy005))
+- Add ESMDataSource [#372](https://github.com/intake/intake-esm/pull/372) ([@andersy005](https://github.com/andersy005))
+- Add Query Model [#370](https://github.com/intake/intake-esm/pull/370) ([@andersy005](https://github.com/andersy005))
+- Use ESMCatModel Pydantic model [#368](https://github.com/intake/intake-esm/pull/368) ([@andersy005](https://github.com/andersy005))
+- Update pydantic models [#367](https://github.com/intake/intake-esm/pull/367) ([@andersy005](https://github.com/andersy005))
+
+### Bugs fixed
+
+- FIX: Update default catalog location and tests [#525](https://github.com/intake/intake-esm/pull/525) ([@mgrover1](https://github.com/mgrover1))
+- FIX: Add fixes to allow reading kerchunk catalog [#485](https://github.com/intake/intake-esm/pull/485) ([@mgrover1](https://github.com/mgrover1))
+
+### Maintenance and upkeep improvements
+
+- Update isort configuration to use `profile=black` [#528](https://github.com/intake/intake-esm/pull/528) ([@andersy005](https://github.com/andersy005))
+- upgrade dependencies [#517](https://github.com/intake/intake-esm/pull/517) ([@andersy005](https://github.com/andersy005))
+- use micromamba in CI [#500](https://github.com/intake/intake-esm/pull/500) ([@andersy005](https://github.com/andersy005))
+- Drop support for Python 3.7 [#499](https://github.com/intake/intake-esm/pull/499) ([@andersy005](https://github.com/andersy005))
+- Bump styfle/cancel-workflow-action from 0.9.1 to 0.10.0 [#486](https://github.com/intake/intake-esm/pull/486) ([@dependabot](https://github.com/dependabot))
+- Bump codecov/codecov-action from 2.1.0 to 3.0.0 [#472](https://github.com/intake/intake-esm/pull/472) ([@dependabot](https://github.com/dependabot))
+- [pre-commit.ci] pre-commit autoupdate [#467](https://github.com/intake/intake-esm/pull/467) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#466](https://github.com/intake/intake-esm/pull/466) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#463](https://github.com/intake/intake-esm/pull/463) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#459](https://github.com/intake/intake-esm/pull/459) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Bump actions/setup-python from 2 to 3 [#451](https://github.com/intake/intake-esm/pull/451) ([@dependabot](https://github.com/dependabot))
+- Bump actions/checkout from 2 to 3 [#450](https://github.com/intake/intake-esm/pull/450) ([@dependabot](https://github.com/dependabot))
+- [pre-commit.ci] pre-commit autoupdate [#438](https://github.com/intake/intake-esm/pull/438) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Add pyupgrade to pre-commit hooks [#433](https://github.com/intake/intake-esm/pull/433) ([@andersy005](https://github.com/andersy005))
+- Pin importlib-metadata to 2.0 [#422](https://github.com/intake/intake-esm/pull/422) ([@andersy005](https://github.com/andersy005))
+- [pre-commit.ci] pre-commit autoupdate [#410](https://github.com/intake/intake-esm/pull/410) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#402](https://github.com/intake/intake-esm/pull/402) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#396](https://github.com/intake/intake-esm/pull/396) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#392](https://github.com/intake/intake-esm/pull/392) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Upgrade setup/build requirements [#383](https://github.com/intake/intake-esm/pull/383) ([@andersy005](https://github.com/andersy005))
+- Update Pull Request Template [#376](https://github.com/intake/intake-esm/pull/376) ([@andersy005](https://github.com/andersy005))
+- [pre-commit.ci] pre-commit autoupdate [#371](https://github.com/intake/intake-esm/pull/371) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Update pre-commit hooks [#369](https://github.com/intake/intake-esm/pull/369) ([@andersy005](https://github.com/andersy005))
+- [pre-commit.ci] pre-commit autoupdate [#366](https://github.com/intake/intake-esm/pull/366) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Bump codecov/codecov-action from 2.0.3 to 2.1.0 [#365](https://github.com/intake/intake-esm/pull/365) ([@dependabot](https://github.com/dependabot))
+
+### Documentation improvements
+
+- Update how to guides [#523](https://github.com/intake/intake-esm/pull/523) ([@andersy005](https://github.com/andersy005))
+- DOC: Add section on intake-esm keys [#522](https://github.com/intake/intake-esm/pull/522) ([@mgrover1](https://github.com/mgrover1))
+- Reorganize the documentation [#521](https://github.com/intake/intake-esm/pull/521) ([@andersy005](https://github.com/andersy005))
+- add `sphinx-design` to list of extensions [#505](https://github.com/intake/intake-esm/pull/505) ([@andersy005](https://github.com/andersy005))
+- Docs improvement: use sphinx-design tabs [#504](https://github.com/intake/intake-esm/pull/504) ([@andersy005](https://github.com/andersy005))
+- updating google-cmip6 cat to have more datasets [#464](https://github.com/intake/intake-esm/pull/464) ([@jukent](https://github.com/jukent))
+- replace references to collection with catalog [#457](https://github.com/intake/intake-esm/pull/457) ([@jukent](https://github.com/jukent))
+- Add tutorial module [#454](https://github.com/intake/intake-esm/pull/454) ([@jukent](https://github.com/jukent))
+- Reorganize docs [#413](https://github.com/intake/intake-esm/pull/413) ([@andersy005](https://github.com/andersy005))
+- Switch over to the furo theme [#412](https://github.com/intake/intake-esm/pull/412) ([@andersy005](https://github.com/andersy005))
+- Add Docs Based on ESDS Blog Posts [#409](https://github.com/intake/intake-esm/pull/409) ([@mgrover1](https://github.com/mgrover1))
+- Use mamba when building docs on Readthedocs [#408](https://github.com/intake/intake-esm/pull/408) ([@andersy005](https://github.com/andersy005))
+
+### Other merged PRs
+
+- Check if all values in a groupby column are NaN or not NaN [#526](https://github.com/intake/intake-esm/pull/526) ([@andersy005](https://github.com/andersy005))
+- [pre-commit.ci] pre-commit autoupdate [#519](https://github.com/intake/intake-esm/pull/519) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#516](https://github.com/intake/intake-esm/pull/516) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Ensure global attributes added by intake-esm are compatible with netCDF and Zarr [#509](https://github.com/intake/intake-esm/pull/509) ([@andersy005](https://github.com/andersy005))
+- ensure `storage_options` are passed to data loader [#508](https://github.com/intake/intake-esm/pull/508) ([@andersy005](https://github.com/andersy005))
+- [pre-commit.ci] pre-commit autoupdate [#507](https://github.com/intake/intake-esm/pull/507) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#497](https://github.com/intake/intake-esm/pull/497) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#494](https://github.com/intake/intake-esm/pull/494) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Bump pypa/gh-action-pypi-publish from 1.5.0 to 1.5.1 [#493](https://github.com/intake/intake-esm/pull/493) ([@dependabot](https://github.com/dependabot))
+- [pre-commit.ci] pre-commit autoupdate [#492](https://github.com/intake/intake-esm/pull/492) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#489](https://github.com/intake/intake-esm/pull/489) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#488](https://github.com/intake/intake-esm/pull/488) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#484](https://github.com/intake/intake-esm/pull/484) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#483](https://github.com/intake/intake-esm/pull/483) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Bump actions/setup-python from 3 to 4 [#482](https://github.com/intake/intake-esm/pull/482) ([@dependabot](https://github.com/dependabot))
+- [pre-commit.ci] pre-commit autoupdate [#476](https://github.com/intake/intake-esm/pull/476) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Bump codecov/codecov-action from 3.0.0 to 3.1.0 [#475](https://github.com/intake/intake-esm/pull/475) ([@dependabot](https://github.com/dependabot))
+- [pre-commit.ci] pre-commit autoupdate [#473](https://github.com/intake/intake-esm/pull/473) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Ensure `storage_options` are passed to `esmcat.save()` [#471](https://github.com/intake/intake-esm/pull/471) ([@andersy005](https://github.com/andersy005))
+- Tutorial url [#455](https://github.com/intake/intake-esm/pull/455) ([@jukent](https://github.com/jukent))
+- Ensure fsspec storage options are propagated to `xr.open_dataset` [#453](https://github.com/intake/intake-esm/pull/453) ([@jukent](https://github.com/jukent))
+- Remove unused `@df.setter` [#440](https://github.com/intake/intake-esm/pull/440) ([@andersy005](https://github.com/andersy005))
+- Fix dependency version conflict [#432](https://github.com/intake/intake-esm/pull/432) ([@andersy005](https://github.com/andersy005))
+- Bump pypa/gh-action-pypi-publish from 1.4.2 to 1.5.0 [#431](https://github.com/intake/intake-esm/pull/431) ([@dependabot](https://github.com/dependabot))
+- [pre-commit.ci] pre-commit autoupdate [#430](https://github.com/intake/intake-esm/pull/430) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Fix CI failures: don't turn warnings into errors [#429](https://github.com/intake/intake-esm/pull/429) ([@andersy005](https://github.com/andersy005))
+- Support mixed data formats [#416](https://github.com/intake/intake-esm/pull/416) ([@aulemahal](https://github.com/aulemahal))
+- [pre-commit.ci] pre-commit autoupdate [#411](https://github.com/intake/intake-esm/pull/411) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Exclude buggy xarray versions [#406](https://github.com/intake/intake-esm/pull/406) ([@andersy005](https://github.com/andersy005))
+- Add Python 3.10 to CI [#400](https://github.com/intake/intake-esm/pull/400) ([@andersy005](https://github.com/andersy005))
+- Remove linting workflow: use pre-commit.ci [#399](https://github.com/intake/intake-esm/pull/399) ([@andersy005](https://github.com/andersy005))
+- ESMCat pydantic Model: make id optional [#398](https://github.com/intake/intake-esm/pull/398) ([@andersy005](https://github.com/andersy005))
+- Properly check whether dataframe is empty [#394](https://github.com/intake/intake-esm/pull/394) ([@andersy005](https://github.com/andersy005))
+- Fix `.nunique()` and `.unique()` methods [#391](https://github.com/intake/intake-esm/pull/391) ([@andersy005](https://github.com/andersy005))
+- Rename `_types` module to `cat` [#381](https://github.com/intake/intake-esm/pull/381) ([@andersy005](https://github.com/andersy005))
+- [pre-commit.ci] pre-commit autoupdate [#364](https://github.com/intake/intake-esm/pull/364) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#363](https://github.com/intake/intake-esm/pull/363) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Bump codecov/codecov-action from 2.0.2 to 2.0.3 [#362](https://github.com/intake/intake-esm/pull/362) ([@dependabot](https://github.com/dependabot))
+- Update changelog in prep for new release [#358](https://github.com/intake/intake-esm/pull/358) ([@andersy005](https://github.com/andersy005))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/intake/intake-esm/graphs/contributors?from=2021-08-17&to=2022-09-18&type=c))
+
+[@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2021-08-17..2022-09-18&type=Issues) | [@aulemahal](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aaulemahal+updated%3A2021-08-17..2022-09-18&type=Issues) | [@d70-t](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ad70-t+updated%3A2021-08-17..2022-09-18&type=Issues) | [@dependabot](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adependabot+updated%3A2021-08-17..2022-09-18&type=Issues) | [@jukent](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajukent+updated%3A2021-08-17..2022-09-18&type=Issues) | [@MackenzieBlanusa](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3AMackenzieBlanusa+updated%3A2021-08-17..2022-09-18&type=Issues) | [@mgrover1](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Amgrover1+updated%3A2021-08-17..2022-09-18&type=Issues) | [@pre-commit-ci](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Apre-commit-ci+updated%3A2021-08-17..2022-09-18&type=Issues) | [@RondeauG](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3ARondeauG+updated%3A2021-08-17..2022-09-18&type=Issues) | [@wachsylon](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Awachsylon+updated%3A2021-08-17..2022-09-18&type=Issues)
+
+## v2021.8.17
 
 ([full changelog](https://github.com/intake/intake-esm/compare/1563b7092415114f1fcda9d2a077413ebaf17fad...a7962e47ac812d938c013e2951c635ac676be80f))
 
@@ -42,7 +177,7 @@
 
 [@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2021-01-16..2021-08-17&type=Issues) | [@dependabot](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adependabot+updated%3A2021-01-16..2021-08-17&type=Issues) | [@mgrover1](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Amgrover1+updated%3A2021-01-16..2021-08-17&type=Issues) | [@pre-commit-ci](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Apre-commit-ci+updated%3A2021-01-16..2021-08-17&type=Issues)
 
-## Intake-esm v2021.1.15
+## v2021.1.15
 
 ([full changelog](https://github.com/intake/intake-esm/compare/2c89c1f15f2d66b93247e83494117b3e90340d01...66ecb069cd1961d2ecde29f696627d7a3f611a59))
 
@@ -69,7 +204,7 @@
 
 [@aaronspring](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aaaronspring+updated%3A2020-12-19..2021-01-16&type=Issues) | [@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2020-12-19..2021-01-16&type=Issues) | [@jbusecke](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajbusecke+updated%3A2020-12-19..2021-01-16&type=Issues)
 
-## Intake-esm v2020.12.18
+## v2020.12.18
 
 ([full changelog](https://github.com/intake/intake-esm/compare/4f63319294fc7d8394a7c89680ca3525ca1b0d54...dd3e7fdbd752a9e26030ccc7c03e571adb3d3be1))
 
@@ -90,7 +225,7 @@
 
 [@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2020-11-05..2020-12-19&type=Issues) | [@dcherian](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adcherian+updated%3A2020-11-05..2020-12-19&type=Issues) | [@jbusecke](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajbusecke+updated%3A2020-11-05..2020-12-19&type=Issues) | [@naomi-henderson](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Anaomi-henderson+updated%3A2020-11-05..2020-12-19&type=Issues) | [@Recalculate](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3ARecalculate+updated%3A2020-11-05..2020-12-19&type=Issues)
 
-## Intake-esm v2020.11.4
+## v2020.11.4
 
 ### Features
 
@@ -127,7 +262,7 @@
 
 [@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2020-08-15..2020-11-04&type=Issues) | [@dcherian](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adcherian+updated%3A2020-08-15..2020-11-04&type=Issues) | [@jbusecke](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajbusecke+updated%3A2020-08-15..2020-11-04&type=Issues) | [@jukent](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajukent+updated%3A2020-08-15..2020-11-04&type=Issues) | [@sherimickelson](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Asherimickelson+updated%3A2020-08-15..2020-11-04&type=Issues)
 
-## Intake-esm v2020.8.15
+## v2020.8.15
 
 ### Features
 
@@ -164,7 +299,7 @@
 
 [@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2020-06-11..2020-08-15&type=Issues) | [@bonnland](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Abonnland+updated%3A2020-06-11..2020-08-15&type=Issues) | [@dcherian](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adcherian+updated%3A2020-06-11..2020-08-15&type=Issues) | [@jeffdlb](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajeffdlb+updated%3A2020-06-11..2020-08-15&type=Issues) | [@jukent](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajukent+updated%3A2020-06-11..2020-08-15&type=Issues) | [@kmpaul](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Akmpaul+updated%3A2020-06-11..2020-08-15&type=Issues) | [@markusritschel](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Amarkusritschel+updated%3A2020-06-11..2020-08-15&type=Issues) | [@martindurant](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Amartindurant+updated%3A2020-06-11..2020-08-15&type=Issues) | [@matt-long](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Amatt-long+updated%3A2020-06-11..2020-08-15&type=Issues)
 
-## Intake-esm v2020.6.11
+## v2020.6.11
 
 ### Features
 
@@ -186,7 +321,7 @@
 
 [@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2020-05-21..2020-06-11&type=Issues) | [@jhamman](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajhamman+updated%3A2020-05-21..2020-06-11&type=Issues) | [@martindurant](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Amartindurant+updated%3A2020-05-21..2020-06-11&type=Issues)
 
-## Intake-esm v2020.5.21
+## v2020.5.21
 
 ### Features
 
@@ -200,7 +335,7 @@
 
 [@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2020-05-01..2020-05-21&type=Issues) | [@bonnland](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Abonnland+updated%3A2020-05-01..2020-05-21&type=Issues) | [@dcherian](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adcherian+updated%3A2020-05-01..2020-05-21&type=Issues) | [@jbusecke](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajbusecke+updated%3A2020-05-01..2020-05-21&type=Issues) | [@jeffdlb](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajeffdlb+updated%3A2020-05-01..2020-05-21&type=Issues) | [@kmpaul](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Akmpaul+updated%3A2020-05-01..2020-05-21&type=Issues) | [@markusritschel](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Amarkusritschel+updated%3A2020-05-01..2020-05-21&type=Issues)
 
-## Intake-esm v2020.5.01
+## v2020.5.01
 
 ### Features
 
@@ -228,7 +363,7 @@
 
 [@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2020-03-16..2020-05-01&type=Issues) | [@bonnland](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Abonnland+updated%3A2020-03-16..2020-05-01&type=Issues) | [@dcherian](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adcherian+updated%3A2020-03-16..2020-05-01&type=Issues) | [@jbusecke](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajbusecke+updated%3A2020-03-16..2020-05-01&type=Issues) | [@jhamman](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajhamman+updated%3A2020-03-16..2020-05-01&type=Issues) | [@kmpaul](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Akmpaul+updated%3A2020-03-16..2020-05-01&type=Issues) | [@sherimickelson](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Asherimickelson+updated%3A2020-03-16..2020-05-01&type=Issues)
 
-## Intake-esm v2020.3.16
+## v2020.3.16
 
 ### Features
 
@@ -264,7 +399,7 @@
 
 [@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2019-12-13..2020-03-16&type=Issues) | [@bonnland](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Abonnland+updated%3A2019-12-13..2020-03-16&type=Issues) | [@dcherian](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adcherian+updated%3A2019-12-13..2020-03-16&type=Issues) | [@jbusecke](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajbusecke+updated%3A2019-12-13..2020-03-16&type=Issues) | [@jhamman](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajhamman+updated%3A2019-12-13..2020-03-16&type=Issues) | [@kmpaul](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Akmpaul+updated%3A2019-12-13..2020-03-16&type=Issues)
 
-## Intake-esm v2019.12.13
+## v2019.12.13
 
 ### Features
 
@@ -308,7 +443,7 @@
 
 [@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2019-10-15..2019-12-13&type=Issues) | [@bonnland](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Abonnland+updated%3A2019-10-15..2019-12-13&type=Issues) | [@dcherian](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adcherian+updated%3A2019-10-15..2019-12-13&type=Issues) | [@jbusecke](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajbusecke+updated%3A2019-10-15..2019-12-13&type=Issues) | [@jhamman](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajhamman+updated%3A2019-10-15..2019-12-13&type=Issues) | [@matt-long](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Amatt-long+updated%3A2019-10-15..2019-12-13&type=Issues) | [@naomi-henderson](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Anaomi-henderson+updated%3A2019-10-15..2019-12-13&type=Issues) | [@Recalculate](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3ARecalculate+updated%3A2019-10-15..2019-12-13&type=Issues) | [@sebasblancogonz](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Asebasblancogonz+updated%3A2019-10-15..2019-12-13&type=Issues)
 
-## Intake-esm v2019.10.15
+## v2019.10.15
 
 ### Features
 
@@ -326,7 +461,7 @@
 
 [@aaronspring](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aaaronspring+updated%3A2019-08-23..2019-10-15&type=Issues) | [@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2019-08-23..2019-10-15&type=Issues) | [@bonnland](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Abonnland+updated%3A2019-08-23..2019-10-15&type=Issues) | [@dcherian](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adcherian+updated%3A2019-08-23..2019-10-15&type=Issues) | [@n-henderson](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3An-henderson+updated%3A2019-08-23..2019-10-15&type=Issues) | [@naomi-henderson](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Anaomi-henderson+updated%3A2019-08-23..2019-10-15&type=Issues) | [@rabernat](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Arabernat+updated%3A2019-08-23..2019-10-15&type=Issues)
 
-## Intake-esm v2019.8.23
+## v2019.8.23
 
 ### Features
 
@@ -438,7 +573,7 @@
 
 ([GitHub contributors page for this release](https://github.com/intake/intake-esm/graphs/contributors?from=2019-10-15&to=2019-12-13&type=c))
 
-## Intake-esm v2019.8.5
+## v2019.8.5
 
 ### Features
 
@@ -490,7 +625,7 @@
 
 ([GitHub contributors page for this release](https://github.com/intake/intake-esm/graphs/contributors?from=2019-05-11&to=2019-08-05&type=c))
 
-## Intake-esm v2019.5.11
+## v2019.5.11
 
 ### Features
 
@@ -503,7 +638,7 @@
 
 ([GitHub contributors page for this release](https://github.com/intake/intake-esm/graphs/contributors?from=2019-04-26&to=2019-05-11&type=c))
 
-## Intake-esm v2019.4.26
+## v2019.4.26
 
 ### Features
 
@@ -520,7 +655,7 @@
 
 ([GitHub contributors page for this release](https://github.com/intake/intake-esm/graphs/contributors?from=2019-02-28&to=2019-04-26&type=c))
 
-## Intake-esm v2019.2.28
+## v2019.2.28
 
 ### Features
 
