@@ -46,6 +46,7 @@
 
 ### Maintenance and upkeep improvements
 
+- Update isort configuration to use `profile=black` [#528](https://github.com/intake/intake-esm/pull/528) ([@andersy005](https://github.com/andersy005))
 - upgrade dependencies [#517](https://github.com/intake/intake-esm/pull/517) ([@andersy005](https://github.com/andersy005))
 - use micromamba in CI [#500](https://github.com/intake/intake-esm/pull/500) ([@andersy005](https://github.com/andersy005))
 - Drop support for Python 3.7 [#499](https://github.com/intake/intake-esm/pull/499) ([@andersy005](https://github.com/andersy005))
