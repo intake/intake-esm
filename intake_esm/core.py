@@ -78,11 +78,10 @@ class esm_datastore(Catalog):
         registry: typing.Optional[DerivedVariableRegistry] = None,
         read_csv_kwargs: typing.Dict[str, typing.Any] = None,
         storage_options: typing.Dict[str, typing.Any] = None,
-        intake_kwargs: typing.Dict[str, typing.Any] = None,
+        **intake_kwargs: typing.Dict[str, typing.Any],
     ):
 
         """Intake Catalog representing an ESM Collection."""
-        intake_kwargs = intake_kwargs or {}
         super().__init__(**intake_kwargs)
         self.storage_options = storage_options or {}
         self.read_csv_kwargs = read_csv_kwargs or {}
