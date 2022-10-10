@@ -5,7 +5,7 @@ channels:
 dependencies:
   - cftime
   - distributed
-  - ecgtools
+  - ecgtools >=2022.10.7
   - fsspec>=2022.7.0
   - gcsfs
   - intake>=0.6.6
