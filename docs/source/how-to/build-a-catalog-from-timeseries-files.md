@@ -84,13 +84,13 @@ Let's start by setting the builder object up.
 
 cat_builder = Builder(
     # Directory with the output
-    root_path=root_path,
+    paths=['../../../tests/sample_data/cesm/'],
     # Depth of 1 since we are sending it to the case output directory
     depth=1,
     # Exclude the timeseries and restart directories
     exclude_patterns=["*/tseries/*", "*/rest/*"],
     # Number of jobs to execute - should be equal to # threads you are using
-    njobs=5,
+    joblib_parallel_kwargs={'n_jobs': 5},
 )
 
 cat_builder
@@ -99,7 +99,7 @@ cat_builder
 We are good to go! Let's build the catalog by calling `.build()` on the object, passing in the `parse_cesm_history` parser, which is a built-in parser for CESM history files.
 
 ```{code-cell} ipython3
-cat_builder = cat_builder.build(parse_cesm_timeseries)
+cat_builder = cat_builder.build(parsing_func=parse_cesm_timeseries)
 ```
 
 ## Inspect the built catalog
@@ -134,7 +134,8 @@ Now that we have our data catalog, we can save it, by specifying the path to the
 
 ```{code-cell} ipython3
 cat_builder.save(
-    '/tmp/cesm_sample_data.csv',
+    name='cesm_sample_data',
+    directory='/tmp',
     # Column name including filepath
     path_column_name='path',
     # Column name including variables
