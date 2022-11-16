@@ -16,7 +16,7 @@ dependencies:
   - pydantic>=1.9
   - python-graphviz
   - python=3.10
-  - s3fs
+  - s3fs >=2022.8.2
   - sphinx
   - sphinx-copybutton
   - sphinx-design

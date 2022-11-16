@@ -22,7 +22,7 @@ dependencies:
   - pytest-sugar
   - pytest-xdist
   - pytest-mock
-  - s3fs
+  - s3fs >=2022.8.2
   - scipy
   - xarray>=2022.06
   - xarray-datatree

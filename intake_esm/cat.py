@@ -246,6 +246,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         """
         storage_options = storage_options if storage_options is not None else {}
         read_csv_kwargs = read_csv_kwargs or {}
+        json_file = str(json_file)  # We accept Path, but fsspec doesn't.
         _mapper = fsspec.get_mapper(json_file, **storage_options)
 
         with fsspec.open(json_file, **storage_options) as fobj:
