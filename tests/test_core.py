@@ -219,7 +219,6 @@ def test_empty_queries():
 @pytest.mark.parametrize(
     'key',
     [
-        'CMIP.CNRM-CERFACS.CNRM-CM6-1.historical.Lmon.gr',
         'CMIP.CNRM-CERFACS.CNRM-CM6-1.piControl.Lmon.gr',
         'CMIP.CNRM-CERFACS.CNRM-ESM2-1.1pctCO2.Omon.gn',
         'CMIP.CNRM-CERFACS.CNRM-ESM2-1.abrupt-4xCO2.Amon.gr',
