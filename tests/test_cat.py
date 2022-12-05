@@ -12,6 +12,7 @@ from .utils import (
     multi_variable_cat,
     sample_df,
     sample_esmcat_data,
+    sample_esmcat_data_without_agg,
     zarr_cat_aws_cesm,
     zarr_cat_pangeo_cmip6,
 )
@@ -54,12 +55,15 @@ def test_esmcatmodel_load(file):
     assert isinstance(cat.has_multiple_variable_assets, bool)
 
 
-def test_esmcatmodel_from_dict():
-    cat = ESMCatalogModel.from_dict({'esmcat': sample_esmcat_data, 'df': sample_df})
+@pytest.mark.parametrize(
+    'esmcat_data',
+    [sample_esmcat_data, sample_esmcat_data_without_agg],
+)
+def test_esmcatmodel_from_dict(esmcat_data):
+    cat = ESMCatalogModel.from_dict({'esmcat': esmcat_data, 'df': sample_df})
     assert isinstance(cat, ESMCatalogModel)
     assert isinstance(cat.df, pd.DataFrame)
     assert isinstance(cat.columns_with_iterables, set)
-    assert isinstance(cat.has_multiple_variable_assets, bool)
 
 
 @pytest.mark.parametrize(
