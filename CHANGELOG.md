@@ -471,7 +471,7 @@
 
 - Replace `.csv` with `netCDF` as serialization format when saving the built collection to disk. With `netCDF`, we can record very useful information into the global attributes of the netCDF dataset. ({pr}`119`) [@andersy005](https://github.com/andersy005)
 
-- Add string representation of ` ESMMetadataStoreCatalog`` object ({pr} `122`) [@andersy005](https://github.com/andersy005)
+- Add string representation of `ESMMetadataStoreCatalog`` object ({pr}`122`) [@andersy005](https://github.com/andersy005)
 
 - Automatically build missing collections by calling `esm_metadatastore(collection_name="GLADE-CMIP5")`. When the specified collection is part of the curated collections in `intake-esm-datastore`. ({pr}`124`) [@andersy005](https://github.com/andersy005)
 
