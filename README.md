@@ -94,8 +94,8 @@ It is also available from `conda-forge` for conda installations:
 conda install -c conda-forge intake-esm
 ```
 
-[github-ci-badge]: https://img.shields.io/github/workflow/status/intake/intake-esm/CI?label=CI&logo=github
-[github-ci-link]: https://github.com/intake/intake-esm/actions?query=workflow%3ACI
+[github-ci-badge]: https://github.com/intake/intake-esm/actions/workflows/ci.yaml/badge.svg
+[github-ci-link]: https://github.com/intake/intake-esm/actions/workflows/ci.yaml
 [codecov-badge]: https://img.shields.io/codecov/c/github/intake/intake-esm.svg?logo=codecov
 [codecov-link]: https://codecov.io/gh/intake/intake-esm
 [rtd-badge]: https://img.shields.io/readthedocs/intake-esm/latest.svg
