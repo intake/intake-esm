@@ -33,6 +33,10 @@ was serialized as a string:
 ```{code-cell} ipython3
 import intake
 import ast
+import dask
+
+# Make sure this is single-threaded
+dask.config.set(scheduler='single-threaded')
 
 cat = intake.open_esm_datastore(
     "multi-variable-catalog.json",
