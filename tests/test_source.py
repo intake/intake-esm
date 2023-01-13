@@ -1,7 +1,12 @@
 import os
+import tarfile
+import tempfile
 
+import dask
 import pytest
 import xarray
+
+dask.config.set(scheduler='single-threaded')
 
 from intake_esm.source import _get_xarray_open_kwargs, _open_dataset, _update_attrs
 
@@ -25,14 +30,37 @@ kerchunk_file = os.path.join(
 multi_path = f'{os.path.dirname(f1)}/*.nc'
 
 
-def _common_open(fpath, varname='tasmax'):
+def _create_tmp_folder():
+    tmpdir = tempfile.mkdtemp()
+    return tmpdir
+
+
+def _create_tar_file(ipath):
+    tmp_folder = _create_tmp_folder()
+    tar_fn = tmp_folder + '/test.tar'
+    basename = os.path.basename(ipath)
+    with tarfile.open(tar_fn, 'w') as tar:
+        tar.add(ipath, arcname=basename)
+    return tar_fn
+
+
+tar_path = _create_tar_file(f1)
+tar_url = f'tar://{os.path.basename(f1)}::{tar_path}'
+
+
+def _common_open(fpath, varname='tasmax', engine=None):
     _xarray_open_kwargs = _get_xarray_open_kwargs('netcdf')
+    if engine is not None:
+        _xarray_open_kwargs['engine'] = engine
     return _open_dataset(fpath, varname, xarray_open_kwargs=_xarray_open_kwargs).compute()
 
 
-@pytest.mark.parametrize('fpath,expected_time_size', [(f1, 2), (f2, 2), (multi_path, 4)])
-def test_open_dataset(fpath, expected_time_size):
-    ds = _common_open(fpath)
+@pytest.mark.parametrize(
+    'fpath,expected_time_size,engine',
+    [(f1, 2, None), (f2, 2, None), (multi_path, 4, None), (tar_url, 2, 'scipy')],
+)
+def test_open_dataset(fpath, expected_time_size, engine):
+    ds = _common_open(fpath, engine=engine)
     assert isinstance(ds, xarray.Dataset)
     assert len(ds.time) == expected_time_size
 

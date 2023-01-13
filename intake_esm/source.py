@@ -64,7 +64,7 @@ def _open_dataset(
         url = fsspec.open(urlpath, **storage_options).open()
 
     # Handle multi-file datasets with `xr.open_mfdataset()`
-    if '*' in url or isinstance(url, list):
+    if (isinstance(url, str) and '*' in url) or isinstance(url, list):
         # How should we handle concat_dim, and other xr.open_mfdataset kwargs?
         xarray_open_kwargs.update(preprocess=preprocess)
         xarray_open_kwargs.update(parallel=True)
