@@ -93,7 +93,7 @@ cat_builder = Builder(
     # Exclude the timeseries and restart directories
     exclude_patterns=["*/tseries/*", "*/rest/*"],
     # Number of jobs to execute - should be equal to # threads you are using
-    joblib_parallel_kwargs={'n_jobs': 5},
+    joblib_parallel_kwargs={'n_jobs': -1},
 )
 
 cat_builder
