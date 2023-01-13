@@ -57,9 +57,12 @@ The only parts of ecgtools we need are the `Builder` object and the `parse_cesm_
 ```{code-cell} ipython3
 import pathlib
 
+import dask
 import intake
 from ecgtools import Builder
 from ecgtools.parsers.cesm import parse_cesm_timeseries
+
+dask.config.set(scheduler='single-threaded')
 ```
 
 ## Understanding the directory structure
@@ -90,7 +93,7 @@ cat_builder = Builder(
     # Exclude the timeseries and restart directories
     exclude_patterns=["*/tseries/*", "*/rest/*"],
     # Number of jobs to execute - should be equal to # threads you are using
-    joblib_parallel_kwargs={'n_jobs': 5},
+    joblib_parallel_kwargs={'n_jobs': -1},
 )
 
 cat_builder
