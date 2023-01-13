@@ -2,9 +2,9 @@ import os
 import tarfile
 import tempfile
 
+import dask
 import pytest
 import xarray
-import dask
 
 dask.config.set(scheduler='single-threaded')
 
