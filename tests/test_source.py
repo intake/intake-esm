@@ -4,6 +4,9 @@ import tempfile
 
 import pytest
 import xarray
+import dask
+
+dask.config.set(scheduler='single-threaded')
 
 from intake_esm.source import _get_xarray_open_kwargs, _open_dataset, _update_attrs
 
