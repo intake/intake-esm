@@ -24,9 +24,9 @@ CLASSIFIERS = [
     'Intended Audience :: Science/Research',
     'Programming Language :: Python',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
     'Topic :: Scientific/Engineering',
 ]
 
@@ -35,7 +35,7 @@ setup(
     description='An intake plugin for parsing an Earth System Model (ESM) catalog and loading netCDF files and/or Zarr stores into Xarray datasets.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    python_requires='>=3.8',
+    python_requires='>=3.9',
     maintainer='NCAR XDev Team',
     maintainer_email='xdev@ucar.edu',
     classifiers=CLASSIFIERS,
