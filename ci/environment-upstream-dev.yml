@@ -8,7 +8,7 @@ dependencies:
   - codecov
   - dask>=2022.02.0
   - fastprogress>=1.0.0
-  - gcsfs
+  - gcsfs >=2022.11.0
   - h5netcdf>=0.8.1
   - ipython
   - matplotlib
@@ -27,7 +27,7 @@ dependencies:
   - pytest-sugar
   - pytest-xdist
   - regionmask
-  - s3fs
+  - s3fs >=2022.11.0
   - scipy
   - xarray-datatree
   - xgcm

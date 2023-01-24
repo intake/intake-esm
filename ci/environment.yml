@@ -6,8 +6,8 @@ dependencies:
   - cftime
   - codecov
   - fastprogress>=1.0.0
-  - fsspec>=2022.7.0
-  - gcsfs
+  - fsspec>=2022.11.0
+  - gcsfs >=2022.11.0
   - h5netcdf>=0.8.1
   - intake>=0.6.6
   - ipython
@@ -22,7 +22,7 @@ dependencies:
   - pytest-sugar
   - pytest-xdist
   - pytest-mock
-  - s3fs >=2022.8.2
+  - s3fs >=2022.11.0
   - scipy
   - xarray>=2022.06
   - xarray-datatree
