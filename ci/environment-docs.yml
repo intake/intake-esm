@@ -6,8 +6,8 @@ dependencies:
   - cftime
   - distributed
   - ecgtools >=2022.10.7
-  - fsspec>=2022.7.0
-  - gcsfs
+  - fsspec>=2022.11.0
+  - gcsfs >=2022.11.0
   - intake>=0.6.6
   - jupyterlab
   - matplotlib
@@ -16,7 +16,7 @@ dependencies:
   - pydantic>=1.9
   - python-graphviz
   - python=3.10
-  - s3fs >=2022.8.2
+  - s3fs >=2022.11.0
   - sphinx
   - sphinx-copybutton
   - sphinx-design
