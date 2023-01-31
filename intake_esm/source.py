@@ -125,19 +125,19 @@ class ESMDataSource(DataSource):
     def __init__(
         self,
         key: pydantic.StrictStr,
-        records: typing.List[typing.Dict[str, typing.Any]],
+        records: list[dict[str, typing.Any]],
         variable_column_name: pydantic.StrictStr,
         path_column_name: pydantic.StrictStr,
         data_format: typing.Optional[DataFormat],
         format_column_name: typing.Optional[pydantic.StrictStr],
         *,
-        aggregations: typing.Optional[typing.List[Aggregation]] = None,
-        requested_variables: typing.List[str] = None,
+        aggregations: typing.Optional[list[Aggregation]] = None,
+        requested_variables: list[str] = None,
         preprocess: typing.Callable = None,
-        storage_options: typing.Dict[str, typing.Any] = None,
-        xarray_open_kwargs: typing.Dict[str, typing.Any] = None,
-        xarray_combine_by_coords_kwargs: typing.Dict[str, typing.Any] = None,
-        intake_kwargs: typing.Dict[str, typing.Any] = None,
+        storage_options: dict[str, typing.Any] = None,
+        xarray_open_kwargs: dict[str, typing.Any] = None,
+        xarray_combine_by_coords_kwargs: dict[str, typing.Any] = None,
+        intake_kwargs: dict[str, typing.Any] = None,
     ):
         """An intake compatible Data Source for ESM data.
 

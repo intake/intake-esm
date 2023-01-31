@@ -86,7 +86,7 @@ class Assets(pydantic.BaseModel):
 class Aggregation(pydantic.BaseModel):
     type: AggregationType
     attribute_name: pydantic.StrictStr
-    options: typing.Optional[typing.Dict] = {}
+    options: typing.Optional[dict] = {}
 
     class Config:
         validate_all = True
@@ -95,8 +95,8 @@ class Aggregation(pydantic.BaseModel):
 
 class AggregationControl(pydantic.BaseModel):
     variable_column_name: pydantic.StrictStr
-    groupby_attrs: typing.List[pydantic.StrictStr]
-    aggregations: typing.List[Aggregation] = []
+    groupby_attrs: list[pydantic.StrictStr]
+    aggregations: list[Aggregation] = []
 
     class Config:
         validate_all = True
@@ -109,11 +109,11 @@ class ESMCatalogModel(pydantic.BaseModel):
     """
 
     esmcat_version: pydantic.StrictStr
-    attributes: typing.List[Attribute]
+    attributes: list[Attribute]
     assets: Assets
     aggregation_control: typing.Optional[AggregationControl] = None
     id: typing.Optional[str] = ''
-    catalog_dict: typing.Optional[typing.List[typing.Dict]] = None
+    catalog_dict: typing.Optional[list[dict]] = None
     catalog_file: pydantic.StrictStr = None
     description: pydantic.StrictStr = None
     title: pydantic.StrictStr = None
@@ -135,7 +135,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         return values
 
     @classmethod
-    def from_dict(cls, data: typing.Dict) -> 'ESMCatalogModel':
+    def from_dict(cls, data: dict) -> 'ESMCatalogModel':
         esmcat = data['esmcat']
         df = data['df']
         if 'last_updated' not in esmcat:
@@ -152,7 +152,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         catalog_type: str = 'dict',
         to_csv_kwargs: dict = None,
         json_dump_kwargs: dict = None,
-        storage_options: typing.Dict[str, typing.Any] = None,
+        storage_options: dict[str, typing.Any] = None,
     ) -> None:
         """
         Save the catalog to a file.
@@ -227,8 +227,8 @@ class ESMCatalogModel(pydantic.BaseModel):
     def load(
         cls,
         json_file: typing.Union[str, pydantic.FilePath, pydantic.AnyUrl],
-        storage_options: typing.Dict[str, typing.Any] = None,
-        read_csv_kwargs: typing.Dict[str, typing.Any] = None,
+        storage_options: dict[str, typing.Any] = None,
+        read_csv_kwargs: dict[str, typing.Any] = None,
     ) -> 'ESMCatalogModel':
         """
         Loads the catalog from a file
@@ -273,7 +273,7 @@ class ESMCatalogModel(pydantic.BaseModel):
             return cat
 
     @property
-    def columns_with_iterables(self) -> typing.Set[str]:
+    def columns_with_iterables(self) -> set[str]:
         """Return a set of columns that have iterables."""
         if self._df.empty:
             return set()
@@ -325,9 +325,7 @@ class ESMCatalogModel(pydantic.BaseModel):
             return self.df.groupby(self.aggregation_control.groupby_attrs)
         return self.df
 
-    def _construct_group_keys(
-        self, sep: str = '.'
-    ) -> typing.Dict[str, typing.Union[str, typing.Tuple[str]]]:
+    def _construct_group_keys(self, sep: str = '.') -> dict[str, typing.Union[str, tuple[str]]]:
         grouped = self.grouped
         if isinstance(grouped, pd.core.groupby.generic.DataFrameGroupBy):
             internal_keys = grouped.groups.keys()
@@ -346,7 +344,7 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         return dict(zip(public_keys, internal_keys))
 
-    def _unique(self) -> typing.Dict:
+    def _unique(self) -> dict:
         def _find_unique(series):
             values = series.dropna()
             if series.name in self.columns_with_iterables:
@@ -370,8 +368,8 @@ class ESMCatalogModel(pydantic.BaseModel):
     def search(
         self,
         *,
-        query: typing.Union['QueryModel', typing.Dict[str, typing.Any]],
-        require_all_on: typing.Union[str, typing.List[str]] = None,
+        query: typing.Union['QueryModel', dict[str, typing.Any]],
+        require_all_on: typing.Union[str, list[str]] = None,
     ) -> 'ESMCatalogModel':
         """
         Search for entries in the catalog.
@@ -417,9 +415,9 @@ class ESMCatalogModel(pydantic.BaseModel):
 class QueryModel(pydantic.BaseModel):
     """A Pydantic model to represent a query to be executed against a catalog."""
 
-    query: typing.Dict[pydantic.StrictStr, typing.Union[typing.Any, typing.List[typing.Any]]]
-    columns: typing.List[str]
-    require_all_on: typing.Union[str, typing.List[typing.Any]] = None
+    query: dict[pydantic.StrictStr, typing.Union[typing.Any, list[typing.Any]]]
+    columns: list[str]
+    require_all_on: typing.Union[str, list[typing.Any]] = None
 
     class Config:
         validate_all = True
