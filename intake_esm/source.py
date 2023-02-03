@@ -56,7 +56,7 @@ def _open_dataset(
         xarray_open_kwargs['backend_kwargs']['consolidated'] = False
         urlpath = 'reference://'
 
-    if xarray_open_kwargs['engine'] == 'zarr':
+    if xarray_open_kwargs['engine'] in 'zarr' or data_format == 'opendap':
         url = urlpath
     elif fsspec.utils.can_be_local(urlpath):
         url = fsspec.open_local(urlpath, **storage_options)
