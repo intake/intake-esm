@@ -109,7 +109,7 @@ def test_impossible_derivedcat():
         ds['FOO'] = ds.FLNS + ds.FLUT
         return ds
 
-    with pytest.raises(ValueError, match="Variable derivation requires an `aggregation_control`"):
+    with pytest.raises(ValueError, match='Variable derivation requires an `aggregation_control`'):
         intake.open_esm_datastore(noagg_cat, registry=registry)
 
 
@@ -131,7 +131,9 @@ def test_catalog_unique(obj, sep, read_csv_kwargs):
     nuniques = cat.nunique()
     assert isinstance(uniques, pd.Series)
     assert isinstance(nuniques, pd.Series)
-    assert len(uniques.keys()) == len(cat.df.columns) + (0 if obj is noagg_cat else 1)  # for derived_variable entry
+    assert len(uniques.keys()) == len(cat.df.columns) + (
+        0 if obj is noagg_cat else 1
+    )  # for derived_variable entry
 
 
 def test_catalog_contains():

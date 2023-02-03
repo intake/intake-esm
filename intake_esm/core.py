@@ -154,9 +154,9 @@ class esm_datastore(Catalog):
         """
         results = self.esmcat._construct_group_keys(sep=self.sep)
         if self.esmcat.aggregation_control and self.esmcat.aggregation_control.groupby_attrs:
-            groupby_attrs = self.esmcat.aggregation_control.groupby_attrs
+            pass
         else:
-            groupby_attrs = self.df.columns
+            pass
         data = {
             key: dict(zip(self.esmcat.aggregation_control.groupby_attrs, results[key]))
             for key in results
@@ -604,10 +604,14 @@ class esm_datastore(Catalog):
             )
             return {}
 
-        if self.esmcat.aggregation_control and (
-            self.esmcat.aggregation_control.variable_column_name
-            in self.esmcat.aggregation_control.groupby_attrs
-        ) and len(self.derivedcat) > 0:
+        if (
+            self.esmcat.aggregation_control
+            and (
+                self.esmcat.aggregation_control.variable_column_name
+                in self.esmcat.aggregation_control.groupby_attrs
+            )
+            and len(self.derivedcat) > 0
+        ):
             raise NotImplementedError(
                 f'The `{self.esmcat.aggregation_control.variable_column_name}` column name is used as a groupby attribute: {self.esmcat.aggregation_control.groupby_attrs}. '
                 'This is not yet supported when computing derived variables.'
