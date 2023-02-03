@@ -294,35 +294,38 @@ class ESMCatalogModel(pydantic.BaseModel):
     @property
     def has_multiple_variable_assets(self) -> bool:
         """Return True if the catalog has multiple variable assets."""
-        return self.aggregation_control.variable_column_name in self.columns_with_iterables
+        if self.aggregation_control:
+            return self.aggregation_control.variable_column_name in self.columns_with_iterables
+        return False
 
     def _cast_agg_columns_with_iterables(self) -> None:
         """Cast all agg_columns with iterables to tuple values so as
         to avoid hashing issues (e.g. TypeError: unhashable type: 'list')
         """
-        columns = list(
-            self.columns_with_iterables.intersection(
-                set(map(lambda agg: agg.attribute_name, self.aggregation_control.aggregations))
+        if self.aggregation_control:
+            columns = list(
+                self.columns_with_iterables.intersection(
+                    set(map(lambda agg: agg.attribute_name, self.aggregation_control.aggregations))
+                )
             )
-        )
-        if columns:
-            self._df[columns] = self._df[columns].apply(tuple)
+            if columns:
+                self._df[columns] = self._df[columns].apply(tuple)
 
     @property
     def grouped(self) -> typing.Union[pd.core.groupby.DataFrameGroupBy, pd.DataFrame]:
-
-        if self.aggregation_control.groupby_attrs:
-            self.aggregation_control.groupby_attrs = list(
-                filter(
-                    functools.partial(_allnan_or_nonan, self.df),
-                    self.aggregation_control.groupby_attrs,
+        if self.aggregation_control:
+            if self.aggregation_control.groupby_attrs:
+                self.aggregation_control.groupby_attrs = list(
+                    filter(
+                        functools.partial(_allnan_or_nonan, self.df),
+                        self.aggregation_control.groupby_attrs,
+                    )
                 )
-            )
 
-        if self.aggregation_control.groupby_attrs and set(
-            self.aggregation_control.groupby_attrs
-        ) != set(self.df.columns):
-            return self.df.groupby(self.aggregation_control.groupby_attrs)
+            if self.aggregation_control.groupby_attrs and set(
+                self.aggregation_control.groupby_attrs
+            ) != set(self.df.columns):
+                return self.df.groupby(self.aggregation_control.groupby_attrs)
         return self.df
 
     def _construct_group_keys(self, sep: str = '.') -> dict[str, typing.Union[str, tuple[str]]]:

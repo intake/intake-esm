@@ -101,6 +101,10 @@ class esm_datastore(Catalog):
         self._validate_derivedcat()
 
     def _validate_derivedcat(self) -> None:
+        if self.esmcat.aggregation_control is None and len(self.derivedcat):
+            raise ValueError(
+                'Variable derivation requires an `aggregation_control` to be specified in the catalog.'
+            )
         for key, entry in self.derivedcat.items():
             if self.esmcat.aggregation_control.variable_column_name not in entry.query.keys():
                 raise ValueError(
@@ -149,6 +153,10 @@ class esm_datastore(Catalog):
 
         """
         results = self.esmcat._construct_group_keys(sep=self.sep)
+        if self.esmcat.aggregation_control and self.esmcat.aggregation_control.groupby_attrs:
+            groupby_attrs = self.esmcat.aggregation_control.groupby_attrs
+        else:
+            groupby_attrs = self.df.columns
         data = {
             key: dict(zip(self.esmcat.aggregation_control.groupby_attrs, results[key]))
             for key in results
@@ -167,7 +175,7 @@ class esm_datastore(Catalog):
         str
           string template used to create catalog entry keys
         """
-        if self.esmcat.aggregation_control.groupby_attrs:
+        if self.esmcat.aggregation_control and self.esmcat.aggregation_control.groupby_attrs:
             return self.sep.join(self.esmcat.aggregation_control.groupby_attrs)
         else:
             return self.sep.join(self.esmcat.df.columns)
@@ -233,15 +241,21 @@ class esm_datastore(Catalog):
                 else:
                     records = grouped.get_group(internal_key).to_dict(orient='records')
 
+                if self.esmcat.aggregation_control:
+                    variable_column_name = self.esmcat.aggregation_control.variable_column_name
+                    aggregations = self.esmcat.aggregation_control.aggregations
+                else:
+                    variable_column_name = None
+                    aggregations = []
                 # Create a new entry
                 entry = ESMDataSource(
                     key=key,
                     records=records,
-                    variable_column_name=self.esmcat.aggregation_control.variable_column_name,
+                    variable_column_name=variable_column_name,
                     path_column_name=self.esmcat.assets.column_name,
                     data_format=self.esmcat.assets.format,
                     format_column_name=self.esmcat.assets.format_column_name,
-                    aggregations=self.esmcat.aggregation_control.aggregations,
+                    aggregations=aggregations,
                     intake_kwargs={'metadata': {}},
                 )
                 self._entries[key] = entry
@@ -366,7 +380,10 @@ class esm_datastore(Catalog):
         # step 2: Search for entries required to derive variables in the derived catalogs
         # This requires a bit of a hack i.e. the user has to specify the variable in the query
         derivedcat_results = []
-        variables = query.pop(self.esmcat.aggregation_control.variable_column_name, None)
+        if self.esmcat.aggregation_control:
+            variables = query.pop(self.esmcat.aggregation_control.variable_column_name, None)
+        else:
+            variables = None
         dependents = []
         derived_cat_subset = {}
         if variables:
@@ -488,9 +505,10 @@ class esm_datastore(Catalog):
         dtype: int64
         """
         nunique = self.esmcat.nunique()
-        nunique[f'derived_{self.esmcat.aggregation_control.variable_column_name}'] = len(
-            self.derivedcat.keys()
-        )
+        if self.esmcat.aggregation_control:
+            nunique[f'derived_{self.esmcat.aggregation_control.variable_column_name}'] = len(
+                self.derivedcat.keys()
+            )
         return nunique
 
     def unique(self) -> pd.Series:
@@ -498,9 +516,10 @@ class esm_datastore(Catalog):
         catalog.
         """
         unique = self.esmcat.unique()
-        unique[f'derived_{self.esmcat.aggregation_control.variable_column_name}'] = list(
-            self.derivedcat.keys()
-        )
+        if self.esmcat.aggregation_control:
+            unique[f'derived_{self.esmcat.aggregation_control.variable_column_name}'] = list(
+                self.derivedcat.keys()
+            )
         return unique
 
     @pydantic.validate_arguments
@@ -585,7 +604,7 @@ class esm_datastore(Catalog):
             )
             return {}
 
-        if (
+        if self.esmcat.aggregation_control and (
             self.esmcat.aggregation_control.variable_column_name
             in self.esmcat.aggregation_control.groupby_attrs
         ) and len(self.derivedcat) > 0:
@@ -618,7 +637,7 @@ class esm_datastore(Catalog):
             storage_options=storage_options,
         )
 
-        if aggregate is not None and not aggregate:
+        if aggregate is not None and not aggregate and self.esmcat.aggregation_control:
             self = deepcopy(self)
             self.esmcat.aggregation_control.groupby_attrs = []
         if progressbar is not None:

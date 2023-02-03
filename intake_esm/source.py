@@ -86,7 +86,7 @@ def _open_dataset(
         ds = ds.set_coords(scalar_variables)
         ds = ds[variables]
         ds.attrs[OPTIONS['vars_key']] = variables
-    else:
+    elif varname:
         ds.attrs[OPTIONS['vars_key']] = varname
 
     ds = _expand_dims(expand_dims, ds)
@@ -126,11 +126,11 @@ class ESMDataSource(DataSource):
         self,
         key: pydantic.StrictStr,
         records: list[dict[str, typing.Any]],
-        variable_column_name: pydantic.StrictStr,
         path_column_name: pydantic.StrictStr,
         data_format: typing.Optional[DataFormat],
         format_column_name: typing.Optional[pydantic.StrictStr],
         *,
+        variable_column_name: typing.Optional[pydantic.StrictStr] = None,
         aggregations: typing.Optional[list[Aggregation]] = None,
         requested_variables: list[str] = None,
         preprocess: typing.Callable = None,
@@ -148,12 +148,12 @@ class ESMDataSource(DataSource):
         records: list of dict
             A list of records, each of which is a dictionary
             mapping column names to values.
-        variable_column_name: str
-            The column name of the variable name.
         path_column_name: str
             The column name of the path.
         data_format: DataFormat
             The data format of the data.
+        variable_column_name: str, optional
+            The column name of the variable name.
         aggregations: list of Aggregation, optional
             A list of aggregations to apply to the data.
         requested_variables: list of str, optional
@@ -220,7 +220,7 @@ class ESMDataSource(DataSource):
             datasets = [
                 _open_dataset(
                     record[self.path_column_name],
-                    record[self.variable_column_name],
+                    record[self.variable_column_name] if self.variable_column_name else None,
                     xarray_open_kwargs=_get_xarray_open_kwargs(
                         record['_data_format_'], self.xarray_open_kwargs, self.storage_options
                     ),

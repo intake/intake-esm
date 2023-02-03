@@ -47,6 +47,7 @@ from .utils import (
     cdf_cat_sample_cmip6,
     mixed_cat_sample_cmip6,
     multi_variable_cat,
+    noagg_cat,
     sample_df,
     sample_esmcat_data,
     zarr_cat_aws_cesm,
@@ -58,6 +59,7 @@ from .utils import (
     'obj, sep, read_csv_kwargs',
     [
         (catalog_dict_records, '.', None),
+        (noagg_cat, '.', None),
         (cdf_cat_sample_cmip6, '/', None),
         (zarr_cat_aws_cesm, '.', None),
         (zarr_cat_pangeo_cmip6, '*', None),
@@ -99,6 +101,18 @@ def test_invalid_derivedcat(query, regex):
         intake.open_esm_datastore(catalog_dict_records, registry=registry)
 
 
+def test_impossible_derivedcat():
+    registry = intake_esm.DerivedVariableRegistry()
+
+    @registry.register(variable='FOO', query={'variable': ['FLNS', 'FLUT']})
+    def func(ds):
+        ds['FOO'] = ds.FLNS + ds.FLUT
+        return ds
+
+    with pytest.raises(ValueError, match="Variable derivation requires an `aggregation_control`"):
+        intake.open_esm_datastore(noagg_cat, registry=registry)
+
+
 @pytest.mark.parametrize(
     'obj, sep, read_csv_kwargs',
     [
@@ -107,6 +121,7 @@ def test_invalid_derivedcat(query, regex):
         (cdf_cat_sample_cmip5, '.', None),
         (cdf_cat_sample_cmip6, '*', None),
         (catalog_dict_records, '.', None),
+        (noagg_cat, '.', None),
         ({'esmcat': sample_esmcat_data, 'df': sample_df}, '.', None),
     ],
 )
@@ -116,7 +131,7 @@ def test_catalog_unique(obj, sep, read_csv_kwargs):
     nuniques = cat.nunique()
     assert isinstance(uniques, pd.Series)
     assert isinstance(nuniques, pd.Series)
-    assert len(uniques.keys()) == len(cat.df.columns) + 1  # for derived_variable entry
+    assert len(uniques.keys()) == len(cat.df.columns) + (0 if obj is noagg_cat else 1)  # for derived_variable entry
 
 
 def test_catalog_contains():
