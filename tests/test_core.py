@@ -444,7 +444,6 @@ def test_to_dataset_dict_skip_error():
 
 
 def test_to_dataset_dict_with_registry():
-
     registry = intake_esm.DerivedVariableRegistry()
 
     @registry.register(variable='FOO', query={'variable': ['FLNS', 'FLUT']})
