@@ -310,7 +310,6 @@ class ESMCatalogModel(pydantic.BaseModel):
 
     @property
     def grouped(self) -> typing.Union[pd.core.groupby.DataFrameGroupBy, pd.DataFrame]:
-
         if self.aggregation_control.groupby_attrs:
             self.aggregation_control.groupby_attrs = list(
                 filter(

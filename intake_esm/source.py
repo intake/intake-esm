@@ -48,7 +48,6 @@ def _open_dataset(
     expand_dims=None,
     data_format=None,
 ):
-
     storage_options = xarray_open_kwargs.get('backend_kwargs', {}).get('storage_options', {})
     # Support kerchunk datasets, setting the file object (fo) and urlpath
     if data_format == 'reference':
@@ -200,7 +199,6 @@ class ESMDataSource(DataSource):
         return f'<{type(self).__name__}  (name: {self.key}, asset(s): {len(self.df)})>'
 
     def _get_schema(self) -> Schema:
-
         if self._ds is None:
             self._open_dataset()
             metadata = {'dims': {}, 'data_vars': {}, 'coords': ()}
