@@ -1,7 +1,6 @@
 import ast
 import os
 
-import dask
 import intake
 import pandas as pd
 import pydantic
@@ -11,7 +10,7 @@ from datatree import DataTree
 
 import intake_esm
 
-dask.config.set(scheduler='single-threaded')
+# dask.config.set(scheduler='single-threaded')
 
 
 registry = intake_esm.DerivedVariableRegistry()
