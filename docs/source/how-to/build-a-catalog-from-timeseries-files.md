@@ -58,7 +58,6 @@ The only parts of ecgtools we need are the `Builder` object and the `parse_cesm_
 import pathlib
 
 import dask
-import distributed
 import intake
 from ecgtools import Builder
 from ecgtools.parsers.cesm import parse_cesm_timeseries
