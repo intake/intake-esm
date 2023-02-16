@@ -63,10 +63,6 @@ import intake
 from ecgtools import Builder
 from ecgtools.parsers.cesm import parse_cesm_timeseries
 
-dask.config.set(scheduler='single-threaded')
-
-from distributed import Client
-client = Client()
 ```
 
 ## Understanding the directory structure
