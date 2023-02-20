@@ -80,7 +80,6 @@ class esm_datastore(Catalog):
         storage_options: dict[str, typing.Any] = None,
         **intake_kwargs: dict[str, typing.Any],
     ):
-
         """Intake Catalog representing an ESM Collection."""
         super().__init__(**intake_kwargs)
         self.storage_options = storage_options or {}

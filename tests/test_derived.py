@@ -23,7 +23,6 @@ def test_registry_init():
 
 
 def test_registry_load():
-
     sys.path.insert(0, f'{here}/')
     dvr = DerivedVariableRegistry.load('my_registry')
     assert len(dvr) > 0
