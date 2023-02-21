@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### New features added
+
+- Add `opendap` as a possible data format.[#570](https://github.com/intake/intake-esm/pull/570) ([@aulemahal](https://github.com/aulemahal))
+
 ## v2022.9.18
 
 ([full changelog](https://github.com/intake/intake-esm/compare/v2021.8.17...3e959d126663f9b8415528bfcee575967c3ef0c1))
