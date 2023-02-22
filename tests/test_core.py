@@ -43,6 +43,7 @@ from .utils import (
     cdf_cat_sample_cmip6,
     mixed_cat_sample_cmip6,
     multi_variable_cat,
+    opendap_cat_sample_noaa,
     sample_df,
     sample_esmcat_data,
     zarr_cat_aws_cesm,
@@ -467,6 +468,14 @@ def test_to_dataset_dict_with_registry():
         new_cat.to_dataset_dict(
             xarray_open_kwargs={'backend_kwargs': {'storage_options': {'anon': True}}}
         )
+
+
+def test_to_dask_opendap():
+    cat = intake.open_esm_datastore(opendap_cat_sample_noaa)
+    new_cat = cat.search(variable='sst', first_swap='2005001', scode=482)
+    ds = new_cat.to_dask(xarray_open_kwargs=dict(engine='pydap'))
+    assert 'sst' in ds.data_vars
+    assert len(ds.__dask_keys__()) > 0
 
 
 def test_subclassing_catalog():
