@@ -19,6 +19,7 @@ dependencies:
   - pre-commit
   - psutil
   - pydantic>=1.9
+  - pydap
   - pyproj
   - pytest
   - pytest-cov
