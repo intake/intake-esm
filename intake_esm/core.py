@@ -103,7 +103,7 @@ class esm_datastore(Catalog):
     def _validate_derivedcat(self) -> None:
         if self.esmcat.aggregation_control is None and len(self.derivedcat):
             raise ValueError(
-                'Variable derivation requires an `aggregation_control` to be specified in the catalog.'
+                'Variable derivation requires `aggregation_control` to be specified in the catalog.'
             )
         for key, entry in self.derivedcat.items():
             if self.esmcat.aggregation_control.variable_column_name not in entry.query.keys():
