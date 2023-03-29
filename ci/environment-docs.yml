@@ -12,6 +12,7 @@ dependencies:
   - jupyterlab
   - matplotlib
   - myst-nb
+  - netcdf4<1.6
   - pip
   - pydantic>=1.9
   - python-graphviz
