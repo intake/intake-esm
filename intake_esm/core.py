@@ -1,8 +1,8 @@
+import ast
 import concurrent.futures
 import typing
 import warnings
 from copy import deepcopy
-import ast
 
 import dask
 
@@ -45,7 +45,7 @@ class esm_datastore(Catalog):
         Additional keyword arguments passed through to the :py:func:`~pandas.read_csv` function.
     columns_with_iterables : list of str, optional
         A list of columns in the csv file containing iterables. Values in columns specified here will be
-        converted with `ast.literal_eval` when :py:func:`~pandas.read_csv` is called (i.e., this is a 
+        converted with `ast.literal_eval` when :py:func:`~pandas.read_csv` is called (i.e., this is a
         shortcut to passing converters to `read_csv_kwargs`).
     storage_options : dict, optional
         Parameters passed to the backend file-system such as Google Cloud Storage,
@@ -93,8 +93,8 @@ class esm_datastore(Catalog):
         if columns_with_iterables:
             converter = ast.literal_eval
             read_csv_kwargs.setdefault('converters', {})
-            for col in columns_with_iterables:    
-                if read_csv_kwargs["converters"].setdefault(col, converter) != converter:
+            for col in columns_with_iterables:
+                if read_csv_kwargs['converters'].setdefault(col, converter) != converter:
                     raise ValueError(
                         f"Cannot provide converter for '{col}' via `read_csv_kwargs` when '{col}' is also specified in `columns_with_iterables`"
                     )
