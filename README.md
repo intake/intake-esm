@@ -99,7 +99,7 @@ conda install -c conda-forge intake-esm
 [codecov-badge]: https://img.shields.io/codecov/c/github/intake/intake-esm.svg?logo=codecov
 [codecov-link]: https://codecov.io/gh/intake/intake-esm
 [rtd-badge]: https://readthedocs.org/projects/intake-esm/badge/?version=latest
-[rtd-link]: https://intake-esm.readthedocs.io/en/stable/?badge=latest
+[rtd-link]: https://intake-esm.readthedocs.io/en/latest/?badge=latest
 [pypi-badge]: https://img.shields.io/pypi/v/intake-esm?logo=pypi
 [pypi-link]: https://pypi.org/project/intake-esm
 [conda-badge]: https://img.shields.io/conda/vn/conda-forge/intake-esm?logo=anaconda
