@@ -59,9 +59,11 @@ intake-esm could always use more documentation. What exactly is needed?
 You can also edit documentation files directly in the GitHub web interface,
 without using a local copy. This can be convenient for small fixes.
 
-Build the documentation locally with the following command:
+To build the docs locally, follow the steps 1 and 2 under [Preparing Pull Requests](#preparing-pull-requests) below and then create a conda environment and build the docs with the following commands:
 
 ```bash
+$ conda env update -f ci/environment-docs.yml
+$ conda activate intake-esm-doc
 $ make docs
 ```
 
