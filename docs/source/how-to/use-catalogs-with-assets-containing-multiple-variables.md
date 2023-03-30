@@ -51,7 +51,7 @@ To confirm that intake-esm has loaded the catalog correctly, we can inspect the 
 cat.esmcat.has_multiple_variable_assets
 ```
 
-Alternatively, we can simply specify the variable column name in the `columns_with_iterables` parameter:
+Alternatively, we can specify the variable column name in the `columns_with_iterables` parameter:
 
 ```{code-cell} ipython3
 cat = intake.open_esm_datastore(
