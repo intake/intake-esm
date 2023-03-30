@@ -12,7 +12,7 @@ kernelspec:
 By default, `intake-esm` assumes that the data assets (files) contain a single variable (e.g. `temperature`, `precipitation`, etc..). If you have multiple variables in your data files, intake-esm requires the following:
 
 - the `variable_column` of the catalog must contain iterables (list, tuple, set) of values (e.g. `['temperature', 'precipitation']`).
-- the user must provide converters with appropriate functions for parsing values in the `variable_column` (and/or any other column with iterables) into iterables when loading the catalog. There are two ways to do this with the `open_esm_datastore` function: either pass the converter functions directly through the `read_csv_kwargs` argument, or simply specify the columns in `columns_with_iterables` parameter. The latter is a shortcut for the former. Both are demonstrated below.
+- the user must provide converters with appropriate functions for parsing values in the `variable_column` (and/or any other column with iterables) into iterables when loading the catalog. There are two ways to do this with the `open_esm_datastore` function: either pass the converter functions directly through the `read_csv_kwargs` argument, or specify the columns in `columns_with_iterables` parameter. The latter is a shortcut for the former. Both are demonstrated below.
 
 ## Inspect the catalog
 
