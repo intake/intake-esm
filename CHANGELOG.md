@@ -4,7 +4,8 @@
 
 ### New features added
 
-- Add `opendap` as a possible data format.[#570](https://github.com/intake/intake-esm/pull/570) ([@aulemahal](https://github.com/aulemahal))
+- Add optional `columns_with_iterables` argument to `esm_datastore` [#589](https://github.com/intake/intake-esm/pull/589) ([@dougiesquire](https://github.com/dougiesquire))
+- Add `opendap` as a possible data format [#570](https://github.com/intake/intake-esm/pull/570) ([@aulemahal](https://github.com/aulemahal))
 
 ## v2022.9.18
 

@@ -1,3 +1,4 @@
+import ast
 import concurrent.futures
 import typing
 import warnings
@@ -42,6 +43,10 @@ class esm_datastore(Catalog):
         Registry of derived variables to use, by default None. If not provided, uses the default registry.
     read_csv_kwargs : dict, optional
         Additional keyword arguments passed through to the :py:func:`~pandas.read_csv` function.
+    columns_with_iterables : list of str, optional
+        A list of columns in the csv file containing iterables. Values in columns specified here will be
+        converted with `ast.literal_eval` when :py:func:`~pandas.read_csv` is called (i.e., this is a
+        shortcut to passing converters to `read_csv_kwargs`).
     storage_options : dict, optional
         Parameters passed to the backend file-system such as Google Cloud Storage,
         Amazon Web Service S3.
@@ -77,13 +82,23 @@ class esm_datastore(Catalog):
         sep: str = '.',
         registry: typing.Optional[DerivedVariableRegistry] = None,
         read_csv_kwargs: dict[str, typing.Any] = None,
+        columns_with_iterables: list[str] = None,
         storage_options: dict[str, typing.Any] = None,
         **intake_kwargs: dict[str, typing.Any],
     ):
         """Intake Catalog representing an ESM Collection."""
         super().__init__(**intake_kwargs)
         self.storage_options = storage_options or {}
-        self.read_csv_kwargs = read_csv_kwargs or {}
+        read_csv_kwargs = read_csv_kwargs or {}
+        if columns_with_iterables:
+            converter = ast.literal_eval
+            read_csv_kwargs.setdefault('converters', {})
+            for col in columns_with_iterables:
+                if read_csv_kwargs['converters'].setdefault(col, converter) != converter:
+                    raise ValueError(
+                        f"Cannot provide converter for '{col}' via `read_csv_kwargs` when '{col}' is also specified in `columns_with_iterables`"
+                    )
+        self.read_csv_kwargs = read_csv_kwargs
         self.progressbar = progressbar
         self.sep = sep
         if isinstance(obj, dict):
