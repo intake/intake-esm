@@ -15,7 +15,7 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: 'v0.0.260'
+    rev: 'v0.0.263'
     hooks:
       - id: ruff
         args: ['--fix']
@@ -31,6 +31,6 @@ repos:
       - id: blackdoc
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.0.0-alpha.6
+    rev: v3.0.0-alpha.9-for-vscode
     hooks:
       - id: prettier
