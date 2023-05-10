@@ -9,7 +9,7 @@ multi_variable_cat = os.path.join(here, 'sample-catalogs/multi-variable-catalog.
 cdf_cat_sample_cmip5 = os.path.join(here, 'sample-catalogs/cmip5-netcdf.json')
 cdf_cat_sample_cesmle = os.path.join(here, 'sample-catalogs/cesm1-lens-netcdf.json')
 catalog_dict_records = os.path.join(here, 'sample-catalogs/catalog-dict-records.json')
-noagg_cat = os.path.join(here, 'sample-catalogs/catalog-dict-records-noagg.json')
+cdf_cat_sample_cmip6_noagg = os.path.join(here, 'sample-catalogs/cmip6-netcdf-noagg.json')
 opendap_cat_sample_noaa = os.path.join(here, 'sample-catalogs/noaa-pathfinder-opendap.json')
 zarr_cat_aws_cesm = (
     'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json'

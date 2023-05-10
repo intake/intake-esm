@@ -43,7 +43,7 @@ from .utils import (
     cdf_cat_sample_cmip6,
     mixed_cat_sample_cmip6,
     multi_variable_cat,
-    noagg_cat,
+    cdf_cat_sample_cmip6_noagg,
     opendap_cat_sample_noaa,
     sample_df,
     sample_esmcat_data,
@@ -56,7 +56,7 @@ from .utils import (
     'obj, sep, read_csv_kwargs, columns_with_iterables',
     [
         (catalog_dict_records, '.', None, None),
-        (noagg_cat, '.', None, None), 
+        (cdf_cat_sample_cmip6_noagg, '.', None, None),
         (cdf_cat_sample_cmip6, '/', None, None),
         (zarr_cat_aws_cesm, '.', None, None),
         (zarr_cat_pangeo_cmip6, '*', None, None),
@@ -142,8 +142,8 @@ def test_impossible_derivedcat():
         ds['FOO'] = ds.FLNS + ds.FLUT
         return ds
 
-    with pytest.raises(ValueError, match='Variable derivation requires an `aggregation_control`'):
-        intake.open_esm_datastore(noagg_cat, registry=registry)
+    with pytest.raises(ValueError, match='Variable derivation requires `aggregation_control`'):
+        intake.open_esm_datastore(cdf_cat_sample_cmip6_noagg, registry=registry)
 
 
 @pytest.mark.parametrize(
@@ -154,7 +154,7 @@ def test_impossible_derivedcat():
         (cdf_cat_sample_cmip5, '.', None),
         (cdf_cat_sample_cmip6, '*', None),
         (catalog_dict_records, '.', None),
-        (noagg_cat, '.', None),
+        (cdf_cat_sample_cmip6_noagg, '.', None),
         ({'esmcat': sample_esmcat_data, 'df': sample_df}, '.', None),
     ],
 )
@@ -165,7 +165,7 @@ def test_catalog_unique(obj, sep, read_csv_kwargs):
     assert isinstance(uniques, pd.Series)
     assert isinstance(nuniques, pd.Series)
     assert len(uniques.keys()) == len(cat.df.columns) + (
-        0 if obj is noagg_cat else 1
+        0 if obj is cdf_cat_sample_cmip6_noagg else 1
     )  # for derived_variable entry
 
 
@@ -341,6 +341,11 @@ def test_multi_variable_catalog_derived_cat():
             dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_id=['tasmax']),
             {'chunks': {'time': 1}},
         ),
+        (
+            cdf_cat_sample_cmip6_noagg,
+            dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_id=['tasmax']),
+            {'chunks': {'time': 1}},
+        ),
         (mixed_cat_sample_cmip6, dict(institution_id='BCC'), {}),
     ],
 )
@@ -348,7 +353,8 @@ def test_to_dataset_dict(path, query, xarray_open_kwargs):
     cat = intake.open_esm_datastore(path)
     cat_sub = cat.search(**query)
     _, ds = cat_sub.to_dataset_dict(xarray_open_kwargs=xarray_open_kwargs).popitem()
-    assert 'member_id' in ds.dims
+    if path != cdf_cat_sample_cmip6_noagg:
+        assert 'member_id' in ds.dims
     assert len(ds.__dask_keys__()) > 0
     assert ds.time.encoding
 
@@ -425,6 +431,7 @@ def test_to_dask(path, query, xarray_open_kwargs):
     'path, query',
     [
         (cdf_cat_sample_cmip6, {'experiment_id': ['historical', 'rcp85']}),
+        (cdf_cat_sample_cmip6_noagg, {'experiment_id': ['historical', 'rcp85']}),
         (cdf_cat_sample_cmip5, {'experiment': ['historical', 'rcp85']}),
     ],
 )
