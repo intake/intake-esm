@@ -1,7 +1,6 @@
 import ast
 import os
 
-import dask
 import intake
 import pandas as pd
 import pydantic
@@ -10,9 +9,6 @@ import xarray as xr
 from datatree import DataTree
 
 import intake_esm
-
-dask.config.set(scheduler='single-threaded')
-
 
 registry = intake_esm.DerivedVariableRegistry()
 
@@ -48,6 +44,7 @@ from .utils import (
     mixed_cat_sample_cmip6,
     multi_variable_cat,
     noagg_cat,
+    opendap_cat_sample_noaa,
     sample_df,
     sample_esmcat_data,
     zarr_cat_aws_cesm,
@@ -56,21 +53,24 @@ from .utils import (
 
 
 @pytest.mark.parametrize(
-    'obj, sep, read_csv_kwargs',
+    'obj, sep, read_csv_kwargs, columns_with_iterables',
     [
-        (catalog_dict_records, '.', None),
-        (noagg_cat, '.', None),
-        (cdf_cat_sample_cmip6, '/', None),
-        (zarr_cat_aws_cesm, '.', None),
-        (zarr_cat_pangeo_cmip6, '*', None),
-        (cdf_cat_sample_cesmle, '.', None),
-        (multi_variable_cat, '*', {'converters': {'variable': ast.literal_eval}}),
-        ({'esmcat': sample_esmcat_data, 'df': sample_df}, '.', None),
+        (catalog_dict_records, '.', None, None),
+        (noagg_cat, '.', None, None), 
+        (cdf_cat_sample_cmip6, '/', None, None),
+        (zarr_cat_aws_cesm, '.', None, None),
+        (zarr_cat_pangeo_cmip6, '*', None, None),
+        (cdf_cat_sample_cesmle, '.', None, None),
+        (multi_variable_cat, '*', {'converters': {'variable': ast.literal_eval}}, None),
+        (multi_variable_cat, '*', None, ['variable']),
+        ({'esmcat': sample_esmcat_data, 'df': sample_df}, '.', None, None),
     ],
 )
-def test_catalog_init(capsys, obj, sep, read_csv_kwargs):
+def test_catalog_init(capsys, obj, sep, read_csv_kwargs, columns_with_iterables):
     """Test that the catalog can be initialized."""
-    cat = intake.open_esm_datastore(obj, sep=sep, read_csv_kwargs=read_csv_kwargs)
+    cat = intake.open_esm_datastore(
+        obj, sep=sep, read_csv_kwargs=read_csv_kwargs, columns_with_iterables=columns_with_iterables
+    )
     assert isinstance(cat.esmcat, intake_esm.cat.ESMCatalogModel)
     assert isinstance(cat.df, pd.DataFrame)
     assert len(cat) > 0
@@ -80,6 +80,39 @@ def test_catalog_init(capsys, obj, sep, read_csv_kwargs):
     # https://docs.pytest.org/en/latest/capture.html#accessing-captured-output-from-a-test-function
     captured = capsys.readouterr()
     assert 'catalog with' in captured.out
+
+
+@pytest.mark.parametrize(
+    'obj, read_csv_kwargs, columns_with_iterables',
+    [
+        (multi_variable_cat, {'converters': {'variable': ast.literal_eval}}, None),
+        (multi_variable_cat, None, ['variable']),
+    ],
+)
+def test_columns_with_iterables(capsys, obj, read_csv_kwargs, columns_with_iterables):
+    """Test that columns with iterables are successfully evaluated."""
+    cat = intake.open_esm_datastore(
+        obj, read_csv_kwargs=read_csv_kwargs, columns_with_iterables=columns_with_iterables
+    )
+    assert 'variable' in cat.esmcat.columns_with_iterables
+
+
+def test_read_csv_conflict():
+    """Test that error is raised when `columns_with_iterables` conflicts with `read_csv_kwargs`."""
+    # Work when inputs are consistent
+    intake.open_esm_datastore(
+        multi_variable_cat,
+        read_csv_kwargs={'converters': {'converters': {'variable': ast.literal_eval}}},
+        columns_with_iterables=['variable'],
+    )
+
+    # Fails on conflict
+    with pytest.raises(ValueError):
+        intake.open_esm_datastore(
+            multi_variable_cat,
+            read_csv_kwargs={'converters': {'variable': lambda x: x}},
+            columns_with_iterables=['variable'],
+        )
 
 
 @pytest.mark.parametrize(
@@ -461,7 +494,6 @@ def test_to_dataset_dict_skip_error():
 
 
 def test_to_dataset_dict_with_registry():
-
     registry = intake_esm.DerivedVariableRegistry()
 
     @registry.register(variable='FOO', query={'variable': ['FLNS', 'FLUT']})
@@ -489,6 +521,14 @@ def test_to_dataset_dict_with_registry():
         new_cat.to_dataset_dict(
             xarray_open_kwargs={'backend_kwargs': {'storage_options': {'anon': True}}}
         )
+
+
+def test_to_dask_opendap():
+    cat = intake.open_esm_datastore(opendap_cat_sample_noaa)
+    new_cat = cat.search(variable='sst', first_swap='2005001', scode=482)
+    ds = new_cat.to_dask(xarray_open_kwargs=dict(engine='pydap'))
+    assert 'sst' in ds.data_vars
+    assert len(ds.__dask_keys__()) > 0
 
 
 def test_subclassing_catalog():

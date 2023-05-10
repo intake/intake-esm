@@ -1,0 +1,86 @@
+{
+  "esmcat_version": "0.1.0",
+  "id": "noaa-pathfinder-opendap",
+  "description": "This is an ESM catalog for NOAA's pathfinder data publicly available on a test opendap server.",
+  "catalog_dict": [
+    {
+      "domain": "global",
+      "variable": "sst",
+      "first_swap": "2005001",
+      "last_swap": "2005008",
+      "scode": 482,
+      "path": "http://test.opendap.org/opendap/noaa/pathfinder/2005001-2005008.s0482pfv50-sst.hdf"
+    },
+    {
+      "domain": "global",
+      "variable": "sst",
+      "first_swap": "2005001",
+      "last_swap": "2005008",
+      "scode": 484,
+      "path": "http://test.opendap.org/opendap/noaa/pathfinder/2005001-2005008.s0484pfv50-sst.hdf"
+    },
+    {
+      "domain": "global",
+      "variable": "sst",
+      "first_swap": "2005009",
+      "last_swap": "2005016",
+      "scode": 482,
+      "path": "http://test.opendap.org/opendap/noaa/pathfinder/2005009-2005016.s0482pfv50-sst.hdf"
+    },
+    {
+      "domain": "global",
+      "variable": "sst",
+      "first_swap": "2005009",
+      "last_swap": "2005016",
+      "scode": 484,
+      "path": "http://test.opendap.org/opendap/noaa/pathfinder/2005009-2005016.s0484pfv50-sst.hdf"
+    },
+    {
+      "domain": "global",
+      "variable": "sst",
+      "first_swap": "2005017",
+      "last_swap": "2005024",
+      "scode": 482,
+      "path": "http://test.opendap.org/opendap/noaa/pathfinder/2005017-2005024.s0482pfv50-sst.hdf"
+    },
+    {
+      "domain": "global",
+      "variable": "sst",
+      "first_swap": "2005017",
+      "last_swap": "2005024",
+      "scode": 484,
+      "path": "http://test.opendap.org/opendap/noaa/pathfinder/2005017-2005024.s0484pfv50-sst.hdf"
+    }
+  ],
+  "attributes": [
+    {
+      "column_name": "domain",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "variable",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "first_swap",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "last_swap",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "scode",
+      "vocabulary": ""
+    }
+  ],
+  "assets": {
+    "column_name": "path",
+    "format": "opendap"
+  },
+  "aggregation_control": {
+    "variable_column_name": "variable",
+    "groupby_attrs": ["first_swap", "scode"],
+    "aggregations": []
+  }
+}

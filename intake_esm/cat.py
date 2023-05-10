@@ -49,6 +49,7 @@ class DataFormat(str, enum.Enum):
     netcdf = 'netcdf'
     zarr = 'zarr'
     reference = 'reference'
+    opendap = 'opendap'
 
     class Config:
         validate_all = True

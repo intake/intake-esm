@@ -12,11 +12,12 @@ dependencies:
   - intake>=0.6.6
   - ipython
   - matplotlib
-  - netcdf4>=1.5.5
+  - netcdf4>=1.5.5,<1.6.1
   - pip
   - pooch
   - pre-commit
   - pydantic>=1.9
+  - pydap
   - pytest
   - pytest-cov
   - pytest-sugar

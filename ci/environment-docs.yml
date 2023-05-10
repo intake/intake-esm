@@ -1,4 +1,4 @@
-name: intake-esm-dev
+name: intake-esm-doc
 channels:
   - conda-forge
   - nodefaults
@@ -12,6 +12,7 @@ dependencies:
   - jupyterlab
   - matplotlib
   - myst-nb
+  - netcdf4<1.6.1
   - pip
   - pydantic>=1.9
   - python-graphviz
