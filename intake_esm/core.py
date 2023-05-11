@@ -168,13 +168,10 @@ class esm_datastore(Catalog):
         """
         results = self.esmcat._construct_group_keys(sep=self.sep)
         if self.esmcat.aggregation_control and self.esmcat.aggregation_control.groupby_attrs:
-            pass
+            groupby_attrs = self.esmcat.aggregation_control.groupby_attrs
         else:
-            pass
-        data = {
-            key: dict(zip(self.esmcat.aggregation_control.groupby_attrs, results[key]))
-            for key in results
-        }
+            groupby_attrs = list(self.df.columns)
+        data = {key: dict(zip(groupby_attrs, results[key])) for key in results}
         data = pd.DataFrame.from_dict(data, orient='index')
         data.index.name = 'key'
         return data

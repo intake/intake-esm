@@ -222,8 +222,9 @@ def test_catalog_getitem_error():
         cat['foo']
 
 
-def test_catalog_keys_info():
-    cat = intake.open_esm_datastore(cdf_cat_sample_cesmle)
+@pytest.mark.parametrize('cat', [cdf_cat_sample_cesmle, cdf_cat_sample_cmip6_noagg])
+def test_catalog_keys_info(cat):
+    cat = intake.open_esm_datastore(cat)
     data = cat.keys_info()
     assert isinstance(data, pd.DataFrame)
     assert data.index.name == 'key'
