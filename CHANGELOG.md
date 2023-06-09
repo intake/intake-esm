@@ -4,8 +4,10 @@
 
 ### New features added
 
+- Fix the link to documentation build status [#591](https://github.com/intake/intake-esm/pull/591) ([@mgrover1](https://github.com/mgrover1))
 - Add optional `columns_with_iterables` argument to `esm_datastore` [#589](https://github.com/intake/intake-esm/pull/589) ([@dougiesquire](https://github.com/dougiesquire))
 - Add `opendap` as a possible data format [#570](https://github.com/intake/intake-esm/pull/570) ([@aulemahal](https://github.com/aulemahal))
+- Fix for catalogs without `aggregation_control`, as allowed by the ESM catalog specification [#569](https://github.com/intake/intake-esm/pull/569) ([@aulemahal](https://github.com/aulemahal))
 
 ## v2022.9.18
 

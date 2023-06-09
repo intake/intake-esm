@@ -41,6 +41,7 @@ from .utils import (
     cdf_cat_sample_cesmle,
     cdf_cat_sample_cmip5,
     cdf_cat_sample_cmip6,
+    cdf_cat_sample_cmip6_noagg,
     mixed_cat_sample_cmip6,
     multi_variable_cat,
     opendap_cat_sample_noaa,
@@ -55,6 +56,7 @@ from .utils import (
     'obj, sep, read_csv_kwargs, columns_with_iterables',
     [
         (catalog_dict_records, '.', None, None),
+        (cdf_cat_sample_cmip6_noagg, '.', None, None),
         (cdf_cat_sample_cmip6, '/', None, None),
         (zarr_cat_aws_cesm, '.', None, None),
         (zarr_cat_pangeo_cmip6, '*', None, None),
@@ -132,6 +134,18 @@ def test_invalid_derivedcat(query, regex):
         intake.open_esm_datastore(catalog_dict_records, registry=registry)
 
 
+def test_impossible_derivedcat():
+    registry = intake_esm.DerivedVariableRegistry()
+
+    @registry.register(variable='FOO', query={'variable': ['FLNS', 'FLUT']})
+    def func(ds):
+        ds['FOO'] = ds.FLNS + ds.FLUT
+        return ds
+
+    with pytest.raises(ValueError, match='Variable derivation requires `aggregation_control`'):
+        intake.open_esm_datastore(cdf_cat_sample_cmip6_noagg, registry=registry)
+
+
 @pytest.mark.parametrize(
     'obj, sep, read_csv_kwargs',
     [
@@ -140,6 +154,7 @@ def test_invalid_derivedcat(query, regex):
         (cdf_cat_sample_cmip5, '.', None),
         (cdf_cat_sample_cmip6, '*', None),
         (catalog_dict_records, '.', None),
+        (cdf_cat_sample_cmip6_noagg, '.', None),
         ({'esmcat': sample_esmcat_data, 'df': sample_df}, '.', None),
     ],
 )
@@ -149,7 +164,9 @@ def test_catalog_unique(obj, sep, read_csv_kwargs):
     nuniques = cat.nunique()
     assert isinstance(uniques, pd.Series)
     assert isinstance(nuniques, pd.Series)
-    assert len(uniques.keys()) == len(cat.df.columns) + 1  # for derived_variable entry
+    assert len(uniques.keys()) == len(cat.df.columns) + (
+        0 if obj is cdf_cat_sample_cmip6_noagg else 1
+    )  # for derived_variable entry
 
 
 def test_catalog_contains():
@@ -205,8 +222,9 @@ def test_catalog_getitem_error():
         cat['foo']
 
 
-def test_catalog_keys_info():
-    cat = intake.open_esm_datastore(cdf_cat_sample_cesmle)
+@pytest.mark.parametrize('cat', [cdf_cat_sample_cesmle, cdf_cat_sample_cmip6_noagg])
+def test_catalog_keys_info(cat):
+    cat = intake.open_esm_datastore(cat)
     data = cat.keys_info()
     assert isinstance(data, pd.DataFrame)
     assert data.index.name == 'key'
@@ -324,6 +342,11 @@ def test_multi_variable_catalog_derived_cat():
             dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_id=['tasmax']),
             {'chunks': {'time': 1}},
         ),
+        (
+            cdf_cat_sample_cmip6_noagg,
+            dict(source_id=['CNRM-ESM2-1', 'CNRM-CM6-1', 'BCC-ESM1'], variable_id=['tasmax']),
+            {'chunks': {'time': 1}},
+        ),
         (mixed_cat_sample_cmip6, dict(institution_id='BCC'), {}),
     ],
 )
@@ -331,7 +354,8 @@ def test_to_dataset_dict(path, query, xarray_open_kwargs):
     cat = intake.open_esm_datastore(path)
     cat_sub = cat.search(**query)
     _, ds = cat_sub.to_dataset_dict(xarray_open_kwargs=xarray_open_kwargs).popitem()
-    assert 'member_id' in ds.dims
+    if path != cdf_cat_sample_cmip6_noagg:
+        assert 'member_id' in ds.dims
     assert len(ds.__dask_keys__()) > 0
     assert ds.time.encoding
 
@@ -408,6 +432,7 @@ def test_to_dask(path, query, xarray_open_kwargs):
     'path, query',
     [
         (cdf_cat_sample_cmip6, {'experiment_id': ['historical', 'rcp85']}),
+        (cdf_cat_sample_cmip6_noagg, {'experiment_id': ['historical', 'rcp85']}),
         (cdf_cat_sample_cmip5, {'experiment': ['historical', 'rcp85']}),
     ],
 )
