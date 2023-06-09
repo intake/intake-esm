@@ -33,6 +33,7 @@ def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_option
         and 'storage_options' not in xarray_open_kwargs['backend_kwargs']
     ):
         xarray_open_kwargs['backend_kwargs']['storage_options'] = {} or storage_options
+
     return xarray_open_kwargs
 
 
@@ -47,8 +48,12 @@ def _open_dataset(
     additional_attrs=None,
     expand_dims=None,
     data_format=None,
+    storage_options=None,
 ):
-    storage_options = xarray_open_kwargs.get('backend_kwargs', {}).get('storage_options', {})
+    storage_options = storage_options or xarray_open_kwargs.get('backend_kwargs', {}).get(
+        'storage_options', {}
+    )
+
     # Support kerchunk datasets, setting the file object (fo) and urlpath
     if data_format == 'reference':
         xarray_open_kwargs['backend_kwargs']['storage_options']['fo'] = urlpath
@@ -231,6 +236,7 @@ class ESMDataSource(DataSource):
                     requested_variables=self.requested_variables,
                     data_format=record['_data_format_'],
                     additional_attrs=record[~record.isnull()].to_dict(),
+                    storage_options=self.storage_options,
                 )
                 for _, record in self.df.iterrows()
             ]
