@@ -6,28 +6,27 @@ dependencies:
   - cftime
   - distributed
   - ecgtools >=2022.10.7
-  - fsspec>=2022.11.0
-  - gcsfs >=2022.11.0
-  - intake>=0.6.6
+  - fsspec>=2023.05
+  - gcsfs >=2023.05
+  - intake>=0.7
   - jupyterlab
   - matplotlib
   - myst-nb
-  - netcdf4<1.6.1
+  - netcdf4!=1.6.1
   - pip
   - pydantic>=1.9
   - python-graphviz
   - python=3.11
-  - s3fs >=2022.11.0
+  - s3fs >=2023.05
   - sphinx
   - sphinx-copybutton
   - sphinx-design
   - watermark
   - xarray-datatree>=0.0.9
-  - xarray>=2022.06
+  - xarray>=2023.05
   - zarr>=2.12
+  - furo>=2022.09.15
   - pip:
-      - furo>=2022.09.15
-      - tornado>=6.2
       - sphinxext-opengraph
       - autodoc_pydantic
       - -e ..
