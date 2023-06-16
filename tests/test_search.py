@@ -1,5 +1,5 @@
 import re
-
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -116,6 +116,16 @@ params = [
             {'A': 'NASA', 'B': 'foo', 'C': 'HiSt', 'D': 'tAs'},
         ],
     ),
+    (
+        {'A': None},
+        None,
+        [{'A': None, 'B': None, 'C': 'exp', 'D': 'UA'}]
+    ),
+    (
+        {'A': np.nan},
+        None,
+        [{'A': None, 'B': None, 'C': 'exp', 'D': 'UA'}]
+    )
 ]
 
 
@@ -123,10 +133,10 @@ params = [
 def test_search(query, require_all_on, expected):
     df = pd.DataFrame(
         {
-            'A': ['NCAR', 'IPSL', 'IPSL', 'CSIRO', 'IPSL', 'NCAR', 'NOAA', 'NCAR', 'NASA'],
-            'B': ['CESM', 'FOO', 'FOO', 'BAR', 'FOO', 'CESM', 'GCM', 'WACM', 'foo'],
-            'C': ['hist', 'control', 'hist', 'control', 'hist', 'control', 'hist', 'hist', 'HiSt'],
-            'D': ['O2', 'O2', 'O2', 'O2', 'NO2', 'O2', 'O2', 'TA', 'tAs'],
+            'A': ['NCAR', 'IPSL', 'IPSL', 'CSIRO', 'IPSL', 'NCAR', 'NOAA', 'NCAR', 'NASA', None],
+            'B': ['CESM', 'FOO', 'FOO', 'BAR', 'FOO', 'CESM', 'GCM', 'WACM', 'foo', None],
+            'C': ['hist', 'control', 'hist', 'control', 'hist', 'control', 'hist', 'hist', 'HiSt', 'exp'],
+            'D': ['O2', 'O2', 'O2', 'O2', 'NO2', 'O2', 'O2', 'TA', 'tAs', 'UA'],
         }
     )
     query_model = QueryModel(

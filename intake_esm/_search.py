@@ -48,6 +48,8 @@ def search(
                 mask = df[column].str.contains(value, regex=False)
             elif column_is_stringtype and is_pattern(value):
                 mask = df[column].str.contains(value, regex=True, case=True, flags=0)
+            elif pd.isna(value):
+                mask = df[column].isnull()
             else:
                 mask = df[column] == value
             local_mask = local_mask | mask

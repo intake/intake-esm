@@ -441,7 +441,7 @@ class QueryModel(pydantic.BaseModel):
                     raise ValueError(f'Column {key} not in columns {columns}')
         _query = query.copy()
         for key, value in _query.items():
-            if isinstance(value, (str, int, float, bool)):
+            if isinstance(value, (str, int, float, bool)) or value is None or value is pd.NA:
                 _query[key] = [value]
 
         values['query'] = _query
