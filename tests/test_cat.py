@@ -121,7 +121,11 @@ def test_esmcatmodel_unique_and_nunique(query, expected_unique_vals, expected_nu
 
 @pytest.mark.parametrize(
     'query, columns, require_all_on',
-    [({'foo': 1}, ['foo', 'bar'], ['bar']), ({'bar': 1}, ['foo', 'bar'], 'foo')],
+    [
+        ({'foo': 1}, ['foo', 'bar'], ['bar']),
+        ({'bar': 1}, ['foo', 'bar'], 'foo'),
+        ({'foo': None}, ['foo', 'bar'], None),
+    ],
 )
 def test_query_model(query, columns, require_all_on):
     q = QueryModel(query=query, columns=columns, require_all_on=require_all_on)
