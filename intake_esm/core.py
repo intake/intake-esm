@@ -542,7 +542,7 @@ class esm_datastore(Catalog):
         storage_options: typing.Optional[dict[pydantic.StrictStr, typing.Any]] = None,
         progressbar: typing.Optional[pydantic.StrictBool] = None,
         aggregate: typing.Optional[pydantic.StrictBool] = None,
-        skip_on_error: typing.Optional[pydantic.StrictBool] = False,
+        skip_on_error: pydantic.StrictBool = False,
         **kwargs,
     ) -> dict[str, xr.Dataset]:
         """

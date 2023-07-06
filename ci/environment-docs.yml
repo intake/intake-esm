@@ -14,7 +14,7 @@ dependencies:
   - myst-nb
   - netcdf4!=1.6.1
   - pip
-  - pydantic>=1.9
+  - pydantic>=2.0
   - python-graphviz
   - python=3.11
   - s3fs >=2023.05
