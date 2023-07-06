@@ -329,7 +329,11 @@ class esm_datastore(Catalog):
         return self.__dir__()
 
     @pydantic.validate_arguments
-    def search(self, require_all_on: typing.Optional[typing.Union[str, list[str]]] = None, **query: typing.Any):
+    def search(
+        self,
+        require_all_on: typing.Optional[typing.Union[str, list[str]]] = None,
+        **query: typing.Any,
+    ):
         """Search for entries in the catalog.
 
         Parameters

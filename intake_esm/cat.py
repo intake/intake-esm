@@ -8,8 +8,8 @@ import typing
 import fsspec
 import pandas as pd
 import pydantic
-from pydantic import ConfigDict
 import tlz
+from pydantic import ConfigDict
 
 from ._search import search, search_apply_require_all_on
 
@@ -67,7 +67,7 @@ class Assets(pydantic.BaseModel):
 
     model_config = ConfigDict(validate_default=True, validate_assignment=True)
 
-    @pydantic.model_validator(mode="after")
+    @pydantic.model_validator(mode='after')
     def _validate_data_format(cls, model):
         data_format, format_column_name = model.format, model.format_column_name
         if data_format is not None and format_column_name is not None:
@@ -102,7 +102,7 @@ class ESMCatalogModel(pydantic.BaseModel):
     attributes: list[Attribute]
     assets: Assets
     aggregation_control: typing.Optional[AggregationControl] = None
-    id: str = ""
+    id: str = ''
     catalog_dict: typing.Optional[list[dict]] = None
     catalog_file: typing.Optional[pydantic.StrictStr] = None
     description: typing.Optional[pydantic.StrictStr] = None
@@ -110,9 +110,11 @@ class ESMCatalogModel(pydantic.BaseModel):
     last_updated: typing.Optional[typing.Union[datetime.datetime, datetime.date]] = None
     _df: pd.DataFrame = pydantic.PrivateAttr()
 
-    model_config = ConfigDict(arbitrary_types_allowed=True, validate_default=True, validate_assignment=True)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True, validate_default=True, validate_assignment=True
+    )
 
-    @pydantic.model_validator(mode="after")
+    @pydantic.model_validator(mode='after')
     def validate_catalog(cls, model):
         catalog_dict, catalog_file = model.catalog_dict, model.catalog_file
         if catalog_dict is not None and catalog_file is not None:
@@ -408,7 +410,7 @@ class QueryModel(pydantic.BaseModel):
     # validate_assignment=True since it leads to recursion
     model_config = ConfigDict(validate_default=True, validate_assignment=False)
 
-    @pydantic.model_validator(mode="after")
+    @pydantic.model_validator(mode='after')
     def validate_query(cls, model):
         query = model.query
         columns = model.columns
