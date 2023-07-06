@@ -16,6 +16,7 @@ extensions = [
     'myst_nb',
     'sphinxext.opengraph',
     'sphinx_copybutton',
+    'sphinxcontrib.autodoc_pydantic',
     'sphinx_design',
 ]
 
@@ -27,6 +28,9 @@ myst_url_schemes = ['http', 'https', 'mailto']
 # sphinx-copybutton configurations
 copybutton_prompt_text = r'>>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: '
 copybutton_prompt_is_regexp = True
+
+autodoc_pydantic_model_show_json = True
+autodoc_pydantic_model_show_config = False
 
 nb_execution_mode = 'cache'
 nb_execution_timeout = 600

@@ -24,19 +24,13 @@ For more details and examples, refer to the relevant chapters in the main part o
 ## ESM Catalog
 
 ```{eval-rst}
-.. autoclass:: intake_esm.cat.ESMCatalogModel
-    :members:
-    :noindex:
-    :special-members: __init__
+.. autopydantic_model:: intake_esm.cat.ESMCatalogModel
 ```
 
 ## Query Model
 
 ```{eval-rst}
-.. autoclass:: intake_esm.cat.QueryModel
-    :members:
-    :noindex:
-    :special-members: __init__
+.. autopydantic_model:: intake_esm.cat.QueryModel
 ```
 
 ## Derived Variable Registry

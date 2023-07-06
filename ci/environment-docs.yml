@@ -5,7 +5,7 @@ channels:
 dependencies:
   - cftime
   - distributed
-#  - ecgtools >=2022.10.7
+  - ecgtools >=2022.10.7
   - fsspec>=2023.05
   - gcsfs >=2023.05
   - intake>=0.7
@@ -30,4 +30,3 @@ dependencies:
       - sphinxext-opengraph
       - autodoc_pydantic
       - -e ..
-      - git+https://github.com/ncar-xdev/ecgtools.git@refs/pull/164/head
