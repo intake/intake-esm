@@ -16,7 +16,7 @@ dependencies:
   - pip
   - pooch
   - pre-commit
-  - pydantic>=1.9
+  - pydantic>=2.0
   - pydap
   - pytest
   - pytest-cov

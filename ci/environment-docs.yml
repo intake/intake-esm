@@ -14,7 +14,7 @@ dependencies:
   - myst-nb
   - netcdf4!=1.6.1
   - pip
-  - pydantic>=1.9
+  - pydantic>=2.0
   - python-graphviz
   - python=3.11
   - s3fs >=2023.05
@@ -27,6 +27,6 @@ dependencies:
   - zarr>=2.12
   - furo>=2022.09.15
   - pip:
+      - git+https://github.com/ncar-xdev/ecgtools
       - sphinxext-opengraph
-      - autodoc_pydantic
       - -e ..
