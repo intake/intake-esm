@@ -27,5 +27,6 @@ dependencies:
   - zarr>=2.12
   - furo>=2022.09.15
   - pip:
+      - git+https://github.com/ncar-xdev/ecgtools
       - sphinxext-opengraph
       - -e ..
