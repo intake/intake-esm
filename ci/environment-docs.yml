@@ -28,5 +28,4 @@ dependencies:
   - furo>=2022.09.15
   - pip:
       - sphinxext-opengraph
-      - autodoc_pydantic
       - -e ..
