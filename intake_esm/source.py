@@ -136,12 +136,12 @@ class ESMDataSource(DataSource):
         *,
         variable_column_name: typing.Optional[pydantic.StrictStr] = None,
         aggregations: typing.Optional[list[Aggregation]] = None,
-        requested_variables: list[str] = None,
-        preprocess: typing.Callable = None,
-        storage_options: dict[str, typing.Any] = None,
-        xarray_open_kwargs: dict[str, typing.Any] = None,
-        xarray_combine_by_coords_kwargs: dict[str, typing.Any] = None,
-        intake_kwargs: dict[str, typing.Any] = None,
+        requested_variables: typing.Optional[list[str]] = None,
+        preprocess: typing.Optional[typing.Callable] = None,
+        storage_options: typing.Optional[dict[str, typing.Any]] = None,
+        xarray_open_kwargs: typing.Optional[dict[str, typing.Any]] = None,
+        xarray_combine_by_coords_kwargs: typing.Optional[dict[str, typing.Any]] = None,
+        intake_kwargs: typing.Optional[dict[str, typing.Any]] = None,
     ):
         """An intake compatible Data Source for ESM data.
 

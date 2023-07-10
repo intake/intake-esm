@@ -17,7 +17,7 @@ class DerivedVariable(pydantic.BaseModel):
     query: dict[pydantic.StrictStr, typing.Union[typing.Any, list[typing.Any]]]
     prefer_derived: bool
 
-    @pydantic.validator('query')
+    @pydantic.field_validator('query')
     def validate_query(cls, values):
         _query = values.copy()
         for key, value in _query.items():
@@ -46,7 +46,7 @@ class DerivedVariable(pydantic.BaseModel):
 class DerivedVariableRegistry:
     """Registry of derived variables"""
 
-    def __post_init_post_parse__(self):
+    def __post_init__(self):
         self._registry = {}
 
     @classmethod

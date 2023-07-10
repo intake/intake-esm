@@ -18,7 +18,7 @@ dependencies:
   - pooch
   - pre-commit
   - psutil
-  - pydantic>=1.9
+  - pydantic>=2.0
   - pydap
   - pyproj
   - pytest

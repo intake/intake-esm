@@ -9,6 +9,7 @@ import fsspec
 import pandas as pd
 import pydantic
 import tlz
+from pydantic import ConfigDict
 
 from ._search import search, search_apply_require_all_on
 
@@ -40,9 +41,7 @@ class AggregationType(str, enum.Enum):
     join_existing = 'join_existing'
     union = 'union'
 
-    class Config:
-        validate_all = True
-        validate_assignment = True
+    model_config = ConfigDict(validate_default=True, validate_assignment=True)
 
 
 class DataFormat(str, enum.Enum):
@@ -51,47 +50,39 @@ class DataFormat(str, enum.Enum):
     reference = 'reference'
     opendap = 'opendap'
 
-    class Config:
-        validate_all = True
-        validate_assignment = True
+    model_config = ConfigDict(validate_default=True, validate_assignment=True)
 
 
 class Attribute(pydantic.BaseModel):
     column_name: pydantic.StrictStr
     vocabulary: pydantic.StrictStr = ''
 
-    class Config:
-        validate_all = True
-        validate_assignment = True
+    model_config = ConfigDict(validate_default=True, validate_assignment=True)
 
 
 class Assets(pydantic.BaseModel):
     column_name: pydantic.StrictStr
-    format: typing.Optional[DataFormat]
-    format_column_name: typing.Optional[pydantic.StrictStr]
+    format: typing.Optional[DataFormat] = None
+    format_column_name: typing.Optional[pydantic.StrictStr] = None
 
-    class Config:
-        validate_all = True
-        validate_assignment = True
+    model_config = ConfigDict(validate_default=True, validate_assignment=True)
 
-    @pydantic.root_validator
-    def _validate_data_format(cls, values):
-        data_format, format_column_name = values.get('format'), values.get('format_column_name')
+    @pydantic.model_validator(mode='after')
+    def _validate_data_format(cls, model):
+        data_format, format_column_name = model.format, model.format_column_name
         if data_format is not None and format_column_name is not None:
             raise ValueError('Cannot set both format and format_column_name')
         elif data_format is None and format_column_name is None:
             raise ValueError('Must set one of format or format_column_name')
-        return values
+        return model
 
 
 class Aggregation(pydantic.BaseModel):
     type: AggregationType
     attribute_name: pydantic.StrictStr
-    options: typing.Optional[dict] = {}
+    options: dict = {}
 
-    class Config:
-        validate_all = True
-        validate_assignment = True
+    model_config = ConfigDict(validate_default=True, validate_assignment=True)
 
 
 class AggregationControl(pydantic.BaseModel):
@@ -99,9 +90,7 @@ class AggregationControl(pydantic.BaseModel):
     groupby_attrs: list[pydantic.StrictStr]
     aggregations: list[Aggregation] = []
 
-    class Config:
-        validate_all = True
-        validate_assignment = True
+    model_config = ConfigDict(validate_default=True, validate_assignment=True)
 
 
 class ESMCatalogModel(pydantic.BaseModel):
@@ -113,27 +102,25 @@ class ESMCatalogModel(pydantic.BaseModel):
     attributes: list[Attribute]
     assets: Assets
     aggregation_control: typing.Optional[AggregationControl] = None
-    id: typing.Optional[str] = ''
+    id: str = ''
     catalog_dict: typing.Optional[list[dict]] = None
-    catalog_file: pydantic.StrictStr = None
-    description: pydantic.StrictStr = None
-    title: pydantic.StrictStr = None
+    catalog_file: typing.Optional[pydantic.StrictStr] = None
+    description: typing.Optional[pydantic.StrictStr] = None
+    title: typing.Optional[pydantic.StrictStr] = None
     last_updated: typing.Optional[typing.Union[datetime.datetime, datetime.date]] = None
-    _df: typing.Optional[pd.DataFrame] = pydantic.PrivateAttr()
+    _df: pd.DataFrame = pydantic.PrivateAttr()
 
-    class Config:
-        arbitrary_types_allowed = True
-        underscore_attrs_are_private = True
-        validate_all = True
-        validate_assignment = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True, validate_default=True, validate_assignment=True
+    )
 
-    @pydantic.root_validator
-    def validate_catalog(cls, values):
-        catalog_dict, catalog_file = values.get('catalog_dict'), values.get('catalog_file')
+    @pydantic.model_validator(mode='after')
+    def validate_catalog(cls, model):
+        catalog_dict, catalog_file = model.catalog_dict, model.catalog_file
         if catalog_dict is not None and catalog_file is not None:
             raise ValueError('catalog_dict and catalog_file cannot be set at the same time')
 
-        return values
+        return model
 
     @classmethod
     def from_dict(cls, data: dict) -> 'ESMCatalogModel':
@@ -141,7 +128,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         df = data['df']
         if 'last_updated' not in esmcat:
             esmcat['last_updated'] = None
-        cat = cls.parse_obj(esmcat)
+        cat = cls.model_validate(esmcat)
         cat._df = df
         return cat
 
@@ -254,7 +241,7 @@ class ESMCatalogModel(pydantic.BaseModel):
             data = json.loads(fobj.read())
             if 'last_updated' not in data:
                 data['last_updated'] = None
-            cat = cls.parse_obj(data)
+            cat = cls.model_validate(data)
             if cat.catalog_file:
                 if _mapper.fs.exists(cat.catalog_file):
                     csv_path = cat.catalog_file
@@ -417,26 +404,26 @@ class QueryModel(pydantic.BaseModel):
 
     query: dict[pydantic.StrictStr, typing.Union[typing.Any, list[typing.Any]]]
     columns: list[str]
-    require_all_on: typing.Union[str, list[typing.Any]] = None
+    require_all_on: typing.Optional[typing.Union[str, list[typing.Any]]] = None
 
-    class Config:
-        validate_all = True
-        validate_assignment = True
+    # TODO: Seem to be unable to modify fields in model_validator with
+    # validate_assignment=True since it leads to recursion
+    model_config = ConfigDict(validate_default=True, validate_assignment=False)
 
-    @pydantic.root_validator(pre=False)
-    def validate_query(cls, values):
-        query = values.get('query', {})
-        columns = values.get('columns')
-        require_all_on = values.get('require_all_on', [])
+    @pydantic.model_validator(mode='after')
+    def validate_query(cls, model):
+        query = model.query
+        columns = model.columns
+        require_all_on = model.require_all_on
 
         if query:
             for key in query:
                 if key not in columns:
                     raise ValueError(f'Column {key} not in columns {columns}')
         if isinstance(require_all_on, str):
-            values['require_all_on'] = [require_all_on]
+            model.require_all_on = [require_all_on]
         if require_all_on is not None:
-            for key in values['require_all_on']:
+            for key in model.require_all_on:
                 if key not in columns:
                     raise ValueError(f'Column {key} not in columns {columns}')
         _query = query.copy()
@@ -444,5 +431,5 @@ class QueryModel(pydantic.BaseModel):
             if isinstance(value, (str, int, float, bool)) or value is None or value is pd.NA:
                 _query[key] = [value]
 
-        values['query'] = _query
-        return values
+        model.query = _query
+        return model
