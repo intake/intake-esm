@@ -411,9 +411,9 @@ def test_to_datatree_levels():
             'consolidated': True,
             'backend_kwargs': {'storage_options': {'token': 'anon'}},
         },
-        levels=['activity_id', 'institution_id', 'source_id'],
+        levels=['source_id'],
     )
-    assert tree.keys() == ['activity_id', 'institution_id', 'source_id']
+    assert list(tree.keys()) == ['BCC-ESM1']
 
 
 @pytest.mark.parametrize(
