@@ -393,6 +393,29 @@ def test_to_datatree(path, query, xarray_open_kwargs):
     assert isinstance(tree, DataTree)
 
 
+def test_to_datatree_levels():
+    cat = intake.open_esm_datastore(zarr_cat_pangeo_cmip6)
+    cat_sub = cat.search(
+        **dict(
+            variable_id=['pr'],
+            experiment_id='ssp370',
+            activity_id='AerChemMIP',
+            source_id='BCC-ESM1',
+            table_id='Amon',
+            grid_label='gn',
+        ),
+    )
+
+    tree = cat_sub.to_datatree(
+        xarray_open_kwargs={
+            'consolidated': True,
+            'backend_kwargs': {'storage_options': {'token': 'anon'}},
+        },
+        levels=['source_id'],
+    )
+    assert list(tree.keys()) == ['BCC-ESM1']
+
+
 @pytest.mark.parametrize(
     'path, query, xarray_open_kwargs',
     [

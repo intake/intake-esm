@@ -697,6 +697,7 @@ class esm_datastore(Catalog):
         progressbar: typing.Optional[pydantic.StrictBool] = None,
         aggregate: typing.Optional[pydantic.StrictBool] = None,
         skip_on_error: pydantic.StrictBool = False,
+        levels: list[str] = None,
         **kwargs,
     ):
         """
@@ -720,6 +721,9 @@ class esm_datastore(Catalog):
             If False, no aggregation will be done.
         skip_on_error : bool, optional
             If True, skip datasets that cannot be loaded and/or variables we are unable to derive.
+        levels : list[str], optional
+            List of fields to use as the datatree nodes. WARNING: This will overwrite the fields
+            used to create the unique aggregation keys.
 
         Returns
         -------
@@ -760,6 +764,11 @@ class esm_datastore(Catalog):
                 'To proceed please install xarray-datatree using: '
                 ' `python -m pip install xarray-datatree` or `conda install -c conda-forge xarray-datatree`.'
             )
+
+        # Change the groupby controls if neccessary, used to assemble the tree
+        if levels is not None:
+            self = deepcopy(self)
+            self.esmcat.aggregation_control.groupby_attrs = levels
 
         # Set the separator to a / for datatree temporarily
         self.sep, old_sep = '/', self.sep
