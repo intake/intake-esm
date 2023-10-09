@@ -19,7 +19,7 @@ def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_option
     xarray_open_kwargs = (xarray_open_kwargs or {}).copy()
     _default_open_kwargs = {
         'engine': 'zarr' if data_format in {'zarr', 'reference'} else 'netcdf4',
-        'chunks': {},
+        'chunks': 'auto',
         'backend_kwargs': {},
     }
     xarray_open_kwargs = (
