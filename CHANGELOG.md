@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Bugs fixed
+
+- Fix catalog serialization with fsspec 2023.10.0 [#636](https://github.com/intake/intake-esm/pull/636) ([@aulemahal](https://github.com/aulemahal))
+
+## v2023.07.07
+
 ### New features added
 
 - Fix the link to documentation build status [#591](https://github.com/intake/intake-esm/pull/591) ([@mgrover1](https://github.com/mgrover1))
