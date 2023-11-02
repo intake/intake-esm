@@ -267,7 +267,7 @@ class ESMCatalogModel(pydantic.BaseModel):
             return set()
         has_iterables = (
             self._df.sample(20, replace=True)
-            .applymap(type)
+            .map(type)
             .isin([list, tuple, set])
             .any()
             .to_dict()
