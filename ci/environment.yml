@@ -13,6 +13,7 @@ dependencies:
   - ipython
   - matplotlib
   - netcdf4>=1.5.5,<1.6.1
+  - pandas>=2.1.0
   - pip
   - pooch
   - pre-commit
