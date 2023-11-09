@@ -1,10 +1,34 @@
 # Changelog
 
-## Unreleased
+## v2023.10.27
 
-### Bugs fixed
+([full changelog](https://github.com/intake/intake-esm/compare/v2023.07.07...487e3149679ff1c67a4af75d9e9a6ff72f64f028))
+
+### New features added
+
+- ADD: Add levels option to to_datatree() [#624](https://github.com/intake/intake-esm/pull/624) ([@mgrover1](https://github.com/mgrover1))
+
+### Enhancements made
+
+- ADD: Add levels option to to_datatree() [#624](https://github.com/intake/intake-esm/pull/624) ([@mgrover1](https://github.com/mgrover1))
+
+### Other merged PRs
 
 - Fix catalog serialization with fsspec 2023.10.0 [#636](https://github.com/intake/intake-esm/pull/636) ([@aulemahal](https://github.com/aulemahal))
+- [pre-commit.ci] pre-commit autoupdate [#631](https://github.com/intake/intake-esm/pull/631) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Bump actions/checkout from 3 to 4 [#630](https://github.com/intake/intake-esm/pull/630) ([@dependabot](https://github.com/dependabot))
+- [pre-commit.ci] pre-commit autoupdate [#628](https://github.com/intake/intake-esm/pull/628) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Bump pypa/gh-action-pypi-publish from 1.8.8 to 1.8.10 [#627](https://github.com/intake/intake-esm/pull/627) ([@dependabot](https://github.com/dependabot))
+- [pre-commit.ci] pre-commit autoupdate [#626](https://github.com/intake/intake-esm/pull/626) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Bump pypa/gh-action-pypi-publish from 1.8.7 to 1.8.8 [#625](https://github.com/intake/intake-esm/pull/625) ([@dependabot](https://github.com/dependabot))
+- Updates for pydantic v2 [#619](https://github.com/intake/intake-esm/pull/619) ([@dougiesquire](https://github.com/dougiesquire))
+- [pre-commit.ci] pre-commit autoupdate [#618](https://github.com/intake/intake-esm/pull/618) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/intake/intake-esm/graphs/contributors?from=2023-07-07&to=2023-10-27&type=c))
+
+[@andersy005](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aandersy005+updated%3A2023-07-07..2023-10-27&type=Issues) | [@aulemahal](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Aaulemahal+updated%3A2023-07-07..2023-10-27&type=Issues) | [@dcherian](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adcherian+updated%3A2023-07-07..2023-10-27&type=Issues) | [@dependabot](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adependabot+updated%3A2023-07-07..2023-10-27&type=Issues) | [@dougiesquire](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Adougiesquire+updated%3A2023-07-07..2023-10-27&type=Issues) | [@jbusecke](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Ajbusecke+updated%3A2023-07-07..2023-10-27&type=Issues) | [@mgrover1](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Amgrover1+updated%3A2023-07-07..2023-10-27&type=Issues) | [@pre-commit-ci](https://github.com/search?q=repo%3Aintake%2Fintake-esm+involves%3Apre-commit-ci+updated%3A2023-07-07..2023-10-27&type=Issues)
 
 ## v2023.07.07
 
