@@ -266,11 +266,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         if self._df.empty:
             return set()
         has_iterables = (
-            self._df.sample(20, replace=True)
-            .applymap(type)
-            .isin([list, tuple, set])
-            .any()
-            .to_dict()
+            self._df.sample(20, replace=True).map(type).isin([list, tuple, set]).any().to_dict()
         )
         return {column for column, check in has_iterables.items() if check}
 
