@@ -40,13 +40,10 @@ exclude = [
     "venv",
 ]
 per-file-ignores = {}
-# E402: module level import not at top of file
-# E501: line too long - let black worry about that
-# E731: do not assign a lambda expression, use a def
 ignore = [
-    "E402",
-    "E501",
-    "E731",
+    "E721", # Comparing types instead of isinstance
+    "E741", # Ambiguous variable names
+    "E501", # Conflicts with ruff format
 ]
 select = [
     # Pyflakes
@@ -61,8 +58,15 @@ select = [
 ]
 
 
-[tool.ruff.mccabe]
+[tool.ruff.lint.mccabe]
 max-complexity = 18
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["intake_esm"]
+combine-as-imports = true
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"

@@ -6,9 +6,10 @@ import dask
 import pytest
 import xarray
 
+from intake_esm.source import _get_xarray_open_kwargs, _open_dataset, _update_attrs
+
 dask.config.set(scheduler='single-threaded')
 
-from intake_esm.source import _get_xarray_open_kwargs, _open_dataset, _update_attrs
 
 here = os.path.abspath(os.path.dirname(__file__))
 

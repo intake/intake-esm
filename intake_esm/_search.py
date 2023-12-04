@@ -23,7 +23,7 @@ def is_pattern(value):
     try:
         value_ = value
         for char in wildcard_chars:
-            value_ = value_.replace(fr'\{char}', '')
+            value_ = value_.replace(rf'\{char}', '')
         return any(char in value_ for char in wildcard_chars)
     except (TypeError, AttributeError):
         return False
