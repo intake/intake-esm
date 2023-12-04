@@ -10,6 +10,21 @@ from datatree import DataTree
 
 import intake_esm
 
+from .utils import (
+    catalog_dict_records,
+    cdf_cat_sample_cesmle,
+    cdf_cat_sample_cmip5,
+    cdf_cat_sample_cmip6,
+    cdf_cat_sample_cmip6_noagg,
+    mixed_cat_sample_cmip6,
+    multi_variable_cat,
+    opendap_cat_sample_noaa,
+    sample_df,
+    sample_esmcat_data,
+    zarr_cat_aws_cesm,
+    zarr_cat_pangeo_cmip6,
+)
+
 registry = intake_esm.DerivedVariableRegistry()
 
 
@@ -34,22 +49,6 @@ registry_multivar = intake_esm.DerivedVariableRegistry()
 @registry_multivar.register(variable='FOO', query={'variable': ['TEMP']})
 def func_multivar(ds):
     return ds + 1
-
-
-from .utils import (
-    catalog_dict_records,
-    cdf_cat_sample_cesmle,
-    cdf_cat_sample_cmip5,
-    cdf_cat_sample_cmip6,
-    cdf_cat_sample_cmip6_noagg,
-    mixed_cat_sample_cmip6,
-    multi_variable_cat,
-    opendap_cat_sample_noaa,
-    sample_df,
-    sample_esmcat_data,
-    zarr_cat_aws_cesm,
-    zarr_cat_pangeo_cmip6,
-)
 
 
 @pytest.mark.parametrize(
