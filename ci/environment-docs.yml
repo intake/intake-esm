@@ -19,7 +19,7 @@ dependencies:
   - python-graphviz
   - python=3.11
   - s3fs >=2023.05
-  - sphinx
+  - sphinx<7.0
   - sphinx-copybutton
   - sphinx-design
   - watermark
