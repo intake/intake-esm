@@ -5,7 +5,7 @@ on:
       - main
   pull_request:
   schedule:
-    - cron: '0 0 * * *' # Daily “At 00:00”
+    - cron: "0 0 * * *" # Daily “At 00:00”
   workflow_dispatch: # allows you to trigger manually
 
 concurrency:
@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,7 +34,7 @@ jobs:
         uses: mamba-org/provision-with-micromamba@main
         with:
           cache-downloads: true
-          micromamba-version: 'latest'
+          micromamba-version: "latest"
           environment-file: ci/environment.yml
           extra-specs: |
             python=${{ matrix.python-version }}
@@ -74,7 +74,7 @@ jobs:
         uses: mamba-org/provision-with-micromamba@main
         with:
           cache-downloads: true
-          micromamba-version: 'latest'
+          micromamba-version: "latest"
           environment-file: ci/environment-upstream-dev.yml
           extra-specs: |
             python=3.11
