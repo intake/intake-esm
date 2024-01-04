@@ -2,6 +2,6 @@ version: 2
 conda:
   environment: ci/environment-docs.yml
 build:
-  os: 'ubuntu-20.04'
+  os: "ubuntu-20.04"
   tools:
-    python: 'mambaforge-4.10'
+    python: "mambaforge-4.10"

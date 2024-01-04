@@ -5,8 +5,8 @@ codecov:
 comment: false
 
 ignore:
-  - 'tests/*.py'
-  - 'setup.py'
+  - "tests/*.py"
+  - "setup.py"
 
 coverage:
   precision: 2
