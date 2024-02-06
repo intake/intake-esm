@@ -1,6 +1,6 @@
 [tool.black]
 line-length = 100
-target-version = ['py39']
+target-version = ['py310']
 skip-string-normalization = true
 
 [build-system]
@@ -15,7 +15,7 @@ markers = "network: tests requiring a network connection"
 
 [tool.ruff]
 line-length = 100
-target-version = "py39"
+target-version = "py310"
 extend-include = ["*.ipynb"]
 
 
