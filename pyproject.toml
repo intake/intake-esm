@@ -49,6 +49,7 @@ exclude = [
     "site-packages",
     "venv",
 ]
+[tool.ruff.lint]
 per-file-ignores = {}
 ignore = [
     "E721", # Comparing types instead of isinstance

@@ -85,7 +85,6 @@ class set_options:
     >>> cat = intake.open_esm_datastore('catalog.json')
     >>> with intake_esm.set_options(attrs_prefix='cat'):
     ...     out = cat.to_dataset_dict()
-    ...
 
     Or to set global options:
 
