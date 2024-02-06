@@ -3,5 +3,8 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      # Check for updates once a week
       interval: "monthly"
+    groups:
+      actions:
+        patterns:
+          - "*"
