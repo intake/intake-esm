@@ -125,7 +125,7 @@ class ESMDataSource(DataSource):
     name = 'esm_datasource'
     partition_access = True
 
-    @pydantic.validate_arguments
+    @pydantic.validate_call
     def __init__(
         self,
         key: pydantic.StrictStr,
@@ -206,7 +206,7 @@ class ESMDataSource(DataSource):
     def _get_schema(self) -> Schema:
         if self._ds is None:
             self._open_dataset()
-            metadata = {'dims': {}, 'data_vars': {}, 'coords': ()}
+            metadata: dict[str, typing.Any] = {'dims': {}, 'data_vars': {}, 'coords': ()}
             self._schema = Schema(
                 datashape=None,
                 dtype=None,

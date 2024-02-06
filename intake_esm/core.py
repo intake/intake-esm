@@ -209,7 +209,7 @@ class esm_datastore(Catalog):
             _ = self[key]
         return self._entries
 
-    @pydantic.validate_arguments
+    @pydantic.validate_call
     def __getitem__(self, key: str) -> ESMDataSource:
         """
         This method takes a key argument and return a data source
@@ -328,7 +328,7 @@ class esm_datastore(Catalog):
     def _ipython_key_completions_(self):
         return self.__dir__()
 
-    @pydantic.validate_arguments
+    @pydantic.validate_call
     def search(
         self,
         require_all_on: str | list[str] | None = None,
@@ -443,7 +443,7 @@ class esm_datastore(Catalog):
             cat.derivedcat = self.derivedcat
         return cat
 
-    @pydantic.validate_arguments
+    @pydantic.validate_call
     def serialize(
         self,
         name: pydantic.StrictStr,
@@ -537,7 +537,7 @@ class esm_datastore(Catalog):
             )
         return unique
 
-    @pydantic.validate_arguments
+    @pydantic.validate_call
     def to_dataset_dict(
         self,
         xarray_open_kwargs: dict[str, typing.Any] | None = None,
@@ -687,7 +687,7 @@ class esm_datastore(Catalog):
         self.datasets = self._create_derived_variables(datasets, skip_on_error)
         return self.datasets
 
-    @pydantic.validate_arguments
+    @pydantic.validate_call
     def to_datatree(
         self,
         xarray_open_kwargs: dict[str, typing.Any] | None = None,

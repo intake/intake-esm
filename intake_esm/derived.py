@@ -29,7 +29,7 @@ class DerivedVariable(pydantic.BaseModel):
         """Return a list of dependent variables for a given variable"""
         return self.query[variable_key_name]
 
-    def __call__(self, *args, variable_key_name: str = None, **kwargs) -> xr.Dataset:
+    def __call__(self, *args, variable_key_name: str | None = None, **kwargs) -> xr.Dataset:
         """Call the function and return the result"""
         try:
             return self.func(*args, **kwargs)
