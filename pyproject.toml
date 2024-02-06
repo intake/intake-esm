@@ -16,6 +16,9 @@ markers = "network: tests requiring a network connection"
 [tool.ruff]
 line-length = 100
 target-version = "py39"
+extend-include = ["*.ipynb"]
+
+
 builtins = ["ellipsis"]
 # Exclude a variety of commonly ignored directories.
 exclude = [
@@ -23,20 +26,27 @@ exclude = [
     ".direnv",
     ".eggs",
     ".git",
+    ".git-rewrite",
     ".hg",
+    ".ipynb_checkpoints",
     ".mypy_cache",
     ".nox",
     ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
     ".ruff_cache",
     ".svn",
     ".tox",
     ".venv",
+    ".vscode",
     "__pypackages__",
     "_build",
     "buck-out",
     "build",
     "dist",
     "node_modules",
+    "site-packages",
     "venv",
 ]
 per-file-ignores = {}
@@ -67,6 +77,7 @@ combine-as-imports = true
 
 [tool.ruff.format]
 quote-style = "single"
+docstring-code-format = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
