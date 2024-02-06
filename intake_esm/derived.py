@@ -75,9 +75,9 @@ class DerivedVariableRegistry:
         $PYTHONPATH before calling this function.
 
         >>> import sys
-        >>> sys.path.insert(0, "/home/foo/pythonfiles")
+        >>> sys.path.insert(0, '/home/foo/pythonfiles')
         >>> from intake_esm.derived import DerivedVariableRegistry
-        >>> registsry = DerivedVariableRegistry.load("registry")
+        >>> registsry = DerivedVariableRegistry.load('registry')
         """
         modname = importlib.import_module(name, package=package)
         candidates = inspect.getmembers(modname, lambda x: isinstance(x, DerivedVariableRegistry))

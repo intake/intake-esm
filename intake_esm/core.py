@@ -60,7 +60,7 @@ class esm_datastore(Catalog):
     can be accessed with `intake.open_esm_datastore()`:
 
     >>> import intake
-    >>> url = "https://storage.googleapis.com/cmip6/pangeo-cmip6.json"
+    >>> url = 'https://storage.googleapis.com/cmip6/pangeo-cmip6.json'
     >>> cat = intake.open_esm_datastore(url)
     >>> cat.df.head()
     activity_id institution_id source_id experiment_id  ... variable_id grid_label                                             zstore dcpp_init_year
@@ -155,7 +155,7 @@ class esm_datastore(Catalog):
         --------
 
         >>> import intake
-        >>> cat = intake.open_esm_datastore("./tests/sample-catalogs/cesm1-lens-netcdf.json")
+        >>> cat = intake.open_esm_datastore('./tests/sample-catalogs/cesm1-lens-netcdf.json')
         >>> cat.keys_info()
                         component experiment stream
         key
@@ -233,8 +233,8 @@ class esm_datastore(Catalog):
 
         Examples
         --------
-        >>> cat = intake.open_esm_datastore("mycatalog.json")
-        >>> data_source = cat["AerChemMIP.BCC.BCC-ESM1.piClim-control.AERmon.gn"]
+        >>> cat = intake.open_esm_datastore('mycatalog.json')
+        >>> data_source = cat['AerChemMIP.BCC.BCC-ESM1.piClim-control.AERmon.gn']
         """
         # The canonical unique key is the key of a compatible group of assets
         try:
@@ -354,7 +354,7 @@ class esm_datastore(Catalog):
         Examples
         --------
         >>> import intake
-        >>> cat = intake.open_esm_datastore("pangeo-cmip6.json")
+        >>> cat = intake.open_esm_datastore('pangeo-cmip6.json')
         >>> cat.df.head(3)
         activity_id institution_id source_id  ... grid_label                                             zstore dcpp_init_year
         0  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
@@ -362,11 +362,11 @@ class esm_datastore(Catalog):
         2  AerChemMIP            BCC  BCC-ESM1  ...         gn  gs://cmip6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1...            NaN
 
         >>> sub_cat = cat.search(
-        ...     source_id=["BCC-CSM2-MR", "CNRM-CM6-1", "CNRM-ESM2-1"],
-        ...     experiment_id=["historical", "ssp585"],
-        ...     variable_id="pr",
-        ...     table_id="Amon",
-        ...     grid_label="gn",
+        ...     source_id=['BCC-CSM2-MR', 'CNRM-CM6-1', 'CNRM-ESM2-1'],
+        ...     experiment_id=['historical', 'ssp585'],
+        ...     variable_id='pr',
+        ...     table_id='Amon',
+        ...     grid_label='gn',
         ... )
         >>> sub_cat.df.head(3)
             activity_id institution_id    source_id  ... grid_label                                             zstore dcpp_init_year
@@ -379,7 +379,7 @@ class esm_datastore(Catalog):
 
         >>> import re
         >>> # Let's search for variables containing "Frac" in their name
-        >>> pat = re.compile(r"Frac")  # Define a regular expression
+        >>> pat = re.compile(r'Frac')  # Define a regular expression
         >>> cat.search(variable_id=pat)
         >>> cat.df.head().variable_id
         0     residualFrac
@@ -479,14 +479,14 @@ class esm_datastore(Catalog):
         Examples
         --------
         >>> import intake
-        >>> cat = intake.open_esm_datastore("pangeo-cmip6.json")
+        >>> cat = intake.open_esm_datastore('pangeo-cmip6.json')
         >>> cat_subset = cat.search(
-        ...     source_id="BCC-ESM1",
-        ...     grid_label="gn",
-        ...     table_id="Amon",
-        ...     experiment_id="historical",
+        ...     source_id='BCC-ESM1',
+        ...     grid_label='gn',
+        ...     table_id='Amon',
+        ...     experiment_id='historical',
         ... )
-        >>> cat_subset.serialize(name="cmip6_bcc_esm1", catalog_type="file")
+        >>> cat_subset.serialize(name='cmip6_bcc_esm1', catalog_type='file')
         """
 
         self.esmcat.save(
@@ -505,7 +505,7 @@ class esm_datastore(Catalog):
         Examples
         --------
         >>> import intake
-        >>> cat = intake.open_esm_datastore("pangeo-cmip6.json")
+        >>> cat = intake.open_esm_datastore('pangeo-cmip6.json')
         >>> cat.nunique()
         activity_id          10
         institution_id       23
@@ -583,18 +583,18 @@ class esm_datastore(Catalog):
         Examples
         --------
         >>> import intake
-        >>> cat = intake.open_esm_datastore("glade-cmip6.json")
+        >>> cat = intake.open_esm_datastore('glade-cmip6.json')
         >>> sub_cat = cat.search(
-        ...     source_id=["BCC-CSM2-MR", "CNRM-CM6-1", "CNRM-ESM2-1"],
-        ...     experiment_id=["historical", "ssp585"],
-        ...     variable_id="pr",
-        ...     table_id="Amon",
-        ...     grid_label="gn",
+        ...     source_id=['BCC-CSM2-MR', 'CNRM-CM6-1', 'CNRM-ESM2-1'],
+        ...     experiment_id=['historical', 'ssp585'],
+        ...     variable_id='pr',
+        ...     table_id='Amon',
+        ...     grid_label='gn',
         ... )
         >>> dsets = sub_cat.to_dataset_dict()
         >>> dsets.keys()
         dict_keys(['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn', 'ScenarioMIP.BCC.BCC-CSM2-MR.ssp585.Amon.gn'])
-        >>> dsets["CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn"]
+        >>> dsets['CMIP.BCC.BCC-CSM2-MR.historical.Amon.gn']
         <xarray.Dataset>
         Dimensions:    (bnds: 2, lat: 160, lon: 320, member_id: 3, time: 1980)
         Coordinates:
@@ -733,16 +733,16 @@ class esm_datastore(Catalog):
         Examples
         --------
         >>> import intake
-        >>> cat = intake.open_esm_datastore("glade-cmip6.json")
+        >>> cat = intake.open_esm_datastore('glade-cmip6.json')
         >>> sub_cat = cat.search(
-        ...     source_id=["BCC-CSM2-MR", "CNRM-CM6-1", "CNRM-ESM2-1"],
-        ...     experiment_id=["historical", "ssp585"],
-        ...     variable_id="pr",
-        ...     table_id="Amon",
-        ...     grid_label="gn",
+        ...     source_id=['BCC-CSM2-MR', 'CNRM-CM6-1', 'CNRM-ESM2-1'],
+        ...     experiment_id=['historical', 'ssp585'],
+        ...     variable_id='pr',
+        ...     table_id='Amon',
+        ...     grid_label='gn',
         ... )
         >>> dsets = sub_cat.to_datatree()
-        >>> dsets["CMIP/BCC.BCC-CSM2-MR/historical/Amon/gn"].ds
+        >>> dsets['CMIP/BCC.BCC-CSM2-MR/historical/Amon/gn'].ds
         <xarray.Dataset>
         Dimensions:    (bnds: 2, lat: 160, lon: 320, member_id: 3, time: 1980)
         Coordinates:

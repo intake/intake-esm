@@ -9,7 +9,7 @@ dependencies:
   - fsspec>=2022.11.0
   - gcsfs >=2022.11.0
   - h5netcdf>=0.8.1
-  - intake>=0.6.6
+  - intake<2.0
   - ipython
   - matplotlib
   - netcdf4>=1.5.5
