@@ -76,11 +76,11 @@ class esm_datastore(Catalog):
 
     def __init__(
         self,
-        obj: typing.Union[pydantic.FilePath, pydantic.AnyUrl, dict[str, typing.Any]],
+        obj: pydantic.FilePath | pydantic.AnyUrl | dict[str, typing.Any],
         *,
         progressbar: bool = True,
         sep: str = '.',
-        registry: typing.Optional[DerivedVariableRegistry] = None,
+        registry: DerivedVariableRegistry | None = None,
         read_csv_kwargs: dict[str, typing.Any] = None,
         columns_with_iterables: list[str] = None,
         storage_options: dict[str, typing.Any] = None,
@@ -331,7 +331,7 @@ class esm_datastore(Catalog):
     @pydantic.validate_arguments
     def search(
         self,
-        require_all_on: typing.Optional[typing.Union[str, list[str]]] = None,
+        require_all_on: str | list[str] | None = None,
         **query: typing.Any,
     ):
         """Search for entries in the catalog.
@@ -447,11 +447,11 @@ class esm_datastore(Catalog):
     def serialize(
         self,
         name: pydantic.StrictStr,
-        directory: typing.Optional[typing.Union[pydantic.DirectoryPath, pydantic.StrictStr]] = None,
+        directory: pydantic.DirectoryPath | pydantic.StrictStr | None = None,
         catalog_type: str = 'dict',
-        to_csv_kwargs: typing.Optional[dict[typing.Any, typing.Any]] = None,
-        json_dump_kwargs: typing.Optional[dict[typing.Any, typing.Any]] = None,
-        storage_options: typing.Optional[dict[str, typing.Any]] = None,
+        to_csv_kwargs: dict[typing.Any, typing.Any] | None = None,
+        json_dump_kwargs: dict[typing.Any, typing.Any] | None = None,
+        storage_options: dict[str, typing.Any] | None = None,
     ) -> None:
         """Serialize catalog to corresponding json and csv files.
 
@@ -540,12 +540,12 @@ class esm_datastore(Catalog):
     @pydantic.validate_arguments
     def to_dataset_dict(
         self,
-        xarray_open_kwargs: typing.Optional[dict[str, typing.Any]] = None,
-        xarray_combine_by_coords_kwargs: typing.Optional[dict[str, typing.Any]] = None,
-        preprocess: typing.Optional[typing.Callable] = None,
-        storage_options: typing.Optional[dict[pydantic.StrictStr, typing.Any]] = None,
-        progressbar: typing.Optional[pydantic.StrictBool] = None,
-        aggregate: typing.Optional[pydantic.StrictBool] = None,
+        xarray_open_kwargs: dict[str, typing.Any] | None = None,
+        xarray_combine_by_coords_kwargs: dict[str, typing.Any] | None = None,
+        preprocess: typing.Callable | None = None,
+        storage_options: dict[pydantic.StrictStr, typing.Any] | None = None,
+        progressbar: pydantic.StrictBool | None = None,
+        aggregate: pydantic.StrictBool | None = None,
         skip_on_error: pydantic.StrictBool = False,
         **kwargs,
     ) -> dict[str, xr.Dataset]:
@@ -690,12 +690,12 @@ class esm_datastore(Catalog):
     @pydantic.validate_arguments
     def to_datatree(
         self,
-        xarray_open_kwargs: typing.Optional[dict[str, typing.Any]] = None,
-        xarray_combine_by_coords_kwargs: typing.Optional[dict[str, typing.Any]] = None,
-        preprocess: typing.Optional[typing.Callable] = None,
-        storage_options: typing.Optional[dict[pydantic.StrictStr, typing.Any]] = None,
-        progressbar: typing.Optional[pydantic.StrictBool] = None,
-        aggregate: typing.Optional[pydantic.StrictBool] = None,
+        xarray_open_kwargs: dict[str, typing.Any] | None = None,
+        xarray_combine_by_coords_kwargs: dict[str, typing.Any] | None = None,
+        preprocess: typing.Callable | None = None,
+        storage_options: dict[pydantic.StrictStr, typing.Any] | None = None,
+        progressbar: pydantic.StrictBool | None = None,
+        aggregate: pydantic.StrictBool | None = None,
         skip_on_error: pydantic.StrictBool = False,
         levels: list[str] = None,
         **kwargs,

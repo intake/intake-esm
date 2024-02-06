@@ -41,7 +41,7 @@ class AggregationType(str, enum.Enum):
     join_existing = 'join_existing'
     union = 'union'
 
-    model_config = ConfigDict(validate_default=True, validate_assignment=True)
+    model_config = ConfigDict(validate_assignment=True)
 
 
 class DataFormat(str, enum.Enum):
@@ -50,22 +50,22 @@ class DataFormat(str, enum.Enum):
     reference = 'reference'
     opendap = 'opendap'
 
-    model_config = ConfigDict(validate_default=True, validate_assignment=True)
+    model_config = ConfigDict(validate_assignment=True)
 
 
 class Attribute(pydantic.BaseModel):
     column_name: pydantic.StrictStr
     vocabulary: pydantic.StrictStr = ''
 
-    model_config = ConfigDict(validate_default=True, validate_assignment=True)
+    model_config = ConfigDict(validate_assignment=True)
 
 
 class Assets(pydantic.BaseModel):
     column_name: pydantic.StrictStr
-    format: typing.Optional[DataFormat] = None
-    format_column_name: typing.Optional[pydantic.StrictStr] = None
+    format: DataFormat | None = None
+    format_column_name: pydantic.StrictStr | None = None
 
-    model_config = ConfigDict(validate_default=True, validate_assignment=True)
+    model_config = ConfigDict(validate_assignment=True)
 
     @pydantic.model_validator(mode='after')
     def _validate_data_format(cls, model):
@@ -82,7 +82,7 @@ class Aggregation(pydantic.BaseModel):
     attribute_name: pydantic.StrictStr
     options: dict = {}
 
-    model_config = ConfigDict(validate_default=True, validate_assignment=True)
+    model_config = ConfigDict(validate_assignment=True)
 
 
 class AggregationControl(pydantic.BaseModel):
@@ -101,18 +101,16 @@ class ESMCatalogModel(pydantic.BaseModel):
     esmcat_version: pydantic.StrictStr
     attributes: list[Attribute]
     assets: Assets
-    aggregation_control: typing.Optional[AggregationControl] = None
+    aggregation_control: AggregationControl | None = None
     id: str = ''
-    catalog_dict: typing.Optional[list[dict]] = None
-    catalog_file: typing.Optional[pydantic.StrictStr] = None
-    description: typing.Optional[pydantic.StrictStr] = None
-    title: typing.Optional[pydantic.StrictStr] = None
-    last_updated: typing.Optional[typing.Union[datetime.datetime, datetime.date]] = None
+    catalog_dict: list[dict] | None = None
+    catalog_file: pydantic.StrictStr | None = None
+    description: pydantic.StrictStr | None = None
+    title: pydantic.StrictStr | None = None
+    last_updated: datetime.datetime | datetime.date | None = None
     _df: pd.DataFrame = pydantic.PrivateAttr()
 
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True, validate_default=True, validate_assignment=True
-    )
+    model_config = ConfigDict(arbitrary_types_allowed=True, validate_assignment=True)
 
     @pydantic.model_validator(mode='after')
     def validate_catalog(cls, model):
@@ -136,11 +134,11 @@ class ESMCatalogModel(pydantic.BaseModel):
         self,
         name: str,
         *,
-        directory: str = None,
+        directory: str | None = None,
         catalog_type: str = 'dict',
-        to_csv_kwargs: dict = None,
-        json_dump_kwargs: dict = None,
-        storage_options: dict[str, typing.Any] = None,
+        to_csv_kwargs: dict | None = None,
+        json_dump_kwargs: dict | None = None,
+        storage_options: dict[str, typing.Any] | None = None,
     ) -> None:
         """
         Save the catalog to a file.
@@ -193,7 +191,7 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         if catalog_type == 'file':
             csv_kwargs = {'index': False}
-            csv_kwargs.update(to_csv_kwargs or {})
+            csv_kwargs |= to_csv_kwargs or {}
             compression = csv_kwargs.get('compression')
             extensions = {'gzip': '.gz', 'bz2': '.bz2', 'zip': '.zip', 'xz': '.xz', None: ''}
             csv_file_name = f'{csv_file_name}{extensions[compression]}'
@@ -206,7 +204,7 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         with fs.open(json_file_name, 'w') as outfile:
             json_kwargs = {'indent': 2}
-            json_kwargs.update(json_dump_kwargs or {})
+            json_kwargs |= json_dump_kwargs or {}
             json.dump(data, outfile, **json_kwargs)
 
         print(f'Successfully wrote ESM catalog json file to: {json_file_name}')
@@ -214,7 +212,7 @@ class ESMCatalogModel(pydantic.BaseModel):
     @classmethod
     def load(
         cls,
-        json_file: typing.Union[str, pydantic.FilePath, pydantic.AnyUrl],
+        json_file: str | pydantic.FilePath | pydantic.AnyUrl,
         storage_options: dict[str, typing.Any] = None,
         read_csv_kwargs: dict[str, typing.Any] = None,
     ) -> 'ESMCatalogModel':
@@ -287,16 +285,20 @@ class ESMCatalogModel(pydantic.BaseModel):
         to avoid hashing issues (e.g. TypeError: unhashable type: 'list')
         """
         if self.aggregation_control:
-            columns = list(
+            if columns := list(
                 self.columns_with_iterables.intersection(
-                    set(map(lambda agg: agg.attribute_name, self.aggregation_control.aggregations))
+                    set(
+                        map(
+                            lambda agg: agg.attribute_name,
+                            self.aggregation_control.aggregations,
+                        )
+                    )
                 )
-            )
-            if columns:
+            ):
                 self._df[columns] = self._df[columns].apply(tuple)
 
     @property
-    def grouped(self) -> typing.Union[pd.core.groupby.DataFrameGroupBy, pd.DataFrame]:
+    def grouped(self) -> pd.core.groupby.DataFrameGroupBy | pd.DataFrame:
         if self.aggregation_control:
             if self.aggregation_control.groupby_attrs:
                 self.aggregation_control.groupby_attrs = list(
@@ -318,7 +320,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         )
         return self.df.groupby(cols)
 
-    def _construct_group_keys(self, sep: str = '.') -> dict[str, typing.Union[str, tuple[str]]]:
+    def _construct_group_keys(self, sep: str = '.') -> dict[str, str | tuple[str]]:
         internal_keys = self.grouped.groups.keys()
         public_keys = map(
             lambda key: key if isinstance(key, str) else sep.join(str(value) for value in key),
@@ -352,7 +354,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         self,
         *,
         query: typing.Union['QueryModel', dict[str, typing.Any]],
-        require_all_on: typing.Union[str, list[str]] = None,
+        require_all_on: str | list[str] | None = None,
     ) -> 'ESMCatalogModel':
         """
         Search for entries in the catalog.
@@ -398,13 +400,13 @@ class ESMCatalogModel(pydantic.BaseModel):
 class QueryModel(pydantic.BaseModel):
     """A Pydantic model to represent a query to be executed against a catalog."""
 
-    query: dict[pydantic.StrictStr, typing.Union[typing.Any, list[typing.Any]]]
+    query: dict[pydantic.StrictStr, typing.Any | list[typing.Any]]
     columns: list[str]
-    require_all_on: typing.Optional[typing.Union[str, list[typing.Any]]] = None
+    require_all_on: str | list[typing.Any] | None = None
 
     # TODO: Seem to be unable to modify fields in model_validator with
     # validate_assignment=True since it leads to recursion
-    model_config = ConfigDict(validate_default=True, validate_assignment=False)
+    model_config = ConfigDict(validate_assignment=False)
 
     @pydantic.model_validator(mode='after')
     def validate_query(cls, model):
@@ -424,7 +426,7 @@ class QueryModel(pydantic.BaseModel):
                     raise ValueError(f'Column {key} not in columns {columns}')
         _query = query.copy()
         for key, value in _query.items():
-            if isinstance(value, (str, int, float, bool)) or value is None or value is pd.NA:
+            if isinstance(value, str | int | float | bool) or value is None or value is pd.NA:
                 _query[key] = [value]
 
         model.query = _query

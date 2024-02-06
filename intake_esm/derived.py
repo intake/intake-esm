@@ -14,14 +14,14 @@ class DerivedVariableError(Exception):
 class DerivedVariable(pydantic.BaseModel):
     func: typing.Callable
     variable: pydantic.StrictStr
-    query: dict[pydantic.StrictStr, typing.Union[typing.Any, list[typing.Any]]]
+    query: dict[pydantic.StrictStr, typing.Any | list[typing.Any]]
     prefer_derived: bool
 
     @pydantic.field_validator('query')
     def validate_query(cls, values):
         _query = values.copy()
         for key, value in _query.items():
-            if isinstance(value, (str, int, float, bool)):
+            if isinstance(value, str | int | float | bool):
                 _query[key] = [value]
         return _query
 
@@ -50,7 +50,7 @@ class DerivedVariableRegistry:
         self._registry = {}
 
     @classmethod
-    def load(cls, name: str, package: str = None) -> 'DerivedVariableRegistry':
+    def load(cls, name: str, package: str | None = None) -> 'DerivedVariableRegistry':
         """Load a DerivedVariableRegistry from a Python module/file
 
         Parameters
@@ -80,8 +80,9 @@ class DerivedVariableRegistry:
         >>> registsry = DerivedVariableRegistry.load('registry')
         """
         modname = importlib.import_module(name, package=package)
-        candidates = inspect.getmembers(modname, lambda x: isinstance(x, DerivedVariableRegistry))
-        if candidates:
+        if candidates := inspect.getmembers(
+            modname, lambda x: isinstance(x, DerivedVariableRegistry)
+        ):
             return candidates[0][1]
         else:
             raise ValueError(f'No DerivedVariableRegistry found in {name} module')
@@ -92,7 +93,7 @@ class DerivedVariableRegistry:
         func: typing.Callable,
         *,
         variable: str,
-        query: dict[pydantic.StrictStr, typing.Union[typing.Any, list[typing.Any]]],
+        query: dict[pydantic.StrictStr, typing.Any | list[typing.Any]],
         prefer_derived: bool = False,
     ) -> typing.Callable:
         """Register a derived variable
@@ -143,7 +144,7 @@ class DerivedVariableRegistry:
     def values(self) -> list[DerivedVariable]:
         return list(self._registry.values())
 
-    def search(self, variable: typing.Union[str, list[str]]) -> 'DerivedVariableRegistry':
+    def search(self, variable: str | list[str]) -> 'DerivedVariableRegistry':
         """Search for a derived variable by name or list of names
 
         Parameters
