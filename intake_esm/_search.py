@@ -40,7 +40,7 @@ def search(
     for column, values in query.items():
         local_mask = np.zeros(len(df), dtype=bool)
         column_is_stringtype = isinstance(
-            df[column].dtype, (object, pd.core.arrays.string_.StringDtype)
+            df[column].dtype, object | pd.core.arrays.string_.StringDtype
         )
         column_has_iterables = column in columns_with_iterables
         for value in values:
@@ -62,8 +62,8 @@ def search_apply_require_all_on(
     *,
     df: pd.DataFrame,
     query: dict[str, typing.Any],
-    require_all_on: typing.Union[str, list[typing.Any]],
-    columns_with_iterables: set = None,
+    require_all_on: str | list[typing.Any],
+    columns_with_iterables: set | None = None,
 ) -> pd.DataFrame:
     _query = query.copy()
     # Make sure to remove columns that were already

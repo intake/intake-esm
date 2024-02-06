@@ -125,23 +125,23 @@ class ESMDataSource(DataSource):
     name = 'esm_datasource'
     partition_access = True
 
-    @pydantic.validate_arguments
+    @pydantic.validate_call
     def __init__(
         self,
         key: pydantic.StrictStr,
         records: list[dict[str, typing.Any]],
         path_column_name: pydantic.StrictStr,
-        data_format: typing.Optional[DataFormat],
-        format_column_name: typing.Optional[pydantic.StrictStr],
+        data_format: DataFormat | None,
+        format_column_name: pydantic.StrictStr | None,
         *,
-        variable_column_name: typing.Optional[pydantic.StrictStr] = None,
-        aggregations: typing.Optional[list[Aggregation]] = None,
-        requested_variables: typing.Optional[list[str]] = None,
-        preprocess: typing.Optional[typing.Callable] = None,
-        storage_options: typing.Optional[dict[str, typing.Any]] = None,
-        xarray_open_kwargs: typing.Optional[dict[str, typing.Any]] = None,
-        xarray_combine_by_coords_kwargs: typing.Optional[dict[str, typing.Any]] = None,
-        intake_kwargs: typing.Optional[dict[str, typing.Any]] = None,
+        variable_column_name: pydantic.StrictStr | None = None,
+        aggregations: list[Aggregation] | None = None,
+        requested_variables: list[str] | None = None,
+        preprocess: typing.Callable | None = None,
+        storage_options: dict[str, typing.Any] | None = None,
+        xarray_open_kwargs: dict[str, typing.Any] | None = None,
+        xarray_combine_by_coords_kwargs: dict[str, typing.Any] | None = None,
+        intake_kwargs: dict[str, typing.Any] | None = None,
     ):
         """An intake compatible Data Source for ESM data.
 
@@ -206,7 +206,7 @@ class ESMDataSource(DataSource):
     def _get_schema(self) -> Schema:
         if self._ds is None:
             self._open_dataset()
-            metadata = {'dims': {}, 'data_vars': {}, 'coords': ()}
+            metadata: dict[str, typing.Any] = {'dims': {}, 'data_vars': {}, 'coords': ()}
             self._schema = Schema(
                 datashape=None,
                 dtype=None,
