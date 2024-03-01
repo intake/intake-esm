@@ -66,8 +66,8 @@ jobs:
         if: github.event_name == 'push'
         run: |
           python -m pip install --upgrade pip
-          python -m pip install dist/intake_thredds*.whl
-          python -c "import intake_thredds; print(intake_thredds.__version__)"
+          python -m pip install dist/intake_esm*.whl
+          python -c "import intake_esm; print(intake_esm.__version__)"
 
   upload-to-pypi:
     needs: test-built-dist
