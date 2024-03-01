@@ -1,15 +1,65 @@
-[tool.black]
-line-length = 100
-target-version = ['py310']
-skip-string-normalization = true
-
 [build-system]
 requires = ["setuptools>=45", "wheel", "setuptools_scm>=6.2"]
 
-[tool.pytest.ini_options]
-console_output_style = "count"
-addopts = "--cov=./ --cov-report=xml --verbose"
-markers = "network: tests requiring a network connection"
+[project]
+name = "intake-esm"
+description = "An intake plugin for parsing an Earth System Model (ESM) catalog and loading netCDF files and/or Zarr stores into Xarray datasets."
+readme = "README.md"
+license = {text="Apache Software License 2.0"}
+requires-python = ">=3.10"
+maintainers = [
+    { name = "NCAR XDev Team", email = "xdev@ucar.edu" },
+]
+keywords = [
+    "catalog",
+    "intake",
+    "xarray",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
+
+dynamic = ["version", "dependencies"]
+
+[tool.setuptools.dynamic]
+
+dependencies = { file = ["requirements.txt"] }
+optional-dependencies = { dev = { file = ["requirements-dev.txt"] } }
+
+[project.entry-points."intake.drivers"]
+esm_datasource = "intake_esm.source:ESMDataSource"
+esm_datastore = "intake_esm.core:esm_datastore"
+
+[project.urls]
+Documentation = "https://intake-esm.readthedocs.io"
+Homepage = "https://intake-esm.readthedocs.io"
+Source = "https://github.com/intake/intake-esm"
+Tracker = "https://github.com/intake/intake-esm/issues"
+
+
+[tool.setuptools.packages.find]
+include = ["intake_esm*"]
+
+[tool.setuptools.package-data]
+intake_esm = ["py.typed"]
+
+
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
+local_scheme = "node-and-date"
+fallback_version = "999"
+write_to = "intake_esm/_version.py"
+write_to_template = '__version__ = "{version}"'
 
 
 
@@ -82,3 +132,8 @@ docstring-code-format = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
+
+[tool.pytest.ini_options]
+console_output_style = "count"
+addopts = "--cov=./ --cov-report=xml --verbose"
+markers = "network: tests requiring a network connection"
