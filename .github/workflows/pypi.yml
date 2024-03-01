@@ -1,35 +1,84 @@
-name: Publish intake-esm to PyPI
+name: Build and Upload intake-esm to PyPI
 
 on:
   release:
     types:
       - published
+  push:
 
 jobs:
-  deploy:
-    if: github.repository == 'intake/intake-esm'
+  build-artifacts:
     runs-on: ubuntu-latest
+    if: github.repository == 'intake/intake-esm'
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        name: Install Python
+        with:
+          python-version: "3.11"
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install setuptools setuptools-scm wheel twine check-manifest
+
       - name: Build tarball and wheels
         run: |
           git clean -xdf
           git restore -SW .
           python -m build --sdist --wheel .
-      - name: Test the artifacts
+
+      - name: Check built artifacts
         run: |
           python -m twine check dist/*
+          pwd
+          if [ -f dist/intake-esm-unknown.tar.gz ]; then
+            echo "❌ INVALID VERSION NUMBER"
+            exit 1
+          else
+            echo "✅ Looks good"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: releases
+          path: dist
+
+  test-built-dist:
+    needs: build-artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        name: Install Python
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@v4
+        with:
+          name: releases
+          path: dist
+      - name: List contents of built dist
+        run: |
+          ls -ltrh
+          ls -ltrh dist
+
+      - name: Verify the built dist/wheel is valid
+        if: github.event_name == 'push'
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install dist/intake_esm*.whl
+          python -c "import intake_esm; print(intake_esm.__version__)"
+
+  upload-to-pypi:
+    needs: test-built-dist
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: releases
+          path: dist
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@v1.8.12
-        with:
-          user: ${{ secrets.PYPI_USERNAME }}
-          password: ${{ secrets.PYPI_PASSWORD }}
-          verbose: true
