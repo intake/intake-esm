@@ -1,4 +1,5 @@
-""" Helper functions for fetching and loading catalog"""
+"""Helper functions for fetching and loading catalog"""
+
 import importlib
 import sys
 
