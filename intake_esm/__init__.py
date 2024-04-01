@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # flake8: noqa
-""" Top-level module for intake_esm. """
+"""Top-level module for intake_esm."""
+
 # Import intake first to avoid circular imports during discovery.
 import intake
 

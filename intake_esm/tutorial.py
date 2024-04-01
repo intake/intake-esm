@@ -3,6 +3,7 @@ Useful for:
 * users learning intake-esm
 * building tutorials in the documentation.
 """
+
 from __future__ import annotations
 
 DEFAULT_CATALOGS = {
