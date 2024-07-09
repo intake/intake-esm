@@ -102,7 +102,7 @@ $ make docs
    $ python -m pip install -e .
    ```
 
-5. Install `pre-commit <https://pre-commit.com>`\_ hooks on the intake-esm repo::
+5. Install [pre-commit](https://pre-commit.com) hooks on the intake-esm repo::
 
    ```bash
    $ pre-commit install
@@ -110,7 +110,7 @@ $ make docs
 
    Afterwards `pre-commit` will run whenever you commit.
 
-   [pre-commit](https://pre-commit.com) is a framework for managing and maintaining multi-language pre-commit hooks to ensure code-style and code formatting is consistent.
+   `pre-commit` is a framework for managing and maintaining multi-language pre-commit hooks to ensure code-style and code formatting is consistent.
 
    Now you have an environment called `intake-esm-dev` that you can work in.
    You’ll need to make sure to activate that environment next time you want
