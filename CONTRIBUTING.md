@@ -80,10 +80,10 @@ $ make docs
    $ git remote add upstream git@github.com:intake/intake-esm.git
    ```
 
-   now, to fix a bug or add feature create your own branch off "master":
+   now, to fix a bug or add feature create your own branch off "main":
 
    ```bash
-   $ git checkout -b your-bugfix-feature-branch-name master
+   $ git checkout -b your-bugfix-feature-branch-name main
    ```
 
    If you need some help with Git, follow this quick start
@@ -142,5 +142,5 @@ $ make docs
    compare: your-branch-name
 
    base-fork: intake/intake-esm
-   base: master # if it's a bugfix or feature
+   base: main # if it's a bugfix or feature
    ```
