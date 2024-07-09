@@ -87,7 +87,7 @@ $ make docs
    ```
 
    If you need some help with Git, follow this quick start
-   guide: https://git.wiki.kernel.org/index.php/QuickStart
+   guide: https://docs.github.com/en/get-started/getting-started-with-git
 
 3. Install dependencies into a new conda environment::
 
