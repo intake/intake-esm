@@ -84,9 +84,15 @@ def _open_dataset(
     if requested_variables:
         if isinstance(requested_variables, str):
             requested_variables = [requested_variables]
+
         variable_intersection = set(requested_variables).intersection(set(varname))
-        variables = [variable for variable in variable_intersection if variable in ds.data_vars]
+
+        data_vars = [variable for variable in variable_intersection if variable in ds.data_vars]
+        coord_vars = [variable for variable in variable_intersection if variable in ds.coords]
+
+        variables = [*data_vars, *coord_vars]
         scalar_variables = [v for v in ds.data_vars if len(ds[v].dims) == 0]
+
         ds = ds.set_coords(scalar_variables)
         ds = ds[variables]
         ds.attrs[OPTIONS['vars_key']] = variables
@@ -242,7 +248,7 @@ class ESMDataSource(DataSource):
             ]
 
             datasets = dask.compute(*datasets)
-            if len(datasets) == 1:
+            if len(datasets) == 1 or not datasets[0].data_vars:
                 self._ds = datasets[0]
             else:
                 datasets = sorted(
@@ -252,10 +258,6 @@ class ESMDataSource(DataSource):
                         for agg in self.aggregations
                     ),
                 )
-                datasets = [
-                    ds.set_coords(set(ds.variables) - set(ds.attrs[OPTIONS['vars_key']]))
-                    for ds in datasets
-                ]
                 self._ds = xr.combine_by_coords(datasets, **self.xarray_combine_by_coords_kwargs)
 
             self._ds.attrs[OPTIONS['dataset_key']] = self.key
