@@ -258,6 +258,10 @@ class ESMDataSource(DataSource):
                         for agg in self.aggregations
                     ),
                 )
+                datasets = [
+                    ds.set_coords(set(ds.variables) - set(ds.attrs[OPTIONS['vars_key']]))
+                    for ds in datasets
+                ]
                 self._ds = xr.combine_by_coords(datasets, **self.xarray_combine_by_coords_kwargs)
 
             self._ds.attrs[OPTIONS['dataset_key']] = self.key
