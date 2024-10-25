@@ -28,7 +28,11 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 
-dynamic = ["version", "dependencies"]
+version = "2024.10.26"
+dynamic = [
+    "dependencies",
+    # "version",
+]
 
 [tool.setuptools.dynamic]
 
@@ -54,12 +58,12 @@ intake_esm = ["py.typed"]
 
 
 
-[tool.setuptools_scm]
-version_scheme = "post-release"
-local_scheme = "node-and-date"
-fallback_version = "999"
-write_to = "intake_esm/_version.py"
-write_to_template = '__version__ = "{version}"'
+# [tool.setuptools_scm]
+# version_scheme = "post-release"
+# local_scheme = "node-and-date"
+# fallback_version = "999"
+# write_to = "intake_esm/_version.py"
+# write_to_template = '__version__ = "{version}"'
 
 
 
