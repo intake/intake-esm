@@ -5,6 +5,7 @@ channels:
 dependencies:
   - cftime
   - codecov
+  - dask[complete]>=2022.02.0
   - fastprogress>=1.0.0
   - fsspec>=2022.11.0
   - gcsfs >=2022.11.0
