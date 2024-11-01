@@ -420,11 +420,8 @@ class esm_datastore(Catalog):
 
         if derivedcat_results:
             # Merge results from the main and the derived catalogs
-            esmcat_results = (
-                pd.concat([esmcat_results, *derivedcat_results])
-                .drop_duplicates()
-                .reset_index(drop=True)
-            )
+            esmcat_results = pd.concat([esmcat_results, *derivedcat_results])
+            esmcat_results = (esmcat_results[~esmcat_results.astype(str).duplicated()])
 
         cat = self.__class__({'esmcat': self.esmcat.dict(), 'df': esmcat_results})
         cat.esmcat.catalog_file = None  # Don't save the catalog file
