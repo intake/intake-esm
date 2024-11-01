@@ -31,7 +31,7 @@ jobs:
           fetch-depth: 0 # Fetch all history for all branches and tags.
 
       - name: set up conda environment
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: ci/environment.yml
           init-shell: >-
@@ -52,7 +52,7 @@ jobs:
           python -m pytest
 
       - name: Upload code coverage to Codecov
-        uses: codecov/codecov-action@v4.5.0
+        uses: codecov/codecov-action@v4.6.0
         with:
           file: ./coverage.xml
           flags: unittests
@@ -74,7 +74,7 @@ jobs:
           fetch-depth: 0 # Fetch all history for all branches and tags.
 
       - name: set up conda environment
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: ci/environment-upstream-dev.yml
           init-shell: >-
