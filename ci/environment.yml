@@ -5,11 +5,12 @@ channels:
 dependencies:
   - cftime
   - codecov
+  - dask[complete]>=2022.02.0
   - fastprogress>=1.0.0
   - fsspec>=2022.11.0
   - gcsfs >=2022.11.0
   - h5netcdf>=0.8.1
-  - intake<2.0
+  - intake>=2.0
   - ipython
   - matplotlib
   - netcdf4>=1.5.5
@@ -26,7 +27,7 @@ dependencies:
   - pytest-mock
   - s3fs >=2022.11.0
   - scipy
-  - xarray>=2022.06
+  - xarray>=2022.06, !=2024.10
   - xarray-datatree
   - zarr>=2.12
   # - pytest-icdiff
