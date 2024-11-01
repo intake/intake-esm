@@ -1,4 +1,5 @@
 import typing
+import warnings
 
 import dask
 import fsspec
@@ -9,6 +10,10 @@ from intake.source.base import DataSource, Schema
 
 from .cat import Aggregation, DataFormat
 from .utils import OPTIONS
+
+
+class ConcatenationWarning(UserWarning):
+    pass
 
 
 class ESMDataSourceError(Exception):
@@ -84,9 +89,16 @@ def _open_dataset(
     if requested_variables:
         if isinstance(requested_variables, str):
             requested_variables = [requested_variables]
+
         variable_intersection = set(requested_variables).intersection(set(varname))
-        variables = [variable for variable in variable_intersection if variable in ds.data_vars]
+
+        data_vars = variable_intersection & set(ds.data_vars)
+        coord_vars = variable_intersection & set(ds.coords)
+
+        variables = list(data_vars | coord_vars)
+
         scalar_variables = [v for v in ds.data_vars if len(ds[v].dims) == 0]
+
         ds = ds.set_coords(scalar_variables)
         ds = ds[variables]
         ds.attrs[OPTIONS['vars_key']] = variables
@@ -242,7 +254,7 @@ class ESMDataSource(DataSource):
             ]
 
             datasets = dask.compute(*datasets)
-            if len(datasets) == 1:
+            if len(datasets) == 1 or not datasets[0].data_vars:
                 self._ds = datasets[0]
             else:
                 datasets = sorted(
@@ -256,7 +268,23 @@ class ESMDataSource(DataSource):
                     ds.set_coords(set(ds.variables) - set(ds.attrs[OPTIONS['vars_key']]))
                     for ds in datasets
                 ]
-                self._ds = xr.combine_by_coords(datasets, **self.xarray_combine_by_coords_kwargs)
+                try:
+                    self._ds = xr.combine_by_coords(
+                        datasets, **self.xarray_combine_by_coords_kwargs
+                    )
+                except ValueError as exc:
+                    if (
+                        str(exc)
+                        == 'Could not find any dimension coordinates to use to order the datasets for concatenation'
+                    ):
+                        warnings.warn(
+                            'Attempting to concatenate datasets without valid dimension coordinates: retaining only first dataset.'
+                            ' Request valid dimension coordinate to silence this warning.',
+                            category=ConcatenationWarning,
+                        )
+                        self._ds = datasets[0]
+                    else:
+                        raise exc
 
             self._ds.attrs[OPTIONS['dataset_key']] = self.key
 

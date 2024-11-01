@@ -179,7 +179,8 @@ class ESMCatalogModel(pydantic.BaseModel):
             directory = os.getcwd()
 
         # Configure the fsspec mapper and associated filenames
-        mapper = fsspec.get_mapper(f'{directory}', storage_options=storage_options)
+        storage_options = storage_options if storage_options is not None else {}
+        mapper = fsspec.get_mapper(f'{directory}', **storage_options)
         fs = mapper.fs
         csv_file_name = fs.unstrip_protocol(f'{mapper.root}/{name}.csv')
         json_file_name = fs.unstrip_protocol(f'{mapper.root}/{name}.json')
