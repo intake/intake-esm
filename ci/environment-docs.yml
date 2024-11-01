@@ -4,11 +4,12 @@ channels:
   - nodefaults
 dependencies:
   - cftime
+  - dask[complete]>=2022.02.0
   - distributed
   - ecgtools >=2022.10.7
   - fsspec>=2023.05
   - gcsfs >=2023.05
-  - intake<2.0
+  - intake>=2.0
   - jupyterlab
   - matplotlib
   - myst-nb
