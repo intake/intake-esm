@@ -4,11 +4,11 @@ channels:
   - nodefaults
 dependencies:
   - cftime
-  - dask[complete]>=2022.02.0
+  - dask>=2024.12
   - distributed
   - ecgtools >=2022.10.7
-  - fsspec>=2023.05
-  - gcsfs >=2023.05
+  - fsspec>=2024.12
+  - gcsfs >=2024.12
   - intake>=2.0
   - jupyterlab
   - matplotlib
@@ -19,13 +19,13 @@ dependencies:
   - pydantic>=2.0
   - python-graphviz
   - python=3.11
-  - s3fs >=2023.05
+  - s3fs >=2024.12
   - sphinx<6.0
   - sphinx-copybutton
   - sphinx-design
   - watermark
   - xarray-datatree>=0.0.9
-  - xarray>=2023.05
+  - xarray>=2024.10
   - zarr>=2.12
   - furo>=2022.09.15
   - pip:
