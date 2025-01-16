@@ -2,11 +2,16 @@ import ast
 import os
 
 import intake
+import packaging.version
 import pandas as pd
 import pydantic
 import pytest
 import xarray as xr
-from datatree import DataTree
+
+if packaging.version.Version(xr.__version__) < packaging.version.Version('2024.10'):
+    from datatree import DataTree
+else:
+    from xarray import DataTree
 
 import intake_esm
 
