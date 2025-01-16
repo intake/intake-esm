@@ -68,6 +68,7 @@ def func_multivar(ds):
         (multi_variable_cat, '*', {'converters': {'variable': ast.literal_eval}}, None),
         (multi_variable_cat, '*', None, ['variable']),
         ({'esmcat': sample_esmcat_data, 'df': sample_df}, '.', None, None),
+        (intake_esm.cat.ESMCatalogModel.load(cdf_cat_sample_cmip6), '.', None, None),
     ],
 )
 def test_catalog_init(capsys, obj, sep, read_csv_kwargs, columns_with_iterables):

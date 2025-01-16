@@ -34,7 +34,8 @@ class esm_datastore(Catalog):
 
     Parameters
     ----------
-    obj : str, dict
+    obj : str, dict, ESMCatalogModel
+        The ESM Catalog to use, or a path to a JSON file containing the catalog.
         If string, this must be a path or URL to an ESM catalog JSON file.
         If dict, this must be a dict representation of an ESM catalog.
         This dict must have two keys: 'esmcat' and 'df'. The 'esmcat' key must be a
@@ -79,7 +80,7 @@ class esm_datastore(Catalog):
 
     def __init__(
         self,
-        obj: pydantic.FilePath | pydantic.AnyUrl | dict[str, typing.Any],
+        obj: pydantic.FilePath | pydantic.AnyUrl | dict[str, typing.Any] | ESMCatalogModel,
         *,
         progressbar: bool = True,
         sep: str = '.',
@@ -104,7 +105,9 @@ class esm_datastore(Catalog):
         self.read_csv_kwargs = read_csv_kwargs
         self.progressbar = progressbar
         self.sep = sep
-        if isinstance(obj, dict):
+        if isinstance(obj, ESMCatalogModel):
+            self.esmcat = obj
+        elif isinstance(obj, dict):
             self.esmcat = ESMCatalogModel.from_dict(obj)
         else:
             self.esmcat = ESMCatalogModel.load(
