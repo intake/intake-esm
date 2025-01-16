@@ -27,7 +27,7 @@ dependencies:
   - pytest-mock
   - s3fs >=2022.11.0
   - scipy
-  - xarray>=2022.06, !=2024.10
+  - xarray>=2022.06
   - xarray-datatree
   - zarr>=2.12
   # - pytest-icdiff
