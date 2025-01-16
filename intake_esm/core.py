@@ -5,16 +5,19 @@ import warnings
 from copy import deepcopy
 
 import dask
+import packaging.version
+import xarray as xr
 
 try:
-    from datatree import DataTree
-
+    if packaging.version.Version(xr.__version__) < packaging.version.Version('2024.10'):
+        from datatree import DataTree
+    else:
+        from xarray import DataTree
     _DATATREE_AVAILABLE = True
 except ImportError:
     _DATATREE_AVAILABLE = False
 import pandas as pd
 import pydantic
-import xarray as xr
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
@@ -81,9 +84,9 @@ class esm_datastore(Catalog):
         progressbar: bool = True,
         sep: str = '.',
         registry: DerivedVariableRegistry | None = None,
-        read_csv_kwargs: dict[str, typing.Any] = None,
-        columns_with_iterables: list[str] = None,
-        storage_options: dict[str, typing.Any] = None,
+        read_csv_kwargs: dict[str, typing.Any] | None = None,
+        columns_with_iterables: list[str] | None = None,
+        storage_options: dict[str, typing.Any] | None = None,
         **intake_kwargs: dict[str, typing.Any],
     ):
         """Intake Catalog representing an ESM Collection."""
