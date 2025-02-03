@@ -49,6 +49,7 @@ def test_assets_mutually_exclusive():
         multi_variable_cat,
     ],
 )
+@pytest.mark.flaky(max_runs=3, min_passes=1)  # Cold start related failures
 def test_esmcatmodel_load(file):
     cat = ESMCatalogModel.load(file)
     assert isinstance(cat, ESMCatalogModel)

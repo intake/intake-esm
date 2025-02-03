@@ -7,6 +7,7 @@ dependencies:
   - codecov
   - dask>=2024.12
   - fastprogress>=1.0.0
+  - flaky >= 3.8.0
   - fsspec>=2024.12
   - gcsfs >=2024.12
   - h5netcdf>=0.8.1
