@@ -8,6 +8,7 @@ dependencies:
   - codecov
   - dask>=2024.12
   - fastprogress>=1.0.0
+  - flaky >= 3.8.0
   - gcsfs >=2024.12
   - h5netcdf>=0.8.1
   - ipython
@@ -32,7 +33,7 @@ dependencies:
   - scipy
   - xarray-datatree
   - xgcm
-  - zarr>=2.10
+  - zarr>=2.10,<3.0
   - pip:
       - git+https://github.com/intake/intake.git
       - git+https://github.com/pydata/xarray.git

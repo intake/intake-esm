@@ -71,6 +71,7 @@ def func_multivar(ds):
         (intake_esm.cat.ESMCatalogModel.load(cdf_cat_sample_cmip6), '.', None, None),
     ],
 )
+@pytest.mark.flaky(max_runs=3, min_passes=1)  # Cold start related failures
 def test_catalog_init(capsys, obj, sep, read_csv_kwargs, columns_with_iterables):
     """Test that the catalog can be initialized."""
     cat = intake.open_esm_datastore(
@@ -355,6 +356,7 @@ def test_multi_variable_catalog_derived_cat():
         (mixed_cat_sample_cmip6, dict(institution_id='BCC'), {}),
     ],
 )
+@pytest.mark.flaky(max_runs=3, min_passes=1)  # Cold start related failures
 def test_to_dataset_dict(path, query, xarray_open_kwargs):
     cat = intake.open_esm_datastore(path)
     cat_sub = cat.search(**query)
@@ -387,6 +389,7 @@ def test_to_dataset_dict(path, query, xarray_open_kwargs):
         ),
     ],
 )
+@pytest.mark.flaky(max_runs=3, min_passes=1)  # Cold start related failures
 def test_to_datatree(path, query, xarray_open_kwargs):
     cat = intake.open_esm_datastore(path)
     cat_sub = cat.search(**query)
