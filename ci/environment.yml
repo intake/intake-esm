@@ -30,5 +30,5 @@ dependencies:
   - scipy
   - xarray>=2024.10
   - xarray-datatree
-  - zarr>=2.12
+  - zarr>=2.12,<3.0
   # - pytest-icdiff
