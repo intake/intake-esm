@@ -114,7 +114,7 @@ def _update_attrs(*, additional_attrs, ds):
     additional_attrs = additional_attrs or {}
     if additional_attrs:
         additional_attrs = {
-            f"{OPTIONS['attrs_prefix']}:{key}": f'{value}'
+            f'{OPTIONS["attrs_prefix"]}:{key}': f'{value}'
             if isinstance(value, str) or not hasattr(value, '__iter__')
             else ','.join(value)
             for key, value in additional_attrs.items()
@@ -260,7 +260,7 @@ class ESMDataSource(DataSource):
                 datasets = sorted(
                     datasets,
                     key=lambda ds: tuple(
-                        f"{OPTIONS['attrs_prefix']}/{agg.attribute_name}"
+                        f'{OPTIONS["attrs_prefix"]}/{agg.attribute_name}'
                         for agg in self.aggregations
                     ),
                 )
