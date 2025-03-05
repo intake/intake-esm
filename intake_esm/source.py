@@ -26,7 +26,7 @@ def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_option
         'engine': 'zarr' if data_format in {'zarr', 'reference'} else 'netcdf4',
         'chunks': {},
         'backend_kwargs': {},
-        'decode_timedelta' : False,
+        'decode_timedelta': False,
     }
     xarray_open_kwargs = (
         {**_default_open_kwargs, **xarray_open_kwargs}
