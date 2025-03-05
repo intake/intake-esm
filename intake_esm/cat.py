@@ -110,6 +110,7 @@ class ESMCatalogModel(pydantic.BaseModel):
     title: pydantic.StrictStr | None = None
     last_updated: datetime.datetime | datetime.date | None = None
     _df: pd.DataFrame = pydantic.PrivateAttr()
+    _pl_df: pl.DataFrame = pydantic.PrivateAttr()
 
     model_config = ConfigDict(arbitrary_types_allowed=True, validate_assignment=True)
 
@@ -248,16 +249,24 @@ class ESMCatalogModel(pydantic.BaseModel):
                 else:
                     csv_path = f'{os.path.dirname(_mapper.root)}/{cat.catalog_file}'
                 cat.catalog_file = csv_path
-                read_csv_kwargs.pop('converters',None) # Hack
-                df = pl.read_csv(
+                converters =  read_csv_kwargs.pop('converters',{}) # Hack
+                pl_df = pl.read_csv(
                     cat.catalog_file,
                     storage_options=storage_options,
                     **read_csv_kwargs,
-                ).to_pandas()
+                ).with_columns(
+                    [
+                        pl.col(colname).str.replace('^.','[')  # Replace first/last chars with [ or ].
+                                       .str.replace('.$',']')  # set/tuple => list
+                                       .str.replace_all("'",'"',)
+                                       .str.json_decode() # This is to do with the way polars reads json - single versus double quotes
+                        for colname in converters.keys()
+                ])
             else:
-                df = pl.DataFrame(cat.catalog_dict).to_pandas()
+                pl_df = pl.DataFrame(cat.catalog_dict)
 
-            cat._df = df
+            cat._df = pl_df.to_pandas()
+            cat._pl_df = pl_df
             cat._cast_agg_columns_with_iterables()
             return cat
 
