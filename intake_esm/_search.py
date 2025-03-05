@@ -30,7 +30,10 @@ def is_pattern(value):
 
 
 def search(
-    *, df: pd.DataFrame, query: dict[str, typing.Any], columns_with_iterables: set
+    *,
+    df: pd.DataFrame,
+    query: dict[str, typing.Any],
+    columns_with_iterables: set,
 ) -> pd.DataFrame:
     """Search for entries in the catalog."""
 

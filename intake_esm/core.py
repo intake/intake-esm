@@ -87,6 +87,7 @@ class esm_datastore(Catalog):
         registry: DerivedVariableRegistry | None = None,
         read_csv_kwargs: dict[str, typing.Any] | None = None,
         columns_with_iterables: list[str] | None = None,
+        columns_with_date_bnds: str | tuple[str, str] | None = None,
         storage_options: dict[str, typing.Any] | None = None,
         **intake_kwargs: dict[str, typing.Any],
     ):
@@ -102,6 +103,15 @@ class esm_datastore(Catalog):
                     raise ValueError(
                         f"Cannot provide converter for '{col}' via `read_csv_kwargs` when '{col}' is also specified in `columns_with_iterables`"
                     )
+        match columns_with_date_bnds:
+            case str(bnds_col):
+                self._start_col, self._end_col = bnds_col, bnds_col
+                raise NotImplementedError('Single date column for bounds not yet supported.')
+            case start, end:
+                self._start_col, self._end_col = start, end
+            case None:
+                self._start_col, self._end_col = None, None
+
         self.read_csv_kwargs = read_csv_kwargs
         self.progressbar = progressbar
         self.sep = sep

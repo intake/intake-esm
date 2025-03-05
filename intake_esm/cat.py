@@ -7,6 +7,7 @@ import typing
 
 import fsspec
 import pandas as pd
+import polars as pl
 import pydantic
 import tlz
 from pydantic import ConfigDict
@@ -247,13 +248,14 @@ class ESMCatalogModel(pydantic.BaseModel):
                 else:
                     csv_path = f'{os.path.dirname(_mapper.root)}/{cat.catalog_file}'
                 cat.catalog_file = csv_path
-                df = pd.read_csv(
+                read_csv_kwargs.pop('converters',None) # Hack
+                df = pl.read_csv(
                     cat.catalog_file,
                     storage_options=storage_options,
                     **read_csv_kwargs,
-                )
+                ).to_pandas()
             else:
-                df = pd.DataFrame(cat.catalog_dict)
+                df = pl.DataFrame(cat.catalog_dict).to_pandas()
 
             cat._df = df
             cat._cast_agg_columns_with_iterables()
