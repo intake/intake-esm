@@ -130,6 +130,7 @@ class ESMCatalogModel(pydantic.BaseModel):
             esmcat['last_updated'] = None
         cat = cls.model_validate(esmcat)
         cat._df = df
+        cat._pl_df = pl.from_pandas(df)
         return cat
 
     def save(
@@ -249,19 +250,24 @@ class ESMCatalogModel(pydantic.BaseModel):
                 else:
                     csv_path = f'{os.path.dirname(_mapper.root)}/{cat.catalog_file}'
                 cat.catalog_file = csv_path
-                converters =  read_csv_kwargs.pop('converters',{}) # Hack
+                converters = read_csv_kwargs.pop('converters', {})  # Hack
                 pl_df = pl.read_csv(
                     cat.catalog_file,
                     storage_options=storage_options,
                     **read_csv_kwargs,
                 ).with_columns(
                     [
-                        pl.col(colname).str.replace('^.','[')  # Replace first/last chars with [ or ].
-                                       .str.replace('.$',']')  # set/tuple => list
-                                       .str.replace_all("'",'"',)
-                                       .str.json_decode() # This is to do with the way polars reads json - single versus double quotes
+                        pl.col(colname)
+                        .str.replace('^.', '[')  # Replace first/last chars with [ or ].
+                        .str.replace('.$', ']')  # set/tuple => list
+                        .str.replace_all(
+                            "'",
+                            '"',
+                        )
+                        .str.json_decode()  # This is to do with the way polars reads json - single versus double quotes
                         for colname in converters.keys()
-                ])
+                    ]
+                )
             else:
                 pl_df = pl.DataFrame(cat.catalog_dict)
 
@@ -275,6 +281,9 @@ class ESMCatalogModel(pydantic.BaseModel):
         """Return a set of columns that have iterables."""
         if self._df.empty:
             return set()
+        return {
+            colname for colname in self._pl_df.columns if self._pl_df.schema[colname] == pl.List
+        }
         has_iterables = (
             self._df.sample(20, replace=True).map(type).isin([list, tuple, set]).any().to_dict()
         )
@@ -360,6 +369,15 @@ class ESMCatalogModel(pydantic.BaseModel):
 
     def nunique(self) -> pd.Series:
         """Return a series of the number of unique values for each column in the catalog."""
+
+        return pd.Series(
+            {
+                colname: self._pl_df.get_column(colname).explode().n_unique()
+                if self._pl_df.schema[colname] == pl.List
+                else self._pl_df.get_column(colname).n_unique()
+                for colname in self._pl_df.columns
+            }
+        )
         return pd.Series(tlz.valmap(len, self._unique()))
 
     def search(
