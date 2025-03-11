@@ -284,10 +284,6 @@ class ESMCatalogModel(pydantic.BaseModel):
         return {
             colname for colname in self._pl_df.columns if self._pl_df.schema[colname] == pl.List
         }
-        has_iterables = (
-            self._df.sample(20, replace=True).map(type).isin([list, tuple, set]).any().to_dict()
-        )
-        return {column for column, check in has_iterables.items() if check}
 
     @property
     def df(self) -> pd.DataFrame:
@@ -378,7 +374,6 @@ class ESMCatalogModel(pydantic.BaseModel):
                 for colname in self._pl_df.columns
             }
         )
-        return pd.Series(tlz.valmap(len, self._unique()))
 
     def search(
         self,

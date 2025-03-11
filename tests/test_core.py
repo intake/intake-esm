@@ -7,6 +7,7 @@ import pandas as pd
 import pydantic
 import pytest
 import xarray as xr
+from polars.testing import assert_frame_equal as assert_frame_equal_pl
 
 if packaging.version.Version(xr.__version__) < packaging.version.Version('2024.10'):
     from datatree import DataTree
@@ -108,7 +109,7 @@ def test_read_csv_conflict():
     # Work when inputs are consistent
     intake.open_esm_datastore(
         multi_variable_cat,
-        read_csv_kwargs={'converters': {'converters': {'variable': ast.literal_eval}}},
+        read_csv_kwargs={'converters': {'variable': ast.literal_eval}},
         columns_with_iterables=['variable'],
     )
 
@@ -261,8 +262,10 @@ def test_catalog_serialize(catalog_type, to_csv_kwargs, json_dump_kwargs, direct
     if directory is None:
         directory = os.getcwd()
     cat = intake.open_esm_datastore(f'{directory}/{name}.json')
-    pd.testing.assert_frame_equal(
-        cat_subset.df.reset_index(drop=True), cat.df.reset_index(drop=True)
+    assert_frame_equal_pl(
+        cat_subset.esmcat._pl_df,
+        cat.esmcat._pl_df,
+        check_dtypes=False,  # lNull types are chaging ty
     )
     assert cat.esmcat.id == name
 
