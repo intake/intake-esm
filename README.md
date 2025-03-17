@@ -11,7 +11,7 @@
 | CI           | [![GitHub Workflow Status][github-ci-badge]][github-ci-link] [![Code Coverage Status][codecov-badge]][codecov-link] [![pre-commit.ci status][pre-commit.ci-badge]][pre-commit.ci-link] |
 | :----------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
 | **Docs**     |                                                                     [![Documentation Status][rtd-badge]][rtd-link]                                                                     |
-| **Package**  |                                                          [![Conda][conda-badge]][conda-link] [![PyPI][pypi-badge]][pypi-link]                                                          |
+| **Package**  |                                     [![Conda][conda-badge]][conda-link] [![PyPI][pypi-badge]][pypi-link] [![Versions][versions-badge]][pypi-link]                                      |
 | **License**  |                                                                         [![License][license-badge]][repo-link]                                                                         |
 | **Citation** |                                                                         [![Zenodo][zenodo-badge]][zenodo-link]                                                                         |
 
@@ -110,3 +110,4 @@ conda install -c conda-forge intake-esm
 [repo-link]: https://github.com/intake/intake-esm
 [pre-commit.ci-badge]: https://results.pre-commit.ci/badge/github/intake/intake-esm/main.svg
 [pre-commit.ci-link]: https://results.pre-commit.ci/latest/github/intake/intake-esm/main
+[versions-badge]: https://img.shields.io/pypi/pyversions/intake-esm
