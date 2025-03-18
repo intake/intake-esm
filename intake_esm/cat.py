@@ -251,22 +251,26 @@ class ESMCatalogModel(pydantic.BaseModel):
                     csv_path = f'{os.path.dirname(_mapper.root)}/{cat.catalog_file}'
                 cat.catalog_file = csv_path
                 converters = read_csv_kwargs.pop('converters', {})  # Hack
-                pl_df = pl.read_csv(
-                    cat.catalog_file,
-                    storage_options=storage_options,
-                    **read_csv_kwargs,
-                ).with_columns(
-                    [
-                        pl.col(colname)
-                        .str.replace('^.', '[')  # Replace first/last chars with [ or ].
-                        .str.replace('.$', ']')  # set/tuple => list
-                        .str.replace_all(
-                            "'",
-                            '"',
-                        )
-                        .str.json_decode()  # This is to do with the way polars reads json - single versus double quotes
-                        for colname in converters.keys()
-                    ]
+                pl_df = (
+                    pl.scan_csv(  # See https://github.com/pola-rs/polars/issues/13040 - can't use read_csv.
+                        cat.catalog_file,
+                        storage_options=storage_options,
+                        **read_csv_kwargs,
+                    )
+                    .with_columns(
+                        [
+                            pl.col(colname)
+                            .str.replace('^.', '[')  # Replace first/last chars with [ or ].
+                            .str.replace('.$', ']')  # set/tuple => list
+                            .str.replace_all(
+                                "'",
+                                '"',
+                            )
+                            .str.json_decode()  # This is to do with the way polars reads json - single versus double quotes
+                            for colname in converters.keys()
+                        ]
+                    )
+                    .collect()
                 )
             else:
                 pl_df = pl.DataFrame(cat.catalog_dict)
