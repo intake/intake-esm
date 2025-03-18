@@ -4,6 +4,7 @@ import os
 import intake
 import packaging.version
 import pandas as pd
+import polars as pl
 import pydantic
 import pytest
 import xarray as xr
@@ -262,10 +263,24 @@ def test_catalog_serialize(catalog_type, to_csv_kwargs, json_dump_kwargs, direct
     if directory is None:
         directory = os.getcwd()
     cat = intake.open_esm_datastore(f'{directory}/{name}.json')
+    subset_df = cat_subset.esmcat._pl_df.with_columns(
+        [
+            pl.col(colname).cast(pl.Null)
+            for colname in cat_subset.esmcat._pl_df.columns
+            if cat_subset.esmcat._pl_df.get_column(colname).is_null().all()
+        ]
+    )
+
+    df = cat.esmcat._pl_df.with_columns(
+        [
+            pl.col(colname).cast(pl.Null)
+            for colname in cat.esmcat._pl_df.columns
+            if cat.esmcat._pl_df.get_column(colname).is_null().all()
+        ]
+    )
     assert_frame_equal_pl(
-        cat_subset.esmcat._pl_df,
-        cat.esmcat._pl_df,
-        check_dtypes=False,  # lNull types are chaging ty
+        subset_df,
+        df,
     )
     assert cat.esmcat.id == name
 

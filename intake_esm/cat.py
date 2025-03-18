@@ -245,40 +245,59 @@ class ESMCatalogModel(pydantic.BaseModel):
                 data['last_updated'] = None
             cat = cls.model_validate(data)
             if cat.catalog_file:
-                if _mapper.fs.exists(cat.catalog_file):
-                    csv_path = cat.catalog_file
-                else:
-                    csv_path = f'{os.path.dirname(_mapper.root)}/{cat.catalog_file}'
-                cat.catalog_file = csv_path
-                converters = read_csv_kwargs.pop('converters', {})  # Hack
-                pl_df = (
-                    pl.scan_csv(  # See https://github.com/pola-rs/polars/issues/13040 - can't use read_csv.
-                        cat.catalog_file,
-                        storage_options=storage_options,
-                        **read_csv_kwargs,
-                    )
-                    .with_columns(
-                        [
-                            pl.col(colname)
-                            .str.replace('^.', '[')  # Replace first/last chars with [ or ].
-                            .str.replace('.$', ']')  # set/tuple => list
-                            .str.replace_all(
-                                "'",
-                                '"',
-                            )
-                            .str.json_decode()  # This is to do with the way polars reads json - single versus double quotes
-                            for colname in converters.keys()
-                        ]
-                    )
-                    .collect()
+                cat._df, cat._pl_df = cat._df_from_file(
+                    cat, _mapper, storage_options, read_csv_kwargs
                 )
             else:
-                pl_df = pl.DataFrame(cat.catalog_dict)
+                cat._pl_df = pl.DataFrame(cat.catalog_dict)
+                cat._df = cat._pl_df.to_pandas()
 
-            cat._df = pl_df.to_pandas()
-            cat._pl_df = pl_df
             cat._cast_agg_columns_with_iterables()
             return cat
+
+    def _df_from_file(
+        self, cat, _mapper, storage_options, read_csv_kwargs
+    ) -> tuple[pd.DataFrame, pl.DataFrame]:
+        """
+        Reading the catalog from disk is a bit messy right now, as polars doesn't support reading
+        bz2 compressed files directly. So we need to screw around a bit to get what we want.
+        """
+        if _mapper.fs.exists(cat.catalog_file):
+            csv_path = cat.catalog_file
+        else:
+            csv_path = f'{os.path.dirname(_mapper.root)}/{cat.catalog_file}'
+        cat.catalog_file = csv_path
+        converters = read_csv_kwargs.pop('converters', {})  # Hack
+        if cat.catalog_file.endswith('.csv.bz2'):
+            df = pd.read_csv(
+                cat.catalog_file,
+                storage_options=storage_options,
+                **read_csv_kwargs,
+            )
+            return df, pl.from_pandas(df)
+        else:
+            pl_df = (
+                pl.scan_csv(  # See https://github.com/pola-rs/polars/issues/13040 - can't use read_csv.
+                    cat.catalog_file,
+                    storage_options=storage_options,
+                    **read_csv_kwargs,
+                )
+                .with_columns(
+                    [
+                        pl.col(colname)
+                        .str.replace('^.', '[')  # Replace first/last chars with [ or ].
+                        .str.replace('.$', ']')  # set/tuple => list
+                        .str.replace_all(
+                            "'",
+                            '"',
+                        )
+                        .str.json_decode()  # This is to do with the way polars reads json - single versus double quotes
+                        for colname in converters.keys()
+                    ]
+                )
+                .collect()
+            )
+            return pl_df.to_pandas(), pl_df
 
     @property
     def columns_with_iterables(self) -> set[str]:

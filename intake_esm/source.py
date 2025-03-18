@@ -83,7 +83,7 @@ def _open_dataset(
         if preprocess is not None:
             ds = preprocess(ds)
 
-    if varname and isinstance(varname, str):
+    if varname is not None and isinstance(varname, str):
         varname = [varname]
 
     if requested_variables:
@@ -102,7 +102,7 @@ def _open_dataset(
         ds = ds.set_coords(scalar_variables)
         ds = ds[variables]
         ds.attrs[OPTIONS['vars_key']] = variables
-    elif varname:
+    elif varname is not None:
         ds.attrs[OPTIONS['vars_key']] = varname
 
     ds = _expand_dims(expand_dims, ds)
