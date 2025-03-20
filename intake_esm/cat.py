@@ -245,9 +245,7 @@ class ESMCatalogModel(pydantic.BaseModel):
                 data['last_updated'] = None
             cat = cls.model_validate(data)
             if cat.catalog_file:
-                cat._df, cat._pl_df = cat._df_from_file(
-                    cat, _mapper, storage_options, read_csv_kwargs
-                )
+                cat._df, cat._lf = cat._df_from_file(cat, _mapper, storage_options, read_csv_kwargs)
             else:
                 cat._pl_df = pl.DataFrame(cat.catalog_dict)
                 cat._df = cat._pl_df.to_pandas()
@@ -261,7 +259,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         _mapper: fsspec.FSMap,
         storage_options: dict[str, typing.Any],
         read_csv_kwargs: dict[str, typing.Any],
-    ) -> tuple[pd.DataFrame | None, pl.DataFrame | None]:
+    ) -> tuple[pd.DataFrame | None, pl.LazyFrame | None]:
         """
         Reading the catalog from disk is a bit messy right now, as polars doesn't support reading
         bz2 compressed files directly. So we need to screw around a bit to get what we want.
@@ -286,8 +284,8 @@ class ESMCatalogModel(pydantic.BaseModel):
         -------
         pd.DataFrame | None
             A pandas dataframe, or None if the catalog file was read using polars
-        pl.DataFrame
-            A polars dataframe, or None if the catalog file was read using pandas
+        pl.LazyFrame | None
+            A polars lazyframe, or None if the catalog file was read using pandas
         """
         if _mapper.fs.exists(cat.catalog_file):
             csv_path = cat.catalog_file
@@ -297,28 +295,21 @@ class ESMCatalogModel(pydantic.BaseModel):
         converters = read_csv_kwargs.pop('converters', {})  # Hack
         if not cat.catalog_file.endswith('.csv.bz2'):  # type: ignore[union-attr]
             # See https://github.com/pola-rs/polars/issues/13040 - can't use read_csv.
-            pl_df = (
-                pl.scan_csv(
-                    cat.catalog_file,  # type: ignore[arg-type]
-                    storage_options=storage_options,
-                    **read_csv_kwargs,
-                )
-                .with_columns(
-                    [
-                        pl.col(colname)
-                        .str.replace('^.', '[')  # Replace first/last chars with [ or ].
-                        .str.replace('.$', ']')  # set/tuple => list
-                        .str.replace_all(
-                            "'",
-                            '"',
-                        )
-                        .str.json_decode()  # This is to do with the way polars reads json - single versus double quotes
-                        for colname in converters.keys()
-                    ]
-                )
-                .collect()
+            lf = pl.scan_csv(
+                cat.catalog_file,  # type: ignore[arg-type]
+                storage_options=storage_options,
+                infer_schema=False,
+                **read_csv_kwargs,
+            ).with_columns(
+                [
+                    pl.col(colname)
+                    .str.replace_all(r'(^.|.$)', r'[]')  # Replace first/last chars with [ or ]
+                    .str.replace_all("'", '"')
+                    .str.json_decode()  # This is to do with the way polars reads json - single versus double quotes
+                    for colname in converters.keys()
+                ]
             )
-            return None, pl_df
+            return None, lf
         else:
             df = pd.read_csv(
                 cat.catalog_file,
@@ -330,17 +321,20 @@ class ESMCatalogModel(pydantic.BaseModel):
     @property
     def columns_with_iterables(self) -> set[str]:
         """Return a set of columns that have iterables."""
-        if self._df.empty:
+        if self._lf is not None and self._lf.fetch(1).height == 0:
             return set()
-        return {
-            colname for colname in self._pl_df.columns if self._pl_df.schema[colname] == pl.List
-        }
+        if self._df is not None and self._df.empty:
+            return set()
+
+        schema = self._lf.collect_schema()
+        return {colname for colname, dtype in schema.items() if dtype == pl.List}
 
     @property
     def df(self) -> pd.DataFrame:
         """Return the dataframe, performing pandas <=> polars conversion if necessary."""
         if self._df is None:
-            return self._pl_df.to_pandas(use_pyarrow_extension_array=True)
+            self._pl_df = self._lf.collect()
+            self._df = self._pl_df.to_pandas(use_pyarrow_extension_array=True)
         elif self._pl_df is None:
             self._pl_df = pl.from_pandas(self._df)
         return self._df
