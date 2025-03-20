@@ -109,8 +109,8 @@ class ESMCatalogModel(pydantic.BaseModel):
     description: pydantic.StrictStr | None = None
     title: pydantic.StrictStr | None = None
     last_updated: datetime.datetime | datetime.date | None = None
-    _df: pd.DataFrame = pydantic.PrivateAttr()
-    _pl_df: pl.DataFrame = pydantic.PrivateAttr()
+    _df: pd.DataFrame | None = pydantic.PrivateAttr()
+    _pl_df: pl.DataFrame | None = pydantic.PrivateAttr()
 
     model_config = ConfigDict(arbitrary_types_allowed=True, validate_assignment=True)
 
@@ -256,11 +256,38 @@ class ESMCatalogModel(pydantic.BaseModel):
             return cat
 
     def _df_from_file(
-        self, cat, _mapper, storage_options, read_csv_kwargs
-    ) -> tuple[pd.DataFrame, pl.DataFrame]:
+        self,
+        cat: 'ESMCatalogModel',
+        _mapper: fsspec.FSMap,
+        storage_options: dict[str, typing.Any],
+        read_csv_kwargs: dict[str, typing.Any],
+    ) -> tuple[pd.DataFrame | None, pl.DataFrame | None]:
         """
         Reading the catalog from disk is a bit messy right now, as polars doesn't support reading
         bz2 compressed files directly. So we need to screw around a bit to get what we want.
+
+        We return a tuple of (pd.DataFrame | None, pl.DataFrame | None ) so that
+        we can defer evaluation of the conversion to/from a polars dataframe until
+        we need to.
+
+        Parameters
+        ----------
+        cat: ESMCatalogModel
+            The catalog model
+        _mapper: fsspec mapper
+            A fsspec mapper object
+        storage_options: dict
+            fsspec parameters passed to the backend file-system such as Google Cloud Storage,
+            Amazon Web Service S3.
+        read_csv_kwargs: dict
+            Additional keyword arguments passed through to the :py:func:`~pandas.read_csv` function.
+
+        Returns
+        -------
+        pd.DataFrame | None
+            A pandas dataframe, or None if the catalog file was read using polars
+        pl.DataFrame
+            A polars dataframe, or None if the catalog file was read using pandas
         """
         if _mapper.fs.exists(cat.catalog_file):
             csv_path = cat.catalog_file
@@ -268,17 +295,11 @@ class ESMCatalogModel(pydantic.BaseModel):
             csv_path = f'{os.path.dirname(_mapper.root)}/{cat.catalog_file}'
         cat.catalog_file = csv_path
         converters = read_csv_kwargs.pop('converters', {})  # Hack
-        if cat.catalog_file.endswith('.csv.bz2'):
-            df = pd.read_csv(
-                cat.catalog_file,
-                storage_options=storage_options,
-                **read_csv_kwargs,
-            )
-            return df, pl.from_pandas(df)
-        else:
+        if not cat.catalog_file.endswith('.csv.bz2'):  # type: ignore[union-attr]
+            # See https://github.com/pola-rs/polars/issues/13040 - can't use read_csv.
             pl_df = (
-                pl.scan_csv(  # See https://github.com/pola-rs/polars/issues/13040 - can't use read_csv.
-                    cat.catalog_file,
+                pl.scan_csv(
+                    cat.catalog_file,  # type: ignore[arg-type]
                     storage_options=storage_options,
                     **read_csv_kwargs,
                 )
@@ -297,7 +318,14 @@ class ESMCatalogModel(pydantic.BaseModel):
                 )
                 .collect()
             )
-            return pl_df.to_pandas(), pl_df
+            return None, pl_df
+        else:
+            df = pd.read_csv(
+                cat.catalog_file,
+                storage_options=storage_options,
+                **read_csv_kwargs,
+            )
+            return df, None
 
     @property
     def columns_with_iterables(self) -> set[str]:
@@ -310,7 +338,11 @@ class ESMCatalogModel(pydantic.BaseModel):
 
     @property
     def df(self) -> pd.DataFrame:
-        """Return the dataframe."""
+        """Return the dataframe, performing pandas <=> polars conversion if necessary."""
+        if self._df is None:
+            return self._pl_df.to_pandas(use_pyarrow_extension_array=True)
+        elif self._pl_df is None:
+            self._pl_df = pl.from_pandas(self._df)
         return self._df
 
     @property
