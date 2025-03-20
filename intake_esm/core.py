@@ -87,7 +87,6 @@ class esm_datastore(Catalog):
         registry: DerivedVariableRegistry | None = None,
         read_csv_kwargs: dict[str, typing.Any] | None = None,
         columns_with_iterables: list[str] | None = None,
-        columns_with_date_bnds: str | tuple[str, str] | None = None,
         storage_options: dict[str, typing.Any] | None = None,
         **intake_kwargs: dict[str, typing.Any],
     ):
@@ -103,14 +102,6 @@ class esm_datastore(Catalog):
                     raise ValueError(
                         f"Cannot provide converter for '{col}' via `read_csv_kwargs` when '{col}' is also specified in `columns_with_iterables`"
                     )
-        match columns_with_date_bnds:
-            case str(bnds_col):
-                self._start_col, self._end_col = bnds_col, bnds_col
-                raise NotImplementedError('Single date column for bounds not yet supported.')
-            case start, end:
-                self._start_col, self._end_col = start, end
-            case None:
-                self._start_col, self._end_col = None, None
 
         self.read_csv_kwargs = read_csv_kwargs
         self.progressbar = progressbar
@@ -348,6 +339,7 @@ class esm_datastore(Catalog):
     def search(
         self,
         require_all_on: str | list[str] | None = None,
+        driver: str = 'pandas',
         **query: typing.Any,
     ):
         """Search for entries in the catalog.
@@ -359,6 +351,8 @@ class esm_datastore(Catalog):
             which all entries must satisfy the query criteria.
             If None, return entries that fulfill any of the criteria specified
             in the query, by default None.
+        driver : str, optional
+            The driver to use for searching the catalog. Options are 'pandas' or 'polars'.
         **query:
             keyword arguments corresponding to user's query to execute against the dataframe.
 
@@ -406,7 +400,9 @@ class esm_datastore(Catalog):
         """
 
         # step 1: Search in the base/main catalog
-        esmcat_results = self.esmcat.search(require_all_on=require_all_on, query=query)
+        esmcat_results = self.esmcat.search(
+            require_all_on=require_all_on, query=query, driver=driver
+        )
 
         # step 2: Search for entries required to derive variables in the derived catalogs
         # This requires a bit of a hack i.e. the user has to specify the variable in the query

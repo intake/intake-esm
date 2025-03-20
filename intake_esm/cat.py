@@ -12,7 +12,7 @@ import pydantic
 import tlz
 from pydantic import ConfigDict
 
-from ._search import search, search_apply_require_all_on
+from ._search import search, search_apply_require_all_on, search_pl
 
 
 def _allnan_or_nonan(df, column: str) -> bool:
@@ -110,6 +110,7 @@ class ESMCatalogModel(pydantic.BaseModel):
     title: pydantic.StrictStr | None = None
     last_updated: datetime.datetime | datetime.date | None = None
     _df: pd.DataFrame | None = pydantic.PrivateAttr()
+    _lf: pl.LazyFrame | None = pydantic.PrivateAttr()
     _pl_df: pl.DataFrame | None = pydantic.PrivateAttr()
 
     model_config = ConfigDict(arbitrary_types_allowed=True, validate_assignment=True)
@@ -131,6 +132,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         cat = cls.model_validate(esmcat)
         cat._df = df
         cat._pl_df = pl.from_pandas(df)
+        cat._lf = cat._pl_df.lazy()
         return cat
 
     def save(
@@ -217,8 +219,8 @@ class ESMCatalogModel(pydantic.BaseModel):
     def load(
         cls,
         json_file: str | pydantic.FilePath | pydantic.AnyUrl,
-        storage_options: dict[str, typing.Any] = None,
-        read_csv_kwargs: dict[str, typing.Any] = None,
+        storage_options: dict[str, typing.Any] | None = None,
+        read_csv_kwargs: dict[str, typing.Any] | None = None,
     ) -> 'ESMCatalogModel':
         """
         Loads the catalog from a file
@@ -247,7 +249,7 @@ class ESMCatalogModel(pydantic.BaseModel):
             if cat.catalog_file:
                 cat._df, cat._lf = cat._df_from_file(cat, _mapper, storage_options, read_csv_kwargs)
             else:
-                cat._pl_df = pl.DataFrame(cat.catalog_dict)
+                cat._lf, cat._pl_df = pl.LazyFrame(cat.catalog_dict), pl.DataFrame(cat.catalog_dict)
                 cat._df = cat._pl_df.to_pandas()
 
             cat._cast_agg_columns_with_iterables()
@@ -303,7 +305,8 @@ class ESMCatalogModel(pydantic.BaseModel):
             ).with_columns(
                 [
                     pl.col(colname)
-                    .str.replace_all(r'(^.|.$)', r'[]')  # Replace first/last chars with [ or ]
+                    .str.replace('^.', '[')  # Replace first/last chars with [ or ].
+                    .str.replace('.$', ']')  # set/tuple => list
                     .str.replace_all("'", '"')
                     .str.json_decode()  # This is to do with the way polars reads json - single versus double quotes
                     for colname in converters.keys()
@@ -429,6 +432,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         *,
         query: typing.Union['QueryModel', dict[str, typing.Any]],
         require_all_on: str | list[str] | None = None,
+        driver: str = 'pandas',
     ) -> 'ESMCatalogModel':
         """
         Search for entries in the catalog.
@@ -442,6 +446,9 @@ class ESMCatalogModel(pydantic.BaseModel):
             which all entries must satisfy the query criteria.
             If None, return entries that fulfill any of the criteria specified
             in the query, by default None.
+        driver: str, optional
+            The driver to use for the search. Valid options are 'pandas' and 'polars'.
+            By default 'pandas'.
 
         Returns
         -------
@@ -458,9 +465,24 @@ class ESMCatalogModel(pydantic.BaseModel):
             )
         )
 
-        results = search(
-            df=self.df, query=_query.query, columns_with_iterables=self.columns_with_iterables
-        )
+        if driver == 'pandas':
+            iter_cols = [
+                colname for colname, dtype in self._pl_df.schema.items() if dtype == pl.List
+            ]
+            df = self._pl_df.to_pandas()
+            for col in iter_cols:
+                df[col] = df[col].apply(tuple)
+            results = search(
+                df=df,
+                query=_query.query,
+                columns_with_iterables=self.columns_with_iterables,
+            )
+        else:
+            results = search_pl(
+                df=self._pl_df,
+                query=_query.query,
+                columns_with_iterables=self.columns_with_iterables,
+            )
         if _query.require_all_on is not None and not results.empty:
             results = search_apply_require_all_on(
                 df=results,
