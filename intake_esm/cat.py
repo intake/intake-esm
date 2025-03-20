@@ -248,8 +248,12 @@ class ESMCatalogModel(pydantic.BaseModel):
             cat = cls.model_validate(data)
             if cat.catalog_file:
                 cat._df, cat._lf = cat._df_from_file(cat, _mapper, storage_options, read_csv_kwargs)
+                cat._pl_df = None
             else:
-                cat._lf, cat._pl_df = pl.LazyFrame(cat.catalog_dict), pl.DataFrame(cat.catalog_dict)
+                cat._lf, cat._pl_df = (
+                    pl.LazyFrame(cat.catalog_dict),
+                    pl.DataFrame(cat.catalog_dict),
+                )
                 cat._df = cat._pl_df.to_pandas()
 
             cat._cast_agg_columns_with_iterables()
@@ -322,6 +326,44 @@ class ESMCatalogModel(pydantic.BaseModel):
             return df, None
 
     @property
+    def lf(self) -> pl.LazyFrame:
+        """Return the polars LazyFrame, if found. If not, instantiate it and return it"""
+        if self._lf is not None:
+            return self._lf
+
+        self._lf = self.pl_df.lazy()
+        return self._lf
+
+    @property
+    def pl_df(self) -> pl.DataFrame:
+        """Return the polars DataFrame, if found. If not, instantiate it and return it"""
+        if self._pl_df is not None:
+            return self._pl_df
+
+        if self._lf is not None:
+            self._pl_df = self._lf.collect()
+        elif self._df is not None:
+            self._pl_df = pl.from_pandas(self._df)
+            self._lf = self._pl_df.lazy()
+
+        if self._pl_df is None:
+            raise AssertionError(
+                'Could not instantiate a polars DataFrame - logic bug in lazy evaluation'
+            )
+
+        return self._pl_df
+
+    @property
+    def df(self) -> pd.DataFrame:
+        """Return the dataframe, performing pandas <=> polars conversion if necessary."""
+        if self._df is None:
+            self._pl_df = self.lf.collect()
+            self._df = self._pl_df.to_pandas(use_pyarrow_extension_array=True)
+        elif self._pl_df is None:
+            self._pl_df = pl.from_pandas(self._df)
+        return self._df
+
+    @property
     def columns_with_iterables(self) -> set[str]:
         """Return a set of columns that have iterables."""
         if self._lf is not None and self._lf.fetch(1).height == 0:
@@ -329,18 +371,8 @@ class ESMCatalogModel(pydantic.BaseModel):
         if self._df is not None and self._df.empty:
             return set()
 
-        schema = self._lf.collect_schema()
+        schema = self.lf.collect_schema()
         return {colname for colname, dtype in schema.items() if dtype == pl.List}
-
-    @property
-    def df(self) -> pd.DataFrame:
-        """Return the dataframe, performing pandas <=> polars conversion if necessary."""
-        if self._df is None:
-            self._pl_df = self._lf.collect()
-            self._df = self._pl_df.to_pandas(use_pyarrow_extension_array=True)
-        elif self._pl_df is None:
-            self._pl_df = pl.from_pandas(self._df)
-        return self._df
 
     @property
     def has_multiple_variable_assets(self) -> bool:
@@ -364,7 +396,7 @@ class ESMCatalogModel(pydantic.BaseModel):
                     )
                 )
             ):
-                self._df[columns] = self._df[columns].apply(tuple)
+                self.df[columns] = self.df[columns].apply(tuple)
 
     @property
     def grouped(self) -> pd.core.groupby.DataFrameGroupBy | pd.DataFrame:

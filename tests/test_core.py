@@ -263,7 +263,7 @@ def test_catalog_serialize(catalog_type, to_csv_kwargs, json_dump_kwargs, direct
     if directory is None:
         directory = os.getcwd()
     cat = intake.open_esm_datastore(f'{directory}/{name}.json')
-    subset_df = cat_subset.esmcat._pl_df.with_columns(
+    subset_df = cat_subset.esmcat.pl_df.with_columns(
         [
             pl.col(colname).cast(pl.Null)
             for colname in cat_subset.esmcat._pl_df.columns
@@ -271,7 +271,7 @@ def test_catalog_serialize(catalog_type, to_csv_kwargs, json_dump_kwargs, direct
         ]
     )
 
-    df = cat.esmcat._pl_df.with_columns(
+    df = cat.esmcat.pl_df.with_columns(
         [
             pl.col(colname).cast(pl.Null)
             for colname in cat.esmcat._pl_df.columns
