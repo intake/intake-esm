@@ -365,13 +365,14 @@ class ESMCatalogModel(pydantic.BaseModel):
 
     @property
     def columns_with_iterables(self) -> set[str]:
-        """Return a set of columns that have iterables."""
+        """Return a set of columns that have iterables, never converting a polars
+        DataFrame to a pandas DataFrame."""
         if self.lf.head(1).collect().is_empty():
             return set()
-        if self.df.empty:
+        if self._df is not None and self.df.empty:
             return set()
 
-        colnames, dtypes = self.lf.columns, self.lf.head(1).collect().dtypes
+        colnames, dtypes = self.lf.collect_schema().names(), self.lf.head(1).collect().dtypes
         return {colname for colname, dtype in zip(colnames, dtypes) if dtype == pl.List}
 
     @property
