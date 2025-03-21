@@ -189,18 +189,18 @@ class ESMCatalogModel(pydantic.BaseModel):
         csv_file_name = fs.unstrip_protocol(f'{mapper.root}/{name}.csv')
         json_file_name = fs.unstrip_protocol(f'{mapper.root}/{name}.json')
 
-        data = self.dict().copy()
+        data = self.model_dump().copy()
         for key in {'catalog_dict', 'catalog_file'}:
             data.pop(key, None)
         data['id'] = name
         data['last_updated'] = datetime.datetime.now().utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
 
         if catalog_type == 'file':
-            csv_kwargs = {'index': False}
+            csv_kwargs: dict[str, typing.Any] = {'index': False}
             csv_kwargs |= to_csv_kwargs or {}
-            compression = csv_kwargs.get('compression')
-            extensions = {'gzip': '.gz', 'bz2': '.bz2', 'zip': '.zip', 'xz': '.xz', None: ''}
-            csv_file_name = f'{csv_file_name}{extensions[compression]}'
+            compression = csv_kwargs.get('compression', '')
+            extensions = {'gzip': '.gz', 'bz2': '.bz2', 'zip': '.zip', 'xz': '.xz'}
+            csv_file_name = f'{csv_file_name}{extensions.get(compression, "")}'
             data['catalog_file'] = str(csv_file_name)
 
             with fs.open(csv_file_name, 'wb') as csv_outfile:
@@ -211,7 +211,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         with fs.open(json_file_name, 'w') as outfile:
             json_kwargs = {'indent': 2}
             json_kwargs |= json_dump_kwargs or {}
-            json.dump(data, outfile, **json_kwargs)
+            json.dump(data, outfile, **json_kwargs)  # type: ignore[arg-type]
 
         print(f'Successfully wrote ESM catalog json file to: {json_file_name}')
 
@@ -367,12 +367,12 @@ class ESMCatalogModel(pydantic.BaseModel):
     def columns_with_iterables(self) -> set[str]:
         """Return a set of columns that have iterables, never converting a polars
         DataFrame to a pandas DataFrame."""
-        if self.lf.head(1).collect().is_empty():
+        if (trunc_df := self.lf.head(1).collect()).is_empty():
             return set()
         if self._df is not None and self.df.empty:
             return set()
 
-        colnames, dtypes = self.lf.collect_schema().names(), self.lf.head(1).collect().dtypes
+        colnames, dtypes = trunc_df.columns, trunc_df.dtypes
         return {colname for colname, dtype in zip(colnames, dtypes) if dtype == pl.List}
 
     @property
@@ -453,10 +453,10 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         return pd.Series(
             {
-                colname: self._pl_df.get_column(colname).explode().n_unique()
-                if self._pl_df.schema[colname] == pl.List
-                else self._pl_df.get_column(colname).n_unique()
-                for colname in self._pl_df.columns
+                colname: self.pl_df.get_column(colname).explode().n_unique()
+                if self.pl_df.schema[colname] == pl.List
+                else self.pl_df.get_column(colname).n_unique()
+                for colname in self.pl_df.columns
             }
         )
 
@@ -465,7 +465,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         *,
         query: typing.Union['QueryModel', dict[str, typing.Any]],
         require_all_on: str | list[str] | None = None,
-    ) -> 'ESMCatalogModel':
+    ) -> pd.DataFrame:
         """
         Search for entries in the catalog.
 
@@ -478,9 +478,6 @@ class ESMCatalogModel(pydantic.BaseModel):
             which all entries must satisfy the query criteria.
             If None, return entries that fulfill any of the criteria specified
             in the query, by default None.
-        driver: str, optional
-            The driver to use for the search. Valid options are 'pandas' and 'polars'.
-            By default 'pandas'.
 
         Returns
         -------
