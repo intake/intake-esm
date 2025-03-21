@@ -15,6 +15,7 @@ dependencies:
   - myst-nb
   - netcdf4 >=1.5.5,!=1.6.1
   - pandas >=2.1.0
+  - polars>=1.24.0
   - pip
   - pydantic>=2.0
   - python-graphviz

@@ -7,6 +7,7 @@ import typing
 
 import fsspec
 import pandas as pd
+import polars as pl
 import pydantic
 import tlz
 from pydantic import ConfigDict
@@ -108,7 +109,9 @@ class ESMCatalogModel(pydantic.BaseModel):
     description: pydantic.StrictStr | None = None
     title: pydantic.StrictStr | None = None
     last_updated: datetime.datetime | datetime.date | None = None
-    _df: pd.DataFrame = pydantic.PrivateAttr()
+    _df: pd.DataFrame | None = pydantic.PrivateAttr()
+    _lf: pl.LazyFrame | None = pydantic.PrivateAttr()
+    _pl_df: pl.DataFrame | None = pydantic.PrivateAttr()
 
     model_config = ConfigDict(arbitrary_types_allowed=True, validate_assignment=True)
 
@@ -128,6 +131,8 @@ class ESMCatalogModel(pydantic.BaseModel):
             esmcat['last_updated'] = None
         cat = cls.model_validate(esmcat)
         cat._df = df
+        cat._pl_df = pl.from_pandas(df)
+        cat._lf = cat._pl_df.lazy()
         return cat
 
     def save(
@@ -184,18 +189,18 @@ class ESMCatalogModel(pydantic.BaseModel):
         csv_file_name = fs.unstrip_protocol(f'{mapper.root}/{name}.csv')
         json_file_name = fs.unstrip_protocol(f'{mapper.root}/{name}.json')
 
-        data = self.dict().copy()
+        data = self.model_dump().copy()
         for key in {'catalog_dict', 'catalog_file'}:
             data.pop(key, None)
         data['id'] = name
         data['last_updated'] = datetime.datetime.now().utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
 
         if catalog_type == 'file':
-            csv_kwargs = {'index': False}
+            csv_kwargs: dict[str, typing.Any] = {'index': False}
             csv_kwargs |= to_csv_kwargs or {}
-            compression = csv_kwargs.get('compression')
-            extensions = {'gzip': '.gz', 'bz2': '.bz2', 'zip': '.zip', 'xz': '.xz', None: ''}
-            csv_file_name = f'{csv_file_name}{extensions[compression]}'
+            compression = csv_kwargs.get('compression', '')
+            extensions = {'gzip': '.gz', 'bz2': '.bz2', 'zip': '.zip', 'xz': '.xz'}
+            csv_file_name = f'{csv_file_name}{extensions.get(compression, "")}'
             data['catalog_file'] = str(csv_file_name)
 
             with fs.open(csv_file_name, 'wb') as csv_outfile:
@@ -206,7 +211,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         with fs.open(json_file_name, 'w') as outfile:
             json_kwargs = {'indent': 2}
             json_kwargs |= json_dump_kwargs or {}
-            json.dump(data, outfile, **json_kwargs)
+            json.dump(data, outfile, **json_kwargs)  # type: ignore[arg-type]
 
         print(f'Successfully wrote ESM catalog json file to: {json_file_name}')
 
@@ -214,8 +219,8 @@ class ESMCatalogModel(pydantic.BaseModel):
     def load(
         cls,
         json_file: str | pydantic.FilePath | pydantic.AnyUrl,
-        storage_options: dict[str, typing.Any] = None,
-        read_csv_kwargs: dict[str, typing.Any] = None,
+        storage_options: dict[str, typing.Any] | None = None,
+        read_csv_kwargs: dict[str, typing.Any] | None = None,
     ) -> 'ESMCatalogModel':
         """
         Loads the catalog from a file
@@ -242,37 +247,131 @@ class ESMCatalogModel(pydantic.BaseModel):
                 data['last_updated'] = None
             cat = cls.model_validate(data)
             if cat.catalog_file:
-                if _mapper.fs.exists(cat.catalog_file):
-                    csv_path = cat.catalog_file
-                else:
-                    csv_path = f'{os.path.dirname(_mapper.root)}/{cat.catalog_file}'
-                cat.catalog_file = csv_path
-                df = pd.read_csv(
-                    cat.catalog_file,
-                    storage_options=storage_options,
-                    **read_csv_kwargs,
-                )
+                cat._df, cat._lf = cat._df_from_file(cat, _mapper, storage_options, read_csv_kwargs)
+                cat._pl_df = None
             else:
-                df = pd.DataFrame(cat.catalog_dict)
+                cat._lf, cat._pl_df = (
+                    pl.LazyFrame(cat.catalog_dict),
+                    pl.DataFrame(cat.catalog_dict),
+                )
+                cat._df = cat._pl_df.to_pandas()
 
-            cat._df = df
             cat._cast_agg_columns_with_iterables()
             return cat
 
+    def _df_from_file(
+        self,
+        cat: 'ESMCatalogModel',
+        _mapper: fsspec.FSMap,
+        storage_options: dict[str, typing.Any],
+        read_csv_kwargs: dict[str, typing.Any],
+    ) -> tuple[pd.DataFrame | None, pl.LazyFrame | None]:
+        """
+        Read the catalog file from disk, falling back to pandas for bz2 files which
+        polars can't read.
+
+        We return a tuple of (pd.DataFrame | None, pl.DataFrame | None ) so that
+        we can defer evaluation of the conversion to/from a polars dataframe until
+        we need to.
+
+        Parameters
+        ----------
+        cat: ESMCatalogModel
+            The catalog model
+        _mapper: fsspec mapper
+            A fsspec mapper object
+        storage_options: dict
+            fsspec parameters passed to the backend file-system such as Google Cloud Storage,
+            Amazon Web Service S3.
+        read_csv_kwargs: dict
+            Additional keyword arguments passed through to the :py:func:`~pandas.read_csv` function.
+
+        Returns
+        -------
+        pd.DataFrame | None
+            A pandas dataframe, or None if the catalog file was read using polars
+        pl.LazyFrame | None
+            A polars lazyframe, or None if the catalog file was read using pandas
+        """
+        if _mapper.fs.exists(cat.catalog_file):
+            csv_path = cat.catalog_file
+        else:
+            csv_path = f'{os.path.dirname(_mapper.root)}/{cat.catalog_file}'
+        cat.catalog_file = csv_path
+        converters = read_csv_kwargs.pop('converters', {})  # Hack
+        if not cat.catalog_file.endswith('.csv.bz2'):  # type: ignore[union-attr]
+            # See https://github.com/pola-rs/polars/issues/13040 - can't use read_csv.
+            lf = pl.scan_csv(
+                cat.catalog_file,  # type: ignore[arg-type]
+                storage_options=storage_options,
+                infer_schema=False,
+                **read_csv_kwargs,
+            ).with_columns(
+                [
+                    pl.col(colname)
+                    .str.replace('^.', '[')  # Replace first/last chars with [ or ].
+                    .str.replace('.$', ']')  # set/tuple => list
+                    .str.replace_all("'", '"')
+                    .str.json_decode()  # This is to do with the way polars reads json - single versus double quotes
+                    for colname in converters.keys()
+                ]
+            )
+            return None, lf
+        else:
+            df = pd.read_csv(
+                cat.catalog_file,
+                storage_options=storage_options,
+                **read_csv_kwargs,
+            )
+            return df, None
+
     @property
-    def columns_with_iterables(self) -> set[str]:
-        """Return a set of columns that have iterables."""
-        if self._df.empty:
-            return set()
-        has_iterables = (
-            self._df.sample(20, replace=True).map(type).isin([list, tuple, set]).any().to_dict()
-        )
-        return {column for column, check in has_iterables.items() if check}
+    def lf(self) -> pl.LazyFrame:
+        """Return the polars LazyFrame, if found. If not, instantiate it and return it"""
+        if self._lf is not None:
+            return self._lf
+
+        self._lf = self.pl_df.lazy()
+        return self._lf
+
+    @property
+    def pl_df(self) -> pl.DataFrame:
+        """Return the polars DataFrame, if found. If not, instantiate it and return it"""
+        if self._pl_df is not None:
+            return self._pl_df
+
+        if self._lf is not None:
+            self._pl_df = self._lf.collect()
+        elif self._df is not None:
+            self._pl_df = pl.from_pandas(self._df)
+            self._lf = self._pl_df.lazy()
+
+        if self._pl_df is None:
+            raise AssertionError(
+                'Could not instantiate a polars DataFrame - logic bug in lazy evaluation'
+            )
+
+        return self._pl_df
 
     @property
     def df(self) -> pd.DataFrame:
-        """Return the dataframe."""
+        """Return the dataframe, performing pandas <=> polars conversion if necessary."""
+        if self._df is None:
+            self._pl_df = self.lf.collect()
+            self._df = self._pl_df.to_pandas(use_pyarrow_extension_array=True)
         return self._df
+
+    @property
+    def columns_with_iterables(self) -> set[str]:
+        """Return a set of columns that have iterables, never converting a polars
+        DataFrame to a pandas DataFrame."""
+        if (trunc_df := self.lf.head(1).collect()).is_empty():
+            return set()
+        if self._df is not None and self.df.empty:
+            return set()
+
+        colnames, dtypes = trunc_df.columns, trunc_df.dtypes
+        return {colname for colname, dtype in zip(colnames, dtypes) if dtype == pl.List}
 
     @property
     def has_multiple_variable_assets(self) -> bool:
@@ -296,7 +395,7 @@ class ESMCatalogModel(pydantic.BaseModel):
                     )
                 )
             ):
-                self._df[columns] = self._df[columns].apply(tuple)
+                self.df[columns] = self.df[columns].apply(tuple)
 
     @property
     def grouped(self) -> pd.core.groupby.DataFrameGroupBy | pd.DataFrame:
@@ -349,14 +448,22 @@ class ESMCatalogModel(pydantic.BaseModel):
 
     def nunique(self) -> pd.Series:
         """Return a series of the number of unique values for each column in the catalog."""
-        return pd.Series(tlz.valmap(len, self._unique()))
+
+        return pd.Series(
+            {
+                colname: self.pl_df.get_column(colname).explode().n_unique()
+                if self.pl_df.schema[colname] == pl.List
+                else self.pl_df.get_column(colname).n_unique()
+                for colname in self.pl_df.columns
+            }
+        )
 
     def search(
         self,
         *,
         query: typing.Union['QueryModel', dict[str, typing.Any]],
         require_all_on: str | list[str] | None = None,
-    ) -> 'ESMCatalogModel':
+    ) -> pd.DataFrame:
         """
         Search for entries in the catalog.
 
