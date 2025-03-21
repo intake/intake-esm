@@ -359,8 +359,6 @@ class ESMCatalogModel(pydantic.BaseModel):
         if self._df is None:
             self._pl_df = self.lf.collect()
             self._df = self._pl_df.to_pandas(use_pyarrow_extension_array=True)
-        elif self._pl_df is None:
-            self._pl_df = pl.from_pandas(self._df)
         return self._df
 
     @property
