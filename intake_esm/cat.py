@@ -366,13 +366,13 @@ class ESMCatalogModel(pydantic.BaseModel):
     @property
     def columns_with_iterables(self) -> set[str]:
         """Return a set of columns that have iterables."""
-        if self._lf is not None and self._lf.fetch(1).height == 0:
+        if self.lf.head(1).collect().is_empty():
             return set()
-        if self._df is not None and self._df.empty:
+        if self.df.empty:
             return set()
 
-        schema = self.lf.collect_schema()
-        return {colname for colname, dtype in schema.items() if dtype == pl.List}
+        colnames, dtypes = self.lf.columns, self.lf.head(1).collect().dtypes
+        return {colname for colname, dtype in zip(colnames, dtypes) if dtype == pl.List}
 
     @property
     def has_multiple_variable_assets(self) -> bool:
