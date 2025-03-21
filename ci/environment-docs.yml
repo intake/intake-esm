@@ -4,31 +4,33 @@ channels:
   - nodefaults
 dependencies:
   - cftime
-  - dask>=2024.12
+  - dask >=2024.12
   - distributed
   - ecgtools >=2022.10.7
-  - fsspec>=2024.12
+  - fsspec >=2024.12
   - gcsfs >=2024.12
-  - intake>=2.0
+  - intake >=2.0
   - jupyterlab
   - matplotlib
   - myst-nb
-  - netcdf4!=1.6.1
-  - pandas>=2.1.0
+  - netcdf4 >=1.5.5,!=1.6.1
+  - pandas >=2.1.0
   - polars>=1.24.0
   - pip
   - pydantic>=2.0
   - python-graphviz
   - python=3.11
   - s3fs >=2024.12
-  - sphinx<6.0
+  - setuptools >=75.0.0
+  - setuptools_scm >=8.1.0
+  - sphinx <6.0
   - sphinx-copybutton
   - sphinx-design
   - watermark
-  - xarray-datatree>=0.0.9
-  - xarray>=2024.10
-  - zarr>=2.12
-  - furo>=2022.09.15
+  - xarray-datatree >=0.0.9
+  - xarray >=2024.10
+  - zarr >=2.12,<3.0
+  - furo >=2022.09.15
   - pip:
       - git+https://github.com/ncar-xdev/ecgtools
       - sphinxext-opengraph

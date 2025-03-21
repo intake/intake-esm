@@ -5,22 +5,22 @@ channels:
 dependencies:
   - cftime
   - codecov
-  - dask>=2024.12
-  - fastprogress>=1.0.0
-  - flaky >= 3.8.0
-  - fsspec>=2024.12
+  - dask >=2024.12
+  - fastprogress >=1.0.0
+  - flaky >=3.8.0
+  - fsspec >=2024.12
   - gcsfs >=2024.12
-  - h5netcdf>=0.8.1
-  - intake>=2.0
+  - h5netcdf >=0.8.1
+  - intake >=2.0
   - ipython
   - matplotlib
-  - netcdf4>=1.5.5
-  - pandas>=2.1.0
+  - netcdf4 >=1.5.5,!=1.6.1
+  - pandas >=2.1.0
   - pip
   - polars>=1.24.0
   - pooch
   - pre-commit
-  - pydantic>=2.0
+  - pydantic >=2.0
   - pydap
   - pytest
   - pytest-cov
@@ -28,8 +28,10 @@ dependencies:
   - pytest-xdist
   - pytest-mock
   - s3fs >=2024.12
+  - setuptools >=75.0.0
+  - setuptools_scm >=8.1.0
   - scipy
-  - xarray>=2024.10
+  - xarray >=2024.10
   - xarray-datatree
-  - zarr>=2.12,<3.0
+  - zarr >=2.12,<3.0
   # - pytest-icdiff

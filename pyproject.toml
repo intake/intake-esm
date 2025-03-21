@@ -1,5 +1,5 @@
 [build-system]
-    requires = ["setuptools>=45", "setuptools_scm>=6.2", "wheel"]
+    requires = ["setuptools>=75.0", "setuptools_scm>=8.1", "wheel"]
 
 [project]
     classifiers = [
@@ -11,6 +11,7 @@
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Programming Language :: Python",
         "Topic :: Scientific/Engineering",
     ]
