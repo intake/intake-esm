@@ -12,7 +12,7 @@ import pydantic
 import tlz
 from pydantic import ConfigDict
 
-from ._search import search, search_apply_require_all_on, search_pl
+from ._search import search, search_apply_require_all_on
 
 
 def _allnan_or_nonan(df, column: str) -> bool:
@@ -267,8 +267,8 @@ class ESMCatalogModel(pydantic.BaseModel):
         read_csv_kwargs: dict[str, typing.Any],
     ) -> tuple[pd.DataFrame | None, pl.LazyFrame | None]:
         """
-        Reading the catalog from disk is a bit messy right now, as polars doesn't support reading
-        bz2 compressed files directly. So we need to screw around a bit to get what we want.
+        Read the catalog file from disk, falling back to pandas for bz2 files which
+        polars can't read.
 
         We return a tuple of (pd.DataFrame | None, pl.DataFrame | None ) so that
         we can defer evaluation of the conversion to/from a polars dataframe until
@@ -465,7 +465,6 @@ class ESMCatalogModel(pydantic.BaseModel):
         *,
         query: typing.Union['QueryModel', dict[str, typing.Any]],
         require_all_on: str | list[str] | None = None,
-        driver: str = 'pandas',
     ) -> 'ESMCatalogModel':
         """
         Search for entries in the catalog.
@@ -498,24 +497,9 @@ class ESMCatalogModel(pydantic.BaseModel):
             )
         )
 
-        if driver == 'pandas':
-            iter_cols = [
-                colname for colname, dtype in self._pl_df.schema.items() if dtype == pl.List
-            ]
-            df = self._pl_df.to_pandas()
-            for col in iter_cols:
-                df[col] = df[col].apply(tuple)
-            results = search(
-                df=df,
-                query=_query.query,
-                columns_with_iterables=self.columns_with_iterables,
-            )
-        else:
-            results = search_pl(
-                df=self._pl_df,
-                query=_query.query,
-                columns_with_iterables=self.columns_with_iterables,
-            )
+        results = search(
+            df=self.df, query=_query.query, columns_with_iterables=self.columns_with_iterables
+        )
         if _query.require_all_on is not None and not results.empty:
             results = search_apply_require_all_on(
                 df=results,

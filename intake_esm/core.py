@@ -102,7 +102,6 @@ class esm_datastore(Catalog):
                     raise ValueError(
                         f"Cannot provide converter for '{col}' via `read_csv_kwargs` when '{col}' is also specified in `columns_with_iterables`"
                     )
-
         self.read_csv_kwargs = read_csv_kwargs
         self.progressbar = progressbar
         self.sep = sep
@@ -339,7 +338,6 @@ class esm_datastore(Catalog):
     def search(
         self,
         require_all_on: str | list[str] | None = None,
-        driver: str = 'pandas',
         **query: typing.Any,
     ):
         """Search for entries in the catalog.
@@ -351,8 +349,6 @@ class esm_datastore(Catalog):
             which all entries must satisfy the query criteria.
             If None, return entries that fulfill any of the criteria specified
             in the query, by default None.
-        driver : str, optional
-            The driver to use for searching the catalog. Options are 'pandas' or 'polars'.
         **query:
             keyword arguments corresponding to user's query to execute against the dataframe.
 
@@ -400,9 +396,7 @@ class esm_datastore(Catalog):
         """
 
         # step 1: Search in the base/main catalog
-        esmcat_results = self.esmcat.search(
-            require_all_on=require_all_on, query=query, driver=driver
-        )
+        esmcat_results = self.esmcat.search(require_all_on=require_all_on, query=query)
 
         # step 2: Search for entries required to derive variables in the derived catalogs
         # This requires a bit of a hack i.e. the user has to specify the variable in the query
