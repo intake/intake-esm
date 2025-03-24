@@ -306,8 +306,8 @@ class ESMCatalogModel(pydantic.BaseModel):
         else:
             csv_path = f'{os.path.dirname(_mapper.root)}/{cat.catalog_file}'
         cat.catalog_file = csv_path
-        converters = read_csv_kwargs.pop('converters', {})  # Hack
         if not cat.catalog_file.endswith('.csv.bz2'):  # type: ignore[union-attr]
+            converters = read_csv_kwargs.pop('converters', {})  # Hack
             # See https://github.com/pola-rs/polars/issues/13040 - can't use read_csv.
             lf = pl.scan_csv(
                 cat.catalog_file,  # type: ignore[arg-type]
