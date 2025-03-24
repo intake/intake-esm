@@ -350,8 +350,7 @@ class ESMCatalogModel(pydantic.BaseModel):
 
     @property
     def columns_with_iterables(self) -> set[str]:
-        """Return a set of columns that have iterables, never converting a polars
-        DataFrame to a pandas DataFrame."""
+        """Return a set of columns that have iterables."""
         return self._frames.columns_with_iterables  # type: ignore[union-attr]
 
     @property
@@ -517,13 +516,7 @@ class QueryModel(pydantic.BaseModel):
 
 class FramesModel(pydantic.BaseModel):
     """A Pydantic model to represent our collection of dataframes - pandas, polars,
-    and lazyframes.
-
-    N.B - how much overhead does this introduce? We are using polars for speed,
-    so if pydantic becomes a bottleneck, we may need to rethink this. Potentially
-    just a regular dataclass? At the very least, we can keep our tests in attached
-    to this class, and then migrate them out if pydantic is too slow.
-    """
+    and lazyframe."""
 
     df: pd.DataFrame | None = None
     pl_df: pl.DataFrame | None = None
@@ -534,7 +527,8 @@ class FramesModel(pydantic.BaseModel):
     @pydantic.model_validator(mode='after')
     def ensure_some(self) -> Self:
         """
-        Make sure that at least one of the dataframes is set.
+        Make sure that at least one of the dataframes is not None when the model is
+        instantiated.
         """
         if self.df is None and self.pl_df is None and self.lf is None:
             raise AssertionError('At least one of df, pl_df, or lf must be set')
@@ -542,7 +536,7 @@ class FramesModel(pydantic.BaseModel):
 
     @property
     def pandas(self) -> pd.DataFrame:
-        """Return the pandas DataFrame, if found. If not, instantiate it and return it"""
+        """Return the pandas DataFrame, instantiating it if necessary."""
         if self.df is not None:
             return self.df
 
@@ -556,7 +550,7 @@ class FramesModel(pydantic.BaseModel):
 
     @property
     def polars(self) -> pl.DataFrame:
-        """Return the polars DataFrame, if found. If not, instantiate it and return it"""
+        """Return the pandas DataFrame, instantiating it if necessary."""
         if self.pl_df is not None:
             return self.pl_df
 
@@ -571,7 +565,7 @@ class FramesModel(pydantic.BaseModel):
 
     @property
     def lazy(self) -> pl.LazyFrame:
-        """Return the polars LazyFrame, if found. If not, instantiate it and return it"""
+        """Return the pandas DataFrame, instantiating it if necessary."""
         if self.lf is not None:
             return self.lf
 
@@ -583,8 +577,8 @@ class FramesModel(pydantic.BaseModel):
 
     @property
     def columns_with_iterables(self) -> set[str]:
-        """Return a set of columns that have iterables, never converting a polars
-        DataFrame to a pandas DataFrame."""
+        """Return a set of columns that have iterables, preferentially using
+        lazyframe > pl.dataframe > pd.dataframe to minimise overhead."""
         if (trunc_df := self.lazy.head(1).collect()).is_empty():
             return set()
         if self.df is not None and self.df.empty:

@@ -60,7 +60,7 @@ For more details and examples, refer to the relevant chapters in the main part o
 ## Frames Model
 
 ```{eval-rst}
-.. autoclass:: intake_esm.frames.FramesModel
+.. autoclass:: intake_esm.cat.FramesModel
     :members:
     :noindex:
     :special-members: __init__
