@@ -276,9 +276,12 @@ class ESMCatalogModel(pydantic.BaseModel):
         Read the catalog file from disk, falling back to pandas for bz2 files which
         polars can't read.
 
-        We return a tuple of (pd.DataFrame | None, pl.DataFrame | None ) so that
-        we can defer evaluation of the conversion to/from a polars dataframe until
-        we need to.
+        Returns a FramesModel, which contains at least one of:
+        - a polars LazyFrame
+        - a polars DataFrame
+        - a pandas DataFrame
+
+        , as well as handling dataframe related methods, eg. columns_with_iterables.
 
         Parameters
         ----------
