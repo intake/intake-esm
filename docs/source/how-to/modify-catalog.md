@@ -28,6 +28,14 @@ dataframe and some of its behavior during data loading steps.
 Pandas is a powerful tool for data manipulation. If you are not familiar with it, we recommend you to read the [Pandas documentation](https://pandas.pydata.org/docs/user_guide/index.html).
 ```
 
+```{info}
+
+Intake-ESM is currently in the process of transitioning from `pandas` to `polars` in order to handle larger catalogs more efficiently. There are however no plans to deprecate the pandas based `esm_datastore.df` attribute, or to change this attribute to return a polars dataframe instead.
+
+For more information on the internal changes or if you wish to access the polars dataframe directly, please refer to [the api documentation](../reference/api.md).
+
+```
+
 ## Use case 1: complex search queries
 
 Let's say we are interested in datasets with the following attributes:

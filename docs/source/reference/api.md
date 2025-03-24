@@ -57,6 +57,15 @@ For more details and examples, refer to the relevant chapters in the main part o
     :special-members: __init__
 ```
 
+## Frames Model
+
+```{eval-rst}
+.. autoclass:: intake_esm.frames.FramesModel
+    :members:
+    :noindex:
+    :special-members: __init__
+```
+
 ## Options for dataset attributes
 
 ```{eval-rst}
