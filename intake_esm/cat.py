@@ -125,6 +125,12 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         return model
 
+    def __setattr__(self, name, value):
+        """If we manually set _df, we need to propagate the change to _frames"""
+        if name == '_df':
+            self._frames = FramesModel(df=value)
+        return super().__setattr__(name, value)
+
     @classmethod
     def from_dict(cls, data: dict) -> ESMCatalogModel:
         esmcat = data['esmcat']

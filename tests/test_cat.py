@@ -1,6 +1,8 @@
 import pandas as pd
+import polars as pl
 import pydantic
 import pytest
+from polars import testing as pl_testing
 
 from intake_esm.cat import Assets, ESMCatalogModel, FramesModel, QueryModel
 
@@ -204,3 +206,26 @@ def test_FramesModel_no_accidental_pd(pd_df, pl_df, lf, attr):
         got_attr = getattr(f, attr)
         assert got_attr is not None
         assert f.df is not None
+
+
+def test_FramesModel_set_manual_df():
+    """
+    Test that if we set esmcat._df, we don't cause an error. We also test that the
+    creation of `cat._frames.pl_df` is deferred until we ask for it with the
+    `cat.pl_df` property.
+    """
+    cat = ESMCatalogModel.from_dict({'esmcat': sample_esmcat_data, 'df': sample_df})
+
+    assert cat._frames.pl_df is None
+
+    new_df = pd.DataFrame({'numeric_col': [1, 2, 3], 'str_col': ['a', 'b', 'c']})
+    cat._df = new_df
+
+    assert getattr(cat, '_frames') is not None
+
+    pd.testing.assert_frame_equal(cat.df, new_df)
+
+    expected_pl_df = pl.DataFrame({'numeric_col': [1, 2, 3], 'str_col': ['a', 'b', 'c']})
+
+    assert cat._frames.pl_df is None
+    pl_testing.assert_frame_equal(cat.pl_df, expected_pl_df)
