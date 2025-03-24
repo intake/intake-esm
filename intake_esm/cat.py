@@ -335,17 +335,17 @@ class ESMCatalogModel(pydantic.BaseModel):
 
     @property
     def lf(self) -> pl.LazyFrame:
-        """Return the polars lazyframe containing the catalog, creating it if necessary"""
+        """Return a `pl.LazyFrame` containing the catalog, creating it if necessary"""
         return self._frames.lazy  # type: ignore[union-attr]
 
     @property
     def pl_df(self) -> pl.DataFrame:
-        """Return the polars dataframe containing the catalog, creating it if necessary"""
+        """Return a `pl.DataFrame` containing the catalog, creating it if necessary"""
         return self._frames.polars  # type: ignore[union-attr]
 
     @property
     def df(self) -> pd.DataFrame:
-        """Return the pandas dataframe containing the catalog, creating it if necessary"""
+        """Return the `pd.DataFrame` containing the catalog, creating it if necessary"""
         return self._frames.pandas  # type: ignore[union-attr]
 
     @property
@@ -527,7 +527,7 @@ class FramesModel(pydantic.BaseModel):
     @pydantic.model_validator(mode='after')
     def ensure_some(self) -> Self:
         """
-        Make sure that at least one of the dataframes is not None when the model is
+        Make sure that at least one of the dataframes is not `None` when the model is
         instantiated.
         """
         if self.df is None and self.pl_df is None and self.lf is None:
@@ -550,7 +550,7 @@ class FramesModel(pydantic.BaseModel):
 
     @property
     def polars(self) -> pl.DataFrame:
-        """Return the pandas DataFrame, instantiating it if necessary."""
+        """Return the polars DataFrame, instantiating it if necessary."""
         if self.pl_df is not None:
             return self.pl_df
 
@@ -565,7 +565,7 @@ class FramesModel(pydantic.BaseModel):
 
     @property
     def lazy(self) -> pl.LazyFrame:
-        """Return the pandas DataFrame, instantiating it if necessary."""
+        """Return the polars LazyFrame, instantiating it if necessary."""
         if self.lf is not None:
             return self.lf
 
@@ -578,7 +578,7 @@ class FramesModel(pydantic.BaseModel):
     @property
     def columns_with_iterables(self) -> set[str]:
         """Return a set of columns that have iterables, preferentially using
-        lazyframe > pl.dataframe > pd.dataframe to minimise overhead."""
+        `self.lazy` > `self.polars` > `self.pandas` to minimise overhead."""
         if (trunc_df := self.lazy.head(1).collect()).is_empty():
             return set()
         if self.df is not None and self.df.empty:

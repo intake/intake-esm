@@ -30,7 +30,7 @@ Pandas is a powerful tool for data manipulation. If you are not familiar with it
 
 ```{note}
 
-Intake-ESM is currently in the process of transitioning from using `pandas` to `polars` internaly in order to handle larger catalogs more efficiently. There are however no plans to deprecate the pandas based `esm_datastore.df` attribute, or to change this attribute to return a polars dataframe instead.
+Intake-ESM is currently in the process of transitioning from using `pandas` to `polars` internally in order to handle larger catalogs more efficiently. There are however no plans to deprecate the pandas based `esm_datastore.df` attribute, or to change this attribute to return a polars dataframe instead.
 
 For more information on the internal changes or if you wish to access the polars dataframe directly, please refer to [the api documentation](../reference/api.md).
 ```
