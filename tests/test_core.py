@@ -266,16 +266,16 @@ def test_catalog_serialize(catalog_type, to_csv_kwargs, json_dump_kwargs, direct
     subset_df = cat_subset.esmcat.pl_df.with_columns(
         [
             pl.col(colname).cast(pl.Null)
-            for colname in cat_subset.esmcat._pl_df.columns
-            if cat_subset.esmcat._pl_df.get_column(colname).is_null().all()
+            for colname in cat_subset.esmcat._frames.pl_df.columns
+            if cat_subset.esmcat._frames.pl_df.get_column(colname).is_null().all()
         ]
     )
 
     df = cat.esmcat.pl_df.with_columns(
         [
             pl.col(colname).cast(pl.Null)
-            for colname in cat.esmcat._pl_df.columns
-            if cat.esmcat._pl_df.get_column(colname).is_null().all()
+            for colname in cat.esmcat._frames.pl_df.columns
+            if cat.esmcat._frames.pl_df.get_column(colname).is_null().all()
         ]
     )
     assert_frame_equal_pl(

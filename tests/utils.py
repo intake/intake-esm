@@ -1,6 +1,7 @@
 import os
 
 import pandas as pd
+import polars as pl
 
 here = os.path.abspath(os.path.dirname(__file__))
 zarr_cat_pangeo_cmip6 = 'https://storage.googleapis.com/cmip6/pangeo-cmip6.json'
@@ -37,6 +38,10 @@ sample_df = pd.DataFrame(
         },
     ]
 )
+
+
+sample_pl_df = pl.from_pandas(sample_df)
+sample_lf = sample_pl_df.lazy()
 
 sample_esmcat_data = {
     'esmcat_version': '0.1.0',

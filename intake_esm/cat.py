@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 import enum
 import functools
@@ -11,6 +13,7 @@ import polars as pl
 import pydantic
 import tlz
 from pydantic import ConfigDict
+from typing_extensions import Self
 
 from ._search import search, search_apply_require_all_on
 
@@ -110,8 +113,7 @@ class ESMCatalogModel(pydantic.BaseModel):
     title: pydantic.StrictStr | None = None
     last_updated: datetime.datetime | datetime.date | None = None
     _df: pd.DataFrame | None = pydantic.PrivateAttr()
-    _lf: pl.LazyFrame | None = pydantic.PrivateAttr()
-    _pl_df: pl.DataFrame | None = pydantic.PrivateAttr()
+    _frames: FramesModel | None = pydantic.PrivateAttr()
 
     model_config = ConfigDict(arbitrary_types_allowed=True, validate_assignment=True)
 
@@ -124,15 +126,14 @@ class ESMCatalogModel(pydantic.BaseModel):
         return model
 
     @classmethod
-    def from_dict(cls, data: dict) -> 'ESMCatalogModel':
+    def from_dict(cls, data: dict) -> ESMCatalogModel:
         esmcat = data['esmcat']
         df = data['df']
         if 'last_updated' not in esmcat:
             esmcat['last_updated'] = None
         cat = cls.model_validate(esmcat)
         cat._df = df
-        cat._pl_df = pl.from_pandas(df)
-        cat._lf = cat._pl_df.lazy()
+        cat._frames = FramesModel(df=df)
         return cat
 
     def save(
@@ -221,7 +222,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         json_file: str | pydantic.FilePath | pydantic.AnyUrl,
         storage_options: dict[str, typing.Any] | None = None,
         read_csv_kwargs: dict[str, typing.Any] | None = None,
-    ) -> 'ESMCatalogModel':
+    ) -> ESMCatalogModel:
         """
         Loads the catalog from a file
 
@@ -247,25 +248,24 @@ class ESMCatalogModel(pydantic.BaseModel):
                 data['last_updated'] = None
             cat = cls.model_validate(data)
             if cat.catalog_file:
-                cat._df, cat._lf = cat._df_from_file(cat, _mapper, storage_options, read_csv_kwargs)
-                cat._pl_df = None
+                cat._frames = cat._df_from_file(cat, _mapper, storage_options, read_csv_kwargs)
             else:
-                cat._lf, cat._pl_df = (
-                    pl.LazyFrame(cat.catalog_dict),
-                    pl.DataFrame(cat.catalog_dict),
+                cat._frames = FramesModel(
+                    lf=pl.LazyFrame(cat.catalog_dict),
+                    pl_df=pl.DataFrame(cat.catalog_dict),
+                    df=pl.DataFrame(cat.catalog_dict).to_pandas(),
                 )
-                cat._df = cat._pl_df.to_pandas()
 
             cat._cast_agg_columns_with_iterables()
             return cat
 
     def _df_from_file(
         self,
-        cat: 'ESMCatalogModel',
+        cat: ESMCatalogModel,
         _mapper: fsspec.FSMap,
         storage_options: dict[str, typing.Any],
         read_csv_kwargs: dict[str, typing.Any],
-    ) -> tuple[pd.DataFrame | None, pl.LazyFrame | None]:
+    ) -> FramesModel:
         """
         Read the catalog file from disk, falling back to pandas for bz2 files which
         polars can't read.
@@ -288,10 +288,9 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         Returns
         -------
-        pd.DataFrame | None
-            A pandas dataframe, or None if the catalog file was read using polars
-        pl.LazyFrame | None
-            A polars lazyframe, or None if the catalog file was read using pandas
+        FramesModel:
+            A pydantic model containing at least one of a pandas/polars dataframe
+            and a polars lazyframe
         """
         if _mapper.fs.exists(cat.catalog_file):
             csv_path = cat.catalog_file
@@ -316,62 +315,35 @@ class ESMCatalogModel(pydantic.BaseModel):
                     for colname in converters.keys()
                 ]
             )
-            return None, lf
+            return FramesModel(lf=lf)
         else:
             df = pd.read_csv(
                 cat.catalog_file,
                 storage_options=storage_options,
                 **read_csv_kwargs,
             )
-            return df, None
+            return FramesModel(df=df)
 
     @property
     def lf(self) -> pl.LazyFrame:
-        """Return the polars LazyFrame, if found. If not, instantiate it and return it"""
-        if self._lf is not None:
-            return self._lf
-
-        self._lf = self.pl_df.lazy()
-        return self._lf
+        """Return the polars lazyframe containing the catalog, creating it if necessary"""
+        return self._frames.lazy  # type: ignore[union-attr]
 
     @property
     def pl_df(self) -> pl.DataFrame:
-        """Return the polars DataFrame, if found. If not, instantiate it and return it"""
-        if self._pl_df is not None:
-            return self._pl_df
-
-        if self._lf is not None:
-            self._pl_df = self._lf.collect()
-        elif self._df is not None:
-            self._pl_df = pl.from_pandas(self._df)
-            self._lf = self._pl_df.lazy()
-
-        if self._pl_df is None:
-            raise AssertionError(
-                'Could not instantiate a polars DataFrame - logic bug in lazy evaluation'
-            )
-
-        return self._pl_df
+        """Return the polars dataframe containing the catalog, creating it if necessary"""
+        return self._frames.polars  # type: ignore[union-attr]
 
     @property
     def df(self) -> pd.DataFrame:
-        """Return the dataframe, performing pandas <=> polars conversion if necessary."""
-        if self._df is None:
-            self._pl_df = self.lf.collect()
-            self._df = self._pl_df.to_pandas(use_pyarrow_extension_array=True)
-        return self._df
+        """Return the pandas dataframe containing the catalog, creating it if necessary"""
+        return self._frames.pandas  # type: ignore[union-attr]
 
     @property
     def columns_with_iterables(self) -> set[str]:
         """Return a set of columns that have iterables, never converting a polars
         DataFrame to a pandas DataFrame."""
-        if (trunc_df := self.lf.head(1).collect()).is_empty():
-            return set()
-        if self._df is not None and self.df.empty:
-            return set()
-
-        colnames, dtypes = trunc_df.columns, trunc_df.dtypes
-        return {colname for colname, dtype in zip(colnames, dtypes) if dtype == pl.List}
+        return self._frames.columns_with_iterables  # type: ignore[union-attr]
 
     @property
     def has_multiple_variable_assets(self) -> bool:
@@ -449,19 +421,12 @@ class ESMCatalogModel(pydantic.BaseModel):
     def nunique(self) -> pd.Series:
         """Return a series of the number of unique values for each column in the catalog."""
 
-        return pd.Series(
-            {
-                colname: self.pl_df.get_column(colname).explode().n_unique()
-                if self.pl_df.schema[colname] == pl.List
-                else self.pl_df.get_column(colname).n_unique()
-                for colname in self.pl_df.columns
-            }
-        )
+        return self._frames.nunique()  # type: ignore[union-attr]
 
     def search(
         self,
         *,
-        query: typing.Union['QueryModel', dict[str, typing.Any]],
+        query: QueryModel | dict[str, typing.Any],
         require_all_on: str | list[str] | None = None,
     ) -> pd.DataFrame:
         """
@@ -539,3 +504,93 @@ class QueryModel(pydantic.BaseModel):
 
         model.query = _query
         return model
+
+
+class FramesModel(pydantic.BaseModel):
+    """A Pydantic model to represent our collection of dataframes - pandas, polars,
+    and lazyframes.
+
+    N.B - how much overhead does this introduce? We are using polars for speed,
+    so if pydantic becomes a bottleneck, we may need to rethink this. Potentially
+    just a regular dataclass? At the very least, we can keep our tests in attached
+    to this class, and then migrate them out if pydantic is too slow.
+    """
+
+    df: pd.DataFrame | None = None
+    pl_df: pl.DataFrame | None = None
+    lf: pl.LazyFrame | None = None
+
+    model_config = ConfigDict(validate_assignment=True, arbitrary_types_allowed=True)
+
+    @pydantic.model_validator(mode='after')
+    def ensure_some(self) -> Self:
+        """
+        Make sure that at least one of the dataframes is set.
+        """
+        if self.df is None and self.pl_df is None and self.lf is None:
+            raise AssertionError('At least one of df, pl_df, or lf must be set')
+        return self
+
+    @property
+    def pandas(self) -> pd.DataFrame:
+        """Return the pandas DataFrame, if found. If not, instantiate it and return it"""
+        if self.df is not None:
+            return self.df
+
+        if self.pl_df is not None:
+            self.df = self.pl_df.to_pandas(use_pyarrow_extension_array=True)
+            return self.df
+
+        self.pl_df = self.lf.collect()  # type: ignore[union-attr]
+        self.df = self.pl_df.to_pandas(use_pyarrow_extension_array=True)
+        return self.df
+
+    @property
+    def polars(self) -> pl.DataFrame:
+        """Return the polars DataFrame, if found. If not, instantiate it and return it"""
+        if self.pl_df is not None:
+            return self.pl_df
+
+        if self.lf is not None:
+            self.pl_df = self.lf.collect()
+            return self.pl_df
+
+        self.pl_df = pl.from_pandas(self.df)
+        self.lf = self.pl_df.lazy()
+
+        return self.pl_df
+
+    @property
+    def lazy(self) -> pl.LazyFrame:
+        """Return the polars LazyFrame, if found. If not, instantiate it and return it"""
+        if self.lf is not None:
+            return self.lf
+
+        # Otherwise, it must be none - so lets create the lazyframe now. We use the
+        # self.polars property, so we can cascade to creating it from the pandas dataframe
+        # if necessary.
+        self.lf = self.polars.lazy()
+        return self.lf
+
+    @property
+    def columns_with_iterables(self) -> set[str]:
+        """Return a set of columns that have iterables, never converting a polars
+        DataFrame to a pandas DataFrame."""
+        if (trunc_df := self.lazy.head(1).collect()).is_empty():
+            return set()
+        if self.df is not None and self.df.empty:
+            return set()
+
+        colnames, dtypes = trunc_df.columns, trunc_df.dtypes
+        return {colname for colname, dtype in zip(colnames, dtypes) if dtype == pl.List}
+
+    def nunique(self) -> pd.Series:
+        """Return a series of the number of unique values for each column in the catalog."""
+        return pd.Series(
+            {
+                colname: self.polars.get_column(colname).explode().n_unique()
+                if self.polars.schema[colname] == pl.List
+                else self.polars.get_column(colname).n_unique()
+                for colname in self.polars.columns
+            }
+        )

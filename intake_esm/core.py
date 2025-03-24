@@ -12,7 +12,7 @@ try:
     if packaging.version.Version(xr.__version__) < packaging.version.Version('2024.10'):
         from datatree import DataTree
     else:
-        from xarray import DataTree  # type: ignore
+        from xarray import DataTree
     _DATATREE_AVAILABLE = True
 except ImportError:
     _DATATREE_AVAILABLE = False
@@ -115,15 +115,13 @@ class esm_datastore(Catalog):
             )
 
         self.derivedcat = registry or default_registry
-        self._entries: dict[str, typing.Any] = {}
-        self._requested_variables: list[str] = []
-        self.datasets: dict[str, xr.Dataset] | DataTree = {}
+        self._entries = {}
+        self._requested_variables = []
+        self.datasets = {}
         self._validate_derivedcat()
 
     def _validate_derivedcat(self) -> None:
-        if not len(self.derivedcat):
-            return None
-        if self.esmcat.aggregation_control is None:
+        if self.esmcat.aggregation_control is None and len(self.derivedcat):
             raise ValueError(
                 'Variable derivation requires `aggregation_control` to be specified in the catalog.'
             )
@@ -179,8 +177,8 @@ class esm_datastore(Catalog):
             groupby_attrs = self.esmcat.aggregation_control.groupby_attrs
         else:
             groupby_attrs = list(self.df.columns)
-        _data = {key: dict(zip(groupby_attrs, results[key])) for key in results}
-        data = pd.DataFrame.from_dict(_data, orient='index')
+        data = {key: dict(zip(groupby_attrs, results[key])) for key in results}
+        data = pd.DataFrame.from_dict(data, orient='index')
         data.index.name = 'key'
         return data
 
@@ -398,16 +396,13 @@ class esm_datastore(Catalog):
         """
 
         # step 1: Search in the base/main catalog
-        esmcat_results: ESMCatalogModel | pd.DataFrame = self.esmcat.search(
-            require_all_on=require_all_on, query=query
-        )
+        esmcat_results = self.esmcat.search(require_all_on=require_all_on, query=query)
 
         # step 2: Search for entries required to derive variables in the derived catalogs
         # This requires a bit of a hack i.e. the user has to specify the variable in the query
         derivedcat_results = []
         if self.esmcat.aggregation_control:
             variables = query.pop(self.esmcat.aggregation_control.variable_column_name, None)
-            var_colname = self.esmcat.aggregation_control.variable_column_name
         else:
             variables = None
         dependents = []
@@ -422,7 +417,11 @@ class esm_datastore(Catalog):
                     )
                     if not res.empty:
                         derivedcat_results.append(res)
-                        dependents.extend(value.dependent_variables(var_colname))
+                        dependents.extend(
+                            value.dependent_variables(
+                                self.esmcat.aggregation_control.variable_column_name
+                            )
+                        )
                         derived_cat_subset[key] = value
 
         if derivedcat_results:
@@ -430,7 +429,7 @@ class esm_datastore(Catalog):
             esmcat_results = pd.concat([esmcat_results, *derivedcat_results])
             esmcat_results = esmcat_results[~esmcat_results.astype(str).duplicated()]
 
-        cat = self.__class__({'esmcat': self.esmcat.model_dump(), 'df': esmcat_results})
+        cat = self.__class__({'esmcat': self.esmcat.dict(), 'df': esmcat_results})
         cat.esmcat.catalog_file = None  # Don't save the catalog file
         if self.esmcat.has_multiple_variable_assets:
             requested_variables = list(set(variables or []).union(dependents))
@@ -492,7 +491,6 @@ class esm_datastore(Catalog):
         ... )
         >>> cat_subset.serialize(name='cmip6_bcc_esm1', catalog_type='file')
         """
-        directory = str(directory) if directory is not None else None
 
         self.esmcat.save(
             name,
@@ -663,7 +661,7 @@ class esm_datastore(Catalog):
 
         if aggregate is not None and not aggregate and self.esmcat.aggregation_control:
             self = deepcopy(self)
-            self.esmcat.aggregation_control.groupby_attrs = []  # type: ignore[union-attr]
+            self.esmcat.aggregation_control.groupby_attrs = []
         if progressbar is not None:
             self.progressbar = progressbar
         if self.progressbar:
@@ -702,9 +700,9 @@ class esm_datastore(Catalog):
         progressbar: pydantic.StrictBool | None = None,
         aggregate: pydantic.StrictBool | None = None,
         skip_on_error: pydantic.StrictBool = False,
-        levels: list[str] | None = None,
+        levels: list[str] = None,
         **kwargs,
-    ) -> DataTree:
+    ):
         """
         Load catalog entries into a tree of xarray datasets.
 
@@ -773,13 +771,13 @@ class esm_datastore(Catalog):
         # Change the groupby controls if neccessary, used to assemble the tree
         if levels is not None:
             self = deepcopy(self)
-            self.esmcat.aggregation_control.groupby_attrs = levels  # type: ignore[union-attr]
+            self.esmcat.aggregation_control.groupby_attrs = levels
 
         # Set the separator to a / for datatree temporarily
         self.sep, old_sep = '/', self.sep
 
         # Use to dataset dict to access dictionary of datasets
-        datasets = self.to_dataset_dict(
+        self.datasets = self.to_dataset_dict(
             xarray_open_kwargs=xarray_open_kwargs,
             xarray_combine_by_coords_kwargs=xarray_combine_by_coords_kwargs,
             preprocess=preprocess,
@@ -794,8 +792,7 @@ class esm_datastore(Catalog):
         self.sep = old_sep
 
         # Convert the dictionary of datasets to a datatree
-        # telling mypy to disregard MutableMapping argument error
-        self.datasets = DataTree.from_dict(datasets)  # type: ignore[arg-type]
+        self.datasets = DataTree.from_dict(self.datasets)
         return self.datasets
 
     def to_dask(self, **kwargs) -> xr.Dataset:
@@ -825,10 +822,8 @@ class esm_datastore(Catalog):
         _, ds = res.popitem()
         return ds
 
-    def _create_derived_variables(self, datasets, skip_on_error) -> dict[str, xr.Dataset]:
-        if not len(self.derivedcat):
-            return datasets
-        if self.esmcat.aggregation_control is not None:
+    def _create_derived_variables(self, datasets, skip_on_error):
+        if len(self.derivedcat) > 0:
             datasets = self.derivedcat.update_datasets(
                 datasets=datasets,
                 variable_key_name=self.esmcat.aggregation_control.variable_column_name,
