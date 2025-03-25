@@ -1,3 +1,4 @@
+import threading
 import typing
 import warnings
 
@@ -10,6 +11,8 @@ from intake.source.base import DataSource, Schema
 
 from .cat import Aggregation, DataFormat
 from .utils import OPTIONS
+
+lock = threading.Lock()
 
 
 class ConcatenationWarning(UserWarning):
@@ -59,6 +62,9 @@ def _open_dataset(
     storage_options = storage_options or xarray_open_kwargs.get('backend_kwargs', {}).get(
         'storage_options', {}
     )
+    if xarray_open_kwargs.get('engine', None) == 'zarr' and storage_options:
+        # File lock below forces zarr to read synchronously - this is probably bad?
+        storage_options['asynchronous'] = False
 
     # Support kerchunk datasets, setting the file object (fo) and urlpath
     if data_format == 'reference':
@@ -73,16 +79,17 @@ def _open_dataset(
     else:
         url = fsspec.open(urlpath, **storage_options).open()
 
-    # Handle multi-file datasets with `xr.open_mfdataset()`
-    if (isinstance(url, str) and '*' in url) or isinstance(url, list):
-        # How should we handle concat_dim, and other xr.open_mfdataset kwargs?
-        xarray_open_kwargs.update(preprocess=preprocess)
-        xarray_open_kwargs.update(parallel=True)
-        ds = xr.open_mfdataset(url, **xarray_open_kwargs)
-    else:
-        ds = xr.open_dataset(url, **xarray_open_kwargs)
-        if preprocess is not None:
-            ds = preprocess(ds)
+    with lock:
+        # Handle multi-file datasets with `xr.open_mfdataset()`
+        if (isinstance(url, str) and '*' in url) or isinstance(url, list):
+            # How should we handle concat_dim, and other xr.open_mfdataset kwargs?
+            xarray_open_kwargs.update(preprocess=preprocess)
+            xarray_open_kwargs.update(parallel=True)
+            ds = xr.open_mfdataset(url, **xarray_open_kwargs)
+        else:
+            ds = xr.open_dataset(url, **xarray_open_kwargs)
+            if preprocess is not None:
+                ds = preprocess(ds)
 
     if varname and isinstance(varname, str):
         varname = [varname]
