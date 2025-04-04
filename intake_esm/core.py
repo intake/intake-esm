@@ -639,6 +639,9 @@ class esm_datastore(Catalog):
         xarray_combine_by_coords_kwargs = xarray_combine_by_coords_kwargs or {}
         cdf_kwargs, zarr_kwargs = kwargs.get('cdf_kwargs'), kwargs.get('zarr_kwargs')
 
+        # Change the default engine to h5netcdf if not specified - thread safe
+        xarray_open_kwargs['engine'] = xarray_open_kwargs.get('engine', 'h5netcdf')
+
         if cdf_kwargs or zarr_kwargs:
             warnings.warn(
                 'cdf_kwargs and zarr_kwargs are deprecated and will be removed in a future version. '
