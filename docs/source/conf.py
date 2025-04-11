@@ -33,8 +33,8 @@ nb_execution_timeout = 600
 nb_execution_raise_on_error = True
 
 extlinks = {
-    'issue': ('https://github.com/intake/intake-esm/issues/%s', 'GH#'),
-    'pr': ('https://github.com/intake/intake-esm/pull/%s', 'GH#'),
+    'issue': ('https://github.com/intake/intake-esm/issues/%s', 'GH#%s'),
+    'pr': ('https://github.com/intake/intake-esm/pull/%s', 'GH#%s'),
 }
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
