@@ -43,7 +43,15 @@ def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_option
     return xarray_open_kwargs
 
 
+def _eager_open_ds(*args, **kwargs):
+    return _open_dataset(*args, **kwargs)
+
+
 @dask.delayed
+def _delayed_open_ds(*args, **kwargs):
+    return _open_dataset(*args, **kwargs)
+
+
 def _open_dataset(
     urlpath,
     varname,
@@ -155,6 +163,7 @@ class ESMDataSource(DataSource):
         xarray_open_kwargs: dict[str, typing.Any] | None = None,
         xarray_combine_by_coords_kwargs: dict[str, typing.Any] | None = None,
         intake_kwargs: dict[str, typing.Any] | None = None,
+        threaded: bool,
     ):
         """An intake compatible Data Source for ESM data.
 
@@ -186,6 +195,10 @@ class ESMDataSource(DataSource):
             Keyword arguments to pass to :py:func:`~xarray.combine_by_coords` function.
         intake_kwargs: dict, optional
             Additional keyword arguments are passed through to the :py:class:`~intake.source.base.DataSource` base class.
+        threaded : bool , optional
+            If True, use `dask.compute` to load datasets in parallel. If False, load datasets sequentially.
+            If none, the environment variable `ITK_ESM_THREADING` will be used to determine the threading behavior,
+            defaulting to True if the variable is not set.
         """
 
         intake_kwargs = intake_kwargs or {}
@@ -206,6 +219,7 @@ class ESMDataSource(DataSource):
             **self.xarray_combine_by_coords_kwargs,
             **xarray_combine_by_coords_kwargs,
         }
+        self.threaded = threaded
         self._ds = None
 
         if data_format is not None:
@@ -232,9 +246,11 @@ class ESMDataSource(DataSource):
     def _open_dataset(self):
         """Open dataset with xarray"""
 
+        open_ds = _delayed_open_ds if self.threaded else _eager_open_ds
+
         try:
             datasets = [
-                _open_dataset(
+                open_ds(
                     record[self.path_column_name],
                     record[self.variable_column_name] if self.variable_column_name else None,
                     xarray_open_kwargs=_get_xarray_open_kwargs(
@@ -254,7 +270,8 @@ class ESMDataSource(DataSource):
                 for _, record in self.df.iterrows()
             ]
 
-            datasets = dask.compute(*datasets)
+            if self.threaded:
+                datasets = dask.compute(*datasets)
             if len(datasets) == 1 or not datasets[0].data_vars:
                 self._ds = datasets[0]
             else:
