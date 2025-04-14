@@ -43,6 +43,14 @@ def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_option
     return xarray_open_kwargs
 
 
+def _get_open_func(threaded: bool) -> typing.Callable:
+    """Return the appropriate open function based on threading"""
+    if threaded:
+        return _delayed_open_ds
+    else:
+        return _eager_open_ds
+
+
 def _eager_open_ds(*args, **kwargs):
     return _open_dataset(*args, **kwargs)
 
@@ -246,11 +254,11 @@ class ESMDataSource(DataSource):
     def _open_dataset(self):
         """Open dataset with xarray"""
 
-        open_ds = _delayed_open_ds if self.threaded else _eager_open_ds
+        open_ds_func = _get_open_func(self.threaded)
 
         try:
             datasets = [
-                open_ds(
+                open_ds_func(
                     record[self.path_column_name],
                     record[self.variable_column_name] if self.variable_column_name else None,
                     xarray_open_kwargs=_get_xarray_open_kwargs(

@@ -587,11 +587,11 @@ class esm_datastore(Catalog):
             If False, no aggregation will be done.
         skip_on_error : bool, optional
             If True, skip datasets that cannot be loaded and/or variables we are unable to derive.
-        threaded : bool , optional
-            If True, use `dask.compute` to load datasets in parallel. If False, load datasets sequentially.
-            If none, the environment variable `ITK_ESM_THREADING` will be used to determine the threading behavior,
-            defaulting to True if the variable is not set.
-
+        threaded : bool, optional
+            If True, use :py:func:`dask.compute` to load datasets in parallel. If False, load datasets sequentially.
+            If None, the environment variable `ITK_ESM_THREADING` will be used to determine the threading behavior,
+            defaulting to True if the variable is not set. If a value is provided, it will override the environment
+            variable determined default.
         Returns
         -------
         dsets : dict
@@ -649,8 +649,7 @@ class esm_datastore(Catalog):
                 'This is not yet supported when computing derived variables.'
             )
 
-        if threaded is None:
-            threaded = ast.literal_eval(os.getenv('ITK_ESM_THREADING', 'True'))
+        threaded = _get_threaded(threaded)
 
         xarray_open_kwargs = xarray_open_kwargs or {}
         xarray_combine_by_coords_kwargs = xarray_combine_by_coords_kwargs or {}
@@ -852,3 +851,18 @@ class esm_datastore(Catalog):
 
 def _load_source(key, source):
     return key, source.to_dask()
+
+
+def _get_threaded(threaded: bool | None) -> bool:
+    """
+    Read the threading option from the environment variable & passed value
+    """
+    if threaded is None:
+        try:
+            threaded = ast.literal_eval(os.getenv('ITK_ESM_THREADING', 'True'))
+        except ValueError as e:
+            raise ValueError(
+                'The environment variable ITK_ESM_THREADING must be a boolean, if set.'
+            ) from e
+
+    return threaded
