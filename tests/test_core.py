@@ -1,5 +1,6 @@
 import ast
 import os
+from unittest import mock
 
 import intake
 import packaging.version
@@ -587,3 +588,28 @@ def test_options():
             xarray_open_kwargs={'backend_kwargs': {'storage_options': {'anon': True}}},
         ).popitem()
         assert ds.attrs['myprefix:component'] == 'atm'
+
+
+@pytest.mark.parametrize(
+    'threaded, ITK_ESM_THREADING, expected',
+    [
+        (True, 'True', True),
+        (True, 'False', True),
+        (False, 'True', False),
+        (False, 'False', False),
+        (None, 'True', True),  # Keep previous default behavior
+        (None, 'False', False),
+        (None, 1, False),
+    ],
+)
+@mock.patch('os.getenv')
+def test__get_threaded(mock_get_env, threaded, ITK_ESM_THREADING, expected):
+    mock_get_env.return_value = ITK_ESM_THREADING
+    if isinstance(ITK_ESM_THREADING, int):
+        with pytest.raises(
+            ValueError,
+            match='The environment variable ITK_ESM_THREADING must be a boolean, if set.',
+        ):
+            intake_esm.core._get_threaded(threaded)
+    else:
+        assert intake_esm.core._get_threaded(threaded) == expected

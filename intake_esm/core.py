@@ -1,5 +1,6 @@
 import ast
 import concurrent.futures
+import os
 import typing
 import warnings
 from copy import deepcopy
@@ -88,6 +89,7 @@ class esm_datastore(Catalog):
         read_csv_kwargs: dict[str, typing.Any] | None = None,
         columns_with_iterables: list[str] | None = None,
         storage_options: dict[str, typing.Any] | None = None,
+        threaded: bool | None = None,
         **intake_kwargs: dict[str, typing.Any],
     ):
         """Intake Catalog representing an ESM Collection."""
@@ -105,6 +107,12 @@ class esm_datastore(Catalog):
         self.read_csv_kwargs = read_csv_kwargs
         self.progressbar = progressbar
         self.sep = sep
+
+        if threaded is None:
+            self.threaded = ast.literal_eval(os.getenv('ITK_ESM_THREADING', 'True'))
+        else:
+            self.threaded = threaded
+
         if isinstance(obj, ESMCatalogModel):
             self.esmcat = obj
         elif isinstance(obj, dict):
@@ -274,6 +282,7 @@ class esm_datastore(Catalog):
                     format_column_name=self.esmcat.assets.format_column_name,
                     aggregations=aggregations,
                     intake_kwargs={'metadata': {}},
+                    threaded=self.threaded,
                 )
                 self._entries[key] = entry
                 return self._entries[key]
@@ -550,6 +559,7 @@ class esm_datastore(Catalog):
         progressbar: pydantic.StrictBool | None = None,
         aggregate: pydantic.StrictBool | None = None,
         skip_on_error: pydantic.StrictBool = False,
+        threaded: bool | None = None,
         **kwargs,
     ) -> dict[str, xr.Dataset]:
         """
@@ -577,7 +587,11 @@ class esm_datastore(Catalog):
             If False, no aggregation will be done.
         skip_on_error : bool, optional
             If True, skip datasets that cannot be loaded and/or variables we are unable to derive.
-
+        threaded : bool, optional
+            If True, use :py:func:`dask.compute` to load datasets in parallel. If False, load datasets sequentially.
+            If None, the environment variable `ITK_ESM_THREADING` will be used to determine the threading behavior,
+            defaulting to True if the variable is not set. If a value is provided, it will override the environment
+            variable determined default.
         Returns
         -------
         dsets : dict
@@ -635,6 +649,8 @@ class esm_datastore(Catalog):
                 'This is not yet supported when computing derived variables.'
             )
 
+        threaded = _get_threaded(threaded)
+
         xarray_open_kwargs = xarray_open_kwargs or {}
         xarray_combine_by_coords_kwargs = xarray_combine_by_coords_kwargs or {}
         cdf_kwargs, zarr_kwargs = kwargs.get('cdf_kwargs'), kwargs.get('zarr_kwargs')
@@ -657,6 +673,7 @@ class esm_datastore(Catalog):
             preprocess=preprocess,
             requested_variables=self._requested_variables,
             storage_options=storage_options,
+            threaded=threaded,
         )
 
         if aggregate is not None and not aggregate and self.esmcat.aggregation_control:
@@ -834,3 +851,18 @@ class esm_datastore(Catalog):
 
 def _load_source(key, source):
     return key, source.to_dask()
+
+
+def _get_threaded(threaded: bool | None) -> bool:
+    """
+    Read the threading option from the environment variable & passed value
+    """
+    if threaded is None:
+        try:
+            threaded = ast.literal_eval(os.getenv('ITK_ESM_THREADING', 'True'))
+        except ValueError as e:
+            raise ValueError(
+                'The environment variable ITK_ESM_THREADING must be a boolean, if set.'
+            ) from e
+
+    return threaded
