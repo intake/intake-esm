@@ -597,7 +597,7 @@ def test_options():
         (True, 'False', True),
         (False, 'True', False),
         (False, 'False', False),
-        (None, 'True', True),
+        (None, 'True', True),  # Keep previous default behavior
         (None, 'False', False),
         (None, 1, False),
     ],
