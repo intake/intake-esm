@@ -8,8 +8,6 @@ build:
   os: "ubuntu-24.04"
   tools:
     python: "mambaforge-latest"
-  commands:
-    - conda list
 
 # Build documentation in the doc/ directory with Sphinx
 sphinx:
