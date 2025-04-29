@@ -1,8 +1,10 @@
 import pandas as pd
+import polars as pl
 import pydantic
 import pytest
+from polars import testing as pl_testing
 
-from intake_esm.cat import Assets, ESMCatalogModel, QueryModel
+from intake_esm.cat import Assets, ESMCatalogModel, FramesModel, QueryModel
 
 from .utils import (
     catalog_dict_records,
@@ -14,6 +16,8 @@ from .utils import (
     sample_df,
     sample_esmcat_data,
     sample_esmcat_data_without_agg,
+    sample_lf,
+    sample_pl_df,
     zarr_cat_aws_cesm,
     zarr_cat_pangeo_cmip6,
 )
@@ -146,3 +150,82 @@ def test_query_model(query, columns, require_all_on):
 def test_query_model_validation_error(query, columns, require_all_on):
     with pytest.raises(pydantic.ValidationError):
         QueryModel(query=query, columns=columns, require_all_on=require_all_on)
+
+
+@pytest.mark.parametrize(
+    'pd_df, pl_df, lf, err',
+    [
+        (sample_df, sample_pl_df, sample_lf, False),
+        (sample_df, None, None, False),
+        (None, None, None, True),
+        (None, sample_pl_df, None, False),
+        (None, None, sample_lf, False),
+    ],
+)
+def test_FramesModel_init(pd_df, pl_df, lf, err):
+    """
+    Make sure FramesModel works with different input combos
+    """
+    if not err:
+        FramesModel(df=pd_df, pl_df=pl_df, lf=lf)
+        assert True
+    else:
+        with pytest.raises(pydantic.ValidationError):
+            FramesModel(df=pd_df, pl_df=pl_df, lf=lf)
+
+
+@pytest.mark.parametrize(
+    'pd_df, pl_df, lf',
+    [
+        (sample_df, sample_pl_df, sample_lf),
+        (sample_df, None, None),
+        (None, sample_pl_df, None),
+        (None, None, sample_lf),
+    ],
+)
+@pytest.mark.parametrize('attr', ['polars', 'lazy', 'columns_with_iterables'])
+def test_FramesModel_no_accidental_pd(pd_df, pl_df, lf, attr):
+    """
+    Make sure that if we instantiate with a polars dataframe or a lazy frame, we
+    don't accidentally trigger the creation of a pandas dataframe.
+    """
+    f = FramesModel(df=pd_df, pl_df=pl_df, lf=lf)
+
+    if pd_df is not None:
+        assert f.df is not None
+    else:
+        assert f.df is None
+
+    # Now we just want to run through the properties to ensure they don't error
+    # and that they don't trigger the creation of a pandas dataframe
+    if pd_df is None:
+        got_attr = getattr(f, attr)
+        assert got_attr is not None
+        assert f.df is None
+    else:
+        got_attr = getattr(f, attr)
+        assert got_attr is not None
+        assert f.df is not None
+
+
+def test_FramesModel_set_manual_df():
+    """
+    Test that if we set esmcat._df, we don't cause an error. We also test that the
+    creation of `cat._frames.pl_df` is deferred until we ask for it with the
+    `cat.pl_df` property.
+    """
+    cat = ESMCatalogModel.from_dict({'esmcat': sample_esmcat_data, 'df': sample_df})
+
+    assert cat._frames.pl_df is None
+
+    new_df = pd.DataFrame({'numeric_col': [1, 2, 3], 'str_col': ['a', 'b', 'c']})
+    cat._df = new_df
+
+    assert getattr(cat, '_frames') is not None
+
+    pd.testing.assert_frame_equal(cat.df, new_df)
+
+    expected_pl_df = pl.DataFrame({'numeric_col': [1, 2, 3], 'str_col': ['a', 'b', 'c']})
+
+    assert cat._frames.pl_df is None
+    pl_testing.assert_frame_equal(cat.pl_df, expected_pl_df)

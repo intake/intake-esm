@@ -5,9 +5,11 @@ from unittest import mock
 import intake
 import packaging.version
 import pandas as pd
+import polars as pl
 import pydantic
 import pytest
 import xarray as xr
+from polars.testing import assert_frame_equal as assert_frame_equal_pl
 
 if packaging.version.Version(xr.__version__) < packaging.version.Version('2024.10'):
     from datatree import DataTree
@@ -109,7 +111,7 @@ def test_read_csv_conflict():
     # Work when inputs are consistent
     intake.open_esm_datastore(
         multi_variable_cat,
-        read_csv_kwargs={'converters': {'converters': {'variable': ast.literal_eval}}},
+        read_csv_kwargs={'converters': {'variable': ast.literal_eval}},
         columns_with_iterables=['variable'],
     )
 
@@ -262,8 +264,24 @@ def test_catalog_serialize(catalog_type, to_csv_kwargs, json_dump_kwargs, direct
     if directory is None:
         directory = os.getcwd()
     cat = intake.open_esm_datastore(f'{directory}/{name}.json')
-    pd.testing.assert_frame_equal(
-        cat_subset.df.reset_index(drop=True), cat.df.reset_index(drop=True)
+    subset_df = cat_subset.esmcat.pl_df.with_columns(
+        [
+            pl.col(colname).cast(pl.Null)
+            for colname in cat_subset.esmcat._frames.pl_df.columns
+            if cat_subset.esmcat._frames.pl_df.get_column(colname).is_null().all()
+        ]
+    )
+
+    df = cat.esmcat.pl_df.with_columns(
+        [
+            pl.col(colname).cast(pl.Null)
+            for colname in cat.esmcat._frames.pl_df.columns
+            if cat.esmcat._frames.pl_df.get_column(colname).is_null().all()
+        ]
+    )
+    assert_frame_equal_pl(
+        subset_df,
+        df,
     )
     assert cat.esmcat.id == name
 

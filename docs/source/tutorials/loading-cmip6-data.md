@@ -11,7 +11,7 @@ kernelspec:
 
 This notebook demonstrates how to access Google Cloud CMIP6 data using intake-esm.
 
-Intake-esm is a data cataloging utility built on top of intake, pandas, and
+Intake-esm is a data cataloging utility built on top of intake, pandas, polars, and
 xarray. Intake-esm aims to facilitate:
 
 - the discovery of earth’s climate and weather datasets.

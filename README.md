@@ -31,7 +31,7 @@ providing necessary functionality for searching, discovering, data access/loadin
 
 ## Overview
 
-`intake-esm` is a data cataloging utility built on top of [intake](https://github.com/intake/intake), [pandas](https://pandas.pydata.org/), and [xarray](https://xarray.pydata.org/en/stable/), and it's pretty awesome!
+`intake-esm` is a data cataloging utility built on top of [intake](https://github.com/intake/intake), [pandas](https://pandas.pydata.org/), [polars](https://pola.rs/) and [xarray](https://xarray.pydata.org/en/stable/), and it's pretty awesome!
 
 - Opening an ESM catalog definition file: An Earth System Model (ESM) catalog file is a JSON file that conforms
   to the [ESM Collection Specification](./docs/source/reference/esm-catalog-spec.md). When provided a link/path to an esm catalog file, `intake-esm` establishes
