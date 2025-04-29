@@ -21,7 +21,7 @@ dependencies:
   - pooch
   - pre-commit
   - pydantic >=2.0
-  - pydap
+  - pydap !=3.5.5
   - pytest
   - pytest-cov
   - pytest-sugar
