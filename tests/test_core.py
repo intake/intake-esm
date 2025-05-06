@@ -631,3 +631,25 @@ def test__get_threaded(mock_get_env, threaded, ITK_ESM_THREADING, expected):
             intake_esm.core._get_threaded(threaded)
     else:
         assert intake_esm.core._get_threaded(threaded) == expected
+
+
+@mock.patch('intake_esm.core._ESMVALCORE_AVAILABLE', False)
+def test_to_iris_unavailable():
+    cat = intake.open_esm_datastore(zarr_cat_pangeo_cmip6)
+    cat_sub = cat.search(
+        **dict(
+            variable_id=['pr'],
+            experiment_id='ssp370',
+            activity_id='AerChemMIP',
+            source_id='BCC-ESM1',
+            table_id='Amon',
+            grid_label='gn',
+        )
+    )
+    with pytest.raises(ImportError, match=r'`to_iris\(\)` requires the esmvalcore package'):
+        _ = cat_sub.to_iris(
+            xarray_open_kwargs={
+                'consolidated': True,
+                'backend_kwargs': {'storage_options': {'token': 'anon'}},
+            }
+        )

@@ -5,6 +5,13 @@ import typing
 import warnings
 from copy import deepcopy
 
+import esmvalcore.dataset
+
+if typing.TYPE_CHECKING:
+    import esmvalcore
+    from esmvalcore.dataset import Dataset
+    from esmvalcore.typing import FacetValue
+
 import dask
 import packaging.version
 import xarray as xr
@@ -22,6 +29,7 @@ import pydantic
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
+from ._imports import _ESMVALCORE_AVAILABLE
 from .cat import ESMCatalogModel
 from .derived import DerivedVariableRegistry, default_registry
 from .source import ESMDataSource
@@ -838,6 +846,53 @@ class esm_datastore(Catalog):
             )
         _, ds = res.popitem()
         return ds
+
+    def to_iris(
+        self,
+        facets: dict[FacetValue, str],
+        cmorizer: typing.Any | None = None,
+        **kwargs,
+    ) -> esmvalcore.dataset.Dataset:
+        """
+        Convert result to an ESMValCore Dataset.
+
+        This is only possible if the search returned exactly one result.
+
+        Parameters
+        ----------
+        facets: dict[FacetValue, str]
+            Mapping of ESMValCore Dataset facets to their corresponding esm_datastore
+            attributes. For example, the mapping for a dataset containing keys
+            'activity_id', 'source_id', 'member_id', 'experiment_id' would look like:
+            ```python
+             facets =  {
+                       "activity": "activity_id",
+                       "dataset": "source_id",
+                       "ensemble": "member_id",
+                       "exp": "experiment_id",
+                       "grid": "grid_label",
+                        },
+            ```
+        cmorize: Any, optional
+            CMORizer to use in order to CMORize the datastore search results for
+            the ESMValCore Dataset. Presumably this will be a callable? If not set,
+            no CMORization will be done.
+        kwargs: dict
+            TBC.
+        """
+        if not _ESMVALCORE_AVAILABLE:
+            raise ImportError(
+                '`to_iris()` requires the esmvalcore package to be installed. '
+                'To proceed please install esmvalcore using: '
+                ' `python -m pip install esmvalcore` or `conda install -c conda-forge esmvalcore`.'
+            )
+
+        if len(self) != 1:  # quick check to fail more quickly if there are many results
+            raise ValueError(
+                f'Expected exactly one dataset. Received {len(self)} datasets. Please refine your search.'
+            )
+
+        ds = Dataset(**facets)
 
     def _create_derived_variables(self, datasets, skip_on_error):
         if len(self.derivedcat) > 0:
