@@ -13,6 +13,7 @@ def test__all__(cleanup_init):
         'set_options',
         'show_versions',
         'tutorial',
+        '__version__',
         '_ESMVALCORE_AVAILABLE',
     ]
 

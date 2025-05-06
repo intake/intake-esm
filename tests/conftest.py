@@ -21,8 +21,8 @@ def sample_bad_input():
 def cleanup_init():
     """
     This resets the _optional_imports dictionary in intake_esm to it's default
-    state, so we can test lazy loading and whatnot
+    state before & after tests that use it  so we can test lazy loading and whatnot
     """
+    intake_esm._imports._optional_imports = {'esmvalcore': None}
     yield
-
-    intake_esm._optional_imports = {'esmvalcore': None}
+    intake_esm._imports._optional_imports = {'esmvalcore': None}
