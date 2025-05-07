@@ -5,11 +5,9 @@ import typing
 import warnings
 from copy import deepcopy
 
-import esmvalcore.dataset
-
 if typing.TYPE_CHECKING:
     import esmvalcore
-    from esmvalcore.dataset import Dataset
+    import esmvalcore.dataset
     from esmvalcore.typing import FacetValue
 
 import dask
@@ -849,10 +847,10 @@ class esm_datastore(Catalog):
 
     def to_iris(
         self,
-        facets: dict[FacetValue, str],
+        facet_map: dict['FacetValue', str],
         cmorizer: typing.Any | None = None,
         **kwargs,
-    ) -> esmvalcore.dataset.Dataset:
+    ) -> 'esmvalcore.dataset.Dataset':
         """
         Convert result to an ESMValCore Dataset.
 
@@ -860,7 +858,7 @@ class esm_datastore(Catalog):
 
         Parameters
         ----------
-        facets: dict[FacetValue, str]
+        facet_map: dict[FacetValue, str]
             Mapping of ESMValCore Dataset facets to their corresponding esm_datastore
             attributes. For example, the mapping for a dataset containing keys
             'activity_id', 'source_id', 'member_id', 'experiment_id' would look like:
@@ -891,8 +889,15 @@ class esm_datastore(Catalog):
             raise ValueError(
                 f'Expected exactly one dataset. Received {len(self)} datasets. Please refine your search.'
             )
+        else:
+            from esmvalcore.dataset import Dataset
 
-        ds = Dataset(**facets)
+        ds = Dataset(**facet_map)
+
+        ds.files = self.unique().path
+        ds.augment_facets()
+
+        return ds
 
     def _create_derived_variables(self, datasets, skip_on_error):
         if len(self.derivedcat) > 0:
