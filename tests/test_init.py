@@ -82,7 +82,8 @@ def test_getattr_random_attr_fail(cleanup_init):
         _ = intake_esm.random_attr
 
 
-def test_getattr_optional_import(cleanup_init):
+@mock.patch('importlib.util.find_spec', return_value=False)
+def test_getattr_optional_import(mock_fnd_spec, cleanup_init):
     import intake_esm
 
     assert intake_esm._optional_imports == {'esmvalcore': None}
