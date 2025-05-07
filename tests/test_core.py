@@ -648,8 +648,9 @@ def test_to_iris_unavailable():
     )
     with pytest.raises(ImportError, match=r'`to_iris\(\)` requires the esmvalcore package'):
         _ = cat_sub.to_iris(
+            facet_map={},
             xarray_open_kwargs={
                 'consolidated': True,
                 'backend_kwargs': {'storage_options': {'token': 'anon'}},
-            }
+            },
         )
