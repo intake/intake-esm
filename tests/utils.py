@@ -16,6 +16,9 @@ zarr_cat_aws_cesm = (
     'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json'
 )
 mixed_cat_sample_cmip6 = os.path.join(here, 'sample-catalogs/cmip6-bcc-mixed-formats.json')
+access_columns_with_iterables_cat = os.path.join(
+    here, 'sample-catalogs/access-columns-with-iterables.json'
+)
 
 
 sample_df = pd.DataFrame(
