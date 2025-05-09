@@ -45,7 +45,10 @@ def search(
         column_has_iterables = column in columns_with_iterables
         for value in values:
             if column_has_iterables:
-                mask = df[column].str.contains(value, regex=False)
+                try:
+                    mask = df[column].str.contains(value, regex=False)
+                except AttributeError:
+                    mask = df[column].apply(tuple).str.contains(value, regex=False)
             elif column_is_stringtype and is_pattern(value):
                 mask = df[column].str.contains(value, regex=True, case=True, flags=0)
             elif pd.isna(value):

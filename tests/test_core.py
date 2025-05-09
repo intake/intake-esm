@@ -19,6 +19,7 @@ else:
 import intake_esm
 
 from .utils import (
+    access_columns_with_iterables_cat,
     catalog_dict_records,
     cdf_cat_sample_cesmle,
     cdf_cat_sample_cmip5,
@@ -197,6 +198,18 @@ def test_catalog_contains():
 )
 def test_catalog_search(path, query, expected_size):
     cat = intake.open_esm_datastore(path)
+    new_cat = cat.search(**query)
+    assert len(new_cat) == expected_size
+
+
+@pytest.mark.parametrize(
+    'path, columns_with_iterables, query, expected_size',
+    [
+        (access_columns_with_iterables_cat, ['variable'], {'variable': ['aice_m']}, 1),
+    ],
+)
+def test_catalog_search_columns_with_iterables(path, columns_with_iterables, query, expected_size):
+    cat = intake.open_esm_datastore(path, columns_with_iterables=columns_with_iterables)
     new_cat = cat.search(**query)
     assert len(new_cat) == expected_size
 
@@ -648,7 +661,14 @@ def test_to_iris_unavailable():
     )
     with pytest.raises(ImportError, match=r'`to_iris\(\)` requires the esmvalcore package'):
         _ = cat_sub.to_iris(
-            facet_map={},
+            search=dict(
+                variable_id=['pr'],
+                experiment_id='ssp370',
+                activity_id='AerChemMIP',
+                source_id='BCC-ESM1',
+                table_id='Amon',
+                grid_label='gn',
+            ),
             xarray_open_kwargs={
                 'consolidated': True,
                 'backend_kwargs': {'storage_options': {'token': 'anon'}},

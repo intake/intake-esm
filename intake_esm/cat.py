@@ -109,6 +109,7 @@ class ESMCatalogModel(pydantic.BaseModel):
     id: str = ''
     catalog_dict: list[dict] | None = None
     catalog_file: pydantic.StrictStr | None = None
+    fhandle: pydantic.StrictStr | None = None
     description: pydantic.StrictStr | None = None
     title: pydantic.StrictStr | None = None
     last_updated: datetime.datetime | datetime.date | None = None
@@ -262,6 +263,7 @@ class ESMCatalogModel(pydantic.BaseModel):
                     df=pl.DataFrame(cat.catalog_dict).to_pandas(),
                 )
 
+            cat.fhandle = json_file
             cat._cast_agg_columns_with_iterables()
             return cat
 

@@ -8,7 +8,6 @@ from copy import deepcopy
 if typing.TYPE_CHECKING:
     import esmvalcore
     import esmvalcore.dataset
-    from esmvalcore.typing import FacetValue
 
 import dask
 import packaging.version
@@ -847,7 +846,7 @@ class esm_datastore(Catalog):
 
     def to_iris(
         self,
-        facet_map: dict['FacetValue', str],
+        search: dict[str, str],
         cmorizer: typing.Any | None = None,
         **kwargs,
     ) -> 'esmvalcore.dataset.Dataset':
@@ -889,10 +888,22 @@ class esm_datastore(Catalog):
             raise ValueError(
                 f'Expected exactly one dataset. Received {len(self)} datasets. Please refine your search.'
             )
-        else:
-            from esmvalcore.dataset import Dataset
 
-        ds = Dataset(**facet_map)
+        # Use esmvalcore to load the intake configuration & work out how we
+        # need to map our facets
+
+        from esmvalcore.config._intake import load_intake_config
+        from esmvalcore.dataset import Dataset
+
+        facet_map, project = _read_facets(load_intake_config(), self.esmcat.fhandle)
+
+        facets = {k: search.get(v) for k, v in facet_map.items()}
+        facets = {k: v for k, v in facets.items() if v is not None}
+
+        facets.pop('version', None)  # If there's a version, chuck it
+        facets['project'] = project
+
+        ds = Dataset(**facets)
 
         ds.files = self.unique().path
         ds.augment_facets()
@@ -926,3 +937,47 @@ def _get_threaded(threaded: bool | None) -> bool:
             ) from e
 
     return threaded
+
+
+def _read_facets(
+    cfg: dict,
+    fhandle: str | None,
+    project: str | None = None,
+) -> tuple[dict[str, typing.Any], str]:
+    """
+    Extract facet mapping from ESMValCore configuration for a given catalog file handle.
+
+    Recursively traverses the ESMValCore configuration structure to find the
+    facet mapping that corresponds to the specified file handle.
+
+    Parameters
+    ----------
+    cfg : dict
+        The ESMValCore intake configuration dictionary.
+    fhandle : str
+        The file handle/path of the intake-esm catalog to match.
+    project : str, optional
+        The current project name in the configuration hierarchy.
+
+    Returns
+    -------
+    tuple
+        A tuple containing:
+        - dict: Facet mapping between ESMValCore facets and catalog columns
+        - str: The project name associated with the catalog file
+    """
+    if fhandle is None:
+        raise ValueError('Unable to ascertain facets without valid file handle.')
+
+    for _project, val in cfg.items():
+        if not (isinstance(val, list)):
+            return _read_facets(val, fhandle, project or _project)
+        for facet_info in val:
+            file, facets = facet_info.get('file'), facet_info.get('facets')
+            if file == fhandle:
+                return facets, project  # type: ignore[return-value]
+    else:
+        raise ValueError(
+            f'No facets found for {fhandle} in the config file. '
+            'Please check the config file and ensure it is valid.'
+        )
