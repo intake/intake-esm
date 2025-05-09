@@ -5,6 +5,10 @@ import typing
 import warnings
 from copy import deepcopy
 
+if typing.TYPE_CHECKING:
+    import esmvalcore
+    import esmvalcore.dataset
+
 import dask
 import packaging.version
 import xarray as xr
@@ -22,6 +26,7 @@ import pydantic
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
+from ._imports import _ESMVALCORE_AVAILABLE
 from .cat import ESMCatalogModel
 from .derived import DerivedVariableRegistry, default_registry
 from .source import ESMDataSource
@@ -839,6 +844,72 @@ class esm_datastore(Catalog):
         _, ds = res.popitem()
         return ds
 
+    def to_iris(
+        self,
+        search: dict[str, str],
+        cmorizer: typing.Any | None = None,
+        **kwargs,
+    ) -> 'esmvalcore.dataset.Dataset':
+        """
+        Convert result to an ESMValCore Dataset.
+
+        This is only possible if the search returned exactly one result.
+
+        Parameters
+        ----------
+        facet_map: dict[FacetValue, str]
+            Mapping of ESMValCore Dataset facets to their corresponding esm_datastore
+            attributes. For example, the mapping for a dataset containing keys
+            'activity_id', 'source_id', 'member_id', 'experiment_id' would look like:
+            ```python
+             facets =  {
+                       "activity": "activity_id",
+                       "dataset": "source_id",
+                       "ensemble": "member_id",
+                       "exp": "experiment_id",
+                       "grid": "grid_label",
+                        },
+            ```
+        cmorize: Any, optional
+            CMORizer to use in order to CMORize the datastore search results for
+            the ESMValCore Dataset. Presumably this will be a callable? If not set,
+            no CMORization will be done.
+        kwargs: dict
+            TBC.
+        """
+        if not _ESMVALCORE_AVAILABLE:
+            raise ImportError(
+                '`to_iris()` requires the esmvalcore package to be installed. '
+                'To proceed please install esmvalcore using: '
+                ' `python -m pip install esmvalcore` or `conda install -c conda-forge esmvalcore`.'
+            )
+
+        if len(self) != 1:  # quick check to fail more quickly if there are many results
+            raise ValueError(
+                f'Expected exactly one dataset. Received {len(self)} datasets. Please refine your search.'
+            )
+
+        # Use esmvalcore to load the intake configuration & work out how we
+        # need to map our facets
+
+        from esmvalcore.config._intake import load_intake_config
+        from esmvalcore.dataset import Dataset
+
+        facet_map, project = _read_facets(load_intake_config(), self.esmcat.fhandle)
+
+        facets = {k: search.get(v) for k, v in facet_map.items()}
+        facets = {k: v for k, v in facets.items() if v is not None}
+
+        facets.pop('version', None)  # If there's a version, chuck it
+        facets['project'] = project
+
+        ds = Dataset(**facets)
+
+        ds.files = self.unique().path
+        ds.augment_facets()
+
+        return ds
+
     def _create_derived_variables(self, datasets, skip_on_error):
         if len(self.derivedcat) > 0:
             datasets = self.derivedcat.update_datasets(
@@ -866,3 +937,47 @@ def _get_threaded(threaded: bool | None) -> bool:
             ) from e
 
     return threaded
+
+
+def _read_facets(
+    cfg: dict,
+    fhandle: str | None,
+    project: str | None = None,
+) -> tuple[dict[str, typing.Any], str]:
+    """
+    Extract facet mapping from ESMValCore configuration for a given catalog file handle.
+
+    Recursively traverses the ESMValCore configuration structure to find the
+    facet mapping that corresponds to the specified file handle.
+
+    Parameters
+    ----------
+    cfg : dict
+        The ESMValCore intake configuration dictionary.
+    fhandle : str
+        The file handle/path of the intake-esm catalog to match.
+    project : str, optional
+        The current project name in the configuration hierarchy.
+
+    Returns
+    -------
+    tuple
+        A tuple containing:
+        - dict: Facet mapping between ESMValCore facets and catalog columns
+        - str: The project name associated with the catalog file
+    """
+    if fhandle is None:
+        raise ValueError('Unable to ascertain facets without valid file handle.')
+
+    for _project, val in cfg.items():
+        if not (isinstance(val, list)):
+            return _read_facets(val, fhandle, project or _project)
+        for facet_info in val:
+            file, facets = facet_info.get('file'), facet_info.get('facets')
+            if file == fhandle:
+                return facets, project  # type: ignore[return-value]
+    else:
+        raise ValueError(
+            f'No facets found for {fhandle} in the config file. '
+            'Please check the config file and ensure it is valid.'
+        )
