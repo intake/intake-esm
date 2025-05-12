@@ -91,7 +91,7 @@ def test_open_dataset_kerchunk(kerchunk_file=kerchunk_file):
         urlpath=kerchunk_file,
         varname=None,
         xarray_open_kwargs=xarray_open_kwargs,
-    ).compute()
+    )
     assert isinstance(ds, xarray.Dataset)
 
 

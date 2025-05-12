@@ -259,18 +259,6 @@ def test_catalog_search_columns_with_iterables(path, columns_with_iterables, que
     assert len(new_cat) == expected_size
 
 
-@pytest.mark.parametrize(
-    'path, columns_with_iterables, query, expected_size',
-    [
-        (access_columns_with_iterables_cat, ['variable'], {'variable': ['aice_m']}, 1),
-    ],
-)
-def test_catalog_search_columns_with_iterables(path, columns_with_iterables, query, expected_size):
-    cat = intake.open_esm_datastore(path, columns_with_iterables=columns_with_iterables)
-    new_cat = cat.search(**query)
-    assert len(new_cat) == expected_size
-
-
 def test_catalog_with_registry_search():
     cat = intake.open_esm_datastore(zarr_cat_aws_cesm, registry=registry)
     new_cat = cat.search(variable='FOO')
