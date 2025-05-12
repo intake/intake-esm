@@ -12,7 +12,7 @@ kernelspec:
 ```{code-cell} ipython3
 import intake
 
-url = "https://raw.githubusercontent.com/intake/intake-esm/main/tutorial-catalogs/GOOGLE-CMIP6.json"
+url = "https://storage.googleapis.com/cmip6/pangeo-cmip6.json"
 cat = intake.open_esm_datastore(url)
 cat
 ```
@@ -31,7 +31,7 @@ multiple experiment_ids from the Omon table_id, all from 3 different source_ids:
 ```{code-cell} ipython3
 # Define our query
 query = dict(
-    variable_id=["tos", "o2"],
+    variable_id=["thetao", "o2", "tos"],
     experiment_id=["historical", "ssp585"],
     table_id=["Omon"],
     source_id=["ACCESS-ESM1-5", "AWI-CM-1-1-MR", "FGOALS-f3-L"],
@@ -54,10 +54,10 @@ cat_subset.df.groupby("source_id")[["experiment_id", "variable_id", "table_id"]]
 ```
 
 As you can see, the search results above include source_ids for which we only
-have one of the two variables, and one or two of the two
+have one or two of the three variables, and one of the two experiment ids.
 
-We can tell intake-esm to discard any source_id that doesn’t have both variables
-`["tos", "o2"]` and both experiments
+We can tell intake-esm to discard any source_id that doesn’t have all three variables
+`["thetao", "o2", "tos"]` and both experiments
 `["historical", "ssp585"]` by passing `require_all_on=["source_id"]`
 to the search method:
 
