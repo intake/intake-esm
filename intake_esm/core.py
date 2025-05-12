@@ -27,7 +27,7 @@ from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
 from ._imports import _ESMVALCORE_AVAILABLE
-from .cat import ESMCatalogModel
+from .cat import ESMCatalogModel, QueryModel, _extend_search_hist
 from .derived import DerivedVariableRegistry, default_registry
 from .source import ESMDataSource
 
@@ -348,6 +348,16 @@ class esm_datastore(Catalog):
     def _ipython_key_completions_(self):
         return self.__dir__()
 
+    @property
+    def search_history(self) -> list[dict[str, typing.Any]]:
+        """Return the search history for the catalog."""
+
+        try:
+            return self._search_history
+        except AttributeError:
+            self._search_history: list[dict[str, typing.Any]] = []
+            return self._search_history
+
     @pydantic.validate_call
     def search(
         self,
@@ -409,6 +419,18 @@ class esm_datastore(Catalog):
         4    landCoverFrac
         """
 
+        breakpoint()
+        _search_hist = self.search_history
+        _query = (
+            query
+            if isinstance(query, QueryModel)
+            else QueryModel(
+                query=query, require_all_on=require_all_on, columns=self.df.columns.tolist()
+            )
+        )
+
+        _search_hist = _extend_search_hist(_search_hist, _query)
+
         # step 1: Search in the base/main catalog
         esmcat_results = self.esmcat.search(require_all_on=require_all_on, query=query)
 
@@ -458,6 +480,8 @@ class esm_datastore(Catalog):
             cat.derivedcat._registry.update(derived_cat_subset)
         else:
             cat.derivedcat = self.derivedcat
+
+        cat._search_history = _search_hist
         return cat
 
     @pydantic.validate_call
