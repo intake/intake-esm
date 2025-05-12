@@ -178,7 +178,7 @@ def test_request_coord_vars(fpath, dvars, cvars, expected):
         (False, _eager_open_ds),
     ],
 )
-def test_get_open_func(threaded: bool, expected):
+def test_get_open_func(threaded, expected):
     """Test that the correct open function is returned based on the threaded argument."""
     open_func = _get_open_func(threaded)
     if not threaded:
