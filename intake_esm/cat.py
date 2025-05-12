@@ -515,41 +515,36 @@ class QueryModel(pydantic.BaseModel):
         model.query = _query
         return model
 
+    def _extend_search_history(
+        cls, search_hist: list[dict[str, typing.Any]]
+    ) -> list[dict[str, typing.Any]]:
+        """
+        Extend the search history with the current query. Note this doesn't yet
+        handle cases where we have set `require_all_on`.
 
-def _extend_search_hist(
-    search_hist: list[dict[str, typing.Any]], query: QueryModel
-) -> list[dict[str, typing.Any]]:
-    """
-    Extend the search history with the current query. If we have queries with
-    `require_all_on` set, we can decompose them into multiple queries
+        Parameters
+        ----------
+        search_hist : list[dict]
+            The current search history.
+        query : QueryModel
+            The current query to be added to the search history.
 
-    Parameters
-    ----------
-    search_hist : list[dict]
-        The current search history.
-    query : QueryModel
-        The current query to be added to the search history.
+        Returns
+        -------
+        list[dict[str, typing.Any]]
+            The updated search history.
+        """
 
-    Returns
-    -------
-    list[dict[str, typing.Any]]
-        The updated search history.
-    """
+        _query = cls.query
 
-    req_all_on = query.require_all_on or []
-    _query = query.query
+        if not _query:
+            search_hist.append({})
+            return search_hist
 
-    if not _query:
-        search_hist.append({})
-        return search_hist
-
-    for colname, search_terms in _query.items():
-        if colname not in req_all_on:
+        for colname, search_terms in _query.items():
             search_hist.append({colname: search_terms})
-        else:
-            search_hist.extend([{colname: [search_term]} for search_term in search_terms])
 
-    return search_hist
+        return search_hist
 
 
 class FramesModel(pydantic.BaseModel):

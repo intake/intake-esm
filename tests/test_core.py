@@ -198,7 +198,7 @@ def test_catalog_contains():
 )
 def test_catalog_search(path, query, expected_size):
     cat = intake.open_esm_datastore(path)
-    assert cat.search_history == [{}]
+    assert cat.search_history == []
     new_cat = cat.search(**query)
     assert len(new_cat) == expected_size
 
@@ -244,59 +244,6 @@ def test_catalog_search_history_sequential(path, queries, expected):
     assert cat.search_history == []
     q1, q2 = queries
     new_cat = cat.search(**q1).search(**q2)
-    assert new_cat.search_history == expected
-
-
-@pytest.mark.parametrize(
-    'path, query, require_all_on, expected',
-    [
-        # (cdf_cat_sample_cesmle, {'experiment': 'CTRL'}, [{'experiment': ['CTRL']}]),
-        (
-            cdf_cat_sample_cesmle,
-            {'member_id': ['^1[0-9]$', '^[0-9]8$']},  # Should only match 18
-            'experiment',
-            [{'experiment': ['1[0-9]']}, {'experiment': ['[0-9]8']}],
-        ),
-        # (cdf_cat_sample_cesmle, {}, [{}]),
-        # (
-        #     cdf_cat_sample_cesmle,
-        #     {'variable': 'SHF', 'time_range': ['200601-210012']},
-        #     [{'variable': ['SHF']}, {'time_range': ['200601-210012']}],
-        # ),
-    ],
-)
-def test_catalog_search_history_req_all(path, query, require_all_on, expected):
-    cat = intake.open_esm_datastore(path)
-    assert cat.search_history == []
-    breakpoint()
-    new_cat = cat.search(**query, require_all_on=require_all_on)
-    assert new_cat.search_history == expected
-
-
-@pytest.mark.parametrize(
-    'path, query, require_all_on, expected',
-    [
-        # (cdf_cat_sample_cesmle, {'experiment': 'CTRL'}, [{'experiment': ['CTRL']}]),
-        (
-            cdf_cat_sample_cesmle,
-            {'member_id': ['^1[0-9]$', '^[0-9]8$']},  # Should only match 18
-            'experiment',
-            [{'experiment': ['1[0-9]']}, {'experiment': ['[0-9]8']}],
-        ),
-        # (cdf_cat_sample_cesmle, {}, [{}]),
-        # (
-        #     cdf_cat_sample_cesmle,
-        #     {'variable': 'SHF', 'time_range': ['200601-210012']},
-        #     [{'variable': ['SHF']}, {'time_range': ['200601-210012']}],
-        # ),
-    ],
-)
-def test_catalog_search_req_all(path, query, require_all_on, expected):
-    cat = intake.open_esm_datastore(cdf_cat_sample_cesmle)
-    cat_sequential = cat.search(**{'member_id': ['^1[0-9]$']}).search(**{'member_id': ['^[0-9]8$']})
-    assert cat_sequential.unique().member_id == ['18']
-    return None
-    cat_req_all = cat.search(**{'member_id': ['^1[0-9]$', '^[0-9]8$']}, require_all_on='member_id')
     assert new_cat.search_history == expected
 
 

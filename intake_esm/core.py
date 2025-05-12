@@ -27,7 +27,7 @@ from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
 from ._imports import _ESMVALCORE_AVAILABLE
-from .cat import ESMCatalogModel, QueryModel, _extend_search_hist
+from .cat import ESMCatalogModel, QueryModel
 from .derived import DerivedVariableRegistry, default_registry
 from .source import ESMDataSource
 
@@ -419,17 +419,13 @@ class esm_datastore(Catalog):
         4    landCoverFrac
         """
 
-        breakpoint()
-        _search_hist = self.search_history
-        _query = (
+        _search_hist = (
             query
             if isinstance(query, QueryModel)
             else QueryModel(
                 query=query, require_all_on=require_all_on, columns=self.df.columns.tolist()
-            )
+            )._extend_search_history(self.search_history)
         )
-
-        _search_hist = _extend_search_hist(_search_hist, _query)
 
         # step 1: Search in the base/main catalog
         esmcat_results = self.esmcat.search(require_all_on=require_all_on, query=query)
@@ -916,10 +912,12 @@ class esm_datastore(Catalog):
         # Use esmvalcore to load the intake configuration & work out how we
         # need to map our facets
 
-        from esmvalcore.config._intake import load_intake_config
+        from esmvalcore.config._intake import _read_facets, load_intake_config
         from esmvalcore.dataset import Dataset
 
         facet_map, project = _read_facets(load_intake_config(), self.esmcat.fhandle)
+
+        _search_hist = self.search_history
 
         facets = {k: search.get(v) for k, v in facet_map.items()}
         facets = {k: v for k, v in facets.items() if v is not None}
@@ -961,47 +959,3 @@ def _get_threaded(threaded: bool | None) -> bool:
             ) from e
 
     return threaded
-
-
-def _read_facets(
-    cfg: dict,
-    fhandle: str | None,
-    project: str | None = None,
-) -> tuple[dict[str, typing.Any], str]:
-    """
-    Extract facet mapping from ESMValCore configuration for a given catalog file handle.
-
-    Recursively traverses the ESMValCore configuration structure to find the
-    facet mapping that corresponds to the specified file handle.
-
-    Parameters
-    ----------
-    cfg : dict
-        The ESMValCore intake configuration dictionary.
-    fhandle : str
-        The file handle/path of the intake-esm catalog to match.
-    project : str, optional
-        The current project name in the configuration hierarchy.
-
-    Returns
-    -------
-    tuple
-        A tuple containing:
-        - dict: Facet mapping between ESMValCore facets and catalog columns
-        - str: The project name associated with the catalog file
-    """
-    if fhandle is None:
-        raise ValueError('Unable to ascertain facets without valid file handle.')
-
-    for _project, val in cfg.items():
-        if not (isinstance(val, list)):
-            return _read_facets(val, fhandle, project or _project)
-        for facet_info in val:
-            file, facets = facet_info.get('file'), facet_info.get('facets')
-            if file == fhandle:
-                return facets, project  # type: ignore[return-value]
-    else:
-        raise ValueError(
-            f'No facets found for {fhandle} in the config file. '
-            'Please check the config file and ensure it is valid.'
-        )

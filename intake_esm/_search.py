@@ -74,7 +74,7 @@ def search_apply_require_all_on(
     # if query = dict(variable_id=["A", "B"], source_id=["FOO", "BAR"])
     # and require_all_on = ["source_id"], we need to make sure `source_id` key is
     # not present in _query for the logic below to work
-    breakpoint()
+
     for column in require_all_on:
         _query.pop(column, None)
 
