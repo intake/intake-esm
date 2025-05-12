@@ -6,7 +6,6 @@ import dask
 import pytest
 import xarray
 from dask.delayed import DelayedLeaf
-from typing_extensions import assert_type
 
 from intake_esm.source import (
     _delayed_open_ds,
@@ -92,7 +91,7 @@ def test_open_dataset_kerchunk(kerchunk_file=kerchunk_file):
         urlpath=kerchunk_file,
         varname=None,
         xarray_open_kwargs=xarray_open_kwargs,
-    ).compute()
+    )
     assert isinstance(ds, xarray.Dataset)
 
 
@@ -185,5 +184,4 @@ def test_get_open_func(threaded: bool, expected):
     if not threaded:
         assert open_func == _eager_open_ds
     else:
-        assert_type(open_func, DelayedLeaf)
-        # assert isinstance(open_func, DelayedLeaf)
+        assert isinstance(open_func, DelayedLeaf)
