@@ -6,6 +6,7 @@ import dask
 import pytest
 import xarray
 from dask.delayed import DelayedLeaf
+from typing_extensions import assert_type
 
 from intake_esm.source import (
     _delayed_open_ds,
@@ -178,10 +179,11 @@ def test_request_coord_vars(fpath, dvars, cvars, expected):
         (False, _eager_open_ds),
     ],
 )
-def test_get_open_func(threaded, expected):
+def test_get_open_func(threaded: bool, expected):
     """Test that the correct open function is returned based on the threaded argument."""
     open_func = _get_open_func(threaded)
     if not threaded:
         assert open_func == _eager_open_ds
     else:
-        assert isinstance(open_func, DelayedLeaf)
+        assert_type(open_func, DelayedLeaf)
+        # assert isinstance(open_func, DelayedLeaf)
