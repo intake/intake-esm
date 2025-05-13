@@ -866,7 +866,6 @@ class esm_datastore(Catalog):
 
     def to_iris(
         self,
-        search: dict[str, str],
         cmorizer: typing.Any | None = None,
         **kwargs,
     ) -> 'esmvalcore.dataset.Dataset':
@@ -917,7 +916,7 @@ class esm_datastore(Catalog):
 
         facet_map, project = _read_facets(load_intake_config(), self.esmcat.fhandle)
 
-        _search_hist = self.search_history
+        search = _merge_search_history(self.search_history)
 
         facets = {k: search.get(v) for k, v in facet_map.items()}
         facets = {k: v for k, v in facets.items() if v is not None}
@@ -959,3 +958,56 @@ def _get_threaded(threaded: bool | None) -> bool:
             ) from e
 
     return threaded
+
+
+def _merge_search_history(
+    search_history: list[dict[str, list[typing.Any]]],
+) -> dict[str, typing.Any]:
+    """
+    Take our search history, which typically looks something like
+    ```python
+    [
+        {'variable_id': ['tos']},
+        {'table_id': ['Omon']},
+        {'experiment_id': ['historical']},
+        {'member_id': ['r1i1p1f1']},
+        {'source_id': ['ACCESS-ESM1-5']},
+        {'grid_label': ['gn']},
+        {'version': ['v.*']},
+    ]
+    ```
+    and turn it into something like
+    ```python
+    {
+        'variable_id': 'tos',
+        'table_id': 'Omon',
+        'experiment_id': 'historical',
+        'member_id': 'r1i1p1f1',
+        'source_id': 'ACCESS-ESM1-5',
+        'grid_label': 'gn',
+        'version': 'v.*',
+    }
+    ```
+
+    Notes:
+    -----
+    This function is really quite ugly & could probably be improved. It should also
+    live in esmvalcore.
+    """
+    merged: dict[str, typing.Any] = {}
+
+    for entry in search_history:
+        for key, value in entry.items():
+            if key in merged:
+                if isinstance(merged[key], list):
+                    merged[key].extend(value)
+                else:
+                    merged[key] = [merged[key]] + value
+            else:
+                merged[key] = value
+
+    for key, val in merged.items():
+        if isinstance(val, list) and len(val) == 1:
+            merged[key] = val[0]
+
+    return merged
