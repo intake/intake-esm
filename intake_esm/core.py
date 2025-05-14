@@ -864,7 +864,7 @@ class esm_datastore(Catalog):
         _, ds = res.popitem()
         return ds
 
-    def to_iris(
+    def to_esmvalcore(
         self,
         cmorizer: typing.Any | None = None,
         **kwargs,
@@ -898,7 +898,7 @@ class esm_datastore(Catalog):
         """
         if not _ESMVALCORE_AVAILABLE:
             raise ImportError(
-                '`to_iris()` requires the esmvalcore package to be installed. '
+                '`to_esmvalcore()` requires the esmvalcore package to be installed. '
                 'To proceed please install esmvalcore using: '
                 ' `python -m pip install esmvalcore` or `conda install -c conda-forge esmvalcore`.'
             )

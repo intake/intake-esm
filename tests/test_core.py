@@ -692,7 +692,7 @@ def test__get_threaded(mock_get_env, threaded, ITK_ESM_THREADING, expected):
 
 
 @mock.patch('intake_esm.core._ESMVALCORE_AVAILABLE', False)
-def test_to_iris_unavailable():
+def test_to_esmvalcore_unavailable():
     cat = intake.open_esm_datastore(zarr_cat_pangeo_cmip6)
     cat_sub = cat.search(
         **dict(
@@ -704,8 +704,8 @@ def test_to_iris_unavailable():
             grid_label='gn',
         )
     )
-    with pytest.raises(ImportError, match=r'`to_iris\(\)` requires the esmvalcore package'):
-        _ = cat_sub.to_iris(
+    with pytest.raises(ImportError, match=r'`to_esmvalcore\(\)` requires the esmvalcore package'):
+        _ = cat_sub.to_esmvalcore(
             search=dict(
                 variable_id=['pr'],
                 experiment_id='ssp370',
