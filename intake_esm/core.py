@@ -17,6 +17,7 @@ try:
     _DATATREE_AVAILABLE = True
 except ImportError:
     _DATATREE_AVAILABLE = False
+import itables
 import pandas as pd
 import pydantic
 from fastprogress.fastprogress import progress_bar
@@ -211,6 +212,18 @@ class esm_datastore(Catalog):
         Return pandas :py:class:`~pandas.DataFrame`.
         """
         return self.esmcat.df
+
+    @property
+    def interactive(self) -> None:
+        """
+        Use itables to display the catalog in an interactive table. Use polars
+        for performance ideally. Fall back to pandas if not.
+        """
+        try:
+            df = self.esmcat._frames.polars  # type:ignore[union-attr]
+        except AttributeError:
+            df = self.esmcat.df
+        return itables.show(df)
 
     def __len__(self) -> int:
         return len(self.keys())
