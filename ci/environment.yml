@@ -13,6 +13,7 @@ dependencies:
   - h5netcdf >=0.8.1
   - intake >=2.0
   - ipython
+  - itables
   - matplotlib
   - netcdf4 >=1.5.5,!=1.6.1
   - pandas >=2.1.0

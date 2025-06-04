@@ -63,11 +63,19 @@ cat.esmcat.has_multiple_variable_assets
 
 ## Search for datasets
 
-The search functionatilty works in the same way:
+The search functionality works in the same way:
 
 ```{code-cell} ipython3
 cat_subset =cat.search(variable=["O2", "SiO3"])
 cat_subset.df
+```
+
+### Interactively search the catalog
+
+We can also use the `interactive` attribute of a catalog to interactively search the catalog. This will not save any searches, but allows you to explore the catalog in a quick and intuitive way.
+
+```{code-cell} ipython3
+cat.interactive
 ```
 
 ## Load assets into xarray datasets
