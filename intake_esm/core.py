@@ -224,14 +224,18 @@ class esm_datastore(Catalog):
         can cause ellipsis to be rendered directly into the interactive table,
         losing actual data and inserting junk.
         """
+        iterable_cols = set(self._columns_with_iterables or []).intersection(set(self.df.columns))
+
         try:
             df = self.esmcat._frames.polars  # type:ignore[union-attr]
             if self._columns_with_iterables:
-                df = df.explode(self._columns_with_iterables)
+                for col in iterable_cols:
+                    df = df.explode(col)
         except AttributeError:
             df = self.esmcat.df
             if self._columns_with_iterables:
-                df = df.explode(self._columns_with_iterables, ignore_index=True)
+                for col in iterable_cols:
+                    df = df.explode(col, ignore_index=True)
 
         return itables.show(
             df,
