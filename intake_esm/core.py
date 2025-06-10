@@ -126,6 +126,7 @@ class esm_datastore(Catalog):
         self.derivedcat = registry or default_registry
         self._entries = {}
         self._requested_variables = []
+        self._columns_with_iterables = columns_with_iterables or []
         self.datasets = {}
         self._validate_derivedcat()
 
@@ -218,12 +219,31 @@ class esm_datastore(Catalog):
         """
         Use itables to display the catalog in an interactive table. Use polars
         for performance ideally. Fall back to pandas if not.
+
+        We have to explode columns with iterables, otherwise javascript stringifcation
+        can cause ellipsis to be rendered directly into the interactive table,
+        losing actual data and inserting junk.
         """
         try:
             df = self.esmcat._frames.polars  # type:ignore[union-attr]
+            if self._columns_with_iterables:
+                df = df.explode(self._columns_with_iterables)
         except AttributeError:
             df = self.esmcat.df
-        return itables.show(df)
+            if self._columns_with_iterables:
+                df = df.explode(self._columns_with_iterables, ignore_index=True)
+
+        return itables.show(
+            df,
+            search={'regex': True, 'caseInsensitive': True},
+            layout={'top1': 'searchPanes'},
+            searchPanes={
+                'layout': 'columns-3',
+                'cascadePanes': True,
+                'columns': [i for i, _ in enumerate(df.columns)],
+            },
+            maxBytes=0,
+        )
 
     def __len__(self) -> int:
         return len(self.keys())
