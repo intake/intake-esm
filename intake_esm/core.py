@@ -245,6 +245,7 @@ class esm_datastore(Catalog):
                 'layout': 'columns-3',
                 'cascadePanes': True,
                 'columns': [i for i, _ in enumerate(df.columns)],
+                'initCollapsed': True,
             },
             maxBytes=0,
         )
