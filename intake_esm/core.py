@@ -19,6 +19,7 @@ except ImportError:
     _DATATREE_AVAILABLE = False
 import itables
 import pandas as pd
+import polars as pl
 import pydantic
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
@@ -26,6 +27,7 @@ from intake.catalog import Catalog
 from .cat import ESMCatalogModel
 from .derived import DerivedVariableRegistry, default_registry
 from .source import ESMDataSource
+from .utils import MinimalExploder
 
 
 class esm_datastore(Catalog):
@@ -224,28 +226,22 @@ class esm_datastore(Catalog):
         can cause ellipsis to be rendered directly into the interactive table,
         losing actual data and inserting junk.
         """
-        iterable_cols = set(self._columns_with_iterables or []).intersection(set(self.df.columns))
 
         try:
-            df = self.esmcat._frames.polars  # type:ignore[union-attr]
-            if self._columns_with_iterables:
-                for col in iterable_cols:
-                    df = df.explode(col)
+            pl_df = self.esmcat._frames.polars  # type:ignore[union-attr]
         except AttributeError:
-            df = self.esmcat.df
-            if self._columns_with_iterables:
-                for col in iterable_cols:
-                    df = df.explode(col, ignore_index=True)
+            pl_df = pl.from_pandas(self.df)
+
+        exploded_df = MinimalExploder(pl_df)()
 
         return itables.show(
-            df,
+            exploded_df,
             search={'regex': True, 'caseInsensitive': True},
             layout={'top1': 'searchPanes'},
             searchPanes={
                 'layout': 'columns-3',
                 'cascadePanes': True,
-                'columns': [i for i, _ in enumerate(df.columns)],
-                'initCollapsed': True,
+                'columns': [i for i, _ in enumerate(pl_df.columns)],
             },
             maxBytes=0,
         )
