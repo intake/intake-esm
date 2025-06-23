@@ -10,6 +10,7 @@ dependencies:
   - fsspec >=2024.12
   - gcsfs >=2024.12
   - intake >=2.0
+  - itables
   - jupyterlab
   - matplotlib
   - myst-nb

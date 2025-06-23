@@ -17,7 +17,9 @@ try:
     _DATATREE_AVAILABLE = True
 except ImportError:
     _DATATREE_AVAILABLE = False
+import itables
 import pandas as pd
+import polars as pl
 import pydantic
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
@@ -25,6 +27,7 @@ from intake.catalog import Catalog
 from .cat import ESMCatalogModel
 from .derived import DerivedVariableRegistry, default_registry
 from .source import ESMDataSource
+from .utils import MinimalExploder
 
 
 class esm_datastore(Catalog):
@@ -125,6 +128,7 @@ class esm_datastore(Catalog):
         self.derivedcat = registry or default_registry
         self._entries = {}
         self._requested_variables = []
+        self._columns_with_iterables = columns_with_iterables or []
         self.datasets = {}
         self._validate_derivedcat()
 
@@ -211,6 +215,36 @@ class esm_datastore(Catalog):
         Return pandas :py:class:`~pandas.DataFrame`.
         """
         return self.esmcat.df
+
+    @property
+    def interactive(self) -> None:
+        """
+        Use itables to display the catalog in an interactive table. Use polars
+        for performance ideally. Fall back to pandas if not.
+
+        We have to explode columns with iterables, otherwise javascript stringifcation
+        can cause ellipsis to be rendered directly into the interactive table,
+        losing actual data and inserting junk.
+        """
+
+        try:
+            pl_df = self.esmcat._frames.polars  # type:ignore[union-attr]
+        except AttributeError:
+            pl_df = pl.from_pandas(self.df)
+
+        exploded_df = MinimalExploder(pl_df)()
+
+        return itables.show(
+            exploded_df,
+            search={'regex': True, 'caseInsensitive': True},
+            layout={'top1': 'searchPanes'},
+            searchPanes={
+                'layout': 'columns-3',
+                'cascadePanes': True,
+                'columns': [i for i, _ in enumerate(pl_df.columns)],
+            },
+            maxBytes=0,
+        )
 
     def __len__(self) -> int:
         return len(self.keys())
