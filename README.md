@@ -64,7 +64,7 @@ providing necessary functionality for searching, discovering, data access/loadin
      ...: )
 
   In [6]: cat_subset
-  Out[6]: <GOOGLE-CMIP6 catalog with 4 dataset(s) from 261 asset(s)>
+  Out[6]: <GOOGLE-CMIP6 catalog with 2 dataset(s) from 67 asset(s)>
   ```
 
 - Access: when the user is satisfied with the results of their query, they can load data assets (netCDF and/or Zarr stores) into xarray datasets:
