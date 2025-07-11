@@ -17,6 +17,9 @@ from typing_extensions import Self
 
 from ._search import search, search_apply_require_all_on
 
+__framereaders__ = [pl, pd]
+__filetypes__ = ['csv', 'csv.bz2', 'csv.gz', 'parquet']
+
 
 def _allnan_or_nonan(df, column: str) -> bool:
     """Check if all values in a column are NaN or not NaN
@@ -227,7 +230,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         cls,
         json_file: str | pydantic.FilePath | pydantic.AnyUrl,
         storage_options: dict[str, typing.Any] | None = None,
-        read_csv_kwargs: dict[str, typing.Any] | None = None,
+        read_kwargs: dict[str, typing.Any] | None = None,
     ) -> ESMCatalogModel:
         """
         Loads the catalog from a file
@@ -239,12 +242,14 @@ class ESMCatalogModel(pydantic.BaseModel):
         storage_options: dict
             fsspec parameters passed to the backend file-system such as Google Cloud Storage,
             Amazon Web Service S3.
-        read_csv_kwargs: dict
-            Additional keyword arguments passed through to the :py:func:`~pandas.read_csv` function.
+        read_kwargs : dict, optional
+            Additional keyword arguments passed through to the :py:func:`~pandas.read_csv` function, if the
+            datastore is saved in csv format, or :py:func:`~pandas.read_parquet` if the datastore is saved in
+            parquet format.
 
         """
         storage_options = storage_options if storage_options is not None else {}
-        read_csv_kwargs = read_csv_kwargs or {}
+        read_kwargs = read_kwargs or {}
         json_file = str(json_file)  # We accept Path, but fsspec doesn't.
         _mapper = fsspec.get_mapper(json_file, **storage_options)
 
@@ -254,7 +259,7 @@ class ESMCatalogModel(pydantic.BaseModel):
                 data['last_updated'] = None
             cat = cls.model_validate(data)
             if cat.catalog_file:
-                cat._frames = cat._df_from_file(cat, _mapper, storage_options, read_csv_kwargs)
+                cat._frames = cat._df_from_file(cat, _mapper, storage_options, read_kwargs)
             else:
                 cat._frames = FramesModel(
                     lf=pl.LazyFrame(cat.catalog_dict),
@@ -270,7 +275,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         cat: ESMCatalogModel,
         _mapper: fsspec.FSMap,
         storage_options: dict[str, typing.Any],
-        read_csv_kwargs: dict[str, typing.Any],
+        read_kwargs: dict[str, typing.Any],
     ) -> FramesModel:
         """
         Read the catalog file from disk, falling back to pandas for bz2 files which
@@ -292,7 +297,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         storage_options: dict
             fsspec parameters passed to the backend file-system such as Google Cloud Storage,
             Amazon Web Service S3.
-        read_csv_kwargs: dict
+        read_kwargs: dict
             Additional keyword arguments passed through to the :py:func:`~pandas.read_csv` function.
 
         Returns
@@ -306,32 +311,8 @@ class ESMCatalogModel(pydantic.BaseModel):
         else:
             csv_path = f'{os.path.dirname(_mapper.root)}/{cat.catalog_file}'
         cat.catalog_file = csv_path
-        if not cat.catalog_file.endswith('.csv.bz2'):  # type: ignore[union-attr]
-            converters = read_csv_kwargs.pop('converters', {})  # Hack
-            # See https://github.com/pola-rs/polars/issues/13040 - can't use read_csv.
-            lf = pl.scan_csv(
-                cat.catalog_file,  # type: ignore[arg-type]
-                storage_options=storage_options,
-                infer_schema=False,
-                **read_csv_kwargs,
-            ).with_columns(
-                [
-                    pl.col(colname)
-                    .str.replace('^.', '[')  # Replace first/last chars with [ or ].
-                    .str.replace('.$', ']')  # set/tuple => list
-                    .str.replace_all("'", '"')
-                    .str.json_decode()  # This is to do with the way polars reads json - single versus double quotes
-                    for colname in converters.keys()
-                ]
-            )
-            return FramesModel(lf=lf)
-        else:
-            df = pd.read_csv(
-                cat.catalog_file,
-                storage_options=storage_options,
-                **read_csv_kwargs,
-            )
-            return FramesModel(df=df)
+
+        return CatalogFileDataReader(cat.catalog_file, storage_options, **read_kwargs)()
 
     @property
     def lf(self) -> pl.LazyFrame:
@@ -597,3 +578,81 @@ class FramesModel(pydantic.BaseModel):
                 for colname in self.polars.columns
             }
         )
+
+
+class CatalogFileDataReader:
+    """Abstracts away some of the complexity related to reading dataframes"""
+
+    def __init__(
+        self,
+        catalog_file: pydantic.StrictStr | None,
+        storage_options: dict[str, typing.Any],
+        **read_kwargs,
+    ):
+        self.catalog_file = catalog_file
+        self.storage_options = storage_options
+        self.read_kwargs = read_kwargs
+
+        if self.catalog_file is None:
+            raise AssertionError('catalog_file must be set to a valid file path or URL')
+
+        if self.catalog_file.endswith('.csv.bz2'):
+            self.driver = 'pandas'
+            self.filetype = 'csv'
+        elif self.catalog_file.endswith('.csv.gz') or self.catalog_file.endswith('.csv'):
+            self.driver = 'polars'
+            self.filetype = 'csv'
+
+    def _read_csv_pd(self) -> FramesModel:
+        """Read a catalog file stored as a csv using pandas"""
+        df = pd.read_csv(
+            self.catalog_file,
+            storage_options=self.storage_options,
+            **self.read_kwargs,
+        )
+        return FramesModel(df=df)
+
+    def _read_csv_pl(self) -> FramesModel:
+        """Read a catalog file stored as a csv using polars"""
+        converters = self.read_kwargs.pop('converters', {})  # Hack
+        # See https://github.com/pola-rs/polars/issues/13040 - can't use read_csv.
+        lf = pl.scan_csv(
+            self.catalog_file,  # type: ignore[arg-type]
+            storage_options=self.storage_options,
+            infer_schema=False,
+            **self.read_kwargs,
+        ).with_columns(
+            [
+                pl.col(colname)
+                .str.replace('^.', '[')  # Replace first/last chars with [ or ].
+                .str.replace('.$', ']')  # set/tuple => list
+                .str.replace_all("'", '"')
+                .str.json_decode()  # This is to do with the way polars reads json - single versus double quotes
+                for colname in converters.keys()
+            ]
+        )
+        return FramesModel(lf=lf)
+
+    def _read_parquet_pl(self) -> FramesModel:
+        """Read a catalog file stored as a parquet using polars"""
+        lf = pl.scan_parquet(
+            self.catalog_file,  # type: ignore[arg-type]
+            storage_options=self.storage_options,
+            **self.read_kwargs,
+        )
+        return FramesModel(lf=lf)
+
+    def __call__(self):
+        if self.driver == 'polars':
+            if self.filetype == 'csv':
+                return self._read_csv_pl()
+            elif self.filetype == 'parquet':
+                return self._read_parquet_pl()
+            else:
+                raise ValueError(f'Unsupported file type {self.filetype} for polars reader')
+
+        if self.driver == 'pandas':
+            if self.filetype == 'csv':
+                return self._read_csv_pd()
+            else:
+                raise ValueError(f'Unsupported file type {self.filetype} for pandas reader')
