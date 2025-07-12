@@ -596,12 +596,20 @@ class CatalogFileDataReader:
         if self.catalog_file is None:
             raise AssertionError('catalog_file must be set to a valid file path or URL')
 
-        if self.catalog_file.endswith('.csv.bz2'):
-            self.driver = 'pandas'
-            self.filetype = 'csv'
-        elif self.catalog_file.endswith('.csv.gz') or self.catalog_file.endswith('.csv'):
+        if self.catalog_file.endswith('.csv.gz') or self.catalog_file.endswith('.csv'):
             self.driver = 'polars'
             self.filetype = 'csv'
+        elif self.catalog_file.endswith('.parquet'):
+            self.driver = 'polars'
+            self.filetype = 'parquet'
+        elif self.catalog_file.endswith('.csv.bz2'):
+            self.driver = 'pandas'
+            self.filetype = 'csv'
+        else:
+            raise ValueError(
+                f'Unsupported file type for catalog_file {self.catalog_file}. '
+                f'Expected one of {__filetypes__}'
+            )
 
     def _read_csv_pd(self) -> FramesModel:
         """Read a catalog file stored as a csv using pandas"""
