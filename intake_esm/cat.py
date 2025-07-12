@@ -596,6 +596,7 @@ class CatalogFileDataReader:
         if self.catalog_file is None:
             raise AssertionError('catalog_file must be set to a valid file path or URL')
 
+        # I think we want to replace this with a dict lookup.
         if self.catalog_file.endswith('.csv.gz') or self.catalog_file.endswith('.csv'):
             self.driver = 'polars'
             self.filetype = 'csv'
