@@ -50,7 +50,7 @@ class esm_datastore(Catalog):
     registry : DerivedVariableRegistry, optional
         Registry of derived variables to use, by default None. If not provided, uses the default registry.
     read_kwargs : dict, optional
-        Additional keyword arguments passed through to the :py:func:`~pandas.read_csv` function, if the
+        Additional keyword arguments passed through to the :py:func:`~polars.scan_csv` function, if the
         datastore is saved in csv format, or :py:func:`~polars.scan_parquet` if the datastore is saved in
         parquet format.
     read_csv_kwargs : dict, optional
