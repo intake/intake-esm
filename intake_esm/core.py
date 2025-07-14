@@ -51,8 +51,10 @@ class esm_datastore(Catalog):
         Registry of derived variables to use, by default None. If not provided, uses the default registry.
     read_kwargs : dict, optional
         Additional keyword arguments passed through to the :py:func:`~pandas.read_csv` function, if the
-        datastore is saved in csv format, or :py:func:`~pandas.read_parquet` if the datastore is saved in
+        datastore is saved in csv format, or :py:func:`~polars.scan_parquet` if the datastore is saved in
         parquet format.
+    read_csv_kwargs : dict, optional
+        Deprecated alias for `read_kwargs`.
     columns_with_iterables : list of str, optional
         A list of columns in the csv file containing iterables. Values in columns specified here will be
         converted with `ast.literal_eval` when :py:func:`~pandas.read_csv` is called (i.e., this is a
