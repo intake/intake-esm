@@ -93,6 +93,66 @@ def test_catalog_init(capsys, obj, sep, read_kwargs, columns_with_iterables):
 
 
 @pytest.mark.parametrize(
+    'obj, sep, read_kwargs, read_csv_kwargs',
+    [
+        (  # Both
+            multi_variable_cat,
+            '*',
+            {'converters': {'variable': ast.literal_eval}},
+            {'converters': {'variable': ast.literal_eval}},
+        ),
+        (  # Read kwargs only
+            multi_variable_cat,
+            '*',
+            {'converters': {'variable': ast.literal_eval}},
+            None,
+        ),
+        (  # Read csv kwargs only
+            multi_variable_cat,
+            '*',
+            None,
+            {'converters': {'variable': ast.literal_eval}},
+        ),
+    ],
+)
+@pytest.mark.flaky(max_runs=3, min_passes=1)  # Cold start related failures
+def test_catalog_init_back_compat(capsys, obj, sep, read_kwargs, read_csv_kwargs):
+    """Test that the catalog can be initialized with various combinations of read
+    and read_csv kwargs, rasing and warning appropriately. Retains much of the logic
+    of the test above to make sure behaviour is consistent."""
+
+    if read_kwargs and read_csv_kwargs:
+        with pytest.raises(
+            ValueError, match='Cannot provide both `read_csv_kwargs` and `read_kwargs`. '
+        ):
+            intake.open_esm_datastore(
+                obj, sep=sep, read_kwargs=read_kwargs, read_csv_kwargs=read_csv_kwargs
+            )
+        return None
+
+    if read_csv_kwargs:
+        with pytest.warns(
+            DeprecationWarning,
+            match='read_csv_kwargs is deprecated and will be removed in a future version. ',
+        ):
+            cat = intake.open_esm_datastore(obj, sep=sep, read_csv_kwargs=read_csv_kwargs)
+
+    else:
+        cat = intake.open_esm_datastore(obj, sep=sep, read_csv_kwargs=read_csv_kwargs)
+
+    cat = intake.open_esm_datastore(obj, sep=sep, read_kwargs=read_kwargs)
+    assert isinstance(cat.esmcat, intake_esm.cat.ESMCatalogModel)
+    assert isinstance(cat.df, pd.DataFrame)
+    assert len(cat) > 0
+
+    print(repr(cat))
+    # Use pytest-capturing method
+    # https://docs.pytest.org/en/latest/capture.html#accessing-captured-output-from-a-test-function
+    captured = capsys.readouterr()
+    assert 'catalog with' in captured.out
+
+
+@pytest.mark.parametrize(
     'obj, read_kwargs, columns_with_iterables',
     [
         (multi_variable_cat, {'converters': {'variable': ast.literal_eval}}, None),

@@ -92,6 +92,7 @@ class esm_datastore(Catalog):
         sep: str = '.',
         registry: DerivedVariableRegistry | None = None,
         read_kwargs: dict[str, typing.Any] | None = None,
+        read_csv_kwargs: dict[str, typing.Any] | None = None,
         columns_with_iterables: list[str] | None = None,
         storage_options: dict[str, typing.Any] | None = None,
         threaded: bool | None = None,
@@ -100,6 +101,21 @@ class esm_datastore(Catalog):
         """Intake Catalog representing an ESM Collection."""
         super().__init__(**intake_kwargs)
         self.storage_options = storage_options or {}
+
+        if read_csv_kwargs is not None:
+            warnings.warn(
+                'read_csv_kwargs is deprecated and will be removed in a future version. '
+                'Please use read_kwargs instead.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if read_kwargs is not None:
+                raise ValueError(
+                    'Cannot provide both `read_csv_kwargs` and `read_kwargs`. '
+                    'Please use `read_kwargs`.'
+                )
+            read_kwargs = read_csv_kwargs
+
         read_kwargs = read_kwargs or {}
         if columns_with_iterables:
             converter = ast.literal_eval
