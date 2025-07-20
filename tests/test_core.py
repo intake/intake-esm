@@ -61,7 +61,7 @@ def func_multivar(ds):
 
 
 @pytest.mark.parametrize(
-    'obj, sep, read_csv_kwargs, columns_with_iterables',
+    'obj, sep, read_kwargs, columns_with_iterables',
     [
         (catalog_dict_records, '.', None, None),
         (cdf_cat_sample_cmip6_noagg, '.', None, None),
@@ -76,10 +76,10 @@ def func_multivar(ds):
     ],
 )
 @pytest.mark.flaky(max_runs=3, min_passes=1)  # Cold start related failures
-def test_catalog_init(capsys, obj, sep, read_csv_kwargs, columns_with_iterables):
+def test_catalog_init(capsys, obj, sep, read_kwargs, columns_with_iterables):
     """Test that the catalog can be initialized."""
     cat = intake.open_esm_datastore(
-        obj, sep=sep, read_csv_kwargs=read_csv_kwargs, columns_with_iterables=columns_with_iterables
+        obj, sep=sep, read_kwargs=read_kwargs, columns_with_iterables=columns_with_iterables
     )
     assert isinstance(cat.esmcat, intake_esm.cat.ESMCatalogModel)
     assert isinstance(cat.df, pd.DataFrame)
@@ -93,26 +93,86 @@ def test_catalog_init(capsys, obj, sep, read_csv_kwargs, columns_with_iterables)
 
 
 @pytest.mark.parametrize(
-    'obj, read_csv_kwargs, columns_with_iterables',
+    'obj, sep, read_kwargs, read_csv_kwargs',
+    [
+        (  # Both
+            multi_variable_cat,
+            '*',
+            {'converters': {'variable': ast.literal_eval}},
+            {'converters': {'variable': ast.literal_eval}},
+        ),
+        (  # Read kwargs only
+            multi_variable_cat,
+            '*',
+            {'converters': {'variable': ast.literal_eval}},
+            None,
+        ),
+        (  # Read csv kwargs only
+            multi_variable_cat,
+            '*',
+            None,
+            {'converters': {'variable': ast.literal_eval}},
+        ),
+    ],
+)
+@pytest.mark.flaky(max_runs=3, min_passes=1)  # Cold start related failures
+def test_catalog_init_back_compat(capsys, obj, sep, read_kwargs, read_csv_kwargs):
+    """Test that the catalog can be initialized with various combinations of read
+    and read_csv kwargs, rasing and warning appropriately. Retains much of the logic
+    of the test above to make sure behaviour is consistent."""
+
+    if read_kwargs and read_csv_kwargs:
+        with pytest.raises(
+            ValueError, match='Cannot provide both `read_csv_kwargs` and `read_kwargs`. '
+        ):
+            intake.open_esm_datastore(
+                obj, sep=sep, read_kwargs=read_kwargs, read_csv_kwargs=read_csv_kwargs
+            )
+        return None
+
+    if read_csv_kwargs:
+        with pytest.warns(
+            DeprecationWarning,
+            match='read_csv_kwargs is deprecated and will be removed in a future version. ',
+        ):
+            cat = intake.open_esm_datastore(obj, sep=sep, read_csv_kwargs=read_csv_kwargs)
+
+    else:
+        cat = intake.open_esm_datastore(obj, sep=sep, read_csv_kwargs=read_csv_kwargs)
+
+    cat = intake.open_esm_datastore(obj, sep=sep, read_kwargs=read_kwargs)
+    assert isinstance(cat.esmcat, intake_esm.cat.ESMCatalogModel)
+    assert isinstance(cat.df, pd.DataFrame)
+    assert len(cat) > 0
+
+    print(repr(cat))
+    # Use pytest-capturing method
+    # https://docs.pytest.org/en/latest/capture.html#accessing-captured-output-from-a-test-function
+    captured = capsys.readouterr()
+    assert 'catalog with' in captured.out
+
+
+@pytest.mark.parametrize(
+    'obj, read_kwargs, columns_with_iterables',
     [
         (multi_variable_cat, {'converters': {'variable': ast.literal_eval}}, None),
         (multi_variable_cat, None, ['variable']),
     ],
 )
-def test_columns_with_iterables(capsys, obj, read_csv_kwargs, columns_with_iterables):
+def test_columns_with_iterables(capsys, obj, read_kwargs, columns_with_iterables):
     """Test that columns with iterables are successfully evaluated."""
     cat = intake.open_esm_datastore(
-        obj, read_csv_kwargs=read_csv_kwargs, columns_with_iterables=columns_with_iterables
+        obj, read_kwargs=read_kwargs, columns_with_iterables=columns_with_iterables
     )
     assert 'variable' in cat.esmcat.columns_with_iterables
 
 
 def test_read_csv_conflict():
-    """Test that error is raised when `columns_with_iterables` conflicts with `read_csv_kwargs`."""
+    """Test that error is raised when `columns_with_iterables` conflicts with `read_kwargs`."""
     # Work when inputs are consistent
     intake.open_esm_datastore(
         multi_variable_cat,
-        read_csv_kwargs={'converters': {'variable': ast.literal_eval}},
+        read_kwargs={'converters': {'variable': ast.literal_eval}},
         columns_with_iterables=['variable'],
     )
 
@@ -120,7 +180,7 @@ def test_read_csv_conflict():
     with pytest.raises(ValueError):
         intake.open_esm_datastore(
             multi_variable_cat,
-            read_csv_kwargs={'converters': {'variable': lambda x: x}},
+            read_kwargs={'converters': {'variable': lambda x: x}},
             columns_with_iterables=['variable'],
         )
 
@@ -157,7 +217,7 @@ def test_impossible_derivedcat():
 
 
 @pytest.mark.parametrize(
-    'obj, sep, read_csv_kwargs',
+    'obj, sep, read_kwargs',
     [
         (multi_variable_cat, '.', {'converters': {'variable': ast.literal_eval}}),
         (cdf_cat_sample_cesmle, '/', None),
@@ -168,8 +228,8 @@ def test_impossible_derivedcat():
         ({'esmcat': sample_esmcat_data, 'df': sample_df}, '.', None),
     ],
 )
-def test_catalog_unique(obj, sep, read_csv_kwargs):
-    cat = intake.open_esm_datastore(obj, sep=sep, read_csv_kwargs=read_csv_kwargs)
+def test_catalog_unique(obj, sep, read_kwargs):
+    cat = intake.open_esm_datastore(obj, sep=sep, read_kwargs=read_kwargs)
     uniques = cat.unique()
     nuniques = cat.nunique()
     assert isinstance(uniques, pd.Series)
@@ -336,7 +396,7 @@ def test_multi_variable_catalog(query):
     import ast
 
     cat = intake.open_esm_datastore(
-        multi_variable_cat, read_csv_kwargs={'converters': {'variable': ast.literal_eval}}
+        multi_variable_cat, read_kwargs={'converters': {'variable': ast.literal_eval}}
     )
     assert cat.esmcat.has_multiple_variable_assets
 
@@ -353,7 +413,7 @@ def test_multi_variable_catalog_derived_cat():
 
     cat = intake.open_esm_datastore(
         multi_variable_cat,
-        read_csv_kwargs={'converters': {'variable': ast.literal_eval}},
+        read_kwargs={'converters': {'variable': ast.literal_eval}},
         registry=registry_multivar,
     )
     cat_sub = cat.search(variable=['FOO'])
