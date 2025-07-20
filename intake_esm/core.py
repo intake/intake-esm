@@ -1,26 +1,33 @@
 import ast
 import concurrent.futures
+import os
 import typing
 import warnings
 from copy import deepcopy
 
 import dask
+import packaging.version
+import xarray as xr
 
 try:
-    from datatree import DataTree
-
+    if packaging.version.Version(xr.__version__) < packaging.version.Version('2024.10'):
+        from datatree import DataTree
+    else:
+        from xarray import DataTree
     _DATATREE_AVAILABLE = True
 except ImportError:
     _DATATREE_AVAILABLE = False
+import itables
 import pandas as pd
+import polars as pl
 import pydantic
-import xarray as xr
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
 from .cat import ESMCatalogModel
 from .derived import DerivedVariableRegistry, default_registry
 from .source import ESMDataSource
+from .utils import MinimalExploder
 
 
 class esm_datastore(Catalog):
@@ -31,7 +38,8 @@ class esm_datastore(Catalog):
 
     Parameters
     ----------
-    obj : str, dict
+    obj : str, dict, ESMCatalogModel
+        The ESM Catalog to use, or a path to a JSON file containing the catalog.
         If string, this must be a path or URL to an ESM catalog JSON file.
         If dict, this must be a dict representation of an ESM catalog.
         This dict must have two keys: 'esmcat' and 'df'. The 'esmcat' key must be a
@@ -41,12 +49,16 @@ class esm_datastore(Catalog):
         Delimiter to use when constructing a key for a query, by default '.'
     registry : DerivedVariableRegistry, optional
         Registry of derived variables to use, by default None. If not provided, uses the default registry.
+    read_kwargs : dict, optional
+        Additional keyword arguments passed through to the :py:func:`~polars.scan_csv` function, if the
+        datastore is saved in csv format, or :py:func:`~polars.scan_parquet` if the datastore is saved in
+        parquet format.
     read_csv_kwargs : dict, optional
-        Additional keyword arguments passed through to the :py:func:`~pandas.read_csv` function.
+        Deprecated alias for `read_kwargs`.
     columns_with_iterables : list of str, optional
         A list of columns in the csv file containing iterables. Values in columns specified here will be
         converted with `ast.literal_eval` when :py:func:`~pandas.read_csv` is called (i.e., this is a
-        shortcut to passing converters to `read_csv_kwargs`).
+        shortcut to passing converters to `read_kwargs`).
     storage_options : dict, optional
         Parameters passed to the backend file-system such as Google Cloud Storage,
         Amazon Web Service S3.
@@ -76,41 +88,67 @@ class esm_datastore(Catalog):
 
     def __init__(
         self,
-        obj: pydantic.FilePath | pydantic.AnyUrl | dict[str, typing.Any],
+        obj: pydantic.FilePath | pydantic.AnyUrl | dict[str, typing.Any] | ESMCatalogModel,
         *,
         progressbar: bool = True,
         sep: str = '.',
         registry: DerivedVariableRegistry | None = None,
-        read_csv_kwargs: dict[str, typing.Any] = None,
-        columns_with_iterables: list[str] = None,
-        storage_options: dict[str, typing.Any] = None,
+        read_kwargs: dict[str, typing.Any] | None = None,
+        read_csv_kwargs: dict[str, typing.Any] | None = None,
+        columns_with_iterables: list[str] | None = None,
+        storage_options: dict[str, typing.Any] | None = None,
+        threaded: bool | None = None,
         **intake_kwargs: dict[str, typing.Any],
     ):
         """Intake Catalog representing an ESM Collection."""
         super().__init__(**intake_kwargs)
         self.storage_options = storage_options or {}
-        read_csv_kwargs = read_csv_kwargs or {}
+
+        if read_csv_kwargs is not None:
+            warnings.warn(
+                'read_csv_kwargs is deprecated and will be removed in a future version. '
+                'Please use read_kwargs instead.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if read_kwargs is not None:
+                raise ValueError(
+                    'Cannot provide both `read_csv_kwargs` and `read_kwargs`. '
+                    'Please use `read_kwargs`.'
+                )
+            read_kwargs = read_csv_kwargs
+
+        read_kwargs = read_kwargs or {}
         if columns_with_iterables:
             converter = ast.literal_eval
-            read_csv_kwargs.setdefault('converters', {})
+            read_kwargs.setdefault('converters', {})
             for col in columns_with_iterables:
-                if read_csv_kwargs['converters'].setdefault(col, converter) != converter:
+                if read_kwargs['converters'].setdefault(col, converter) != converter:
                     raise ValueError(
-                        f"Cannot provide converter for '{col}' via `read_csv_kwargs` when '{col}' is also specified in `columns_with_iterables`"
+                        f"Cannot provide converter for '{col}' via `read_kwargs` when '{col}' is also specified in `columns_with_iterables`"
                     )
-        self.read_csv_kwargs = read_csv_kwargs
+        self.read_kwargs = read_kwargs
         self.progressbar = progressbar
         self.sep = sep
-        if isinstance(obj, dict):
+
+        if threaded is None:
+            self.threaded = ast.literal_eval(os.getenv('ITK_ESM_THREADING', 'True'))
+        else:
+            self.threaded = threaded
+
+        if isinstance(obj, ESMCatalogModel):
+            self.esmcat = obj
+        elif isinstance(obj, dict):
             self.esmcat = ESMCatalogModel.from_dict(obj)
         else:
             self.esmcat = ESMCatalogModel.load(
-                obj, storage_options=self.storage_options, read_csv_kwargs=read_csv_kwargs
+                obj, storage_options=self.storage_options, read_kwargs=read_kwargs
             )
 
         self.derivedcat = registry or default_registry
         self._entries = {}
         self._requested_variables = []
+        self._columns_with_iterables = columns_with_iterables or []
         self.datasets = {}
         self._validate_derivedcat()
 
@@ -198,6 +236,36 @@ class esm_datastore(Catalog):
         """
         return self.esmcat.df
 
+    @property
+    def interactive(self) -> None:
+        """
+        Use itables to display the catalog in an interactive table. Use polars
+        for performance ideally. Fall back to pandas if not.
+
+        We have to explode columns with iterables, otherwise javascript stringifcation
+        can cause ellipsis to be rendered directly into the interactive table,
+        losing actual data and inserting junk.
+        """
+
+        try:
+            pl_df = self.esmcat._frames.polars  # type:ignore[union-attr]
+        except AttributeError:
+            pl_df = pl.from_pandas(self.df)
+
+        exploded_df = MinimalExploder(pl_df)()
+
+        return itables.show(
+            exploded_df,
+            search={'regex': True, 'caseInsensitive': True},
+            layout={'top1': 'searchPanes'},
+            searchPanes={
+                'layout': 'columns-3',
+                'cascadePanes': True,
+                'columns': [i for i, _ in enumerate(pl_df.columns)],
+            },
+            maxBytes=0,
+        )
+
     def __len__(self) -> int:
         return len(self.keys())
 
@@ -268,6 +336,7 @@ class esm_datastore(Catalog):
                     format_column_name=self.esmcat.assets.format_column_name,
                     aggregations=aggregations,
                     intake_kwargs={'metadata': {}},
+                    threaded=self.threaded,
                 )
                 self._entries[key] = entry
                 return self._entries[key]
@@ -420,11 +489,8 @@ class esm_datastore(Catalog):
 
         if derivedcat_results:
             # Merge results from the main and the derived catalogs
-            esmcat_results = (
-                pd.concat([esmcat_results, *derivedcat_results])
-                .drop_duplicates()
-                .reset_index(drop=True)
-            )
+            esmcat_results = pd.concat([esmcat_results, *derivedcat_results])
+            esmcat_results = esmcat_results[~esmcat_results.astype(str).duplicated()]
 
         cat = self.__class__({'esmcat': self.esmcat.dict(), 'df': esmcat_results})
         cat.esmcat.catalog_file = None  # Don't save the catalog file
@@ -547,6 +613,7 @@ class esm_datastore(Catalog):
         progressbar: pydantic.StrictBool | None = None,
         aggregate: pydantic.StrictBool | None = None,
         skip_on_error: pydantic.StrictBool = False,
+        threaded: bool | None = None,
         **kwargs,
     ) -> dict[str, xr.Dataset]:
         """
@@ -574,7 +641,11 @@ class esm_datastore(Catalog):
             If False, no aggregation will be done.
         skip_on_error : bool, optional
             If True, skip datasets that cannot be loaded and/or variables we are unable to derive.
-
+        threaded : bool, optional
+            If True, use :py:func:`dask.compute` to load datasets in parallel. If False, load datasets sequentially.
+            If None, the environment variable `ITK_ESM_THREADING` will be used to determine the threading behavior,
+            defaulting to True if the variable is not set. If a value is provided, it will override the environment
+            variable determined default.
         Returns
         -------
         dsets : dict
@@ -632,6 +703,8 @@ class esm_datastore(Catalog):
                 'This is not yet supported when computing derived variables.'
             )
 
+        threaded = _get_threaded(threaded)
+
         xarray_open_kwargs = xarray_open_kwargs or {}
         xarray_combine_by_coords_kwargs = xarray_combine_by_coords_kwargs or {}
         cdf_kwargs, zarr_kwargs = kwargs.get('cdf_kwargs'), kwargs.get('zarr_kwargs')
@@ -654,6 +727,7 @@ class esm_datastore(Catalog):
             preprocess=preprocess,
             requested_variables=self._requested_variables,
             storage_options=storage_options,
+            threaded=threaded,
         )
 
         if aggregate is not None and not aggregate and self.esmcat.aggregation_control:
@@ -831,3 +905,18 @@ class esm_datastore(Catalog):
 
 def _load_source(key, source):
     return key, source.to_dask()
+
+
+def _get_threaded(threaded: bool | None) -> bool:
+    """
+    Read the threading option from the environment variable & passed value
+    """
+    if threaded is None:
+        try:
+            threaded = ast.literal_eval(os.getenv('ITK_ESM_THREADING', 'True'))
+        except ValueError as e:
+            raise ValueError(
+                'The environment variable ITK_ESM_THREADING must be a boolean, if set.'
+            ) from e
+
+    return threaded

@@ -28,7 +28,7 @@ sd_hide_title: true
 
 ```
 
-A data cataloging utility built on top of [intake](https://github.com/intake/intake), [pandas](https://pandas.pydata.org/), and [xarray](https://xarray.pydata.org/en/stable/), and it's pretty awesome!
+A data cataloging utility built on top of [intake](https://github.com/intake/intake), [pandas](https://pandas.pydata.org/), [polars](https://pola.rs/) and [xarray](https://xarray.pydata.org/en/stable/), and it's pretty awesome!
 
 ```{button-ref} how-to/install-intake-esm
 :ref-type: doc

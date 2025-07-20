@@ -26,6 +26,7 @@ def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_option
         'engine': 'zarr' if data_format in {'zarr', 'reference'} else 'netcdf4',
         'chunks': {},
         'backend_kwargs': {},
+        'decode_timedelta': False,
     }
     xarray_open_kwargs = (
         {**_default_open_kwargs, **xarray_open_kwargs}
@@ -42,7 +43,23 @@ def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_option
     return xarray_open_kwargs
 
 
+def _get_open_func(threaded: bool) -> typing.Callable:
+    """Return the appropriate open function based on threading"""
+    if threaded:
+        return _delayed_open_ds
+    else:
+        return _eager_open_ds
+
+
+def _eager_open_ds(*args, **kwargs):
+    return _open_dataset(*args, **kwargs)
+
+
 @dask.delayed
+def _delayed_open_ds(*args, **kwargs):
+    return _open_dataset(*args, **kwargs)
+
+
 def _open_dataset(
     urlpath,
     varname,
@@ -114,7 +131,7 @@ def _update_attrs(*, additional_attrs, ds):
     additional_attrs = additional_attrs or {}
     if additional_attrs:
         additional_attrs = {
-            f"{OPTIONS['attrs_prefix']}:{key}": f'{value}'
+            f'{OPTIONS["attrs_prefix"]}:{key}': f'{value}'
             if isinstance(value, str) or not hasattr(value, '__iter__')
             else ','.join(value)
             for key, value in additional_attrs.items()
@@ -154,6 +171,7 @@ class ESMDataSource(DataSource):
         xarray_open_kwargs: dict[str, typing.Any] | None = None,
         xarray_combine_by_coords_kwargs: dict[str, typing.Any] | None = None,
         intake_kwargs: dict[str, typing.Any] | None = None,
+        threaded: bool,
     ):
         """An intake compatible Data Source for ESM data.
 
@@ -185,6 +203,10 @@ class ESMDataSource(DataSource):
             Keyword arguments to pass to :py:func:`~xarray.combine_by_coords` function.
         intake_kwargs: dict, optional
             Additional keyword arguments are passed through to the :py:class:`~intake.source.base.DataSource` base class.
+        threaded : bool , optional
+            If True, use `dask.compute` to load datasets in parallel. If False, load datasets sequentially.
+            If none, the environment variable `ITK_ESM_THREADING` will be used to determine the threading behavior,
+            defaulting to True if the variable is not set.
         """
 
         intake_kwargs = intake_kwargs or {}
@@ -205,6 +227,7 @@ class ESMDataSource(DataSource):
             **self.xarray_combine_by_coords_kwargs,
             **xarray_combine_by_coords_kwargs,
         }
+        self.threaded = threaded
         self._ds = None
 
         if data_format is not None:
@@ -231,9 +254,11 @@ class ESMDataSource(DataSource):
     def _open_dataset(self):
         """Open dataset with xarray"""
 
+        open_ds_func = _get_open_func(self.threaded)
+
         try:
             datasets = [
-                _open_dataset(
+                open_ds_func(
                     record[self.path_column_name],
                     record[self.variable_column_name] if self.variable_column_name else None,
                     xarray_open_kwargs=_get_xarray_open_kwargs(
@@ -253,14 +278,15 @@ class ESMDataSource(DataSource):
                 for _, record in self.df.iterrows()
             ]
 
-            datasets = dask.compute(*datasets)
+            if self.threaded:
+                datasets = dask.compute(*datasets)
             if len(datasets) == 1 or not datasets[0].data_vars:
                 self._ds = datasets[0]
             else:
                 datasets = sorted(
                     datasets,
                     key=lambda ds: tuple(
-                        f"{OPTIONS['attrs_prefix']}/{agg.attribute_name}"
+                        f'{OPTIONS["attrs_prefix"]}/{agg.attribute_name}'
                         for agg in self.aggregations
                     ),
                 )
