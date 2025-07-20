@@ -119,5 +119,3 @@ dask-worker-space/
 
 CMIP6-MRI-ESM2-0*
 intake_esm/_version.py
-# pixi environments
-.pixi
