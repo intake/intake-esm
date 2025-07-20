@@ -1,139 +1,127 @@
 [build-system]
-requires = ["setuptools>=45", "wheel", "setuptools_scm>=6.2"]
+    requires = ["setuptools>=75.0", "setuptools_scm>=8.1", "wheel"]
 
 [project]
-name = "intake-esm"
-description = "An intake plugin for parsing an Earth System Model (ESM) catalog and loading netCDF files and/or Zarr stores into Xarray datasets."
-readme = "README.md"
-license = {text="Apache Software License 2.0"}
-requires-python = ">=3.10"
-maintainers = [
-    { name = "NCAR XDev Team", email = "xdev@ucar.edu" },
-]
-keywords = [
-    "catalog",
-    "intake",
-    "xarray",
-]
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Topic :: Scientific/Engineering",
-]
+    classifiers = [
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python",
+        "Topic :: Scientific/Engineering",
+    ]
+    description = "An intake plugin for parsing an Earth System Model (ESM) catalog and loading netCDF files and/or Zarr stores into Xarray datasets."
+    keywords = ["catalog", "intake", "xarray"]
+    license = { text = "Apache Software License 2.0" }
+    maintainers = [{ name = "NCAR XDev Team", email = "xdev@ucar.edu" }]
+    name = "intake-esm"
+    readme = "README.md"
+    requires-python = ">=3.10"
 
-dynamic = ["version", "dependencies"]
+    dynamic = ["dependencies", "version"]
 
 [tool.setuptools.dynamic]
 
-dependencies = { file = ["requirements.txt"] }
-optional-dependencies = { dev = { file = ["requirements-dev.txt"] } }
+    dependencies          = { file = ["requirements.txt"] }
+    optional-dependencies = { dev = { file = ["requirements-dev.txt"] } }
 
 [project.entry-points."intake.drivers"]
-esm_datasource = "intake_esm.source:ESMDataSource"
-esm_datastore = "intake_esm.core:esm_datastore"
+    esm_datasource = "intake_esm.source:ESMDataSource"
+    esm_datastore  = "intake_esm.core:esm_datastore"
 
 [project.urls]
-Documentation = "https://intake-esm.readthedocs.io"
-Homepage = "https://intake-esm.readthedocs.io"
-Source = "https://github.com/intake/intake-esm"
-Tracker = "https://github.com/intake/intake-esm/issues"
-
+    Documentation = "https://intake-esm.readthedocs.io"
+    Homepage      = "https://intake-esm.readthedocs.io"
+    Source        = "https://github.com/intake/intake-esm"
+    Tracker       = "https://github.com/intake/intake-esm/issues"
 
 [tool.setuptools.packages.find]
-include = ["intake_esm*"]
+    include = ["intake_esm*"]
 
 [tool.setuptools.package-data]
-intake_esm = ["py.typed"]
-
-
+    intake_esm = ["py.typed"]
 
 [tool.setuptools_scm]
-version_scheme = "post-release"
-local_scheme = "node-and-date"
-fallback_version = "999"
-write_to = "intake_esm/_version.py"
-write_to_template = '__version__ = "{version}"'
-
-
+    fallback_version  = "999"
+    local_scheme      = "node-and-date"
+    version_scheme    = "post-release"
+    write_to          = "intake_esm/_version.py"
+    write_to_template = '__version__ = "{version}"'
 
 [tool.ruff]
-line-length = 100
-target-version = "py310"
-extend-include = ["*.ipynb"]
+    extend-include = ["*.ipynb"]
+    line-length    = 100
+    target-version = "py310"
 
-
-builtins = ["ellipsis"]
-# Exclude a variety of commonly ignored directories.
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".git-rewrite",
-    ".hg",
-    ".ipynb_checkpoints",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".pyenv",
-    ".pytest_cache",
-    ".pytype",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    ".vscode",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "site-packages",
-    "venv",
-]
+    builtins = ["ellipsis"]
+    # Exclude a variety of commonly ignored directories.
+    exclude = [
+        ".bzr",
+        ".direnv",
+        ".eggs",
+        ".git",
+        ".git-rewrite",
+        ".hg",
+        ".ipynb_checkpoints",
+        ".mypy_cache",
+        ".nox",
+        ".pants.d",
+        ".pyenv",
+        ".pytest_cache",
+        ".pytype",
+        ".ruff_cache",
+        ".svn",
+        ".tox",
+        ".venv",
+        ".vscode",
+        "__pypackages__",
+        "_build",
+        "buck-out",
+        "build",
+        "dist",
+        "node_modules",
+        "site-packages",
+        "venv",
+    ]
 [tool.ruff.lint]
-per-file-ignores = {}
-ignore = [
-    "E721", # Comparing types instead of isinstance
-    "E741", # Ambiguous variable names
-    "E501", # Conflicts with ruff format
-]
-select = [
-    # Pyflakes
-    "F",
-    # Pycodestyle
-    "E",
-    "W",
-    # isort
-    "I",
-    # Pyupgrade
-    "UP",
-]
-
+    ignore = [
+        "E501", # Conflicts with ruff format
+        "E721", # Comparing types instead of isinstance
+        "E741", # Ambiguous variable names
+    ]
+    per-file-ignores = {}
+    select = [
+        # Pyflakes
+        "F",
+        # Pycodestyle
+        "E",
+        "W",
+        # isort
+        "I",
+        # Pyupgrade
+        "UP",
+    ]
 
 [tool.ruff.lint.mccabe]
-max-complexity = 18
+    max-complexity = 18
 
 [tool.ruff.lint.isort]
-known-first-party = ["intake_esm"]
-combine-as-imports = true
+    combine-as-imports = true
+    known-first-party  = ["intake_esm"]
 
 [tool.ruff.format]
-quote-style = "single"
-docstring-code-format = true
+    docstring-code-format = true
+    quote-style           = "single"
 
 [tool.ruff.lint.pydocstyle]
-convention = "numpy"
+    convention = "numpy"
 
 [tool.pytest.ini_options]
-console_output_style = "count"
-addopts = "--cov=./ --cov-report=xml --verbose"
-markers = "network: tests requiring a network connection"
+    addopts              = "--cov=./ --cov-report=xml --verbose"
+    console_output_style = "count"
+    markers              = "network: tests requiring a network connection"

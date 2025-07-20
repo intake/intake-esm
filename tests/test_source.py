@@ -5,8 +5,16 @@ import tempfile
 import dask
 import pytest
 import xarray
+from dask.delayed import DelayedLeaf
 
-from intake_esm.source import _get_xarray_open_kwargs, _open_dataset, _update_attrs
+from intake_esm.source import (
+    _delayed_open_ds,
+    _eager_open_ds,
+    _get_open_func,
+    _get_xarray_open_kwargs,
+    _open_dataset,
+    _update_attrs,
+)
 
 dask.config.set(scheduler='single-threaded')
 
@@ -83,7 +91,7 @@ def test_open_dataset_kerchunk(kerchunk_file=kerchunk_file):
         urlpath=kerchunk_file,
         varname=None,
         xarray_open_kwargs=xarray_open_kwargs,
-    ).compute()
+    )
     assert isinstance(ds, xarray.Dataset)
 
 
@@ -102,3 +110,78 @@ def test_update_attrs(tmp_path, data_format, attrs):
     _xarray_open_kwargs = _get_xarray_open_kwargs(data_format=data_format)
     ds_new = _open_dataset(fpath, 'tasmax', xarray_open_kwargs=_xarray_open_kwargs).compute()
     assert ds_new.attrs == ds.attrs
+
+
+@pytest.mark.parametrize(
+    'fpath,dvars,cvars,expected',
+    [
+        (
+            f1,
+            ['time_bnds'],
+            [''],
+            ['time_bnds', 'height', 'time'],
+        ),
+        (f1, ['tasmax'], [''], ['tasmax', 'height', 'time', 'lat', 'lon']),
+        (
+            f1,
+            [],
+            ['height'],
+            ['height'],
+        ),
+        (
+            f1,
+            [],
+            [],
+            ['height', 'time_bnds', 'lon_bnds', 'lat_bnds', 'tasmax', 'time', 'lat', 'lon'],
+        ),
+        (multi_path, ['time_bnds'], [''], ['time_bnds', 'height', 'time']),
+        (
+            multi_path,
+            ['tasmax'],
+            [''],
+            ['tasmax', 'time', 'height', 'lat', 'lon'],
+        ),
+        (multi_path, [], ['height'], ['height']),
+        (
+            multi_path,
+            [],
+            [],
+            ['time_bnds', 'lon_bnds', 'lat_bnds', 'tasmax', 'time', 'height', 'lat', 'lon'],
+        ),
+    ],
+)
+def test_request_coord_vars(fpath, dvars, cvars, expected):
+    """
+    Test requesting a combination of data & coordinate variables.
+    """
+    requested_vars = [*dvars, *cvars]
+    xarray_open_kwargs = _get_xarray_open_kwargs('netcdf')
+    ds = _open_dataset(
+        urlpath=fpath,
+        varname=['height', 'lat', 'lat_bnds', 'lon', 'lon_bnds', 'tasmax', 'time', 'time_bnds'],
+        xarray_open_kwargs=xarray_open_kwargs,
+        requested_variables=requested_vars,
+    ).compute()
+
+    ds_dvars = ds.data_vars or set()
+    ds_cvars = ds.coords or set()
+
+    found_vars = set(ds_dvars) | set(ds_cvars)
+
+    assert found_vars == set(expected)
+
+
+@pytest.mark.parametrize(
+    'threaded, expected',
+    [
+        (True, _delayed_open_ds),
+        (False, _eager_open_ds),
+    ],
+)
+def test_get_open_func(threaded, expected):
+    """Test that the correct open function is returned based on the threaded argument."""
+    open_func = _get_open_func(threaded)
+    if not threaded:
+        assert open_func == _eager_open_ds
+    else:
+        assert isinstance(open_func, DelayedLeaf)
