@@ -2,6 +2,8 @@ import os
 
 import pytest
 
+import intake_esm
+
 here = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -13,3 +15,14 @@ def sample_cmip6():
 @pytest.fixture
 def sample_bad_input():
     return os.path.join(here, 'sample-catalogs/bad.json')
+
+
+@pytest.fixture
+def cleanup_init():
+    """
+    This resets the _optional_imports dictionary in intake_esm to it's default
+    state before & after tests that use it  so we can test lazy loading and whatnot
+    """
+    intake_esm._imports._optional_imports = {'esmvalcore': None}
+    yield
+    intake_esm._imports._optional_imports = {'esmvalcore': None}

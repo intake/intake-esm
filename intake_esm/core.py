@@ -5,6 +5,10 @@ import typing
 import warnings
 from copy import deepcopy
 
+if typing.TYPE_CHECKING:
+    import esmvalcore
+    import esmvalcore.dataset
+
 import dask
 import packaging.version
 import xarray as xr
@@ -24,7 +28,8 @@ import pydantic
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
 
-from .cat import ESMCatalogModel
+from ._imports import _ESMVALCORE_AVAILABLE
+from .cat import ESMCatalogModel, QueryModel
 from .derived import DerivedVariableRegistry, default_registry
 from .source import ESMDataSource
 from .utils import MinimalExploder
@@ -397,6 +402,16 @@ class esm_datastore(Catalog):
     def _ipython_key_completions_(self):
         return self.__dir__()
 
+    @property
+    def search_history(self) -> list[dict[str, typing.Any]]:
+        """Return the search history for the catalog."""
+
+        try:
+            return self._search_history
+        except AttributeError:
+            self._search_history: list[dict[str, typing.Any]] = []
+            return self._search_history
+
     @pydantic.validate_call
     def search(
         self,
@@ -458,6 +473,14 @@ class esm_datastore(Catalog):
         4    landCoverFrac
         """
 
+        _search_hist = (
+            query
+            if isinstance(query, QueryModel)
+            else QueryModel(
+                query=query, require_all_on=require_all_on, columns=self.df.columns.tolist()
+            )._extend_search_history(self.search_history)
+        )
+
         # step 1: Search in the base/main catalog
         esmcat_results = self.esmcat.search(require_all_on=require_all_on, query=query)
 
@@ -507,6 +530,8 @@ class esm_datastore(Catalog):
             cat.derivedcat._registry.update(derived_cat_subset)
         else:
             cat.derivedcat = self.derivedcat
+
+        cat._search_history = _search_hist
         return cat
 
     @pydantic.validate_call
@@ -891,6 +916,74 @@ class esm_datastore(Catalog):
                 f'Expected exactly one dataset. Received {len(self)} datasets. Please refine your search or use `.to_dataset_dict()`.'
             )
         _, ds = res.popitem()
+        return ds
+
+    def to_esmvalcore(
+        self,
+        cmorizer: typing.Any | None = None,
+        **kwargs,
+    ) -> 'esmvalcore.dataset.Dataset':
+        """
+        Convert result to an ESMValCore Dataset.
+
+        This is only possible if the search returned exactly one result.
+
+        Parameters
+        ----------
+        facet_map: dict[FacetValue, str]
+            Mapping of ESMValCore Dataset facets to their corresponding esm_datastore
+            attributes. For example, the mapping for a dataset containing keys
+            'activity_id', 'source_id', 'member_id', 'experiment_id' would look like:
+            ```python
+             facets =  {
+                       "activity": "activity_id",
+                       "dataset": "source_id",
+                       "ensemble": "member_id",
+                       "exp": "experiment_id",
+                       "grid": "grid_label",
+                        },
+            ```
+        cmorize: Any, optional
+            CMORizer to use in order to CMORize the datastore search results for
+            the ESMValCore Dataset. Presumably this will be a callable? If not set,
+            no CMORization will be done.
+        kwargs: dict
+            TBC.
+        """
+        if not _ESMVALCORE_AVAILABLE:
+            raise ImportError(
+                '`to_esmvalcore()` requires the esmvalcore package to be installed. '
+                'To proceed please install esmvalcore using: '
+                ' `python -m pip install esmvalcore` or `conda install -c conda-forge esmvalcore`.'
+            )
+
+        if len(self) != 1:  # quick check to fail more quickly if there are many results
+            raise ValueError(
+                f'Expected exactly one dataset. Received {len(self)} datasets. Please refine your search.'
+            )
+
+        # Use esmvalcore to load the intake configuration & work out how we
+        # need to map our facets
+
+        from esmvalcore.config._intake import _read_facets, load_intake_config
+        from esmvalcore.data import merge_intake_search_history as merge_search_history
+        from esmvalcore.dataset import Dataset
+
+        facet_map, project = _read_facets(load_intake_config(), self.esmcat.fhandle)
+
+        search = merge_search_history(self.search_history)
+
+        facets = {k: search.get(v) for k, v in facet_map.items()}
+        facets = {k: v for k, v in facets.items() if v is not None}
+
+        facets.pop('version', None)  # If there's a version, chuck it
+        facets['project'] = project
+
+        ds = Dataset(**facets)
+
+        ds.files = self.unique().path
+        ds.augment_facets()
+
         return ds
 
     def _create_derived_variables(self, datasets, skip_on_error):
