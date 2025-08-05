@@ -20,6 +20,9 @@ mixed_cat_sample_cmip6 = os.path.join(here, 'sample-catalogs/cmip6-bcc-mixed-for
 access_columns_with_iterables_cat = os.path.join(
     here, 'sample-catalogs/access-columns-with-iterables.json'
 )
+access_columns_with_tuples_cat = os.path.join(
+    here, 'sample-catalogs/access-columns-with-tuples.json'
+)
 
 
 sample_df = pd.DataFrame(

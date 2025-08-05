@@ -20,6 +20,7 @@ import intake_esm
 
 from .utils import (
     access_columns_with_iterables_cat,
+    access_columns_with_tuples_cat,
     catalog_dict_records,
     cdf_cat_sample_cesmle,
     cdf_cat_sample_cmip5,
@@ -266,10 +267,14 @@ def test_catalog_search(path, query, expected_size):
     'path, columns_with_iterables, query, expected_size',
     [
         (access_columns_with_iterables_cat, ['variable'], {'variable': ['aice_m']}, 1),
+        (access_columns_with_tuples_cat, ['variable'], {'variable': ['aice_m']}, 1),
     ],
 )
 def test_catalog_search_columns_with_iterables(path, columns_with_iterables, query, expected_size):
     cat = intake.open_esm_datastore(path, columns_with_iterables=columns_with_iterables)
+
+    for iter_col in columns_with_iterables:
+        assert isinstance(cat.df[iter_col][0], tuple)
     new_cat = cat.search(**query)
     assert len(new_cat) == expected_size
 
