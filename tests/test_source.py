@@ -14,6 +14,7 @@ from intake_esm.source import (
     _get_xarray_open_kwargs,
     _open_dataset,
     _update_attrs,
+    _zarr_async,
 )
 
 dask.config.set(scheduler='single-threaded')
@@ -86,9 +87,10 @@ def test_open_dataset_kerchunk(kerchunk_file=kerchunk_file):
         dict(engine='zarr', consolidated=False),
         storage_options={
             'remote_protocol': 's3',
-            'remote_options': {'anon': True, 'asynchronous': True},
+            'remote_options': {'anon': True, 'asynchronous': _zarr_async()},
         },
     )
+
     ds = _open_dataset(
         data_format='reference',
         urlpath=kerchunk_file,

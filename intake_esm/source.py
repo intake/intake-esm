@@ -6,6 +6,7 @@ import fsspec
 import pandas as pd
 import pydantic
 import xarray as xr
+import zarr
 from intake.source.base import DataSource, Schema
 
 from .cat import Aggregation, DataFormat
@@ -18,6 +19,15 @@ class ConcatenationWarning(UserWarning):
 
 class ESMDataSourceError(Exception):
     pass
+
+
+def _zarr_async() -> bool:
+    """
+    Zarr went all async in version 3.0.0. This sets the async flag based on
+    the zarr version in storage options
+    """
+
+    return int(zarr.__version__.split('.')[0]) > 2
 
 
 def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_options=None):
