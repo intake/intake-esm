@@ -10,4 +10,4 @@ pydantic>=2.0
 pydap!=3.5.5
 requests>=2.24.0
 xarray>=2024.10
-zarr>=2.12
+zarr>3.1.0
