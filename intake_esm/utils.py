@@ -5,6 +5,7 @@ import sys
 from collections import defaultdict
 
 import polars as pl
+import zarr
 
 
 def show_versions(file=sys.stdout):  # pragma: no cover
@@ -55,6 +56,15 @@ def show_versions(file=sys.stdout):  # pragma: no cover
     print('', file=file)
     for k, stat in sorted(deps_blob):
         print(f'{k}: {stat}', file=file)
+
+
+def _zarr_async() -> bool:
+    """
+    Zarr went all async in version 3.0.0. This sets the async flag based on
+    the zarr version in storage options
+    """
+
+    return int(zarr.__version__.split('.')[0]) > 2
 
 
 OPTIONS = {

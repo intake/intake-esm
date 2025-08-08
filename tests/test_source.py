@@ -14,8 +14,8 @@ from intake_esm.source import (
     _get_xarray_open_kwargs,
     _open_dataset,
     _update_attrs,
-    _zarr_async,
 )
+from intake_esm.utils import _zarr_async
 
 dask.config.set(scheduler='single-threaded')
 
