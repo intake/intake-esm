@@ -37,7 +37,7 @@ dependencies:
   - scipy
   - xarray-datatree
   - xgcm
-  - zarr >=3.0.10
+  - zarr <3.0|>=3.0.10
   - pip:
       - git+https://github.com/intake/intake.git
       - git+https://github.com/pydata/xarray.git
