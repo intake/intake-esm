@@ -91,6 +91,33 @@ An assets object describes the columns in the CSV file relevant for opening the 
 | format             | string | The data format. Valid values are `netcdf`, `zarr`, `opendap` or `reference` ([`kerchunk`](https://github.com/fsspec/kerchunk) reference files). If specified, it means that all data in the catalog is the same type. |
 | format_column_name | string | The column name which contains the data format, allowing for variable data types in one catalog. Mutually exclusive with `format`.                                                                                     |
 
+```{note}
+ Zarr v3 is built on asynchronous operations, and requires `xarray_open_kwargs` to contain the following dictionary fragment:
+ ```python
+   xarray_open_kwargs ={
+     "storage_options" : {
+       "remote_options" : {
+         "async": true,
+         ...
+       }
+   },
+   ...
+ }
+ ``````
+ In contrast, Zarr v2 is synchronous and instead requires:
+ ```python
+   xarray_open_kwargs ={
+     "storage_options" : {
+       "remote_options" : {
+         "async": false,
+         ...
+       }
+   },
+   ...
+ }
+ ```
+```
+
 ### Aggregation Control Object
 
 An aggregation control object defines neccessary information to use when aggregating multiple assets into a single xarray data set.
