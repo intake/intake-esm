@@ -94,30 +94,32 @@ An assets object describes the columns in the CSV file relevant for opening the 
 ````{note}
  Zarr v3 is built on asynchronous operations, and requires `xarray_open_kwargs` to contain the following dictionary fragment:
  ```python
-   xarray_open_kwargs ={
-     "storage_options" : {
-       "remote_options" : {
-         "async": true,
-         ...
-       }
-   },
+xarray_open_kwargs = {
+    "storage_options" : {
+        "remote_options" : {
+            "async": true,
+            ...
+        },
+        ...
+    },
    ...
- }
+}
  ```
 
 In contrast, Zarr v2 is synchronous and instead requires:
 
-```python
-  xarray_open_kwargs ={
+ ```python
+xarray_open_kwargs = {
     "storage_options" : {
-      "remote_options" : {
-        "async": false,
+        "remote_options" : {
+            "async": false,
+            ...
+        },
         ...
-      }
-  },
-  ...
+    },
+   ...
 }
-```
+ ```
 ````
 
 If `zarr2` or `zarr3` is specified in the `format` field, the `async` flag will be set automatically. If you specify `zarr` as the format, you must set the `async` flag manually in the `xarray_open_kwargs`.
