@@ -103,7 +103,7 @@ An assets object describes the columns in the CSV file relevant for opening the 
    },
    ...
  }
-````
+ ```
 
 In contrast, Zarr v2 is synchronous and instead requires:
 
@@ -118,10 +118,9 @@ In contrast, Zarr v2 is synchronous and instead requires:
   ...
 }
 ```
+````
 
 If `zarr2` or `zarr3` is specified in the `format` field, the `async` flag will be set automatically. If you specify `zarr` as the format, you must set the `async` flag manually in the `xarray_open_kwargs`.
-
-```
 
 ### Aggregation Control Object
 
@@ -142,4 +141,3 @@ An aggregation object describes types of operations done during the aggregation 
 | type           | string | **REQUIRED.** Type of aggregation operation to apply. Valid values include: `join_new`, `join_existing`, `union`                                                                                                                                                                                                                                                                                     |
 | attribute_name | string | Name of attribute (column) across which to aggregate.                                                                                                                                                                                                                                                                                                                                                |
 | options        | object | **OPTIONAL.** Aggregration settings that are passed as keywords arguments to [`xarray.concat()`](https://xarray.pydata.org/en/stable/generated/xarray.concat.html) or [`xarray.merge()`](https://xarray.pydata.org/en/stable/generated/xarray.merge.html#xarray.merge). For `join_existing`, it must contain the name of the existing dimension to use (for e.g.: something like `{'dim': 'time'}`). |
-```
