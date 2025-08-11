@@ -85,13 +85,13 @@ The column names can optionally be associated with a controlled vocabulary, such
 
 An assets object describes the columns in the CSV file relevant for opening the actual data files.
 
-| Element            | Type   | Description                                                                                                                                                                                                            |
-| ------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| column_name        | string | **REQUIRED.** The name of the column containing the path to the asset. Must be in the header of the CSV file.                                                                                                          |
-| format             | string | The data format. Valid values are `netcdf`, `zarr`, `opendap` or `reference` ([`kerchunk`](https://github.com/fsspec/kerchunk) reference files). If specified, it means that all data in the catalog is the same type. |
-| format_column_name | string | The column name which contains the data format, allowing for variable data types in one catalog. Mutually exclusive with `format`.                                                                                     |
+| Element            | Type   | Description                                                                                                                                                                                                                              |
+| ------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| column_name        | string | **REQUIRED.** The name of the column containing the path to the asset. Must be in the header of the CSV file.                                                                                                                            |
+| format             | string | The data format. Valid values are `netcdf`, `zarr`, `zarr2`, `zarr3`, `opendap` or `reference` ([`kerchunk`](https://github.com/fsspec/kerchunk) reference files). If specified, it means that all data in the catalog is the same type. |
+| format_column_name | string | The column name which contains the data format, allowing for variable data types in one catalog. Mutually exclusive with `format`.                                                                                                       |
 
-```{note}
+````{note}
  Zarr v3 is built on asynchronous operations, and requires `xarray_open_kwargs` to contain the following dictionary fragment:
  ```python
    xarray_open_kwargs ={
@@ -103,19 +103,24 @@ An assets object describes the columns in the CSV file relevant for opening the 
    },
    ...
  }
- ``````
- In contrast, Zarr v2 is synchronous and instead requires:
- ```python
-   xarray_open_kwargs ={
-     "storage_options" : {
-       "remote_options" : {
-         "async": false,
-         ...
-       }
-   },
-   ...
- }
- ```
+````
+
+In contrast, Zarr v2 is synchronous and instead requires:
+
+```python
+  xarray_open_kwargs ={
+    "storage_options" : {
+      "remote_options" : {
+        "async": false,
+        ...
+      }
+  },
+  ...
+}
+```
+
+If `zarr2` or `zarr3` is specified in the `format` field, the `async` flag will be set automatically. If you specify `zarr` as the format, you must set the `async` flag manually in the `xarray_open_kwargs`.
+
 ```
 
 ### Aggregation Control Object
@@ -137,3 +142,4 @@ An aggregation object describes types of operations done during the aggregation 
 | type           | string | **REQUIRED.** Type of aggregation operation to apply. Valid values include: `join_new`, `join_existing`, `union`                                                                                                                                                                                                                                                                                     |
 | attribute_name | string | Name of attribute (column) across which to aggregate.                                                                                                                                                                                                                                                                                                                                                |
 | options        | object | **OPTIONAL.** Aggregration settings that are passed as keywords arguments to [`xarray.concat()`](https://xarray.pydata.org/en/stable/generated/xarray.concat.html) or [`xarray.merge()`](https://xarray.pydata.org/en/stable/generated/xarray.merge.html#xarray.merge). For `join_existing`, it must contain the name of the existing dimension to use (for e.g.: something like `{'dim': 'time'}`). |
+```
