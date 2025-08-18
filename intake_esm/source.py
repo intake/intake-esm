@@ -9,7 +9,7 @@ import xarray as xr
 from intake.source.base import DataSource, Schema
 
 from .cat import Aggregation, DataFormat
-from .utils import OPTIONS
+from .utils import OPTIONS, _set_async_flag
 
 
 class ConcatenationWarning(UserWarning):
@@ -23,7 +23,7 @@ class ESMDataSourceError(Exception):
 def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_options=None):
     xarray_open_kwargs = (xarray_open_kwargs or {}).copy()
     _default_open_kwargs = {
-        'engine': 'zarr' if data_format in {'zarr', 'reference'} else 'netcdf4',
+        'engine': 'zarr' if data_format in {'zarr', 'zarr2', 'zarr3', 'reference'} else 'netcdf4',
         'chunks': {},
         'backend_kwargs': {},
         'decode_timedelta': False,
@@ -39,6 +39,8 @@ def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_option
         and 'storage_options' not in xarray_open_kwargs['backend_kwargs']
     ):
         xarray_open_kwargs['backend_kwargs']['storage_options'] = {} or storage_options
+
+    xarray_open_kwargs = _set_async_flag(data_format, xarray_open_kwargs)
 
     return xarray_open_kwargs
 

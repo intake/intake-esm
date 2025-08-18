@@ -55,6 +55,8 @@ class DataFormat(str, enum.Enum):
     netcdf = 'netcdf'
     netcdf4 = 'netcdf4'
     zarr = 'zarr'
+    zarr2 = 'zarr2'
+    zarr3 = 'zarr3'
     reference = 'reference'
     opendap = 'opendap'
 
