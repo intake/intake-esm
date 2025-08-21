@@ -5,6 +5,13 @@ import sys
 from collections import defaultdict
 
 import polars as pl
+import zarr
+
+__all__ = [
+    'OPTIONS',
+    'set_options',
+    '_set_async_flag',
+]
 
 
 def show_versions(file=sys.stdout):  # pragma: no cover
@@ -55,6 +62,59 @@ def show_versions(file=sys.stdout):  # pragma: no cover
     print('', file=file)
     for k, stat in sorted(deps_blob):
         print(f'{k}: {stat}', file=file)
+
+
+def _zarr_async() -> bool:
+    """
+    Zarr went all async in version 3.0.0. This sets the async flag based on
+    the zarr version in storage options
+    """
+
+    return int(zarr.__version__.split('.')[0]) > 2
+
+
+def _set_async_flag(data_format: str, xarray_open_kwargs: dict) -> dict:
+    """
+    If we have the data format set to either zarr2 or zarr3, the async flag in
+    `xarray_open_kwargs['storage_options']['remote_opetions']` is constrained to
+    be either False or True, respectively.
+
+    Parameters
+    ----------
+    data_format : str
+
+    xarray_open_kwargs : dict
+        The xarray open kwargs dictionary that may contain storage options.
+    Returns
+    -------
+    dict
+        The updated xarray open kwargs with the async flag set appropriately.
+    """
+    if data_format not in {'zarr2', 'zarr3'}:
+        return xarray_open_kwargs
+
+    storage_opts_template = {
+        'backend_kwargs': {'storage_options': {'remote_options': {'asynchronous': _zarr_async()}}}
+    }
+    if (
+        xarray_open_kwargs.get('backend_kwargs', {})
+        .get('storage_options', {})
+        .get('remote_options', None)
+        is not None
+    ):
+        xarray_open_kwargs['backend_kwargs']['storage_options']['remote_options'][
+            'asynchronous'
+        ] = _zarr_async()
+    elif xarray_open_kwargs.get('backend_kwargs', {}).get('storage_options', None) is not None:
+        xarray_open_kwargs['backend_kwargs']['storage_options'] = storage_opts_template[
+            'backend_kwargs'
+        ]['storage_options']
+    elif xarray_open_kwargs.get('backend_kwargs', None) is not None:
+        xarray_open_kwargs['backend_kwargs'] = storage_opts_template['backend_kwargs']
+    else:
+        xarray_open_kwargs = storage_opts_template
+
+    return xarray_open_kwargs
 
 
 OPTIONS = {

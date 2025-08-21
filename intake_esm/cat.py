@@ -54,6 +54,8 @@ class AggregationType(str, enum.Enum):
 class DataFormat(str, enum.Enum):
     netcdf = 'netcdf'
     zarr = 'zarr'
+    zarr2 = 'zarr2'
+    zarr3 = 'zarr3'
     reference = 'reference'
     opendap = 'opendap'
 

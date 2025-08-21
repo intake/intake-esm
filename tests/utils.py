@@ -19,10 +19,12 @@ zarr_cat_aws_cesm = (
 mixed_cat_sample_cmip6 = os.path.join(here, 'sample-catalogs/cmip6-bcc-mixed-formats.json')
 access_columns_with_iterables_cat = os.path.join(
     here, 'sample-catalogs/access-columns-with-iterables.json'
-)
+
 access_columns_with_tuples_cat = os.path.join(
     here, 'sample-catalogs/access-columns-with-tuples.json'
 )
+zarr_v2_cat = os.path.join(here, 'sample-catalogs/cesm1-lens-zarr2.json')
+zarr_v3_cat = os.path.join(here, 'sample-catalogs/cesm1-lens-zarr2.json')
 
 
 sample_df = pd.DataFrame(
