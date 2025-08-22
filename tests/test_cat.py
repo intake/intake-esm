@@ -147,7 +147,7 @@ def test_esmcatmodel_unique_and_nunique(query, expected_unique_vals, expected_nu
     [
         (access_columns_with_lists_cat, list),
         (access_columns_with_tuples_cat, tuple),
-        (access_columns_with_sets_cat, tuple),
+        (access_columns_with_sets_cat, set),
     ],
 )
 def test_esmcatmodel_roundtrip_itercols_type_stable(catalog_file, expected_type):
@@ -160,7 +160,7 @@ def test_esmcatmodel_roundtrip_itercols_type_stable(catalog_file, expected_type)
     )
     # Create a tempdir & save it there, then open with pandas and literal eval it
     # to check the dtype
-    assert cat.df['variable'].dtype == expected_type
+    assert isinstance(cat.df.loc[0, 'variable'], tuple)
     with tempfile.TemporaryDirectory() as tmpdir:
         cat.save(
             'catalog',
@@ -170,7 +170,7 @@ def test_esmcatmodel_roundtrip_itercols_type_stable(catalog_file, expected_type)
         serialised_cat = pd.read_csv(
             f'{tmpdir}/catalog.csv', converters={'variable': ast.literal_eval}
         )
-        assert isinstance(serialised_cat['variable'].iloc[0], expected_type)
+        assert isinstance(serialised_cat.loc[0, 'variable'], expected_type)
 
 
 @pytest.mark.parametrize(
