@@ -269,7 +269,6 @@ class ESMCatalogModel(pydantic.BaseModel):
                     df=pl.DataFrame(cat.catalog_dict).to_pandas(),
                 )
 
-            cat._cast_agg_columns_with_iterables()
             return cat
 
     def _df_from_file(
@@ -342,23 +341,6 @@ class ESMCatalogModel(pydantic.BaseModel):
         if self.aggregation_control:
             return self.aggregation_control.variable_column_name in self.columns_with_iterables
         return False
-
-    def _cast_agg_columns_with_iterables(self) -> None:
-        """Cast all agg_columns with iterables to tuple values so as
-        to avoid hashing issues (e.g. TypeError: unhashable type: 'list')
-        """
-        if self.aggregation_control:
-            if columns := list(
-                self.columns_with_iterables.intersection(
-                    set(
-                        map(
-                            lambda agg: agg.attribute_name,
-                            self.aggregation_control.aggregations,
-                        )
-                    )
-                )
-            ):
-                self.df[columns] = self.df[columns].apply(tuple)
 
     @property
     def grouped(self) -> pd.core.groupby.DataFrameGroupBy | pd.DataFrame:
