@@ -17,13 +17,12 @@ zarr_cat_aws_cesm = (
     'https://raw.githubusercontent.com/NCAR/cesm-lens-aws/master/intake-catalogs/aws-cesm1-le.json'
 )
 mixed_cat_sample_cmip6 = os.path.join(here, 'sample-catalogs/cmip6-bcc-mixed-formats.json')
-access_columns_with_iterables_cat = os.path.join(
-    here, 'sample-catalogs/access-columns-with-iterables.json'
-)
+access_columns_with_lists_cat = os.path.join(here, 'sample-catalogs/access-columns-with-lists.json')
 
 access_columns_with_tuples_cat = os.path.join(
     here, 'sample-catalogs/access-columns-with-tuples.json'
 )
+access_columns_with_sets_cat = os.path.join(here, 'sample-catalogs/access-columns-with-sets.json')
 zarr_v2_cat = os.path.join(here, 'sample-catalogs/cesm1-lens-zarr2.json')
 zarr_v3_cat = os.path.join(here, 'sample-catalogs/cesm1-lens-zarr2.json')
 

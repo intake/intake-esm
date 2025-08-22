@@ -623,6 +623,9 @@ class CatalogFileDataReader:
                 pl.col(colname)
                 .str.replace('^.', '[')  # Replace first/last chars with [ or ].
                 .str.replace('.$', ']')  # set/tuple => list
+                # ^ We also need to cache - probably as an attriubte on this class
+                # what we found ie. '[' => list, '(' => tuple, etc., so we can write
+                # the correct type back when we serialise the catalog. # TODO
                 .str.replace_all("'", '"')
                 .str.json_decode()  # This is to do with the way polars reads json - single versus double quotes
                 for colname in converters.keys()

@@ -19,7 +19,7 @@ else:
 import intake_esm
 
 from .utils import (
-    access_columns_with_iterables_cat,
+    access_columns_with_lists_cat,
     access_columns_with_tuples_cat,
     catalog_dict_records,
     cdf_cat_sample_cesmle,
@@ -266,7 +266,7 @@ def test_catalog_search(path, query, expected_size):
 @pytest.mark.parametrize(
     'path, columns_with_iterables, query, expected_size',
     [
-        (access_columns_with_iterables_cat, ['variable'], {'variable': ['aice_m']}, 1),
+        (access_columns_with_lists_cat, ['variable'], {'variable': ['aice_m']}, 1),
         (access_columns_with_tuples_cat, ['variable'], {'variable': ['aice_m']}, 1),
     ],
 )
