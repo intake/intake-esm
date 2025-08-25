@@ -23,6 +23,9 @@ access_columns_with_tuples_cat = os.path.join(
     here, 'sample-catalogs/access-columns-with-tuples.json'
 )
 access_columns_with_sets_cat = os.path.join(here, 'sample-catalogs/access-columns-with-sets.json')
+access_single_item_iterables_cat = os.path.join(
+    here, 'sample-catalogs/access-single-item-iterables.json'
+)
 zarr_v2_cat = os.path.join(here, 'sample-catalogs/cesm1-lens-zarr2.json')
 zarr_v3_cat = os.path.join(here, 'sample-catalogs/cesm1-lens-zarr2.json')
 

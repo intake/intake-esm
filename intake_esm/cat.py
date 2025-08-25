@@ -516,7 +516,7 @@ class FramesModel(pydantic.BaseModel):
 
         if self.pl_df is not None:
             self.df = self.pl_df.to_pandas(use_pyarrow_extension_array=True)
-            for colname in self.columns_with_iterables:
+            for colname in self.columns_with_iterables:  # Can this be done in one hit?
                 self.df[colname] = self.df[colname].apply(tuple)
             return self.df
 
@@ -660,6 +660,7 @@ class CatalogFileDataReader:
                 pl.col(colname)
                 .str.replace('^.', '[')  # Replace first/last chars with [ or ].
                 .str.replace('.$', ']')  # set/tuple => list
+                .str.replace(',]$', ']')  # Remove trailing commas
                 .str.replace_all("'", '"')
                 .str.json_decode()  # This is to do with the way polars reads json - single versus double quotes
                 for colname in converters.keys()

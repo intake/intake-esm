@@ -13,6 +13,7 @@ from .utils import (
     access_columns_with_lists_cat,
     access_columns_with_sets_cat,
     access_columns_with_tuples_cat,
+    access_single_item_iterables_cat,
     catalog_dict_records,
     cdf_cat_sample_cesmle,
     cdf_cat_sample_cmip5,
@@ -148,6 +149,7 @@ def test_esmcatmodel_unique_and_nunique(query, expected_unique_vals, expected_nu
         (access_columns_with_lists_cat, list),
         (access_columns_with_tuples_cat, tuple),
         (access_columns_with_sets_cat, set),
+        (access_single_item_iterables_cat, tuple),
     ],
 )
 def test_esmcatmodel_roundtrip_itercols_type_stable(catalog_file, expected_type):
