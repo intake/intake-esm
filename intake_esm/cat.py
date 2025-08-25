@@ -321,9 +321,8 @@ class ESMCatalogModel(pydantic.BaseModel):
         cat.catalog_file = csv_path
 
         reader = CatalogFileDataReader(cat.catalog_file, storage_options, **read_kwargs)
-        read = reader()
-        self._iterable_dtype_map = reader._dtype_map
-        return read
+        self._iterable_dtype_map = reader.dtype_map
+        return reader.frames
 
     @property
     def lf(self) -> pl.LazyFrame:
@@ -610,8 +609,8 @@ class CatalogFileDataReader:
                 f'Expected one of {__filetypes__}'
             )
 
-        # Set default dtype_map to tuple
-        self._dtype_map = {key: 'tuple' for key in self.read_kwargs.get('converters', {}).keys()}
+        self._dtype_map: dict[str, str] = {}
+        self.frames = self._read()
 
     def _read_csv_pd(self) -> FramesModel:
         """Read a catalog file stored as a csv using pandas"""
@@ -653,7 +652,7 @@ class CatalogFileDataReader:
             )
             .collect()
             .to_dicts()
-        ):
+        ):  # Returns an empty list if no rows - hence walrus
             self._dtype_map = dtype_map[0]
 
         lf = lf.with_columns(
@@ -661,9 +660,6 @@ class CatalogFileDataReader:
                 pl.col(colname)
                 .str.replace('^.', '[')  # Replace first/last chars with [ or ].
                 .str.replace('.$', ']')  # set/tuple => list
-                # ^ We also need to cache - probably as an attriubte on this class
-                # what we found ie. '[' => list, '(' => tuple, etc., so we can write
-                # the correct type back when we serialise the catalog. # TODO
                 .str.replace_all("'", '"')
                 .str.json_decode()  # This is to do with the way polars reads json - single versus double quotes
                 for colname in converters.keys()
@@ -680,7 +676,7 @@ class CatalogFileDataReader:
         )
         return FramesModel(lf=lf)
 
-    def __call__(self):
+    def _read(self):
         if self.driver == 'polars':
             if self.filetype == 'csv':
                 return self._read_csv_pl()
@@ -694,3 +690,8 @@ class CatalogFileDataReader:
                 return self._read_csv_pd()
             else:
                 raise ValueError(f'Unsupported file type {self.filetype} for pandas reader')
+
+    @property
+    def dtype_map(self) -> dict[str, str]:
+        """Return a map of column names to their dtypes for columns with iterables."""
+        return self._dtype_map
