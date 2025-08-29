@@ -10,6 +10,7 @@ from .utils import (
     catalog_dict_records,
     cdf_cat_sample_cesmle,
     cdf_cat_sample_cmip5,
+    cdf_cat_sample_cmip5_pq,
     cdf_cat_sample_cmip6,
     cdf_cat_sample_cmip6_noagg,
     multi_variable_cat,
@@ -20,11 +21,19 @@ from .utils import (
     sample_pl_df,
     zarr_cat_aws_cesm,
     zarr_cat_pangeo_cmip6,
+    zarr_v2_cat,
+    zarr_v3_cat,
 )
 
 
 @pytest.mark.parametrize(
-    'column_name, format, format_column_name', [('test', 'zarr', None), ('test', 'netcdf', None)]
+    'column_name, format, format_column_name',
+    [
+        ('test', 'zarr', None),
+        ('test', 'zarr2', None),
+        ('test', 'zarr3', None),
+        ('test', 'netcdf', None),
+    ],
 )
 def test_assets(column_name, format, format_column_name):
     a = Assets(column_name=column_name, format=format, format_column_name=format_column_name)
@@ -44,6 +53,7 @@ def test_assets_mutually_exclusive():
         catalog_dict_records,
         cdf_cat_sample_cmip6,
         cdf_cat_sample_cmip5,
+        cdf_cat_sample_cmip5_pq,
         zarr_cat_aws_cesm,
         zarr_cat_pangeo_cmip6,
         cdf_cat_sample_cmip5,
@@ -51,6 +61,8 @@ def test_assets_mutually_exclusive():
         cdf_cat_sample_cmip6_noagg,
         cdf_cat_sample_cesmle,
         multi_variable_cat,
+        zarr_v2_cat,
+        zarr_v3_cat,
     ],
 )
 @pytest.mark.flaky(max_runs=3, min_passes=1)  # Cold start related failures

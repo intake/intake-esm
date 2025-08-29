@@ -2,6 +2,7 @@ dask[complete]>=2024.12
 fastprogress>=1.0.0
 fsspec>=2024.12
 intake>=2.0.0
+itables
 netCDF4>=1.5.5
 pandas>=2.1.0
 polars>=1.24.0
@@ -9,4 +10,5 @@ pydantic>=2.0
 pydap!=3.5.5
 requests>=2.24.0
 xarray>=2024.10
-zarr>=2.12
+# Allow zarr >2.12 or zarr 3.1.0+
+zarr>=2.12,!=3.0.*

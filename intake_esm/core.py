@@ -21,7 +21,9 @@ try:
     _DATATREE_AVAILABLE = True
 except ImportError:
     _DATATREE_AVAILABLE = False
+import itables
 import pandas as pd
+import polars as pl
 import pydantic
 from fastprogress.fastprogress import progress_bar
 from intake.catalog import Catalog
@@ -30,6 +32,7 @@ from ._imports import _ESMVALCORE_AVAILABLE
 from .cat import ESMCatalogModel, QueryModel
 from .derived import DerivedVariableRegistry, default_registry
 from .source import ESMDataSource
+from .utils import MinimalExploder
 
 
 class esm_datastore(Catalog):
@@ -51,12 +54,16 @@ class esm_datastore(Catalog):
         Delimiter to use when constructing a key for a query, by default '.'
     registry : DerivedVariableRegistry, optional
         Registry of derived variables to use, by default None. If not provided, uses the default registry.
+    read_kwargs : dict, optional
+        Additional keyword arguments passed through to the :py:func:`~polars.scan_csv` function, if the
+        datastore is saved in csv format, or :py:func:`~polars.scan_parquet` if the datastore is saved in
+        parquet format.
     read_csv_kwargs : dict, optional
-        Additional keyword arguments passed through to the :py:func:`~pandas.read_csv` function.
+        Deprecated alias for `read_kwargs`.
     columns_with_iterables : list of str, optional
         A list of columns in the csv file containing iterables. Values in columns specified here will be
         converted with `ast.literal_eval` when :py:func:`~pandas.read_csv` is called (i.e., this is a
-        shortcut to passing converters to `read_csv_kwargs`).
+        shortcut to passing converters to `read_kwargs`).
     storage_options : dict, optional
         Parameters passed to the backend file-system such as Google Cloud Storage,
         Amazon Web Service S3.
@@ -91,6 +98,7 @@ class esm_datastore(Catalog):
         progressbar: bool = True,
         sep: str = '.',
         registry: DerivedVariableRegistry | None = None,
+        read_kwargs: dict[str, typing.Any] | None = None,
         read_csv_kwargs: dict[str, typing.Any] | None = None,
         columns_with_iterables: list[str] | None = None,
         storage_options: dict[str, typing.Any] | None = None,
@@ -100,16 +108,31 @@ class esm_datastore(Catalog):
         """Intake Catalog representing an ESM Collection."""
         super().__init__(**intake_kwargs)
         self.storage_options = storage_options or {}
-        read_csv_kwargs = read_csv_kwargs or {}
+
+        if read_csv_kwargs is not None:
+            warnings.warn(
+                'read_csv_kwargs is deprecated and will be removed in a future version. '
+                'Please use read_kwargs instead.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if read_kwargs is not None:
+                raise ValueError(
+                    'Cannot provide both `read_csv_kwargs` and `read_kwargs`. '
+                    'Please use `read_kwargs`.'
+                )
+            read_kwargs = read_csv_kwargs
+
+        read_kwargs = read_kwargs or {}
         if columns_with_iterables:
             converter = ast.literal_eval
-            read_csv_kwargs.setdefault('converters', {})
+            read_kwargs.setdefault('converters', {})
             for col in columns_with_iterables:
-                if read_csv_kwargs['converters'].setdefault(col, converter) != converter:
+                if read_kwargs['converters'].setdefault(col, converter) != converter:
                     raise ValueError(
-                        f"Cannot provide converter for '{col}' via `read_csv_kwargs` when '{col}' is also specified in `columns_with_iterables`"
+                        f"Cannot provide converter for '{col}' via `read_kwargs` when '{col}' is also specified in `columns_with_iterables`"
                     )
-        self.read_csv_kwargs = read_csv_kwargs
+        self.read_kwargs = read_kwargs
         self.progressbar = progressbar
         self.sep = sep
 
@@ -124,12 +147,13 @@ class esm_datastore(Catalog):
             self.esmcat = ESMCatalogModel.from_dict(obj)
         else:
             self.esmcat = ESMCatalogModel.load(
-                obj, storage_options=self.storage_options, read_csv_kwargs=read_csv_kwargs
+                obj, storage_options=self.storage_options, read_kwargs=read_kwargs
             )
 
         self.derivedcat = registry or default_registry
         self._entries = {}
         self._requested_variables = []
+        self._columns_with_iterables = columns_with_iterables or []
         self.datasets = {}
         self._validate_derivedcat()
 
@@ -216,6 +240,36 @@ class esm_datastore(Catalog):
         Return pandas :py:class:`~pandas.DataFrame`.
         """
         return self.esmcat.df
+
+    @property
+    def interactive(self) -> None:
+        """
+        Use itables to display the catalog in an interactive table. Use polars
+        for performance ideally. Fall back to pandas if not.
+
+        We have to explode columns with iterables, otherwise javascript stringifcation
+        can cause ellipsis to be rendered directly into the interactive table,
+        losing actual data and inserting junk.
+        """
+
+        try:
+            pl_df = self.esmcat._frames.polars  # type:ignore[union-attr]
+        except AttributeError:
+            pl_df = pl.from_pandas(self.df)
+
+        exploded_df = MinimalExploder(pl_df)()
+
+        return itables.show(
+            exploded_df,
+            search={'regex': True, 'caseInsensitive': True},
+            layout={'top1': 'searchPanes'},
+            searchPanes={
+                'layout': 'columns-3',
+                'cascadePanes': True,
+                'columns': [i for i, _ in enumerate(pl_df.columns)],
+            },
+            maxBytes=0,
+        )
 
     def __len__(self) -> int:
         return len(self.keys())

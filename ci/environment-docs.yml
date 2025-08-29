@@ -10,6 +10,7 @@ dependencies:
   - fsspec >=2024.12
   - gcsfs >=2024.12
   - intake >=2.0
+  - itables
   - jupyterlab
   - matplotlib
   - myst-nb
@@ -29,7 +30,7 @@ dependencies:
   - watermark
   - xarray-datatree >=0.0.9
   - xarray >=2024.10
-  - zarr >=2.12,<3.0
+  - zarr <3.0|>=3.0.10
   - furo >=2022.09.15
   - pip:
       - git+https://github.com/ncar-xdev/ecgtools

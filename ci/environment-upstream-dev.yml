@@ -12,6 +12,7 @@ dependencies:
   - gcsfs >=2024.12
   - h5netcdf >=0.8.1
   - ipython
+  - itables
   - matplotlib
   - netcdf4 >=1.5.5,!=1.6.1
   - pandas >=2.1.0
@@ -36,7 +37,7 @@ dependencies:
   - scipy
   - xarray-datatree
   - xgcm
-  - zarr >=2.10,<3.0
+  - zarr <3.0|>=3.0.10
   - pip:
       - git+https://github.com/intake/intake.git
       - git+https://github.com/pydata/xarray.git

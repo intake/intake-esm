@@ -8,6 +8,7 @@ zarr_cat_pangeo_cmip6 = 'https://storage.googleapis.com/cmip6/pangeo-cmip6.json'
 cdf_cat_sample_cmip6 = os.path.join(here, 'sample-catalogs/cmip6-netcdf.json')
 multi_variable_cat = os.path.join(here, 'sample-catalogs/multi-variable-catalog.json')
 cdf_cat_sample_cmip5 = os.path.join(here, 'sample-catalogs/cmip5-netcdf.json')
+cdf_cat_sample_cmip5_pq = os.path.join(here, 'sample-catalogs/cmip5-netcdf-parquet.json')
 cdf_cat_sample_cesmle = os.path.join(here, 'sample-catalogs/cesm1-lens-netcdf.json')
 catalog_dict_records = os.path.join(here, 'sample-catalogs/catalog-dict-records.json')
 cdf_cat_sample_cmip6_noagg = os.path.join(here, 'sample-catalogs/cmip6-netcdf-noagg.json')
@@ -19,6 +20,8 @@ mixed_cat_sample_cmip6 = os.path.join(here, 'sample-catalogs/cmip6-bcc-mixed-for
 access_columns_with_iterables_cat = os.path.join(
     here, 'sample-catalogs/access-columns-with-iterables.json'
 )
+zarr_v2_cat = os.path.join(here, 'sample-catalogs/cesm1-lens-zarr2.json')
+zarr_v3_cat = os.path.join(here, 'sample-catalogs/cesm1-lens-zarr2.json')
 
 
 sample_df = pd.DataFrame(
