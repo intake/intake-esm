@@ -258,8 +258,53 @@ def test_catalog_contains():
 )
 def test_catalog_search(path, query, expected_size):
     cat = intake.open_esm_datastore(path)
+    assert cat.search_history == []
     new_cat = cat.search(**query)
     assert len(new_cat) == expected_size
+
+
+@pytest.mark.parametrize(
+    'path, query, expected',
+    [
+        (cdf_cat_sample_cesmle, {'experiment': 'CTRL'}, [{'experiment': ['CTRL']}]),
+        (cdf_cat_sample_cesmle, {'experiment': ['CTRL', '20C']}, [{'experiment': ['CTRL', '20C']}]),
+        (cdf_cat_sample_cesmle, {}, [{}]),
+        (
+            cdf_cat_sample_cesmle,
+            {'variable': 'SHF', 'time_range': ['200601-210012']},
+            [{'variable': ['SHF']}, {'time_range': ['200601-210012']}],
+        ),
+    ],
+)
+def test_catalog_search_history(path, query, expected):
+    cat = intake.open_esm_datastore(path)
+    assert cat.search_history == []
+    new_cat = cat.search(**query)
+    assert new_cat.search_history == expected
+
+
+@pytest.mark.parametrize(
+    'path, queries, expected',
+    [
+        (cdf_cat_sample_cesmle, [{'experiment': 'CTRL'}, {}], [{'experiment': ['CTRL']}, {}]),
+        (
+            cdf_cat_sample_cesmle,
+            [{'variable': 'SHF'}, {'time_range': ['200601-210012']}],
+            [{'variable': ['SHF']}, {'time_range': ['200601-210012']}],
+        ),
+        (
+            cdf_cat_sample_cesmle,
+            [{'experiment': ['CTRL', '20C']}, {'variable': 'SHF'}],
+            [{'experiment': ['CTRL', '20C']}, {'variable': ['SHF']}],
+        ),
+    ],
+)
+def test_catalog_search_history_sequential(path, queries, expected):
+    cat = intake.open_esm_datastore(path)
+    assert cat.search_history == []
+    q1, q2 = queries
+    new_cat = cat.search(**q1).search(**q2)
+    assert new_cat.search_history == expected
 
 
 @pytest.mark.parametrize(
@@ -704,3 +749,33 @@ def test__get_threaded(mock_get_env, threaded, ITK_ESM_THREADING, expected):
             intake_esm.core._get_threaded(threaded)
     else:
         assert intake_esm.core._get_threaded(threaded) == expected
+
+
+@mock.patch('intake_esm.core._ESMVALCORE_AVAILABLE', False)
+def test_to_esmvalcore_unavailable():
+    cat = intake.open_esm_datastore(zarr_cat_pangeo_cmip6)
+    cat_sub = cat.search(
+        **dict(
+            variable_id=['pr'],
+            experiment_id='ssp370',
+            activity_id='AerChemMIP',
+            source_id='BCC-ESM1',
+            table_id='Amon',
+            grid_label='gn',
+        )
+    )
+    with pytest.raises(ImportError, match=r'`to_esmvalcore\(\)` requires the esmvalcore package'):
+        _ = cat_sub.to_esmvalcore(
+            search=dict(
+                variable_id=['pr'],
+                experiment_id='ssp370',
+                activity_id='AerChemMIP',
+                source_id='BCC-ESM1',
+                table_id='Amon',
+                grid_label='gn',
+            ),
+            xarray_open_kwargs={
+                'consolidated': True,
+                'backend_kwargs': {'storage_options': {'token': 'anon'}},
+            },
+        )
