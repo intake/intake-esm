@@ -1,3 +1,6 @@
+import ast
+import tempfile
+
 import pandas as pd
 import polars as pl
 import pydantic
@@ -7,6 +10,10 @@ from polars import testing as pl_testing
 from intake_esm.cat import Assets, ESMCatalogModel, FramesModel, QueryModel
 
 from .utils import (
+    access_columns_with_lists_cat,
+    access_columns_with_sets_cat,
+    access_columns_with_tuples_cat,
+    access_single_item_iterables_cat,
     catalog_dict_records,
     cdf_cat_sample_cesmle,
     cdf_cat_sample_cmip5,
@@ -134,6 +141,38 @@ def test_esmcatmodel_unique_and_nunique(query, expected_unique_vals, expected_nu
     cat_sub = ESMCatalogModel.from_dict({'esmcat': sample_esmcat_data, 'df': df_sub})
     assert cat_sub.unique().to_dict() == expected_unique_vals
     assert cat_sub.nunique().to_dict() == expected_nunique_vals
+
+
+@pytest.mark.parametrize(
+    'catalog_file, expected_type',
+    [
+        (access_columns_with_lists_cat, list),
+        (access_columns_with_tuples_cat, tuple),
+        (access_columns_with_sets_cat, set),
+        (access_single_item_iterables_cat, tuple),
+    ],
+)
+def test_esmcatmodel_roundtrip_itercols_type_stable(catalog_file, expected_type):
+    """
+    Test that if we open a catalog with list iterable column, they are saved as
+    lists, tuples as tuples, etc.
+    """
+    cat = ESMCatalogModel.load(
+        catalog_file, read_kwargs={'converters': {'variable': ast.literal_eval}}
+    )
+    # Create a tempdir & save it there, then open with pandas and literal eval it
+    # to check the dtype
+    assert isinstance(cat.df.loc[0, 'variable'], tuple)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        cat.save(
+            'catalog',
+            directory=tmpdir,
+            catalog_type='file',
+        )
+        serialised_cat = pd.read_csv(
+            f'{tmpdir}/catalog.csv', converters={'variable': ast.literal_eval}
+        )
+        assert isinstance(serialised_cat.loc[0, 'variable'], expected_type)
 
 
 @pytest.mark.parametrize(

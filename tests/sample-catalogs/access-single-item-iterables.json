@@ -77,5 +77,5 @@
   "description": "0.1 degree ACCESS-OM2 global model configuration with JRA55-do v1.3 RYF9091  repeat year forcing (May 1990 to Apr 1991)",
   "title": null,
   "last_updated": "2025-03-04T01:25:35Z",
-  "catalog_file": "access-columns-with-iterables.csv.gz"
+  "catalog_file": "access-single-item-iterables.csv"
 }
