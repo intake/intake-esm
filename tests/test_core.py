@@ -245,60 +245,64 @@ def test_write_csv_conflict(tmp_path, datastore, file_format, catalog_type):
 
 
 @pytest.mark.parametrize(
-    'file_format',
+    'file_format_1',
     [
         'csv',
         'parquet',
     ],
 )
 @pytest.mark.parametrize(
-    'datastore',
+    'file_format_2',
     [
-        cdf_cat_sample_cmip5_pq,
-        cdf_cat_sample_cmip5,
+        'csv',
+        'parquet',
     ],
 )
-def test_open_and_reserialize(tmp_path, datastore, file_format):
+def test_open_and_reserialize(tmp_path, file_format_1, file_format_2):
     """
     Open a catalog, and then re-serialize it into `tmp_path`. We want to
     make sure that the reserialised catalog is the same as the original, but that
     the catalog file is stored in the correct format.
+
+    Note: Round-trip twice as it seems the defaults have changed since the test dataset was
+    created. Only affects unspecified fields.
     """
-    catalog = intake.open_esm_datastore(datastore)
+    catalog = intake.open_esm_datastore(cdf_cat_sample_cmip5)
 
     catalog.serialize(
-        name='test_catalog',
+        name='serialized',
         directory=tmp_path,
         catalog_type='file',
-        file_format=file_format,
+        file_format=file_format_1,
         storage_options={},
     )
 
-    with open(datastore) as f:
-        catalog_json = json.load(f)
+    catalog = intake.open_esm_datastore(tmp_path / 'serialized.json')
 
-    with open(tmp_path / 'test_catalog.json') as f:
-        saved_json = json.load(f)
+    catalog.serialize(
+        name='reserialized',
+        directory=tmp_path,
+        catalog_type='file',
+        file_format=file_format_2,
+        storage_options={},
+    )
 
-    assert saved_json.get('catalog_file', '').endswith(file_format)
+    with open(tmp_path / 'serialized.json') as f:
+        serialized = json.load(f)
+
+    with open(tmp_path / 'reserialized.json') as f:
+        reserialized = json.load(f)
+
+    assert serialized.get('catalog_file', '').endswith(file_format_1)
+    assert reserialized.get('catalog_file', '').endswith(file_format_2)
 
     # Remove fields that are expected to change
     changed_fieldnames = ['catalog_file', 'last_updated', 'id', 'title']
     for field in changed_fieldnames:
-        saved_json.pop(field, None)
-        catalog_json.pop(field, None)
+        serialized.pop(field, None)
+        reserialized.pop(field, None)
 
-    # This seems like an change to defaults?
-    for l_item in saved_json['aggregation_control']['aggregations']:
-        # l_item is a dict - remove empty options dicts
-        if l_item.get('options', {}) == {}:
-            l_item.pop('options', None)
-
-    # This also seems like a change to defaults?
-    if saved_json.get('assets', {}).get('format_column_name', None) is None:
-        saved_json['assets'].pop('format_column_name', None)
-
-    assert saved_json == catalog_json
+    assert serialized == reserialized
 
 
 @pytest.mark.parametrize(
