@@ -521,7 +521,7 @@ class esm_datastore(Catalog):
         json_dump_kwargs: dict[typing.Any, typing.Any] | None = None,
         storage_options: dict[str, typing.Any] | None = None,
     ) -> None:
-        """Serialize catalog to corresponding json and csv files.
+        """Serialize catalog to corresponding json and csv (or parquet) files.
 
         Parameters
         ----------
@@ -549,7 +549,7 @@ class esm_datastore(Catalog):
         Notes
         -----
         Large catalogs can result in large JSON files. To keep the JSON file size manageable, call with
-        `catalog_type='file'` to save catalog as a separate CSV file.
+        `catalog_type='file'` to save catalog as a separate CSV/parquet file.
 
         Examples
         --------
