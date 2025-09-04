@@ -662,8 +662,10 @@ class CatalogFileDataReader:
                 .str.replace('^.', '[')  # Replace first/last chars with [ or ].
                 .str.replace('.$', ']')  # set/tuple => list
                 .str.replace(',]$', ']')  # Remove trailing commas
-                .str.replace_all("'", '"')
-                .str.json_decode()  # This is to do with the way polars reads json - single versus double quotes
+                .str.replace_all(
+                    "'", '"'
+                )  # This is to do with the JSON spec- single versus double quotes
+                .str.json_decode(dtype=pl.List(pl.Utf8))
                 for colname in converters.keys()
             ]
         )
