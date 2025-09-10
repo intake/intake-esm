@@ -759,6 +759,7 @@
 
 - Fix CESM-LE ice component peculiarities that caused intake-esm to load data improperly.
   The fix separates variables for `ice` component into two separate components:
+
   - `ice_sh`: for southern hemisphere
   - `ice_nh`: for northern hemisphere
 

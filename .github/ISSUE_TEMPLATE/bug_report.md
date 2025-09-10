@@ -17,6 +17,7 @@ Here's a quick checklist in what to include:
 - [ ] Include a detailed description of the bug or suggestion
 - [ ] Output of `intake_esm.show_versions()`
 - [ ] Minimal, self-contained copy-pastable example that generates the issue if possible. Please be concise with code posted. See guidelines below on how to provide a good bug report:
+
   - [Minimal Complete Verifiable Examples](https://stackoverflow.com/help/mcve)
   - [Craft Minimal Bug Reports](http://matthewrocklin.com/blog/work/2018/02/28/minimal-bug-reports)
 
