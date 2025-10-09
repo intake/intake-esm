@@ -19,7 +19,7 @@ from typing_extensions import Self
 from ._search import search, search_apply_require_all_on
 
 __framereaders__ = [pl, pd]
-__filetypes__ = ["csv", "csv.bz2", "csv.gz", "parquet"]
+__filetypes__ = ['csv', 'csv.bz2', 'csv.gz', 'parquet']
 
 
 def _allnan_or_nonan(df, column: str) -> bool:
@@ -39,33 +39,33 @@ def _allnan_or_nonan(df, column: str) -> bool:
         return False
     if df[column].isnull().any():
         raise ValueError(
-            f"The data in the {column} column should either be all NaN or there should be no NaNs"
+            f'The data in the {column} column should either be all NaN or there should be no NaNs'
         )
     return True
 
 
 class AggregationType(str, enum.Enum):
-    join_new = "join_new"
-    join_existing = "join_existing"
-    union = "union"
+    join_new = 'join_new'
+    join_existing = 'join_existing'
+    union = 'union'
 
     model_config = ConfigDict(validate_assignment=True)
 
 
 class DataFormat(str, enum.Enum):
-    netcdf = "netcdf"
-    zarr = "zarr"
-    zarr2 = "zarr2"
-    zarr3 = "zarr3"
-    reference = "reference"
-    opendap = "opendap"
+    netcdf = 'netcdf'
+    zarr = 'zarr'
+    zarr2 = 'zarr2'
+    zarr3 = 'zarr3'
+    reference = 'reference'
+    opendap = 'opendap'
 
     model_config = ConfigDict(validate_assignment=True)
 
 
 class Attribute(pydantic.BaseModel):
     column_name: pydantic.StrictStr
-    vocabulary: pydantic.StrictStr = ""
+    vocabulary: pydantic.StrictStr = ''
 
     model_config = ConfigDict(validate_assignment=True)
 
@@ -77,13 +77,13 @@ class Assets(pydantic.BaseModel):
 
     model_config = ConfigDict(validate_assignment=True)
 
-    @pydantic.model_validator(mode="after")
+    @pydantic.model_validator(mode='after')
     def _validate_data_format(self):
         data_format, format_column_name = self.format, self.format_column_name
         if data_format is not None and format_column_name is not None:
-            raise ValueError("Cannot set both format and format_column_name")
+            raise ValueError('Cannot set both format and format_column_name')
         elif data_format is None and format_column_name is None:
-            raise ValueError("Must set one of format or format_column_name")
+            raise ValueError('Must set one of format or format_column_name')
         return self
 
 
@@ -112,7 +112,7 @@ class ESMCatalogModel(pydantic.BaseModel):
     attributes: list[Attribute]
     assets: Assets
     aggregation_control: AggregationControl | None = None
-    id: str = ""
+    id: str = ''
     catalog_dict: list[dict] | None = None
     catalog_file: pydantic.StrictStr | None = None
     description: pydantic.StrictStr | None = None
@@ -120,36 +120,30 @@ class ESMCatalogModel(pydantic.BaseModel):
     last_updated: datetime.datetime | datetime.date | None = None
     _df: pd.DataFrame | None = pydantic.PrivateAttr()
     _frames: FramesModel | None = pydantic.PrivateAttr()
-    _iterable_dtype_map: dict[str, str] = pydantic.PrivateAttr(
-        default_factory=dict
-    )
+    _iterable_dtype_map: dict[str, str] = pydantic.PrivateAttr(default_factory=dict)
 
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True, validate_assignment=True
-    )
+    model_config = ConfigDict(arbitrary_types_allowed=True, validate_assignment=True)
 
-    @pydantic.model_validator(mode="after")
+    @pydantic.model_validator(mode='after')
     def validate_catalog(cls, model):
         catalog_dict, catalog_file = model.catalog_dict, model.catalog_file
         if catalog_dict is not None and catalog_file is not None:
-            raise ValueError(
-                "catalog_dict and catalog_file cannot be set at the same time"
-            )
+            raise ValueError('catalog_dict and catalog_file cannot be set at the same time')
 
         return model
 
     def __setattr__(self, name, value):
         """If we manually set _df, we need to propagate the change to _frames"""
-        if name == "_df":
+        if name == '_df':
             self._frames = FramesModel(df=value)
         return super().__setattr__(name, value)
 
     @classmethod
     def from_dict(cls, data: dict) -> ESMCatalogModel:
-        esmcat = data["esmcat"]
-        df = data["df"]
-        if "last_updated" not in esmcat:
-            esmcat["last_updated"] = None
+        esmcat = data['esmcat']
+        df = data['df']
+        if 'last_updated' not in esmcat:
+            esmcat['last_updated'] = None
         cat = cls.model_validate(esmcat)
         cat._df = df
         cat._frames = FramesModel(df=df)
@@ -160,7 +154,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         name: str,
         *,
         directory: str | None = None,
-        catalog_type: str = "dict",
+        catalog_type: str = 'dict',
         to_csv_kwargs: dict | None = None,
         json_dump_kwargs: dict | None = None,
         storage_options: dict[str, typing.Any] | None = None,
@@ -193,7 +187,7 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         """
 
-        if catalog_type not in {"file", "dict"}:
+        if catalog_type not in {'file', 'dict'}:
             raise ValueError(
                 f'catalog_type must be either "dict" or "file". Received catalog_type={catalog_type}'
             )
@@ -204,48 +198,46 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         # Configure the fsspec mapper and associated filenames
         storage_options = storage_options if storage_options is not None else {}
-        mapper = fsspec.get_mapper(f"{directory}", **storage_options)
+        mapper = fsspec.get_mapper(f'{directory}', **storage_options)
         fs = mapper.fs
-        csv_file_name = fs.unstrip_protocol(f"{mapper.root}/{name}.csv")
-        json_file_name = fs.unstrip_protocol(f"{mapper.root}/{name}.json")
+        csv_file_name = fs.unstrip_protocol(f'{mapper.root}/{name}.csv')
+        json_file_name = fs.unstrip_protocol(f'{mapper.root}/{name}.json')
 
         data = self.model_dump().copy()
-        for key in {"catalog_dict", "catalog_file"}:
+        for key in {'catalog_dict', 'catalog_file'}:
             data.pop(key, None)
-        data["id"] = name
-        data["last_updated"] = (
-            datetime.datetime.now().utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-        )
+        data['id'] = name
+        data['last_updated'] = datetime.datetime.now().utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
 
         _tmp_df = self.df.copy(deep=True)
 
         for colname, dtype in self._iterable_dtype_map.items():
             _tmp_df[colname] = _tmp_df[colname].apply(getattr(builtins, dtype))
 
-        if catalog_type == "file":
-            csv_kwargs: dict[str, typing.Any] = {"index": False}
+        if catalog_type == 'file':
+            csv_kwargs: dict[str, typing.Any] = {'index': False}
             csv_kwargs |= to_csv_kwargs or {}
-            compression = csv_kwargs.get("compression", "")
+            compression = csv_kwargs.get('compression', '')
             extensions = {
-                "gzip": ".gz",
-                "bz2": ".bz2",
-                "zip": ".zip",
-                "xz": ".xz",
+                'gzip': '.gz',
+                'bz2': '.bz2',
+                'zip': '.zip',
+                'xz': '.xz',
             }
             csv_file_name = f'{csv_file_name}{extensions.get(compression, "")}'
-            data["catalog_file"] = str(csv_file_name)
+            data['catalog_file'] = str(csv_file_name)
 
-            with fs.open(csv_file_name, "wb") as csv_outfile:
+            with fs.open(csv_file_name, 'wb') as csv_outfile:
                 _tmp_df.to_csv(csv_outfile, **csv_kwargs)
         else:
-            data["catalog_dict"] = _tmp_df.to_dict(orient="records")
+            data['catalog_dict'] = _tmp_df.to_dict(orient='records')
 
-        with fs.open(json_file_name, "w") as outfile:
-            json_kwargs = {"indent": 2}
+        with fs.open(json_file_name, 'w') as outfile:
+            json_kwargs = {'indent': 2}
             json_kwargs |= json_dump_kwargs or {}
             json.dump(data, outfile, **json_kwargs)  # type: ignore[arg-type]
 
-        print(f"Successfully wrote ESM catalog json file to: {json_file_name}")
+        print(f'Successfully wrote ESM catalog json file to: {json_file_name}')
 
     @classmethod
     def load(
@@ -277,13 +269,11 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         with fsspec.open(json_file, **storage_options) as fobj:
             data = json.loads(fobj.read())
-            if "last_updated" not in data:
-                data["last_updated"] = None
+            if 'last_updated' not in data:
+                data['last_updated'] = None
             cat = cls.model_validate(data)
             if cat.catalog_file:
-                cat._frames = cat._df_from_file(
-                    cat, _mapper, storage_options, read_kwargs
-                )
+                cat._frames = cat._df_from_file(cat, _mapper, storage_options, read_kwargs)
             else:
                 cat._frames = FramesModel(
                     lf=pl.LazyFrame(cat.catalog_dict),
@@ -332,12 +322,10 @@ class ESMCatalogModel(pydantic.BaseModel):
         if _mapper.fs.exists(cat.catalog_file):
             csv_path = cat.catalog_file
         else:
-            csv_path = f"{os.path.dirname(_mapper.root)}/{cat.catalog_file}"
+            csv_path = f'{os.path.dirname(_mapper.root)}/{cat.catalog_file}'
         cat.catalog_file = csv_path
 
-        reader = CatalogFileDataReader(
-            cat.catalog_file, storage_options, **read_kwargs
-        )
+        reader = CatalogFileDataReader(cat.catalog_file, storage_options, **read_kwargs)
         self._iterable_dtype_map = reader.dtype_map
         return reader.frames
 
@@ -365,10 +353,7 @@ class ESMCatalogModel(pydantic.BaseModel):
     def has_multiple_variable_assets(self) -> bool:
         """Return True if the catalog has multiple variable assets."""
         if self.aggregation_control:
-            return (
-                self.aggregation_control.variable_column_name
-                in self.columns_with_iterables
-            )
+            return self.aggregation_control.variable_column_name in self.columns_with_iterables
         return False
 
     @property
@@ -394,16 +379,10 @@ class ESMCatalogModel(pydantic.BaseModel):
         )
         return self.df.groupby(cols)
 
-    def _construct_group_keys(
-        self, sep: str = "."
-    ) -> dict[str, str | tuple[str]]:
+    def _construct_group_keys(self, sep: str = '.') -> dict[str, str | tuple[str]]:
         internal_keys = self.grouped.groups.keys()
         public_keys = map(
-            lambda key: (
-                key
-                if isinstance(key, str)
-                else sep.join(str(value) for value in key)
-            ),
+            lambda key: (key if isinstance(key, str) else sep.join(str(value) for value in key)),
             internal_keys,
         )
 
@@ -420,7 +399,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         if data.empty:
             return {col: [] for col in self.df.columns}
         else:
-            return data.apply(_find_unique, result_type="reduce").to_dict()
+            return data.apply(_find_unique, result_type='reduce').to_dict()
 
     def unique(self) -> pd.Series:
         """Return a series of unique values for each column in the catalog."""
@@ -493,7 +472,7 @@ class QueryModel(pydantic.BaseModel):
     # validate_assignment=True since it leads to recursion
     model_config = ConfigDict(validate_assignment=False)
 
-    @pydantic.model_validator(mode="after")
+    @pydantic.model_validator(mode='after')
     def validate_query(cls, model):
         query = model.query
         columns = model.columns
@@ -502,20 +481,16 @@ class QueryModel(pydantic.BaseModel):
         if query:
             for key in query:
                 if key not in columns:
-                    raise ValueError(f"Column {key} not in columns {columns}")
+                    raise ValueError(f'Column {key} not in columns {columns}')
         if isinstance(require_all_on, str):
             model.require_all_on = [require_all_on]
         if require_all_on is not None:
             for key in model.require_all_on:
                 if key not in columns:
-                    raise ValueError(f"Column {key} not in columns {columns}")
+                    raise ValueError(f'Column {key} not in columns {columns}')
         _query = query.copy()
         for key, value in _query.items():
-            if (
-                isinstance(value, str | int | float | bool)
-                or value is None
-                or value is pd.NA
-            ):
+            if isinstance(value, str | int | float | bool) or value is None or value is pd.NA:
                 _query[key] = [value]
 
         model.query = _query
@@ -530,18 +505,16 @@ class FramesModel(pydantic.BaseModel):
     pl_df: pl.DataFrame | None = None
     lf: pl.LazyFrame | None = None
 
-    model_config = ConfigDict(
-        validate_assignment=True, arbitrary_types_allowed=True
-    )
+    model_config = ConfigDict(validate_assignment=True, arbitrary_types_allowed=True)
 
-    @pydantic.model_validator(mode="after")
+    @pydantic.model_validator(mode='after')
     def ensure_some(self) -> Self:
         """
         Make sure that at least one of the dataframes is not `None` when the model is
         instantiated.
         """
         if self.df is None and self.pl_df is None and self.lf is None:
-            raise AssertionError("At least one of df, pl_df, or lf must be set")
+            raise AssertionError('At least one of df, pl_df, or lf must be set')
         return self
 
     @property
@@ -600,11 +573,7 @@ class FramesModel(pydantic.BaseModel):
             return set()
 
         colnames, dtypes = trunc_df.columns, trunc_df.dtypes
-        return {
-            colname
-            for colname, dtype in zip(colnames, dtypes)
-            if dtype == pl.List
-        }
+        return {colname for colname, dtype in zip(colnames, dtypes) if dtype == pl.List}
 
     def nunique(self) -> pd.Series:
         """Return a series of the number of unique values for each column in the catalog."""
@@ -634,26 +603,22 @@ class CatalogFileDataReader:
         self.read_kwargs = read_kwargs
 
         if self.catalog_file is None:
-            raise AssertionError(
-                "catalog_file must be set to a valid file path or URL"
-            )
+            raise AssertionError('catalog_file must be set to a valid file path or URL')
 
         # I think we want to replace this with a dict lookup.
-        if self.catalog_file.endswith(".csv.gz") or self.catalog_file.endswith(
-            ".csv"
-        ):
-            self.driver = "polars"
-            self.filetype = "csv"
-        elif self.catalog_file.endswith(".parquet"):
-            self.driver = "polars"
-            self.filetype = "parquet"
-        elif self.catalog_file.endswith(".csv.bz2"):
-            self.driver = "pandas"
-            self.filetype = "csv"
+        if self.catalog_file.endswith('.csv.gz') or self.catalog_file.endswith('.csv'):
+            self.driver = 'polars'
+            self.filetype = 'csv'
+        elif self.catalog_file.endswith('.parquet'):
+            self.driver = 'polars'
+            self.filetype = 'parquet'
+        elif self.catalog_file.endswith('.csv.bz2'):
+            self.driver = 'pandas'
+            self.filetype = 'csv'
         else:
             raise ValueError(
-                f"Unsupported file type for catalog_file {self.catalog_file}. "
-                f"Expected one of {__filetypes__}"
+                f'Unsupported file type for catalog_file {self.catalog_file}. '
+                f'Expected one of {__filetypes__}'
             )
 
         self._dtype_map: dict[str, str] = {}
@@ -667,14 +632,14 @@ class CatalogFileDataReader:
             **self.read_kwargs,
         )
         self._dtype_map = {
-            colname: df["colname"].dtype
-            for colname in self.read_kwargs.get("converters", {}).keys()
+            colname: df['colname'].dtype
+            for colname in self.read_kwargs.get('converters', {}).keys()
         }
         return FramesModel(df=df)
 
     def _read_csv_pl(self) -> FramesModel:
         """Read a catalog file stored as a csv using polars"""
-        converters = self.read_kwargs.pop("converters", {})  # Hack
+        converters = self.read_kwargs.pop('converters', {})  # Hack
         # See https://github.com/pola-rs/polars/issues/13040 - can't use read_csv.
         lf = pl.scan_csv(
             self.catalog_file,  # type: ignore[arg-type]
@@ -691,8 +656,8 @@ class CatalogFileDataReader:
                     pl.col(colname)
                     .str.head(1)
                     .str.replace_many(
-                        ["[", "(", "{"],
-                        ["list", "tuple", "set"],
+                        ['[', '(', '{'],
+                        ['list', 'tuple', 'set'],
                     )
                     for colname in converters.keys()
                 ]
@@ -705,9 +670,9 @@ class CatalogFileDataReader:
         lf = lf.with_columns(
             [
                 pl.col(colname)
-                .str.replace("^.", "[")  # Replace first/last chars with [ or ].
-                .str.replace(".$", "]")  # set/tuple => list
-                .str.replace(",]$", "]")  # Remove trailing commas
+                .str.replace('^.', '[')  # Replace first/last chars with [ or ].
+                .str.replace('.$', ']')  # set/tuple => list
+                .str.replace(',]$', ']')  # Remove trailing commas
                 .str.replace_all("'", '"')
                 .str.json_decode()  # This is to do with the way polars reads json - single versus double quotes
                 for colname in converters.keys()
@@ -725,23 +690,19 @@ class CatalogFileDataReader:
         return FramesModel(lf=lf)
 
     def _read(self):
-        if self.driver == "polars":
-            if self.filetype == "csv":
+        if self.driver == 'polars':
+            if self.filetype == 'csv':
                 return self._read_csv_pl()
-            elif self.filetype == "parquet":
+            elif self.filetype == 'parquet':
                 return self._read_parquet_pl()
             else:
-                raise ValueError(
-                    f"Unsupported file type {self.filetype} for polars reader"
-                )
+                raise ValueError(f'Unsupported file type {self.filetype} for polars reader')
 
-        if self.driver == "pandas":
-            if self.filetype == "csv":
+        if self.driver == 'pandas':
+            if self.filetype == 'csv':
                 return self._read_csv_pd()
             else:
-                raise ValueError(
-                    f"Unsupported file type {self.filetype} for pandas reader"
-                )
+                raise ValueError(f'Unsupported file type {self.filetype} for pandas reader')
 
     @property
     def dtype_map(self) -> dict[str, str]:
