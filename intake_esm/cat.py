@@ -78,13 +78,13 @@ class Assets(pydantic.BaseModel):
     model_config = ConfigDict(validate_assignment=True)
 
     @pydantic.model_validator(mode='after')
-    def _validate_data_format(cls, model):
-        data_format, format_column_name = model.format, model.format_column_name
+    def _validate_data_format(self):
+        data_format, format_column_name = self.format, self.format_column_name
         if data_format is not None and format_column_name is not None:
             raise ValueError('Cannot set both format and format_column_name')
         elif data_format is None and format_column_name is None:
             raise ValueError('Must set one of format or format_column_name')
-        return model
+        return self
 
 
 class Aggregation(pydantic.BaseModel):
