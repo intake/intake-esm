@@ -218,12 +218,7 @@ class ESMCatalogModel(pydantic.BaseModel):
             csv_kwargs: dict[str, typing.Any] = {'index': False}
             csv_kwargs |= to_csv_kwargs or {}
             compression = csv_kwargs.get('compression', '')
-            extensions = {
-                'gzip': '.gz',
-                'bz2': '.bz2',
-                'zip': '.zip',
-                'xz': '.xz',
-            }
+            extensions = {'gzip': '.gz', 'bz2': '.bz2', 'zip': '.zip', 'xz': '.xz'}
             csv_file_name = f'{csv_file_name}{extensions.get(compression, "")}'
             data['catalog_file'] = str(csv_file_name)
 
@@ -382,7 +377,7 @@ class ESMCatalogModel(pydantic.BaseModel):
     def _construct_group_keys(self, sep: str = '.') -> dict[str, str | tuple[str]]:
         internal_keys = self.grouped.groups.keys()
         public_keys = map(
-            lambda key: (key if isinstance(key, str) else sep.join(str(value) for value in key)),
+            lambda key: key if isinstance(key, str) else sep.join(str(value) for value in key),
             internal_keys,
         )
 
@@ -440,16 +435,12 @@ class ESMCatalogModel(pydantic.BaseModel):
             query
             if isinstance(query, QueryModel)
             else QueryModel(
-                query=query,
-                require_all_on=require_all_on,
-                columns=self.df.columns.tolist(),
+                query=query, require_all_on=require_all_on, columns=self.df.columns.tolist()
             )
         )
 
         results = search(
-            df=self.df,
-            query=_query.query,
-            columns_with_iterables=self.columns_with_iterables,
+            df=self.df, query=_query.query, columns_with_iterables=self.columns_with_iterables
         )
         if _query.require_all_on is not None and not results.empty:
             results = search_apply_require_all_on(
@@ -579,11 +570,9 @@ class FramesModel(pydantic.BaseModel):
         """Return a series of the number of unique values for each column in the catalog."""
         return pd.Series(
             {
-                colname: (
-                    self.polars.get_column(colname).explode().n_unique()
-                    if self.polars.schema[colname] == pl.List
-                    else self.polars.get_column(colname).n_unique()
-                )
+                colname: self.polars.get_column(colname).explode().n_unique()
+                if self.polars.schema[colname] == pl.List
+                else self.polars.get_column(colname).n_unique()
                 for colname in self.polars.columns
             }
         )
