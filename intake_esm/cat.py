@@ -79,13 +79,13 @@ class Assets(pydantic.BaseModel):
     model_config = ConfigDict(validate_assignment=True)
 
     @pydantic.model_validator(mode='after')
-    def _validate_data_format(cls, model):
-        data_format, format_column_name = model.format, model.format_column_name
+    def _validate_data_format(self) -> Self:
+        data_format, format_column_name = self.format, self.format_column_name
         if data_format is not None and format_column_name is not None:
             raise ValueError('Cannot set both format and format_column_name')
         elif data_format is None and format_column_name is None:
             raise ValueError('Must set one of format or format_column_name')
-        return model
+        return self
 
 
 class Aggregation(pydantic.BaseModel):
@@ -126,12 +126,12 @@ class ESMCatalogModel(pydantic.BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, validate_assignment=True)
 
     @pydantic.model_validator(mode='after')
-    def validate_catalog(cls, model):
-        catalog_dict, catalog_file = model.catalog_dict, model.catalog_file
+    def validate_catalog(self) -> Self:
+        catalog_dict, catalog_file = self.catalog_dict, self.catalog_file
         if catalog_dict is not None and catalog_file is not None:
             raise ValueError('catalog_dict and catalog_file cannot be set at the same time')
 
-        return model
+        return self
 
     def __setattr__(self, name, value):
         """If we manually set _df, we need to propagate the change to _frames"""
@@ -495,19 +495,19 @@ class QueryModel(pydantic.BaseModel):
     model_config = ConfigDict(validate_assignment=False)
 
     @pydantic.model_validator(mode='after')
-    def validate_query(cls, model):
-        query = model.query
-        columns = model.columns
-        require_all_on = model.require_all_on
+    def validate_query(self) -> Self:
+        query = self.query
+        columns = self.columns
+        require_all_on = self.require_all_on
 
         if query:
             for key in query:
                 if key not in columns:
                     raise ValueError(f'Column {key} not in columns {columns}')
         if isinstance(require_all_on, str):
-            model.require_all_on = [require_all_on]
+            self.require_all_on = [require_all_on]
         if require_all_on is not None:
-            for key in model.require_all_on:
+            for key in self.require_all_on:
                 if key not in columns:
                     raise ValueError(f'Column {key} not in columns {columns}')
         _query = query.copy()
@@ -515,8 +515,8 @@ class QueryModel(pydantic.BaseModel):
             if isinstance(value, str | int | float | bool) or value is None or value is pd.NA:
                 _query[key] = [value]
 
-        model.query = _query
-        return model
+        self.query = _query
+        return self
 
 
 class FramesModel(pydantic.BaseModel):
