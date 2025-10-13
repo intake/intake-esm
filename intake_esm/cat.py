@@ -7,6 +7,7 @@ import functools
 import json
 import os
 import typing
+import warnings
 
 import fsspec
 import pandas as pd
@@ -19,7 +20,7 @@ from typing_extensions import Self
 from ._search import search, search_apply_require_all_on
 
 __framereaders__ = [pl, pd]
-__filetypes__ = ['csv', 'csv.bz2', 'csv.gz', 'parquet']
+__filetypes__ = ['csv', 'csv.bz2', 'csv.gz', 'csv.zip', 'csv.xz', 'parquet']
 
 
 def _allnan_or_nonan(df, column: str) -> bool:
@@ -155,6 +156,8 @@ class ESMCatalogModel(pydantic.BaseModel):
         *,
         directory: str | None = None,
         catalog_type: str = 'dict',
+        file_format: str = 'csv',
+        write_kwargs: dict | None = None,
         to_csv_kwargs: dict | None = None,
         json_dump_kwargs: dict | None = None,
         storage_options: dict[str, typing.Any] | None = None,
@@ -172,8 +175,12 @@ class ESMCatalogModel(pydantic.BaseModel):
         catalog_type: str
             The type of catalog to save. Whether to save the catalog table as a dictionary
             in the JSON file or as a separate CSV file. Valid options are 'dict' and 'file'.
+        file_format: str
+            The file format to use when saving the catalog table. Either 'csv' or 'parquet'.
+            If catalog_type is 'dict', this parameter is ignored.
         to_csv_kwargs : dict, optional
             Additional keyword arguments passed through to the :py:meth:`~pandas.DataFrame.to_csv` method.
+            Compression is currently ignored when serializing to parquet.
         json_dump_kwargs : dict, optional
             Additional keyword arguments passed through to the :py:func:`~json.dump` function.
         storage_options: dict
@@ -186,6 +193,22 @@ class ESMCatalogModel(pydantic.BaseModel):
         `catalog_type='file'` to save catalog as a separate CSV file.
 
         """
+
+        if to_csv_kwargs is not None:
+            warnings.warn(
+                'to_csv_kwargs is deprecated and will be removed in a future version. '
+                'Please use read_kwargs instead.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if write_kwargs is not None:
+                raise ValueError(
+                    'Cannot provide both `read_csv_kwargs` and `write_kwargs`. '
+                    'Please use `write_kwargs`.'
+                )
+            write_kwargs = to_csv_kwargs
+
+        write_kwargs = write_kwargs or {}
 
         if catalog_type not in {'file', 'dict'}:
             raise ValueError(
@@ -207,7 +230,9 @@ class ESMCatalogModel(pydantic.BaseModel):
         for key in {'catalog_dict', 'catalog_file'}:
             data.pop(key, None)
         data['id'] = name
-        data['last_updated'] = datetime.datetime.now().utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+        data['last_updated'] = datetime.datetime.now(datetime.timezone.utc).strftime(
+            '%Y-%m-%dT%H:%M:%SZ'
+        )
 
         _tmp_df = self.df.copy(deep=True)
 
@@ -216,14 +241,20 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         if catalog_type == 'file':
             csv_kwargs: dict[str, typing.Any] = {'index': False}
-            csv_kwargs |= to_csv_kwargs or {}
+            csv_kwargs |= write_kwargs or {}
             compression = csv_kwargs.get('compression', '')
             extensions = {'gzip': '.gz', 'bz2': '.bz2', 'zip': '.zip', 'xz': '.xz'}
-            csv_file_name = f'{csv_file_name}{extensions.get(compression, "")}'
-            data['catalog_file'] = str(csv_file_name)
-
-            with fs.open(csv_file_name, 'wb') as csv_outfile:
-                _tmp_df.to_csv(csv_outfile, **csv_kwargs)
+            if file_format == 'csv':
+                csv_file_name = f'{csv_file_name}{extensions.get(compression, "")}'
+                data['catalog_file'] = str(csv_file_name)
+                with fs.open(csv_file_name, 'wb') as csv_outfile:
+                    _tmp_df.to_csv(csv_outfile, **csv_kwargs)
+            elif file_format == 'parquet':
+                pq_file_name = f'{csv_file_name.rstrip(".csv")}.parquet'
+                data['catalog_file'] = str(pq_file_name)
+                write_kwargs.pop('compression', None)
+                with fs.open(pq_file_name, 'wb') as pq_outfile:
+                    _tmp_df.to_parquet(pq_outfile, **write_kwargs)
         else:
             data['catalog_dict'] = _tmp_df.to_dict(orient='records')
 
@@ -601,7 +632,7 @@ class CatalogFileDataReader:
         elif self.catalog_file.endswith('.parquet'):
             self.driver = 'polars'
             self.filetype = 'parquet'
-        elif self.catalog_file.endswith('.csv.bz2'):
+        elif self.catalog_file.endswith('.csv.bz2') or self.catalog_file.endswith('.csv.xz'):
             self.driver = 'pandas'
             self.filetype = 'csv'
         else:
