@@ -121,11 +121,11 @@ class esm_datastore(Catalog):
         read_kwargs = read_kwargs or {}
         if columns_with_iterables:
             warnings.warn(
-                "columns_with_iterables is deprecated as an argument to esm_datastore "
+                'columns_with_iterables is deprecated as an argument to esm_datastore '
                 "and will be removed in a future version.  Please set 'iterable_columns' "
                 r"in the catalog's json definition or pass read_kwargs={'converters': {COL: ast.literal_eval}}.",
                 DeprecationWarning,
-                stacklevel=2
+                stacklevel=2,
             )
             converter = ast.literal_eval
             read_kwargs.setdefault('converters', {})
