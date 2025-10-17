@@ -59,6 +59,7 @@ class esm_datastore(Catalog):
         A list of columns in the csv file containing iterables. Values in columns specified here will be
         converted with `ast.literal_eval` when :py:func:`~pandas.read_csv` is called (i.e., this is a
         shortcut to passing converters to `read_kwargs`).
+        Catalogs might also have such columns configured in their ``iterable_columns`` field.
     storage_options : dict, optional
         Parameters passed to the backend file-system such as Google Cloud Storage,
         Amazon Web Service S3.
@@ -120,13 +121,6 @@ class esm_datastore(Catalog):
 
         read_kwargs = read_kwargs or {}
         if columns_with_iterables:
-            warnings.warn(
-                'columns_with_iterables is deprecated as an argument to esm_datastore '
-                "and will be removed in a future version.  Please set 'iterable_columns' "
-                r"in the catalog's json definition or pass read_kwargs={'converters': {COL: ast.literal_eval}}.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
             converter = ast.literal_eval
             read_kwargs.setdefault('converters', {})
             for col in columns_with_iterables:
