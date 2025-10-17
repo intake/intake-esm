@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import builtins
 import datetime
 import enum
@@ -115,6 +116,7 @@ class ESMCatalogModel(pydantic.BaseModel):
     id: str = ''
     catalog_dict: list[dict] | None = None
     catalog_file: pydantic.StrictStr | None = None
+    iterable_columns: set[pydantic.StrictStr] | None = None
     description: pydantic.StrictStr | None = None
     title: pydantic.StrictStr | None = None
     last_updated: datetime.datetime | datetime.date | None = None
@@ -319,6 +321,15 @@ class ESMCatalogModel(pydantic.BaseModel):
         else:
             csv_path = f'{os.path.dirname(_mapper.root)}/{cat.catalog_file}'
         cat.catalog_file = csv_path
+
+        if self.iterable_columns:
+            converter = ast.literal_eval
+            read_kwargs.setdefault('converters', {})
+            for col in self.iterable_columns:
+                if read_kwargs['converters'].setdefault(col, converter) != converter:
+                    raise ValueError(
+                        f"Cannot provide converter for '{col}' via `read_kwargs` when '{col}' is also specified in `iterable_columns`"
+                    )
 
         reader = CatalogFileDataReader(cat.catalog_file, storage_options, **read_kwargs)
         self._iterable_dtype_map = reader.dtype_map

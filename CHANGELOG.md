@@ -2,6 +2,12 @@
 
 [Full Changelog](https://github.com/intake/intake-esm/compare/v2025.2.3...v2025.7.9)
 
+## vUNRELEASED
+
+### New features added
+
+- New ``iterable_columns`` field in the ESM catalog spec to specify which columns should be read as iterables (tuples). Deprecates argument ``columns_with_iterable`` of the ``esm_datastore`` by @aulemahal in https://github.com/intake/intake-esm/pull/752
+
 ## v2025.7.9
 
 ### New features added
