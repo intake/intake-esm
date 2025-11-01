@@ -40,7 +40,7 @@ jobs:
           else
             echo "✅ Looks good"
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: releases
           path: dist
@@ -53,7 +53,7 @@ jobs:
         name: Install Python
         with:
           python-version: "3.11"
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: releases
           path: dist
@@ -76,7 +76,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: releases
           path: dist
