@@ -492,7 +492,7 @@ class esm_datastore(Catalog):
             esmcat_results = pd.concat([esmcat_results, *derivedcat_results])
             esmcat_results = esmcat_results[~esmcat_results.astype(str).duplicated()]
 
-        cat = self.__class__({'esmcat': self.esmcat.dict(), 'df': esmcat_results})
+        cat = self.__class__({'esmcat': self.esmcat.model_dump(), 'df': esmcat_results})
         cat.esmcat.catalog_file = None  # Don't save the catalog file
         if self.esmcat.has_multiple_variable_assets:
             requested_variables = list(set(variables or []).union(dependents))
