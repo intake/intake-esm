@@ -1,0 +1,81 @@
+{
+  "esmcat_version": "0.0.1",
+  "attributes": [
+    {
+      "column_name": "filename",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "file_id",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "path",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "filename_timestamp",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "frequency",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "start_date",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "end_date",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "variable",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "variable_long_name",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "variable_standard_name",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "variable_cell_methods",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "variable_units",
+      "vocabulary": ""
+    },
+    {
+      "column_name": "realm",
+      "vocabulary": ""
+    }
+  ],
+  "assets": {
+    "column_name": "path",
+    "format": "netcdf",
+    "format_column_name": null
+  },
+  "aggregation_control": {
+    "variable_column_name": "variable",
+    "groupby_attrs": ["file_id", "frequency"],
+    "aggregations": [
+      {
+        "type": "join_existing",
+        "attribute_name": "start_date",
+        "options": {
+          "dim": "time",
+          "combine": "by_coords"
+        }
+      }
+    ]
+  },
+  "id": "01deg_jra55v13_ryf9091",
+  "description": "0.1 degree ACCESS-OM2 global model configuration with JRA55-do v1.3 RYF9091  repeat year forcing (May 1990 to Apr 1991)",
+  "title": null,
+  "last_updated": "2025-03-04T01:25:35Z",
+  "catalog_file": "access-columns-with-lists-bz2.csv.bz2"
+}

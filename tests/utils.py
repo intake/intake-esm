@@ -18,6 +18,9 @@ zarr_cat_aws_cesm = (
 )
 mixed_cat_sample_cmip6 = os.path.join(here, 'sample-catalogs/cmip6-bcc-mixed-formats.json')
 access_columns_with_lists_cat = os.path.join(here, 'sample-catalogs/access-columns-with-lists.json')
+access_columns_with_lists_bz2_cat = os.path.join(
+    here, 'sample-catalogs/access-columns-with-lists-bz2.json'
+)
 
 access_columns_with_tuples_cat = os.path.join(
     here, 'sample-catalogs/access-columns-with-tuples.json'

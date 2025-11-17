@@ -1,10 +1,8 @@
 import datetime as dt
 
 import pandas as pd
-import polars as pl
 import pydantic
 import pytest
-from polars import testing as pl_testing
 from pydantic_core import ValidationError
 
 from intake_esm.cat import Assets, DataFormat, ESMCatalogModel, FramesModel, QueryModel
@@ -20,8 +18,6 @@ from .utils import (
     sample_df,
     sample_esmcat_data,
     sample_esmcat_data_without_agg,
-    sample_lf,
-    sample_pl_df,
     zarr_cat_aws_cesm,
     zarr_cat_pangeo_cmip6,
     zarr_v2_cat,
@@ -75,6 +71,10 @@ def test_esmcatmodel_load(file):
     assert isinstance(cat.df, pd.DataFrame)
     assert isinstance(cat.columns_with_iterables, set)
     assert isinstance(cat.has_multiple_variable_assets, bool)
+
+    # Make sure both references to frames are the same object, if we have an iodriver object instantiated
+    if cat._driver is not None:
+        assert cat._frames is cat._driver._frames
 
 
 @pytest.mark.parametrize(
@@ -140,6 +140,51 @@ def test_esmcatmodel_unique_and_nunique(query, expected_unique_vals, expected_nu
 
 
 @pytest.mark.parametrize(
+    'catalog_file, expected_type',
+    [
+        (access_columns_with_lists_cat, list),
+        (access_columns_with_tuples_cat, tuple),
+        (access_columns_with_sets_cat, set),
+        (access_single_item_iterables_cat, tuple),
+    ],
+)
+def test_esmcatmodel_roundtrip_itercols_type_stable(catalog_file, expected_type):
+    """
+    Test that if we open a catalog with list iterable column, they are saved as
+    lists, tuples as tuples, etc.
+    """
+    cat = ESMCatalogModel.load(
+        catalog_file, read_kwargs={'converters': {'variable': ast.literal_eval}}
+    )
+    # Create a tempdir & save it there, then open with pandas and literal eval it
+    # to check the dtype
+    assert isinstance(cat.df.loc[0, 'variable'], tuple)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        cat.save(
+            'catalog',
+            directory=tmpdir,
+            catalog_type='file',
+        )
+        serialised_cat = pd.read_csv(
+            f'{tmpdir}/catalog.csv', converters={'variable': ast.literal_eval}
+        )
+        assert isinstance(serialised_cat.loc[0, 'variable'], expected_type)
+
+
+def test_save_esmcat_invalidformat():
+    cat = ESMCatalogModel.load(
+        access_columns_with_tuples_cat, read_kwargs={'converters': {'variable': ast.literal_eval}}
+    )
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with pytest.raises(ValueError, match='file_format must be either "csv" or "parquet"'):
+            cat.save(
+                'catalog',
+                directory=tmpdir,
+                file_format='invalidformat',
+            )
+
+
+@pytest.mark.parametrize(
     'query, columns, require_all_on',
     [
         ({'foo': 1}, ['foo', 'bar'], ['bar']),
@@ -165,85 +210,6 @@ def test_query_model(query, columns, require_all_on):
 def test_query_model_validation_error(query, columns, require_all_on):
     with pytest.raises(pydantic.ValidationError):
         QueryModel(query=query, columns=columns, require_all_on=require_all_on)
-
-
-@pytest.mark.parametrize(
-    'pd_df, pl_df, lf, err',
-    [
-        (sample_df, sample_pl_df, sample_lf, False),
-        (sample_df, None, None, False),
-        (None, None, None, True),
-        (None, sample_pl_df, None, False),
-        (None, None, sample_lf, False),
-    ],
-)
-def test_FramesModel_init(pd_df, pl_df, lf, err):
-    """
-    Make sure FramesModel works with different input combos
-    """
-    if not err:
-        FramesModel(df=pd_df, pl_df=pl_df, lf=lf)
-        assert True
-    else:
-        with pytest.raises(pydantic.ValidationError):
-            FramesModel(df=pd_df, pl_df=pl_df, lf=lf)
-
-
-@pytest.mark.parametrize(
-    'pd_df, pl_df, lf',
-    [
-        (sample_df, sample_pl_df, sample_lf),
-        (sample_df, None, None),
-        (None, sample_pl_df, None),
-        (None, None, sample_lf),
-    ],
-)
-@pytest.mark.parametrize('attr', ['polars', 'lazy', 'columns_with_iterables'])
-def test_FramesModel_no_accidental_pd(pd_df, pl_df, lf, attr):
-    """
-    Make sure that if we instantiate with a polars dataframe or a lazy frame, we
-    don't accidentally trigger the creation of a pandas dataframe.
-    """
-    f = FramesModel(df=pd_df, pl_df=pl_df, lf=lf)
-
-    if pd_df is not None:
-        assert f.df is not None
-    else:
-        assert f.df is None
-
-    # Now we just want to run through the properties to ensure they don't error
-    # and that they don't trigger the creation of a pandas dataframe
-    if pd_df is None:
-        got_attr = getattr(f, attr)
-        assert got_attr is not None
-        assert f.df is None
-    else:
-        got_attr = getattr(f, attr)
-        assert got_attr is not None
-        assert f.df is not None
-
-
-def test_FramesModel_set_manual_df():
-    """
-    Test that if we set esmcat._df, we don't cause an error. We also test that the
-    creation of `cat._frames.pl_df` is deferred until we ask for it with the
-    `cat.pl_df` property.
-    """
-    cat = ESMCatalogModel.from_dict({'esmcat': sample_esmcat_data, 'df': sample_df})
-
-    assert cat._frames.pl_df is None
-
-    new_df = pd.DataFrame({'numeric_col': [1, 2, 3], 'str_col': ['a', 'b', 'c']})
-    cat._df = new_df
-
-    assert getattr(cat, '_frames') is not None
-
-    pd.testing.assert_frame_equal(cat.df, new_df)
-
-    expected_pl_df = pl.DataFrame({'numeric_col': [1, 2, 3], 'str_col': ['a', 'b', 'c']})
-
-    assert cat._frames.pl_df is None
-    pl_testing.assert_frame_equal(cat.pl_df, expected_pl_df)
 
 
 # -----------------------------
