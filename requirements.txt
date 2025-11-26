@@ -12,7 +12,4 @@ requests>=2.24.0
 xarray>=2024.10
 # Allow zarr >2.12 or zarr 3.1.0+
 zarr>=2.12,!=3.0.*
-requests>=2.32.5
-aiohttp>=3.13.2
 kerchunk>=0.2.9
-fastparquet>=2024.11.0

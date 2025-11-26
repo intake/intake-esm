@@ -594,15 +594,9 @@ class CatalogFileDataReader:
         if self.catalog_file is None:
             raise AssertionError('catalog_file must be set to a valid file path or URL')
 
-        # lazy-loading flag in read_kwargs
-        LAZY_READ = self.read_kwargs.pop('lazy_read', True)
-
         # I think we want to replace this with a dict lookup.
         if self.catalog_file.endswith('.csv.gz') or self.catalog_file.endswith('.csv'):
-            if LAZY_READ:
-                self.driver = 'polars'
-            else:
-                self.driver = 'pandas'
+            self.driver = 'polars'
             self.filetype = 'csv'
         elif self.catalog_file.endswith('.parquet'):
             self.driver = 'polars'
