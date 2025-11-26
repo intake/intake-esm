@@ -52,7 +52,8 @@ class esm_datastore(Catalog):
     read_kwargs : dict, optional
         Additional keyword arguments passed through to the :py:func:`~polars.scan_csv` function, if the
         datastore is saved in csv format, or :py:func:`~polars.scan_parquet` if the datastore is saved in
-        parquet format.
+        parquet format. A lazy read (Polars) can be disabled by passing `'lazy_read': False` to use Pandas loading 
+        the catalog file, `lazy_read` default is True (Polars is the default reader).
     read_csv_kwargs : dict, optional
         Deprecated alias for `read_kwargs`.
     columns_with_iterables : list of str, optional
