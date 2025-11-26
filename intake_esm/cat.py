@@ -593,7 +593,7 @@ class CatalogFileDataReader:
 
         if self.catalog_file is None:
             raise AssertionError('catalog_file must be set to a valid file path or URL')
- 
+
         # lazy-loading flag in read_kwargs
         LAZY_READ = self.read_kwargs.pop('lazy_read', True)
 
