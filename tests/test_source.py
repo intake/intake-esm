@@ -84,7 +84,7 @@ def test_get_xarray_open_kwargs(storage_options):
 def test_open_dataset_kerchunk(kerchunk_file=kerchunk_file):
     xarray_open_kwargs = _get_xarray_open_kwargs(
         'reference',
-        dict(engine='zarr', consolidated=False),
+        dict(engine='zarr', consolidated=False, drop_variables='crs'),
         storage_options={
             'remote_protocol': 's3',
             'remote_options': {'anon': True, 'asynchronous': _zarr_async()},
