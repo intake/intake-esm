@@ -3,6 +3,7 @@ import warnings
 
 import dask
 import fsspec
+import packaging.version
 import pandas as pd
 import pydantic
 import xarray as xr
@@ -21,10 +22,14 @@ class ESMDataSourceError(Exception):
 
 
 def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_options=None):
+    _can_autochunk_cftime = packaging.version.Version(xr.__version__) >= packaging.version.Version(
+        '2025.11.0'
+    )
+
     xarray_open_kwargs = (xarray_open_kwargs or {}).copy()
     _default_open_kwargs = {
         'engine': 'zarr' if data_format in {'zarr', 'zarr2', 'zarr3', 'reference'} else 'netcdf4',
-        'chunks': {},
+        'chunks': 'auto' if _can_autochunk_cftime else {},
         'backend_kwargs': {},
         'decode_timedelta': False,
     }

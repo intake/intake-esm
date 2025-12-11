@@ -661,12 +661,13 @@ class CatalogFileDataReader:
         """Read a catalog file stored as a csv using polars"""
         converters = self.read_kwargs.pop('converters', {})  # Hack
         # See https://github.com/pola-rs/polars/issues/13040 - can't use read_csv.
-        lf = pl.scan_csv(
-            self.catalog_file,  # type: ignore[arg-type]
-            storage_options=self.storage_options,
-            infer_schema=False,
-            **self.read_kwargs,
-        )
+        with fsspec.open(self.catalog_file, **self.storage_options) as fobj:
+            lf = pl.scan_csv(
+                fobj,  # type: ignore[arg-type]
+                storage_options=self.storage_options,
+                infer_schema=False,
+                **self.read_kwargs,
+            )
 
         if dtype_map := (
             lf.head(1)
