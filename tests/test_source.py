@@ -1,6 +1,7 @@
 import os
 import tarfile
 import tempfile
+from unittest import mock
 
 import dask
 import pytest
@@ -79,6 +80,14 @@ def test_open_dataset(fpath, expected_time_size, engine):
 def test_get_xarray_open_kwargs(storage_options):
     xarray_open_kwargs = _get_xarray_open_kwargs('zarr', storage_options=storage_options)
     assert xarray_open_kwargs['backend_kwargs']['storage_options'] == storage_options
+
+
+@pytest.mark.parametrize('xr_version, chunk_default', [('2025.10.0', {}), ('2025.11.0', 'auto')])
+def test_get_xarray_open_kwargs_chunk_default(xr_version, chunk_default):
+    # patch xr.__version__ to test different default chunking behavior
+    with mock.patch('xarray.__version__', xr_version):
+        xarray_open_kwargs = _get_xarray_open_kwargs('zarr')
+    assert xarray_open_kwargs.get('chunks', None) == chunk_default
 
 
 def test_open_dataset_kerchunk(kerchunk_file=kerchunk_file):
