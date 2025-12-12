@@ -28,6 +28,7 @@ from .utils import (
     cdf_cat_sample_cmip6_noagg,
     mixed_cat_sample_cmip6,
     multi_variable_cat,
+    multi_variable_hard_cat,
     opendap_cat_sample_noaa,
     sample_df,
     sample_esmcat_data,
@@ -158,6 +159,7 @@ def test_catalog_init_back_compat(capsys, obj, sep, read_kwargs, read_csv_kwargs
     [
         (multi_variable_cat, {'converters': {'variable': ast.literal_eval}}, None),
         (multi_variable_cat, None, ['variable']),
+        (multi_variable_hard_cat, None, None),
     ],
 )
 def test_columns_with_iterables(capsys, obj, read_kwargs, columns_with_iterables):
