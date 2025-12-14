@@ -110,20 +110,20 @@ def test_open_dataset_kerchunk(kerchunk_file=kerchunk_file):
     )
     assert isinstance(ds, xarray.Dataset)
 
-@pytest.mark.parametrize('urlpath', ['https://data.gdex.ucar.edu/d640000/kerchunk/anl_surf-remote-https.parq'])
+
+@pytest.mark.parametrize(
+    'urlpath', ['https://data.gdex.ucar.edu/d640000/kerchunk/anl_surf-remote-https.parq']
+)
 @pytest.mark.parametrize('varname', ['tmp2m-hgt-an-gauss'])
 def test_open_dataset_kerchunk_engine(urlpath, varname):
     """
     Test opening kerchunk datasets with the kerchunk engine.
     This tests the code path: `elif xarray_open_kwargs['engine'] == 'kerchunk' and data_format == 'reference'`
-    
+
     Tests remote HTTPS URLs to ensure the kerchunk engine
     workflow handles correctly.
     """
-    xarray_open_kwargs = _get_xarray_open_kwargs(
-        'reference',
-        dict(engine='kerchunk',chunks={})
-    )
+    xarray_open_kwargs = _get_xarray_open_kwargs('reference', dict(engine='kerchunk', chunks={}))
     print(xarray_open_kwargs)
 
     ds = _open_dataset(
@@ -138,9 +138,9 @@ def test_open_dataset_kerchunk_engine(urlpath, varname):
 def test_open_dataset_kerchunk_engine_local(kerchunk_file=kerchunk_file):
     """
     Test opening kerchunk datasets with the kerchunk engine for local reference file
-    This tests the code path: 
+    This tests the code path:
     `elif fsspec.utils.can_be_local(urlpath) and xarray_open_kwargs['engine'] != 'kerchunk':`
-    
+
     Tests local path to ensure the kerchunk engine
     workflow handles correctly.
     """
@@ -150,12 +150,9 @@ def test_open_dataset_kerchunk_engine_local(kerchunk_file=kerchunk_file):
             engine='kerchunk',
             chunks={},
             backend_kwargs={
-                "storage_options" : {
-                    'remote_protocol': 's3',
-                    'remote_options': {'anon': True}
-                }
-            }
-        )
+                'storage_options': {'remote_protocol': 's3', 'remote_options': {'anon': True}}
+            },
+        ),
     )
 
     ds = _open_dataset(
