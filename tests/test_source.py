@@ -135,6 +135,38 @@ def test_open_dataset_kerchunk_engine(urlpath, varname):
     assert isinstance(ds, xarray.Dataset)
 
 
+def test_open_dataset_kerchunk_engine_local(kerchunk_file=kerchunk_file):
+    """
+    Test opening kerchunk datasets with the kerchunk engine for local reference file
+    This tests the code path: 
+    `elif fsspec.utils.can_be_local(urlpath) and xarray_open_kwargs['engine'] != 'kerchunk':`
+    
+    Tests local path to ensure the kerchunk engine
+    workflow handles correctly.
+    """
+    xarray_open_kwargs = _get_xarray_open_kwargs(
+        'reference',
+        dict(
+            engine='kerchunk',
+            chunks={},
+            backend_kwargs={
+                "storage_options" : {
+                    'remote_protocol': 's3',
+                    'remote_options': {'anon': True}
+                }
+            }
+        )
+    )
+
+    ds = _open_dataset(
+        data_format='reference',
+        urlpath=kerchunk_file,
+        varname=None,
+        xarray_open_kwargs=xarray_open_kwargs,
+    )
+    assert isinstance(ds, xarray.Dataset)
+
+
 @pytest.mark.parametrize('data_format', ['zarr', 'netcdf'])
 @pytest.mark.parametrize('attrs', [{}, {'units': 'K'}, {'variables': ['foo', 'bar']}])
 def test_update_attrs(tmp_path, data_format, attrs):
