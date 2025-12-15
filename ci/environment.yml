@@ -35,4 +35,5 @@ dependencies:
   - xarray >=2024.10
   - xarray-datatree
   - zarr <3.0|>=3.0.10
+  - kerchunk >=0.2.9
   # - pytest-icdiff
