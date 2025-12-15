@@ -112,7 +112,7 @@ def test_open_dataset_kerchunk(kerchunk_file=kerchunk_file):
 
 
 @pytest.mark.parametrize(
-    'urlpath', ['https://data.gdex.ucar.edu/d640000/kerchunk/anl_surf-remote-https.parq']
+    'urlpath', ['https://data.gdex.ucar.edu/d633000/kerchunk/meanflux/Mean_convective_precipitation_rate-https.json']
 )
 @pytest.mark.parametrize('varname', ['tmp2m-hgt-an-gauss'])
 def test_open_dataset_kerchunk_engine(urlpath, varname):
