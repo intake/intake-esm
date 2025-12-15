@@ -124,7 +124,6 @@ def test_open_dataset_kerchunk_engine(urlpath, varname):
     workflow handles correctly.
     """
     xarray_open_kwargs = _get_xarray_open_kwargs('reference', dict(engine='kerchunk', chunks={}))
-    print(xarray_open_kwargs)
 
     ds = _open_dataset(
         data_format='reference',
