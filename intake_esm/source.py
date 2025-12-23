@@ -91,7 +91,7 @@ def _open_dataset(
 
     if xarray_open_kwargs['engine'] == 'zarr' or data_format == 'opendap':
         url = urlpath
-    elif fsspec.utils.can_be_local(urlpath):
+    elif fsspec.utils.can_be_local(urlpath) and xarray_open_kwargs['engine'] != 'kerchunk':
         url = fsspec.open_local(urlpath, **storage_options)
     # Support kerchunk datasets opened with the kerchunk engine
     elif xarray_open_kwargs['engine'] == 'kerchunk' and data_format == 'reference':
