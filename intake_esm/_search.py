@@ -4,6 +4,7 @@ import typing
 import numpy as np
 import pandas as pd
 import polars as pl
+from memory_profiler import profile
 
 
 def unpack_iterable_column(df: pd.DataFrame, column: str) -> pd.DataFrame:
@@ -57,9 +58,6 @@ def search(
         global_mask = global_mask & local_mask
     results = df.loc[global_mask]
     return results.reset_index(drop=True)
-
-
-from memory_profiler import profile
 
 
 @profile
