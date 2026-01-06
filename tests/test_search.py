@@ -183,9 +183,7 @@ def test_pl_search(query, require_all_on, expected):
         query=query, columns=df.columns.tolist(), require_all_on=require_all_on
     )
     results_pd = search(df=df, query=query_model.query, columns_with_iterables=set())
-    results_pl = pl_search(
-        df=pl_df, query=query_model.query, columns_with_iterables=set()
-    ).to_pandas()
+    results_pl = pl_search(pl_df=pl_df, query=query_model.query, columns_with_iterables=set())
 
     assert_frame_equal(results_pl, results_pd)
 

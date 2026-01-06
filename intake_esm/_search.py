@@ -60,42 +60,53 @@ def search(
 
 
 def pl_search(
-    *, df: pl.DataFrame, query: dict[str, typing.Any], columns_with_iterables: set
-) -> pl.DataFrame:
+    *, pl_df: pl.DataFrame, query: dict[str, typing.Any], columns_with_iterables: set
+) -> pd.DataFrame:
     """Search for entries in the catalog using Polars."""
     if not query:
-        return pl.DataFrame(schema=df.schema)
+        return pl.DataFrame(schema=pl_df.schema).to_pandas()
 
-    global_mask = pl.Series([True] * df.height)
+    conditions = []
     for column, values in query.items():
-        local_mask = pl.Series([False] * df.height)
-        column_is_stringtype = df[column].dtype == pl.Utf8
+        column_conditions = []
+        column_is_stringtype = pl_df[column].dtype == pl.Utf8
         column_has_iterables = column in columns_with_iterables
         for value in values:
             if column_has_iterables:
-                mask = df[column].list.eval(pl.element().str.contains(value, literal=True)).any()
+                mask = (
+                    pl.col(column)
+                    .list.eval(pl.element().str.contains(value, literal=True))
+                    .list.any()
+                )
             elif column_is_stringtype and is_pattern(value):
                 if isinstance(value, typing.Pattern):
                     pattern = value.pattern
-                    # Check if IGNORECASE flag is set (re.IGNORECASE = 2)
                     case_sensitive = not bool(value.flags & 2)
                 else:
                     pattern = value
                     case_sensitive = True
-                mask = df[column].str.contains(pattern, literal=False, strict=False).fill_null(False)
-                if not case_sensitive:
-                    # For case-insensitive search, convert both to lowercase
-                    mask = df[column].str.to_lowercase().str.contains(
-                        pattern.lower(), literal=False, strict=False
-                    ).fill_null(False)
+                if case_sensitive:
+                    mask = pl.col(column).str.contains(pattern, literal=False).fill_null(False)
+                else:
+                    mask = (
+                        pl.col(column)
+                        .str.to_lowercase()
+                        .str.contains(pattern.lower(), literal=False)
+                        .fill_null(False)
+                    )
             elif pd.isna(value):
-                mask = df[column].is_null()
+                mask = pl.col(column).is_null()
             else:
-                mask = df[column] == value
-            local_mask = local_mask | mask
-        global_mask = global_mask & local_mask
-    results = df.filter(global_mask)
-    return results
+                mask = pl.col(column) == value
+            column_conditions.append(mask)
+        conditions.append(pl.any_horizontal(*column_conditions))
+
+    pd_df = pl_df.filter(pl.all_horizontal(*conditions)).to_pandas()
+
+    for colname in columns_with_iterables:
+        pd_df[colname] = pd_df[colname].apply(tuple)
+
+    return pd_df
 
 
 def search_apply_require_all_on(

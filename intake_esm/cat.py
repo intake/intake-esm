@@ -16,7 +16,7 @@ import tlz
 from pydantic import ConfigDict
 from typing_extensions import Self
 
-from ._search import search, search_apply_require_all_on
+from ._search import pl_search, search_apply_require_all_on
 
 __framereaders__ = [pl, pd]
 __filetypes__ = ['csv', 'csv.bz2', 'csv.gz', 'parquet']
@@ -405,6 +405,9 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         return self._frames.nunique()  # type: ignore[union-attr]
 
+    from memory_profiler import profile
+
+    @profile
     def search(
         self,
         *,
@@ -431,17 +434,20 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         """
 
+        cols = self.lf.collect_schema().keys()
+
         _query = (
             query
             if isinstance(query, QueryModel)
             else QueryModel(
-                query=query, require_all_on=require_all_on, columns=self.df.columns.tolist()
+                query=query, require_all_on=require_all_on, columns=self.lf.collect_schema().keys()
             )
         )
 
-        results = search(
-            df=self.df, query=_query.query, columns_with_iterables=self.columns_with_iterables
+        results = pl_search(
+            pl_df=self.pl_df, query=_query.query, columns_with_iterables=self.columns_with_iterables
         )
+
         if _query.require_all_on is not None and not results.empty:
             results = search_apply_require_all_on(
                 df=results,
