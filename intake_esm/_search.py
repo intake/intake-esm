@@ -59,23 +59,46 @@ def search(
     return results.reset_index(drop=True)
 
 
+from memory_profiler import profile
+
+
+@profile
 def pl_search(
-    *, pl_df: pl.DataFrame, query: dict[str, typing.Any], columns_with_iterables: set
+    *, lf: pl.LazyFrame, query: dict[str, typing.Any], columns_with_iterables: set
 ) -> pd.DataFrame:
-    """Search for entries in the catalog using Polars."""
+    """
+    Search for entries in the catalog using Polars.
+
+    Parameters
+    ----------
+    lf : pl.LazyFrame
+        The Polars LazyFrame to search.
+    query : dict[str, typing.Any]
+        The query dictionary where keys are column names and values are lists of values to search for.
+    columns_with_iterables : set
+        Set of column names that contain iterable values.
+
+    Returns
+    -------
+    pd.DataFrame
+        The resulting DataFrame after applying the search.
+    """
     if not query:
-        return pl.DataFrame(schema=pl_df.schema).to_pandas()
+        return lf.filter(pl.lit(False)).collect().to_pandas()
 
     conditions = []
     for column, values in query.items():
         column_conditions = []
-        column_is_stringtype = pl_df[column].dtype == pl.Utf8
+        column_is_stringtype = lf.collect_schema()[column] == pl.Utf8
         column_has_iterables = column in columns_with_iterables
         for value in values:
             if column_has_iterables:
                 mask = (
                     pl.col(column)
-                    .list.eval(pl.element().str.contains(value, literal=True))
+                    .explode()
+                    .cast(pl.Utf8)
+                    .str.contains(value, literal=True)
+                    .implode()
                     .list.any()
                 )
             elif column_is_stringtype and is_pattern(value):
@@ -101,7 +124,7 @@ def pl_search(
             column_conditions.append(mask)
         conditions.append(pl.any_horizontal(*column_conditions))
 
-    pd_df = pl_df.filter(pl.all_horizontal(*conditions)).to_pandas()
+    pd_df = lf.filter(pl.all_horizontal(*conditions)).collect().to_pandas()
 
     for colname in columns_with_iterables:
         pd_df[colname] = pd_df[colname].apply(tuple)

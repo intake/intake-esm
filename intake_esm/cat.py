@@ -434,19 +434,25 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         """
 
-        cols = self.lf.collect_schema().keys()
+        cols = list(self.lf.collect_schema().keys())
 
         _query = (
             query
             if isinstance(query, QueryModel)
-            else QueryModel(
-                query=query, require_all_on=require_all_on, columns=self.lf.collect_schema().keys()
-            )
+            else QueryModel(query=query, require_all_on=require_all_on, columns=cols)
         )
 
+        from pympler import asizeof
+
+        print('Size of query model:', asizeof.asizeof(_query))
+        print('Size of frames model:', asizeof.asizeof(self._frames))
+
         results = pl_search(
-            pl_df=self.pl_df, query=_query.query, columns_with_iterables=self.columns_with_iterables
+            lf=self.lf, query=_query.query, columns_with_iterables=self.columns_with_iterables
         )
+
+        print('Size of query model:', asizeof.asizeof(_query))
+        print('Size of frames model:', asizeof.asizeof(self._frames))
 
         if _query.require_all_on is not None and not results.empty:
             results = search_apply_require_all_on(

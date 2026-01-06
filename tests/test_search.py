@@ -178,12 +178,12 @@ def test_pl_search(query, require_all_on, expected):
             'D': ['O2', 'O2', 'O2', 'O2', 'NO2', 'O2', 'O2', 'TA', 'tAs', 'UA'],
         }
     )
-    pl_df = pl.from_pandas(df)
+    lf = pl.from_pandas(df).lazy()
     query_model = QueryModel(
         query=query, columns=df.columns.tolist(), require_all_on=require_all_on
     )
     results_pd = search(df=df, query=query_model.query, columns_with_iterables=set())
-    results_pl = pl_search(pl_df=pl_df, query=query_model.query, columns_with_iterables=set())
+    results_pl = pl_search(lf=lf, query=query_model.query, columns_with_iterables=set())
 
     assert_frame_equal(results_pl, results_pd)
 
