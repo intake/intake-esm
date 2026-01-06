@@ -3,6 +3,7 @@ import typing
 
 import numpy as np
 import pandas as pd
+import polars as pl
 
 
 def unpack_iterable_column(df: pd.DataFrame, column: str) -> pd.DataFrame:
@@ -56,6 +57,45 @@ def search(
         global_mask = global_mask & local_mask
     results = df.loc[global_mask]
     return results.reset_index(drop=True)
+
+
+def pl_search(
+    *, df: pl.DataFrame, query: dict[str, typing.Any], columns_with_iterables: set
+) -> pl.DataFrame:
+    """Search for entries in the catalog using Polars."""
+    if not query:
+        return pl.DataFrame(schema=df.schema)
+
+    global_mask = pl.Series([True] * df.height)
+    for column, values in query.items():
+        local_mask = pl.Series([False] * df.height)
+        column_is_stringtype = df[column].dtype == pl.Utf8
+        column_has_iterables = column in columns_with_iterables
+        for value in values:
+            if column_has_iterables:
+                mask = df[column].list.eval(pl.element().str.contains(value, literal=True)).any()
+            elif column_is_stringtype and is_pattern(value):
+                if isinstance(value, typing.Pattern):
+                    pattern = value.pattern
+                    # Check if IGNORECASE flag is set (re.IGNORECASE = 2)
+                    case_sensitive = not bool(value.flags & 2)
+                else:
+                    pattern = value
+                    case_sensitive = True
+                mask = df[column].str.contains(pattern, literal=False, strict=False).fill_null(False)
+                if not case_sensitive:
+                    # For case-insensitive search, convert both to lowercase
+                    mask = df[column].str.to_lowercase().str.contains(
+                        pattern.lower(), literal=False, strict=False
+                    ).fill_null(False)
+            elif pd.isna(value):
+                mask = df[column].is_null()
+            else:
+                mask = df[column] == value
+            local_mask = local_mask | mask
+        global_mask = global_mask & local_mask
+    results = df.filter(global_mask)
+    return results
 
 
 def search_apply_require_all_on(

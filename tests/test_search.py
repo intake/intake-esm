@@ -2,9 +2,11 @@ import re
 
 import numpy as np
 import pandas as pd
+import polars as pl
 import pytest
+from pandas.testing import assert_frame_equal
 
-from intake_esm._search import is_pattern, search, search_apply_require_all_on
+from intake_esm._search import is_pattern, pl_search, search, search_apply_require_all_on
 from intake_esm.cat import QueryModel
 
 
@@ -153,6 +155,39 @@ def test_search(query, require_all_on, expected):
             df=results, query=query_model.query, require_all_on=query_model.require_all_on
         )
     assert results.to_dict(orient='records') == expected
+
+
+@pytest.mark.parametrize('query, require_all_on, expected', params)
+def test_pl_search(query, require_all_on, expected):
+    df = pd.DataFrame(
+        {
+            'A': ['NCAR', 'IPSL', 'IPSL', 'CSIRO', 'IPSL', 'NCAR', 'NOAA', 'NCAR', 'NASA', None],
+            'B': ['CESM', 'FOO', 'FOO', 'BAR', 'FOO', 'CESM', 'GCM', 'WACM', 'foo', None],
+            'C': [
+                'hist',
+                'control',
+                'hist',
+                'control',
+                'hist',
+                'control',
+                'hist',
+                'hist',
+                'HiSt',
+                'exp',
+            ],
+            'D': ['O2', 'O2', 'O2', 'O2', 'NO2', 'O2', 'O2', 'TA', 'tAs', 'UA'],
+        }
+    )
+    pl_df = pl.from_pandas(df)
+    query_model = QueryModel(
+        query=query, columns=df.columns.tolist(), require_all_on=require_all_on
+    )
+    results_pd = search(df=df, query=query_model.query, columns_with_iterables=set())
+    results_pl = pl_search(
+        df=pl_df, query=query_model.query, columns_with_iterables=set()
+    ).to_pandas()
+
+    assert_frame_equal(results_pl, results_pd)
 
 
 @pytest.mark.parametrize(
