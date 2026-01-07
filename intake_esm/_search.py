@@ -1,5 +1,7 @@
 import itertools
+import re
 import typing
+from collections.abc import Collection
 
 import numpy as np
 import pandas as pd
@@ -18,9 +20,19 @@ def unpack_iterable_column(df: pd.DataFrame, column: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def is_pattern(value):
+def is_pattern(value: str | typing.Pattern | Collection) -> bool:
+    """
+    Check whether the passed value is a pattern
+
+    Parameters
+    ----------
+    value: str or Pattern
+        The value to check
+    """
     if isinstance(value, typing.Pattern):
-        return True
+        return True  # Obviously, it's a pattern
+    if isinstance(value, Collection) and not isinstance(value, str):
+        return any(is_pattern(item) for item in value)  # Recurse into the collection
     wildcard_chars = {'*', '?', '$', '^'}
     try:
         value_ = value
@@ -84,19 +96,20 @@ def pl_search(
     if not query:
         return lf.filter(pl.lit(False)).collect().to_pandas()
 
+    # Collect first row to resolve concrete schema types (cheap operation)
+    schema = lf.head(1).collect().schema
+    breakpoint()
+
     conditions = []
     for column, values in query.items():
         column_conditions = []
-        column_is_stringtype = lf.collect_schema()[column] == pl.Utf8
+        column_is_stringtype = schema[column] == pl.Utf8
         column_has_iterables = column in columns_with_iterables
         for value in values:
             if column_has_iterables:
                 mask = (
                     pl.col(column)
-                    .explode()
-                    .cast(pl.Utf8)
-                    .str.contains(value, literal=True)
-                    .implode()
+                    .list.eval(pl.element().cast(pl.Utf8).str.contains(value, literal=True))
                     .list.any()
                 )
             elif column_is_stringtype and is_pattern(value):
@@ -128,6 +141,114 @@ def pl_search(
         pd_df[colname] = pd_df[colname].apply(tuple)
 
     return pd_df
+
+
+def pl_search_2(*, lf: pl.LazyFrame, query: dict[str, typing.Any], columns_with_iterables: set):
+    """
+    Search for entries in the catalog.
+
+    Parameters
+    ----------
+    df: :py:class:`~pandas.DataFrame`
+        A dataframe to search
+    query: dict
+        A dictionary of query parameters to execute against the dataframe
+    columns_with_iterables: list
+        Columns in the dataframe that have iterables
+    name_column: str
+        The name column in the dataframe catalog
+    require_all: bool
+        If True, groupby name_column and return only entries that match
+        for all elements in each group
+
+    Returns
+    -------
+    dataframe: :py:class:`~pandas.DataFrame`
+        A new dataframe with the entries satisfying the query criteria.
+
+    """
+    if not query:
+        return lf.filter(pl.lit(False)).collect().to_pandas()
+
+    if isinstance(columns_with_iterables, str):
+        columns_with_iterables = [columns_with_iterables]
+
+    all_cols = lf.collect_schema().names()
+
+    cols_to_deiter = set(all_cols).difference(columns_with_iterables)
+
+    lf = lf.with_row_index(name='_index')
+    for column in columns_with_iterables:
+        # N.B: Cannot explode multiple columns together as we need a cartesian product
+        lf = lf.explode(column)
+
+    lf, tmp_cols = _match_and_filter(lf, query)
+
+    lf = _group_and_filter_on_index(lf, all_cols, tmp_cols)
+
+    lf = lf.select(*all_cols)
+
+    df = lf.explode(list(cols_to_deiter)).collect().to_pandas()
+
+    return df
+
+
+def _group_and_filter_on_index(
+    lf: pl.LazyFrame,
+    all_cols: list[str],
+    tmp_cols: list[str],
+    /,
+) -> pl.LazyFrame:
+    return (
+        lf.group_by('_index')  # Piece the exploded columns back together
+        .agg(
+            [  # Re-aggregate the exploded columns into lists, flatten them out (imploding creates nested lists) and drop duplicates and nulls
+                pl.col(col).flatten().unique(maintain_order=True).drop_nulls()
+                for col in [*all_cols, *tmp_cols]
+            ]
+        )
+        .drop('_index')  # We don't need the index anymore
+    )
+
+
+def _match_and_filter(
+    lf: pl.LazyFrame, query: dict[str, typing.Any], /
+) -> tuple[pl.LazyFrame, list[str]]:
+    """
+    Take a lazyframe and a query dict, and add match columns and filter the lazyframe
+    accordingly. Positional-only arguments - internal use only.
+    """
+    schema = lf.collect_schema()
+
+    for colname, subquery in query.items():
+        if schema[colname] == pl.Utf8 and is_pattern(subquery):
+            subquery = [q.pattern if isinstance(q, re.Pattern) else q for q in subquery]
+            # Build match expressions
+            match_exprs = [
+                pl.when(pl.col(colname).str.contains(q)).then(pl.lit(q)).otherwise(None)
+                for q in subquery
+            ]
+        else:
+            subquery = [None if pd.isna(q) else q for q in subquery]
+            # Can't unify these branches with literal=True, because that assumes
+            # non-pattern columns *must be strings*, which is not the case.
+            match_exprs = [
+                pl.when(pl.col(colname) == q).then(pl.lit(q)).otherwise(None) for q in subquery
+            ]
+
+        _matchlist = pl.concat_list(match_exprs)
+
+        lf = lf.with_columns(
+            pl.when(_matchlist.list.drop_nulls().list.len() > 0)
+            .then(_matchlist)
+            .otherwise(None)  # This whole when-then-otherwise is to map empty lists to null
+            .alias(f'{colname}_matches')
+        )
+
+        lf = lf.filter(pl.col(f'{colname}_matches').is_not_null())
+
+    tmp_cols = [f'{colname}_matches' for colname in query.keys()]
+    return lf, tmp_cols
 
 
 def search_apply_require_all_on(
