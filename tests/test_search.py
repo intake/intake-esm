@@ -8,7 +8,7 @@ from pandas.testing import assert_frame_equal
 
 from intake_esm._search import (
     is_pattern,
-    pl_search_2,
+    pl_search,
     search,
     search_apply_require_all_on,
 )
@@ -188,7 +188,7 @@ def test_pl_search(query, require_all_on, expected):
         query=query, columns=df.columns.tolist(), require_all_on=require_all_on
     )
     results_pd = search(df=df, query=query_model.query, columns_with_iterables=set())
-    results_pl = pl_search_2(lf=lf, query=query_model.query, columns_with_iterables=set())
+    results_pl = pl_search(lf=lf, query=query_model.query, columns_with_iterables=set())
 
     assert_frame_equal(results_pl, results_pd)
 

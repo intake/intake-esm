@@ -27,7 +27,6 @@ from .utils import (
     sample_esmcat_data,
     sample_esmcat_data_without_agg,
     sample_lf,
-    sample_pl_df,
     zarr_cat_aws_cesm,
     zarr_cat_pangeo_cmip6,
     zarr_v2_cat,
@@ -206,43 +205,41 @@ def test_query_model_validation_error(query, columns, require_all_on):
 
 
 @pytest.mark.parametrize(
-    'pd_df, pl_df, lf, err',
+    'pd_df, lf, err',
     [
-        (sample_df, sample_pl_df, sample_lf, False),
-        (sample_df, None, None, False),
-        (None, None, None, True),
-        (None, sample_pl_df, None, False),
-        (None, None, sample_lf, False),
+        (sample_df, sample_lf, False),
+        (sample_df, None, False),
+        (None, None, True),
+        (None, sample_lf, False),
     ],
 )
-def test_FramesModel_init(pd_df, pl_df, lf, err):
+def test_FramesModel_init(pd_df, lf, err):
     """
     Make sure FramesModel works with different input combos
     """
     if not err:
-        FramesModel(df=pd_df, pl_df=pl_df, lf=lf)
+        FramesModel(df=pd_df, lf=lf)
         assert True
     else:
         with pytest.raises(pydantic.ValidationError):
-            FramesModel(df=pd_df, pl_df=pl_df, lf=lf)
+            FramesModel(df=pd_df, lf=lf)
 
 
 @pytest.mark.parametrize(
-    'pd_df, pl_df, lf',
+    'pd_df, lf',
     [
-        (sample_df, sample_pl_df, sample_lf),
-        (sample_df, None, None),
-        (None, sample_pl_df, None),
-        (None, None, sample_lf),
+        (sample_df, sample_lf),
+        (sample_df, None),
+        (None, sample_lf),
     ],
 )
 @pytest.mark.parametrize('attr', ['polars', 'lazy', 'columns_with_iterables'])
-def test_FramesModel_no_accidental_pd(pd_df, pl_df, lf, attr):
+def test_FramesModel_no_accidental_pd(pd_df, lf, attr):
     """
     Make sure that if we instantiate with a polars dataframe or a lazy frame, we
     don't accidentally trigger the creation of a pandas dataframe.
     """
-    f = FramesModel(df=pd_df, pl_df=pl_df, lf=lf)
+    f = FramesModel(df=pd_df, lf=lf)
 
     if pd_df is not None:
         assert f.df is not None
@@ -269,8 +266,6 @@ def test_FramesModel_set_manual_df():
     """
     cat = ESMCatalogModel.from_dict({'esmcat': sample_esmcat_data, 'df': sample_df})
 
-    assert cat._frames.pl_df is None
-
     new_df = pd.DataFrame({'numeric_col': [1, 2, 3], 'str_col': ['a', 'b', 'c']})
     cat._df = new_df
 
@@ -280,7 +275,6 @@ def test_FramesModel_set_manual_df():
 
     expected_pl_df = pl.DataFrame({'numeric_col': [1, 2, 3], 'str_col': ['a', 'b', 'c']})
 
-    assert cat._frames.pl_df is None
     pl_testing.assert_frame_equal(cat.pl_df, expected_pl_df)
 
 
@@ -420,15 +414,14 @@ def test_query_model_mixed_iterables_preserved():
 
 def test_frames_model_ok_with_pandas_only():
     df = pd.DataFrame({'a': [1, 2]})
-    m = FramesModel(df=df, pl_df=None, lf=None)
+    m = FramesModel(df=df, lf=None)
     assert m.df is not None
-    assert m.pl_df is None
     assert m.lf is None
 
 
 def test_frames_model_error_when_all_none():
     with pytest.raises(ValidationError):
-        FramesModel(df=None, pl_df=None, lf=None)
+        FramesModel(df=None, lf=None)
 
 
 def test_esm_catalog_dates_are_pass_through():

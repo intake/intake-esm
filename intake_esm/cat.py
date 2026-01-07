@@ -272,7 +272,6 @@ class ESMCatalogModel(pydantic.BaseModel):
             else:
                 cat._frames = FramesModel(
                     lf=pl.LazyFrame(cat.catalog_dict),
-                    pl_df=pl.DataFrame(cat.catalog_dict),
                     df=pl.DataFrame(cat.catalog_dict).to_pandas(),
                 )
 
@@ -502,7 +501,6 @@ class FramesModel(pydantic.BaseModel):
     and lazyframe."""
 
     df: pd.DataFrame | None = None
-    pl_df: pl.DataFrame | None = None
     lf: pl.LazyFrame | None = None
 
     model_config = ConfigDict(validate_assignment=True, arbitrary_types_allowed=True)
@@ -510,11 +508,10 @@ class FramesModel(pydantic.BaseModel):
     @pydantic.model_validator(mode='after')
     def ensure_some(self) -> Self:
         """
-        Make sure that at least one of the dataframes is not `None` when the model is
-        instantiated.
+        Make sure at least one of df, or lf is set.
         """
-        if self.df is None and self.pl_df is None and self.lf is None:
-            raise AssertionError('At least one of df, pl_df, or lf must be set')
+        if self.df is None and self.lf is None:
+            raise AssertionError('At least one of df, or lf must be set')
         return self
 
     @property
@@ -523,33 +520,24 @@ class FramesModel(pydantic.BaseModel):
         if self.df is not None:
             return self.df
 
-        if self.pl_df is not None:
-            self.df = self.pl_df.to_pandas(use_pyarrow_extension_array=True)
-            self.df[list(self.columns_with_iterables)] = self.df[
-                list(self.columns_with_iterables)
-            ].map(tuple)
-            return self.df
-
-        self.pl_df = self.lf.collect()  # type: ignore[union-attr]
-        self.df = self.pl_df.to_pandas(use_pyarrow_extension_array=True)
+        pl_df = self.lf.collect()  # type: ignore[union-attr]
+        self.df = pl_df.to_pandas(use_pyarrow_extension_array=True)
         for colname in self.columns_with_iterables:
             self.df[colname] = self.df[colname].apply(tuple)
         return self.df
 
     @property
     def polars(self) -> pl.DataFrame:
-        """Return the polars DataFrame, instantiating it if necessary."""
-        if self.pl_df is not None:
-            return self.pl_df
+        """Return the polars DataFrame, instantiating it preferentially from the
+        lazyframe but from the pandas dataframe if not."""
 
         if self.lf is not None:
-            self.pl_df = self.lf.collect()
-            return self.pl_df
+            return self.lf.collect()
 
-        self.pl_df = pl.from_pandas(self.df)
-        self.lf = self.pl_df.lazy()
+        pl_df = pl.from_pandas(self.df)
+        self.lf = pl_df.lazy()
 
-        return self.pl_df
+        return pl_df
 
     @property
     def lazy(self) -> pl.LazyFrame:
