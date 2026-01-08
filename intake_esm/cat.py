@@ -432,14 +432,32 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         cols = list(self.lf.collect_schema().keys())
 
+        # Looks clunky, reduces memory footprint
+        columns_with_iterables = {
+            col
+            for col, dtype in self._frames.lf.head(1).collect_schema().items()
+            if dtype == pl.List
+        }
+        columns_with_iterables = self.columns_with_iterables
+
         _query = (
             query
             if isinstance(query, QueryModel)
             else QueryModel(query=query, require_all_on=require_all_on, columns=cols)
         )
 
+        if (_df := self._frames.df) is not None:
+            iterable_dtypes = {
+                colname: type(_df[colname].iloc[0]) for colname in columns_with_iterables
+            }
+        else:
+            iterable_dtypes = None
+
         results = pl_search(
-            lf=self.lf, query=_query.query, columns_with_iterables=self.columns_with_iterables
+            lf=self.lf,
+            query=_query.query,
+            columns_with_iterables=columns_with_iterables,
+            iterable_dtypes=iterable_dtypes,
         )
 
         if _query.require_all_on is not None and not results.empty:
@@ -447,7 +465,7 @@ class ESMCatalogModel(pydantic.BaseModel):
                 df=results,
                 query=_query.query,
                 require_all_on=_query.require_all_on,
-                columns_with_iterables=self.columns_with_iterables,
+                columns_with_iterables=columns_with_iterables,
             )
         return results
 

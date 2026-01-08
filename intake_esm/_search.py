@@ -71,11 +71,13 @@ def search(
     return results.reset_index(drop=True)
 
 
-from memory_profiler import profile
-
-
-@profile
-def pl_search(*, lf: pl.LazyFrame, query: dict[str, typing.Any], columns_with_iterables: set):
+def pl_search(
+    *,
+    lf: pl.LazyFrame,
+    query: dict[str, typing.Any],
+    columns_with_iterables: set,
+    iterable_dtypes: dict[str, type] | None = None,
+) -> pd.DataFrame:
     """
     Search for entries in the catalog.
 
@@ -87,11 +89,9 @@ def pl_search(*, lf: pl.LazyFrame, query: dict[str, typing.Any], columns_with_it
         A dictionary of query parameters to execute against the dataframe
     columns_with_iterables: list
         Columns in the dataframe that have iterables
-    name_column: str
-        The name column in the dataframe catalog
-    require_all: bool
-        If True, groupby name_column and return only entries that match
-        for all elements in each group
+    iterable_dtypes: dict, optional
+        A dictionary mapping column names to their iterable dtypes. If not provided,
+        defaults to all tuple
 
     Returns
     -------
@@ -99,141 +99,79 @@ def pl_search(*, lf: pl.LazyFrame, query: dict[str, typing.Any], columns_with_it
         A new dataframe with the entries satisfying the query criteria.
 
     """
+
     if not query:
         return lf.filter(pl.lit(False)).collect().to_pandas()
+
+    full_schema = lf.head(1).collect().collect_schema()
+
+    lf = lf.with_columns(
+        [
+            pl.col(colname).cast(lf.head(1).collect().collect_schema()[colname])
+            for colname in full_schema.keys()
+        ]
+    )
 
     if isinstance(columns_with_iterables, str):
         columns_with_iterables = [columns_with_iterables]
 
-    schema = lf.collect_schema()
-    all_cols = schema.names()
+    iterable_dtypes = iterable_dtypes or {colname: tuple for colname in columns_with_iterables}
 
-    lf: pl.DataFrame = lf.collect()  # type: ignore[assignment]
-    # lf = lf.collect()
-    # breakpoint()
+    for colname, dtype in iterable_dtypes.items():
+        if dtype == np.ndarray:
+            iterable_dtypes[colname] = tuple
 
-    str_cols = [col for col, dtype in schema.items() if dtype == pl.String]
-    int_cols = [col for col, dtype in schema.items() if dtype == pl.Int64]
-    float_cols = [col for col, dtype in schema.items() if dtype == pl.Float64]
-
-    sentinel_map = {
-        pl.String: '_NULL_SENTINEL_',
-        pl.Int64: -999999,
-        pl.Float64: -999999.0,
+    query_non_iterable = {
+        key: val for key, val in query.items() if key not in columns_with_iterables
     }
 
-    _sentinels = {
-        col: sentinel_map[dtype] for col, dtype in schema.items() if dtype in sentinel_map
-    }
-
-    # Make sure we can keep pre-existing nulls distinct from non-matches in the
-    # next steps
-    lf = lf.with_columns(
-        pl.col(colname).fill_null(sentinel) for colname, sentinel in _sentinels.items()
-    )
-
-    cols_to_deiter = set(all_cols).difference(columns_with_iterables)
-
-    lf = lf.with_row_index(name='_index')
-    for column in columns_with_iterables:
-        # N.B: Cannot explode multiple columns together as we need a cartesian product
-        lf = lf.explode(column)
-
-    lf, tmp_cols = _match_and_filter(lf, query)
-
-    lf = _group_and_filter_on_index(lf, all_cols, tmp_cols)
-
-    lf = lf.select(*all_cols)
-
-    lf = lf.explode(list(cols_to_deiter))
-
-    # Change back sentinel to nulls and collect to the final pandas DataFrame
-    df = (
-        lf.with_columns(
-            [
-                *[pl.col(col).replace('_NULL_SENTINEL_', None) for col in str_cols],
-                *[pl.col(col).replace(-999999, None) for col in int_cols],
-                *[pl.col(col).replace(-999999.0, None) for col in float_cols],
-            ]
-        )
-        # .collect()
-        .to_pandas()
-    )
-
-    for colname in columns_with_iterables:
-        df[colname] = df[colname].apply(tuple)
-
-    return df
-
-
-def _group_and_filter_on_index(
-    lf: pl.LazyFrame,
-    all_cols: list[str],
-    tmp_cols: list[str],
-    /,
-) -> pl.LazyFrame:
-    return (
-        lf.group_by('_index')
-        .agg(
-            [
-                pl.col(col).flatten().unique(maintain_order=True).drop_nulls()
-                for col in [*all_cols, *tmp_cols]
-            ]
-        )
-        .drop('_index')
-    )
-
-
-def _match_and_filter(
-    lf: pl.LazyFrame, query: dict[str, typing.Any], /
-) -> tuple[pl.LazyFrame, list[str]]:
-    """
-    Take a lazyframe and a query dict, and add match columns and filter the lazyframe
-    accordingly. Positional-only arguments - internal use only.
-    """
-    schema = lf.collect_schema()
-
-    for colname, subquery in query.items():
-        if schema[colname] == pl.Utf8 and is_pattern(subquery):
+    for colname, subquery in query_non_iterable.items():
+        subquery = [None if pd.isna(subq) else subq for subq in subquery]
+        if is_pattern(subquery):
             case_insensitive = [
                 bool(q.flags & re.IGNORECASE) if isinstance(q, re.Pattern) else False
                 for q in subquery
             ]
-
             # Prepend (?i) to patterns for case insensitive matching if needed
             subquery = [q.pattern if isinstance(q, re.Pattern) else q for q in subquery]
             subquery = [f'(?i){q}' if ci else q for q, ci in zip(subquery, case_insensitive)]
 
-            # Build match expressions
-            match_exprs = [
-                pl.when(pl.col(colname).str.contains(q)).then(pl.lit(q)).otherwise(None)
-                for q in subquery
-            ]
+            lf = lf.filter(pl.col(colname).str.contains('|'.join(subquery), literal=False))
         else:
-            subquery = ['_NULL_SENTINEL_' if pd.isna(q) else q for q in subquery]
-            # Can't unify these branches with literal=True, because that assumes
-            # non-pattern columns *must be strings*, which is not the case.
-            match_exprs = [
-                pl.when(pl.col(colname) == q)
-                .then(pl.lit('_NULL_SENTINEL_' if q is None else q))
-                .otherwise(None)
+            lf = lf.filter(pl.col(colname).is_in(subquery, nulls_equal=True))
+
+    query_iterable = {key: val for key, val in query.items() if key in columns_with_iterables}
+    for colname, subquery in query_iterable.items():
+        if is_pattern(subquery):
+            raise NotImplementedError(
+                'Pattern matching within iterable columns is not implemented yet.'
+            )
+            case_insensitive = [
+                bool(q.flags & re.IGNORECASE) if isinstance(q, re.Pattern) else False
                 for q in subquery
             ]
+            # Prepend (?i) to patterns for case insensitive matching if needed
+            subquery = [q.pattern if isinstance(q, re.Pattern) else q for q in subquery]
+            subquery = [f'(?i){q}' if ci else q for q, ci in zip(subquery, case_insensitive)]
 
-        _matchlist = pl.concat_list(match_exprs)
+            lf = lf.filter(
+                pl.col(colname)
+                .list.eval(pl.element().str.contains('|'.join(subquery), literal=False))
+                .any()
+            )
+        else:
+            lf = lf.filter(
+                pl.col(colname)
+                .list.eval(pl.element().is_in(subquery, nulls_equal=True).any())
+                .explode()
+            )
 
-        lf = lf.with_columns(
-            pl.when(_matchlist.list.drop_nulls().list.len() > 0)
-            .then(_matchlist)
-            .otherwise(None)  # This whole when-then-otherwise is to map empty lists to null
-            .alias(f'{colname}_matches')
-        )
+    df = lf.collect().to_pandas()
 
-        lf = lf.filter(pl.col(f'{colname}_matches').is_not_null())
+    for colname, dtype in iterable_dtypes.items():
+        df[colname] = df[colname].apply(dtype)
 
-    tmp_cols = [f'{colname}_matches' for colname in query.keys()]
-
-    return lf, tmp_cols
+    return df
 
 
 def search_apply_require_all_on(
