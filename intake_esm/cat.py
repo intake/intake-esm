@@ -16,7 +16,7 @@ import tlz
 from pydantic import ConfigDict
 from typing_extensions import Self
 
-from ._search import pl_search, search_apply_require_all_on
+from ._search import pl_search, search, search_apply_require_all_on
 
 __framereaders__ = [pl, pd]
 __filetypes__ = ['csv', 'csv.bz2', 'csv.gz', 'parquet']
@@ -413,6 +413,12 @@ class ESMCatalogModel(pydantic.BaseModel):
         """
         Search for entries in the catalog.
 
+
+        If the pandas dataframe has not yet been instantiated, we search the polars
+        dataframe, materialising the pandas dataframe only when necessary. If the
+        pandas dataframe has been instantiated, we search it instead, as searching
+        is cheap compared to materialisation.
+
         Parameters
         ----------
         query: dict, optional
@@ -430,16 +436,29 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         """
 
-        # The way we get columns with iterables here looks a bit roundabout, but it
-        # minimizes memory overhead.
-        cols = list(self.lf.collect_schema().keys())
-        col_subset = {col for col, dtype in self.lf.collect_schema().items() if dtype == pl.Unknown}
+        if (_df := self._frames.df) is not None:
+            cols = list(self.lf.collect_schema().keys())
+            col_subset = {
+                col for col, dtype in self.lf.collect_schema().items() if dtype == pl.Unknown
+            }
+            columns_with_iterables = {
+                col
+                for col, dtype in self._frames.lf.head(1)
+                .select(col_subset)
+                .collect()
+                .schema.items()
+                if dtype == pl.List
+            }
+            iterable_dtypes = {
+                colname: type(_df[colname].iloc[0]) for colname in columns_with_iterables
+            }
 
-        columns_with_iterables = {
-            col
-            for col, dtype in self._frames.lf.head(1).select(col_subset).collect().schema.items()
-            if dtype == pl.List
-        }
+            use_pl = True
+        else:
+            iterable_dtypes = None
+            use_pl = False
+            columns_with_iterables = self.columns_with_iterables
+            cols = self.df.columns.tolist()
 
         _query = (
             query
@@ -447,19 +466,19 @@ class ESMCatalogModel(pydantic.BaseModel):
             else QueryModel(query=query, require_all_on=require_all_on, columns=cols)
         )
 
-        if (_df := self._frames.df) is not None:
-            iterable_dtypes = {
-                colname: type(_df[colname].iloc[0]) for colname in columns_with_iterables
-            }
+        if use_pl:
+            results = pl_search(
+                lf=self.lf,
+                query=_query.query,
+                columns_with_iterables=columns_with_iterables,
+                iterable_dtypes=iterable_dtypes,
+            )
         else:
-            iterable_dtypes = None
-
-        results = pl_search(
-            lf=self.lf,
-            query=_query.query,
-            columns_with_iterables=columns_with_iterables,
-            iterable_dtypes=iterable_dtypes,
-        )
+            results = search(
+                df=self.df,
+                query=_query.query,
+                columns_with_iterables=columns_with_iterables,
+            )
 
         if _query.require_all_on is not None and not results.empty:
             results = search_apply_require_all_on(
