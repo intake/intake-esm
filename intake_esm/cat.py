@@ -404,6 +404,9 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         return self._frames.nunique()  # type: ignore[union-attr]
 
+    from memory_profiler import profile
+
+    @profile
     def search(
         self,
         *,
@@ -430,15 +433,16 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         """
 
+        # The way we get columns with iterables here is a bit roundabout, but it
+        # minimizes memory overhead.
         cols = list(self.lf.collect_schema().keys())
+        col_subset = {col for col, dtype in self.lf.collect_schema().items() if dtype == pl.Unknown}
 
-        # Looks clunky, reduces memory footprint
         columns_with_iterables = {
             col
-            for col, dtype in self._frames.lf.head(1).collect_schema().items()
+            for col, dtype in self._frames.lf.head(1).select(col_subset).collect().schema.items()
             if dtype == pl.List
         }
-        columns_with_iterables = self.columns_with_iterables
 
         _query = (
             query

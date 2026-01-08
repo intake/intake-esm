@@ -71,6 +71,10 @@ def search(
     return results.reset_index(drop=True)
 
 
+from memory_profiler import profile
+
+
+@profile
 def pl_search(
     *,
     lf: pl.LazyFrame,
@@ -103,13 +107,10 @@ def pl_search(
     if not query:
         return lf.filter(pl.lit(False)).collect().to_pandas()
 
-    full_schema = lf.head(1).collect().collect_schema()
+    full_schema = lf.head(1).collect().schema
 
     lf = lf.with_columns(
-        [
-            pl.col(colname).cast(lf.head(1).collect().collect_schema()[colname])
-            for colname in full_schema.keys()
-        ]
+        [pl.col(colname).cast(full_schema[colname]) for colname in full_schema.keys()]
     )
 
     if isinstance(columns_with_iterables, str):
