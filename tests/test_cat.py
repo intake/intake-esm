@@ -260,9 +260,7 @@ def test_FramesModel_no_accidental_pd(pd_df, lf, attr):
 
 def test_FramesModel_set_manual_df():
     """
-    Test that if we set esmcat._df, we don't cause an error. We also test that the
-    creation of `cat._frames.pl_df` is deferred until we ask for it with the
-    `cat.pl_df` property.
+    Test that if we set esmcat._df, we don't cause an error or our state to get wonky.
     """
     cat = ESMCatalogModel.from_dict({'esmcat': sample_esmcat_data, 'df': sample_df})
 
