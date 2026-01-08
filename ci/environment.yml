@@ -18,7 +18,6 @@ dependencies:
   - netcdf4 >=1.5.5,!=1.6.1
   - pandas >=2.1.0
   - pip
-  - pympler
   - polars>=1.24.0,<1.33.0
   - pooch
   - pre-commit
