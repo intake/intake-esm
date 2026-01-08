@@ -404,8 +404,6 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         return self._frames.nunique()  # type: ignore[union-attr]
 
-    from memory_profiler import profile
-
     def search(
         self,
         *,
