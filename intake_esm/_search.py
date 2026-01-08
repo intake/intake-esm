@@ -108,6 +108,10 @@ def pl_search(*, lf: pl.LazyFrame, query: dict[str, typing.Any], columns_with_it
     schema = lf.collect_schema()
     all_cols = schema.names()
 
+    lf: pl.DataFrame = lf.collect()  # type: ignore[assignment]
+    # lf = lf.collect()
+    # breakpoint()
+
     str_cols = [col for col, dtype in schema.items() if dtype == pl.String]
     int_cols = [col for col, dtype in schema.items() if dtype == pl.Int64]
     float_cols = [col for col, dtype in schema.items() if dtype == pl.Float64]
@@ -122,18 +126,18 @@ def pl_search(*, lf: pl.LazyFrame, query: dict[str, typing.Any], columns_with_it
         col: sentinel_map[dtype] for col, dtype in schema.items() if dtype in sentinel_map
     }
 
+    # Make sure we can keep pre-existing nulls distinct from non-matches in the
+    # next steps
+    lf = lf.with_columns(
+        pl.col(colname).fill_null(sentinel) for colname, sentinel in _sentinels.items()
+    )
+
     cols_to_deiter = set(all_cols).difference(columns_with_iterables)
 
     lf = lf.with_row_index(name='_index')
     for column in columns_with_iterables:
         # N.B: Cannot explode multiple columns together as we need a cartesian product
         lf = lf.explode(column)
-
-    # Make sure we can keep pre-existing nulls distinct from non-matches in the
-    # next steps
-    lf = lf.with_columns(
-        pl.col(colname).fill_null(sentinel) for colname, sentinel in _sentinels.items()
-    )
 
     lf, tmp_cols = _match_and_filter(lf, query)
 
@@ -152,7 +156,7 @@ def pl_search(*, lf: pl.LazyFrame, query: dict[str, typing.Any], columns_with_it
                 *[pl.col(col).replace(-999999.0, None) for col in float_cols],
             ]
         )
-        .collect()
+        # .collect()
         .to_pandas()
     )
 
