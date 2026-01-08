@@ -71,10 +71,6 @@ def search(
     return results.reset_index(drop=True)
 
 
-from memory_profiler import profile
-
-
-@profile
 def pl_search(
     *,
     lf: pl.LazyFrame,

@@ -406,7 +406,6 @@ class ESMCatalogModel(pydantic.BaseModel):
 
     from memory_profiler import profile
 
-    @profile
     def search(
         self,
         *,
@@ -433,7 +432,7 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         """
 
-        # The way we get columns with iterables here is a bit roundabout, but it
+        # The way we get columns with iterables here looks a bit roundabout, but it
         # minimizes memory overhead.
         cols = list(self.lf.collect_schema().keys())
         col_subset = {col for col, dtype in self.lf.collect_schema().items() if dtype == pl.Unknown}
