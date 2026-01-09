@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-python@v6
         name: Install Python
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
@@ -52,7 +52,7 @@ jobs:
       - uses: actions/setup-python@v6
         name: Install Python
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - uses: actions/download-artifact@v6
         with:
           name: releases
@@ -66,6 +66,8 @@ jobs:
         if: github.event_name == 'push'
         run: |
           python -m pip install --upgrade pip
+          python -m pip install ipython
+          # Explicitly install ipython: see https://github.com/AnswerDotAI/fastprogress/issues/117
           python -m pip install dist/intake_esm*.whl
           python -c "import intake_esm; print(intake_esm.__version__)"
 
