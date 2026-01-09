@@ -435,8 +435,7 @@ class ESMCatalogModel(pydantic.BaseModel):
             A new catalog with the entries satisfying the query criteria.
 
         """
-
-        if (_df := self._frames.df) is not None:
+        if (_df := self._frames.df) is None:
             cols = list(self.lf.collect_schema().keys())
             col_subset = {
                 col for col, dtype in self.lf.collect_schema().items() if dtype == pl.Unknown
