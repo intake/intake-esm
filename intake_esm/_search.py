@@ -1,8 +1,11 @@
 import itertools
+import re
 import typing
+from collections.abc import Collection
 
 import numpy as np
 import pandas as pd
+import polars as pl
 
 
 def unpack_iterable_column(df: pd.DataFrame, column: str) -> pd.DataFrame:
@@ -16,9 +19,19 @@ def unpack_iterable_column(df: pd.DataFrame, column: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def is_pattern(value):
+def is_pattern(value: str | typing.Pattern | Collection) -> bool:
+    """
+    Check whether the passed value is a pattern
+
+    Parameters
+    ----------
+    value: str or Pattern
+        The value to check
+    """
     if isinstance(value, typing.Pattern):
-        return True
+        return True  # Obviously, it's a pattern
+    if isinstance(value, Collection) and not isinstance(value, str):
+        return any(is_pattern(item) for item in value)  # Recurse into the collection
     wildcard_chars = {'*', '?', '$', '^'}
     try:
         value_ = value
@@ -56,6 +69,107 @@ def search(
         global_mask = global_mask & local_mask
     results = df.loc[global_mask]
     return results.reset_index(drop=True)
+
+
+def pl_search(
+    *,
+    lf: pl.LazyFrame,
+    query: dict[str, typing.Any],
+    columns_with_iterables: set,
+    iterable_dtypes: dict[str, type] | None = None,
+) -> pd.DataFrame:
+    """
+    Search for entries in the catalog.
+
+    Parameters
+    ----------
+    df: :py:class:`~pandas.DataFrame`
+        A dataframe to search
+    query: dict
+        A dictionary of query parameters to execute against the dataframe
+    columns_with_iterables: list
+        Columns in the dataframe that have iterables
+    iterable_dtypes: dict, optional
+        A dictionary mapping column names to their iterable dtypes. If not provided,
+        defaults to all tuple. Typically unused, unless a dataframe with eg. set
+        iterables has been passed explicitly.
+
+    Returns
+    -------
+    dataframe: :py:class:`~pandas.DataFrame`
+        A new dataframe with the entries satisfying the query criteria.
+
+    """
+
+    if not query:
+        return lf.filter(pl.lit(False)).collect().to_pandas()
+
+    full_schema = lf.head(1).collect().schema
+
+    lf = lf.with_columns(
+        [pl.col(colname).cast(full_schema[colname]) for colname in full_schema.keys()]
+    )
+
+    if isinstance(columns_with_iterables, str):
+        columns_with_iterables = [columns_with_iterables]
+
+    iterable_dtypes = iterable_dtypes or {colname: tuple for colname in columns_with_iterables}
+
+    for colname, dtype in iterable_dtypes.items():
+        if dtype == np.ndarray:
+            iterable_dtypes[colname] = tuple
+
+    query_non_iterable = {
+        key: val for key, val in query.items() if key not in columns_with_iterables
+    }
+
+    for colname, subquery in query_non_iterable.items():
+        subquery = [None if pd.isna(subq) else subq for subq in subquery]
+        if is_pattern(subquery):
+            case_insensitive = [
+                bool(q.flags & re.IGNORECASE) if isinstance(q, re.Pattern) else False
+                for q in subquery
+            ]
+            # Prepend (?i) to patterns for case insensitive matching if needed
+            subquery = [q.pattern if isinstance(q, re.Pattern) else q for q in subquery]
+            subquery = [f'(?i){q}' if ci else q for q, ci in zip(subquery, case_insensitive)]
+
+            lf = lf.filter(pl.col(colname).str.contains('|'.join(subquery), literal=False))
+        else:
+            lf = lf.filter(pl.col(colname).is_in(subquery, nulls_equal=True))
+
+    query_iterable = {key: val for key, val in query.items() if key in columns_with_iterables}
+    for colname, subquery in query_iterable.items():
+        if is_pattern(subquery):
+            raise NotImplementedError(
+                'Pattern matching within iterable columns is not implemented yet.'
+            )
+            case_insensitive = [
+                bool(q.flags & re.IGNORECASE) if isinstance(q, re.Pattern) else False
+                for q in subquery
+            ]
+            # Prepend (?i) to patterns for case insensitive matching if needed
+            subquery = [q.pattern if isinstance(q, re.Pattern) else q for q in subquery]
+            subquery = [f'(?i){q}' if ci else q for q, ci in zip(subquery, case_insensitive)]
+
+            lf = lf.filter(
+                pl.col(colname)
+                .list.eval(pl.element().str.contains('|'.join(subquery), literal=False))
+                .any()
+            )
+        else:
+            lf = lf.filter(
+                pl.col(colname)
+                .list.eval(pl.element().is_in(subquery, nulls_equal=True).any())
+                .explode()
+            )
+
+    df = lf.collect().to_pandas()
+
+    for colname, dtype in iterable_dtypes.items():
+        df[colname] = df[colname].apply(dtype)
+
+    return df
 
 
 def search_apply_require_all_on(

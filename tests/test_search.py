@@ -2,9 +2,16 @@ import re
 
 import numpy as np
 import pandas as pd
+import polars as pl
 import pytest
+from pandas.testing import assert_frame_equal
 
-from intake_esm._search import is_pattern, search, search_apply_require_all_on
+from intake_esm._search import (
+    is_pattern,
+    pl_search,
+    search,
+    search_apply_require_all_on,
+)
 from intake_esm.cat import QueryModel
 
 
@@ -147,6 +154,11 @@ def test_search(query, require_all_on, expected):
         query=query, columns=df.columns.tolist(), require_all_on=require_all_on
     )
     results = search(df=df, query=query_model.query, columns_with_iterables=set())
+
+    lf = pl.from_pandas(df).lazy()
+    results_pl = pl_search(lf=lf, query=query_model.query, columns_with_iterables=set())
+    assert_frame_equal(results_pl, results)
+
     assert isinstance(results, pd.DataFrame)
     if require_all_on:
         results = search_apply_require_all_on(
@@ -180,11 +192,25 @@ def test_search_columns_with_iterables(query, expected):
             'random': [{'bx', 'by'}, {'bx', 'bz'}, {'bx', 'by'}],
         }
     )
+
     query_model = QueryModel(query=query, columns=df.columns.tolist())
-    results = search(
-        df=df, query=query_model.query, columns_with_iterables={'variable', 'random'}
-    ).to_dict(orient='records')
-    assert results == expected
+
+    lf = pl.from_pandas(df).lazy()
+
+    # This mirrors a setup step in the esmcat.search function which preserves dtypes.
+    # If altering this test, ensure that the dtypes are preserved here as well!
+    iterable_dtypes = {colname: type(df[colname].iloc[0]) for colname in {'variable', 'random'}}
+
+    results = search(df=df, query=query_model.query, columns_with_iterables={'variable', 'random'})
+
+    results_pl = pl_search(
+        lf=lf,
+        query=query_model.query,
+        columns_with_iterables={'variable', 'random'},
+        iterable_dtypes=iterable_dtypes,
+    )
+    assert_frame_equal(results_pl, results)
+    assert results.to_dict(orient='records') == expected
 
 
 @pytest.mark.parametrize(
@@ -216,11 +242,37 @@ def test_search_require_all_on_columns_with_iterables(query, expected):
         }
     )
     query_model = QueryModel(query=query, columns=df.columns.tolist(), require_all_on=['attr'])
+
     results = search(df=df, query=query_model.query, columns_with_iterables={'variable', 'random'})
+
+    lf = pl.from_pandas(df).lazy()
+
+    # This mirrors a setup step in the esmcat.search function which preserves dtypes.
+    # If altering this test, ensure that the dtypes are preserved here as well!
+    iterable_dtypes = {colname: type(df[colname].iloc[0]) for colname in {'variable', 'random'}}
+
+    results_pl = pl_search(
+        lf=lf,
+        query=query_model.query,
+        columns_with_iterables={'variable', 'random'},
+        iterable_dtypes=iterable_dtypes,
+    )
+    assert_frame_equal(results_pl, results)
+
+    results_pl = search_apply_require_all_on(
+        df=results_pl,
+        query=query_model.query,
+        require_all_on=query_model.require_all_on,
+        columns_with_iterables={'variable', 'random'},
+    )
+
     results = search_apply_require_all_on(
         df=results,
         query=query_model.query,
         require_all_on=query_model.require_all_on,
         columns_with_iterables={'variable', 'random'},
-    ).to_dict(orient='records')
-    assert results == expected
+    )
+
+    assert_frame_equal(results_pl, results)
+
+    assert results.to_dict(orient='records') == expected

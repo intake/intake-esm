@@ -17,7 +17,7 @@ import tlz
 from pydantic import ConfigDict
 from typing_extensions import Self
 
-from ._search import search, search_apply_require_all_on
+from ._search import pl_search, search, search_apply_require_all_on
 
 __framereaders__ = [pl, pd]
 __filetypes__ = ['csv', 'csv.bz2', 'csv.gz', 'parquet']
@@ -273,7 +273,6 @@ class ESMCatalogModel(pydantic.BaseModel):
             else:
                 cat._frames = FramesModel(
                     lf=pl.LazyFrame(cat.catalog_dict),
-                    pl_df=pl.DataFrame(cat.catalog_dict),
                     df=pl.DataFrame(cat.catalog_dict).to_pandas(),
                 )
 
@@ -415,6 +414,12 @@ class ESMCatalogModel(pydantic.BaseModel):
         """
         Search for entries in the catalog.
 
+
+        If the pandas dataframe has not yet been instantiated, we search the polars
+        dataframe, materialising the pandas dataframe only when necessary. If the
+        pandas dataframe has been instantiated, we search it instead, as searching
+        is cheap compared to materialisation.
+
         Parameters
         ----------
         query: dict, optional
@@ -431,24 +436,50 @@ class ESMCatalogModel(pydantic.BaseModel):
             A new catalog with the entries satisfying the query criteria.
 
         """
+        if (_df := self._frames.df) is None:
+            cols = list(self.lf.collect_schema().keys())
+            col_subset = {
+                col for col, dtype in self.lf.collect_schema().items() if dtype == pl.Unknown
+            }
+            columns_with_iterables = {
+                col
+                for col, dtype in self._frames.lf.head(1)
+                .select(col_subset)
+                .collect()
+                .schema.items()
+                if dtype == pl.List
+            }
+            use_pl = True
+        else:
+            use_pl = False
+            columns_with_iterables = self.columns_with_iterables
+            cols = self.df.columns.tolist()
 
         _query = (
             query
             if isinstance(query, QueryModel)
-            else QueryModel(
-                query=query, require_all_on=require_all_on, columns=self.df.columns.tolist()
-            )
+            else QueryModel(query=query, require_all_on=require_all_on, columns=cols)
         )
 
-        results = search(
-            df=self.df, query=_query.query, columns_with_iterables=self.columns_with_iterables
-        )
+        if use_pl:
+            results = pl_search(
+                lf=self.lf,
+                query=_query.query,
+                columns_with_iterables=columns_with_iterables,
+            )
+        else:
+            results = search(
+                df=self.df,
+                query=_query.query,
+                columns_with_iterables=columns_with_iterables,
+            )
+
         if _query.require_all_on is not None and not results.empty:
             results = search_apply_require_all_on(
                 df=results,
                 query=_query.query,
                 require_all_on=_query.require_all_on,
-                columns_with_iterables=self.columns_with_iterables,
+                columns_with_iterables=columns_with_iterables,
             )
         return results
 
@@ -494,7 +525,6 @@ class FramesModel(pydantic.BaseModel):
     and lazyframe."""
 
     df: pd.DataFrame | None = None
-    pl_df: pl.DataFrame | None = None
     lf: pl.LazyFrame | None = None
 
     model_config = ConfigDict(validate_assignment=True, arbitrary_types_allowed=True)
@@ -502,11 +532,10 @@ class FramesModel(pydantic.BaseModel):
     @pydantic.model_validator(mode='after')
     def ensure_some(self) -> Self:
         """
-        Make sure that at least one of the dataframes is not `None` when the model is
-        instantiated.
+        Make sure at least one of df, or lf is set.
         """
-        if self.df is None and self.pl_df is None and self.lf is None:
-            raise AssertionError('At least one of df, pl_df, or lf must be set')
+        if self.df is None and self.lf is None:
+            raise AssertionError('At least one of df, or lf must be set')
         return self
 
     @property
@@ -515,33 +544,24 @@ class FramesModel(pydantic.BaseModel):
         if self.df is not None:
             return self.df
 
-        if self.pl_df is not None:
-            self.df = self.pl_df.to_pandas(use_pyarrow_extension_array=True)
-            self.df[list(self.columns_with_iterables)] = self.df[
-                list(self.columns_with_iterables)
-            ].map(tuple)
-            return self.df
-
-        self.pl_df = self.lf.collect()  # type: ignore[union-attr]
-        self.df = self.pl_df.to_pandas(use_pyarrow_extension_array=True)
+        pl_df = self.lf.collect()  # type: ignore[union-attr]
+        self.df = pl_df.to_pandas(use_pyarrow_extension_array=True)
         for colname in self.columns_with_iterables:
             self.df[colname] = self.df[colname].apply(tuple)
         return self.df
 
     @property
     def polars(self) -> pl.DataFrame:
-        """Return the polars DataFrame, instantiating it if necessary."""
-        if self.pl_df is not None:
-            return self.pl_df
+        """Return the polars DataFrame, instantiating it preferentially from the
+        lazyframe but from the pandas dataframe if not."""
 
         if self.lf is not None:
-            self.pl_df = self.lf.collect()
-            return self.pl_df
+            return self.lf.collect()
 
-        self.pl_df = pl.from_pandas(self.df)
-        self.lf = self.pl_df.lazy()
+        pl_df = pl.from_pandas(self.df)
+        self.lf = pl_df.lazy()
 
-        return self.pl_df
+        return pl_df
 
     @property
     def lazy(self) -> pl.LazyFrame:
