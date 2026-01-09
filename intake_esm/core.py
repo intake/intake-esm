@@ -515,11 +515,13 @@ class esm_datastore(Catalog):
         name: pydantic.StrictStr,
         directory: pydantic.DirectoryPath | pydantic.StrictStr | None = None,
         catalog_type: str = 'dict',
+        file_format: str = 'csv',
+        write_kwargs: dict[typing.Any, typing.Any] | None = None,
         to_csv_kwargs: dict[typing.Any, typing.Any] | None = None,
         json_dump_kwargs: dict[typing.Any, typing.Any] | None = None,
         storage_options: dict[str, typing.Any] | None = None,
     ) -> None:
-        """Serialize catalog to corresponding json and csv files.
+        """Serialize catalog to corresponding json and csv (or parquet) files.
 
         Parameters
         ----------
@@ -529,8 +531,15 @@ class esm_datastore(Catalog):
             The path to the local directory. If None, use the current directory
         catalog_type: str, default 'dict'
             Whether to save the catalog table as a dictionary in the JSON file or as a separate CSV file.
+        file_format: str, default 'csv'
+            The file format to use when saving the catalog table. Either 'csv' or 'parquet'.
+            If catalog_type is 'dict', this parameter is ignored.
+        write_kwargs: dict, optional
+            Additional keyword arguments passed through to the :py:func:`~pandas.DataFrame.to_csv` or
+            :py:func:`~pandas.DataFrame.to_parquet` functions.
+            Compression is currently ignored when serializing to parquet.
         to_csv_kwargs : dict, optional
-            Additional keyword arguments passed through to the :py:meth:`~pandas.DataFrame.to_csv` method.
+            Deprecated alias for `write_kwargs`.
         json_dump_kwargs : dict, optional
             Additional keyword arguments passed through to the :py:func:`~json.dump` function.
         storage_options: dict
@@ -540,7 +549,7 @@ class esm_datastore(Catalog):
         Notes
         -----
         Large catalogs can result in large JSON files. To keep the JSON file size manageable, call with
-        `catalog_type='file'` to save catalog as a separate CSV file.
+        `catalog_type='file'` to save catalog as a separate CSV/parquet file.
 
         Examples
         --------
@@ -555,11 +564,28 @@ class esm_datastore(Catalog):
         >>> cat_subset.serialize(name='cmip6_bcc_esm1', catalog_type='file')
         """
 
+        if to_csv_kwargs is not None:
+            warnings.warn(
+                'to_csv_kwargs is deprecated and will be removed in a future version. '
+                'Please use read_kwargs instead.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if write_kwargs is not None:
+                raise ValueError(
+                    'Cannot provide both `read_csv_kwargs` and `write_kwargs`. '
+                    'Please use `write_kwargs`.'
+                )
+            write_kwargs = to_csv_kwargs
+
+        write_kwargs = write_kwargs or {}
+
         self.esmcat.save(
             name,
             directory=directory,
             catalog_type=catalog_type,
-            to_csv_kwargs=to_csv_kwargs,
+            file_format=file_format,
+            write_kwargs=write_kwargs,
             json_dump_kwargs=json_dump_kwargs,
             storage_options=storage_options,
         )
