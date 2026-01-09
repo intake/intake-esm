@@ -448,13 +448,8 @@ class ESMCatalogModel(pydantic.BaseModel):
                 .schema.items()
                 if dtype == pl.List
             }
-            iterable_dtypes = {
-                colname: type(_df[colname].iloc[0]) for colname in columns_with_iterables
-            }
-
             use_pl = True
         else:
-            iterable_dtypes = None
             use_pl = False
             columns_with_iterables = self.columns_with_iterables
             cols = self.df.columns.tolist()
@@ -470,7 +465,6 @@ class ESMCatalogModel(pydantic.BaseModel):
                 lf=self.lf,
                 query=_query.query,
                 columns_with_iterables=columns_with_iterables,
-                iterable_dtypes=iterable_dtypes,
             )
         else:
             results = search(

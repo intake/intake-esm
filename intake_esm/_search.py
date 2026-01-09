@@ -91,7 +91,8 @@ def pl_search(
         Columns in the dataframe that have iterables
     iterable_dtypes: dict, optional
         A dictionary mapping column names to their iterable dtypes. If not provided,
-        defaults to all tuple
+        defaults to all tuple. Typically unused, unless a dataframe with eg. set
+        iterables has been passed explicitly.
 
     Returns
     -------
