@@ -6,7 +6,7 @@ dependencies:
   - cftime
   - codecov
   - dask >=2024.12
-  - fastprogress >=1.0.0
+  - fastprogress>=1.0.0,<1.1.0
   - flaky >=3.8.0
   - fsspec >=2024.12
   - gcsfs >=2024.12

@@ -9,7 +9,6 @@ on:
 jobs:
   build-artifacts:
     runs-on: ubuntu-latest
-    if: github.repository == 'intake/intake-esm'
     steps:
       - uses: actions/checkout@v6
         with:
@@ -66,8 +65,6 @@ jobs:
         if: github.event_name == 'push'
         run: |
           python -m pip install --upgrade pip
-          python -m pip install ipython
-          # Explicitly install ipython: see https://github.com/AnswerDotAI/fastprogress/issues/117
           python -m pip install dist/intake_esm*.whl
           python -c "import intake_esm; print(intake_esm.__version__)"
 

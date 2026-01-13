@@ -15,7 +15,6 @@ concurrency:
 jobs:
   build:
     name: python-${{ matrix.python-version }}
-    if: github.repository == 'intake/intake-esm'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:
@@ -62,7 +61,6 @@ jobs:
 
   upstream-dev:
     name: upstream-dev
-    if: github.repository == 'intake/intake-esm'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:
