@@ -1,5 +1,5 @@
 dask[complete]>=2024.12
-fastprogress>=1.0.0
+fastprogress>=1.0.0,<1.1.0
 fsspec>=2024.12
 intake>=2.0.0
 itables
