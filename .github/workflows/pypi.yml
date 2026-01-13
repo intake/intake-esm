@@ -9,7 +9,6 @@ on:
 jobs:
   build-artifacts:
     runs-on: ubuntu-latest
-    if: github.repository == 'intake/intake-esm'
     steps:
       - uses: actions/checkout@v6
         with:
