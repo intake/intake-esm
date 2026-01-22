@@ -38,6 +38,10 @@ kerchunk_file = os.path.join(
     'sample_data/kerchunk-files/noaa-nwm-test-reference.json',
 )
 
+zippedzarr = os.path.join(
+    here, 'sample_data/cesm-le/b.e11.BRCP85C5CNBDRD.f09_g16.105.pop.h.STF_O2.200601-210012.zarr.zip'
+)
+
 multi_path = f'{os.path.dirname(f1)}/*.nc'
 
 
@@ -106,6 +110,20 @@ def test_open_dataset_kerchunk(kerchunk_file=kerchunk_file):
         data_format='reference',
         urlpath=kerchunk_file,
         varname=None,
+        xarray_open_kwargs=xarray_open_kwargs,
+    )
+    assert isinstance(ds, xarray.Dataset)
+
+
+def test_open_dataset_zippedzarr(zippedfile=zippedzarr):
+    xarray_open_kwargs = _get_xarray_open_kwargs(
+        'zarr3', dict(decode_times=False), storage_options={}
+    )
+
+    ds = _open_dataset(
+        data_format='zarre',
+        urlpath=zippedfile,
+        varname='ECOSYS_XKW',
         xarray_open_kwargs=xarray_open_kwargs,
     )
     assert isinstance(ds, xarray.Dataset)
