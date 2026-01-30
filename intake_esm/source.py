@@ -115,7 +115,6 @@ def _open_dataset(
         xarray_open_kwargs.update(parallel=True)
         ds = xr.open_mfdataset(url, **xarray_open_kwargs)
     else:
-        print(115, xarray_open_kwargs)
         ds = xr.open_dataset(url, **xarray_open_kwargs)
         if preprocess is not None:
             ds = preprocess(ds)
