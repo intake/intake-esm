@@ -104,9 +104,11 @@ def _open_dataset(
         # How should we handle concat_dim, and other xr.open_mfdataset kwargs?
         xarray_open_kwargs.update(preprocess=preprocess)
         xarray_open_kwargs.update(parallel=True)
-        ds = xr.open_mfdataset(url, **xarray_open_kwargs)
+        # ds = xr.open_mfdataset(url, **xarray_open_kwargs)
+        ds = _open_dataset_try_auto(url, xr.open_mfdataset, xarray_open_kwargs)
     else:
-        ds = xr.open_dataset(url, **xarray_open_kwargs)
+        # ds = xr.open_dataset(url, **xarray_open_kwargs)
+        ds = _open_dataset_try_auto(url, xr.open_dataset, xarray_open_kwargs)
         if preprocess is not None:
             ds = preprocess(ds)
 
@@ -134,6 +136,30 @@ def _open_dataset(
 
     ds = _expand_dims(expand_dims, ds)
     ds = _update_attrs(additional_attrs=additional_attrs, ds=ds)
+    return ds
+
+
+def _open_dataset_try_auto(url, func: typing.Callable, xarray_open_kwargs) -> xr.Dataset:
+    """
+    Try to open a dataset with chunks set to auto. If we fail because dask doesn't know how to chunk
+    it, set chunks to `{}` and retry. Handles cases where datasets contain things like string variables,
+    which can't be autochunked, as that's restricted to cftime arrays only.
+
+    Attempting to autochunk, rather than always using disk chunks (`{}`) is advantageous as it is generally
+    quite a lot more performant. Unfortunately, there is no straightforward way to detect which variables
+    within a dataset can and can't be autochunked without opening it.
+    """
+    try:
+        ds = func(url, **xarray_open_kwargs)
+    except NotImplementedError as exc:
+        if (
+            'Can not use auto rechunking with object dtype. We are unable to estimate the size in bytes of object data'
+            in str(exc)
+        ):
+            xarray_open_kwargs['chunks'] = {}
+            ds = func(url, **xarray_open_kwargs)
+        else:
+            raise exc
     return ds
 
 
