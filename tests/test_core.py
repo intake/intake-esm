@@ -342,19 +342,19 @@ def test_catalog_serialize(catalog_type, to_csv_kwargs, json_dump_kwargs, direct
     if directory is None:
         directory = os.getcwd()
     cat = intake.open_esm_datastore(f'{directory}/{name}.json')
-    subset_df = cat_subset.esmcat.pl_df.with_columns(
+    subset_df = cat_subset.esmcat.lf.collect().with_columns(
         [
             pl.col(colname).cast(pl.Null)
-            for colname in cat_subset.esmcat._frames.pl_df.columns
-            if cat_subset.esmcat._frames.pl_df.get_column(colname).is_null().all()
+            for colname in cat_subset.esmcat._frames.lf.collect().columns
+            if cat_subset.esmcat._frames.lf.collect().get_column(colname).is_null().all()
         ]
     )
 
-    df = cat.esmcat.pl_df.with_columns(
+    df = cat.esmcat.lf.collect().with_columns(
         [
             pl.col(colname).cast(pl.Null)
-            for colname in cat.esmcat._frames.pl_df.columns
-            if cat.esmcat._frames.pl_df.get_column(colname).is_null().all()
+            for colname in cat.esmcat._frames.lf.collect().columns
+            if cat.esmcat._frames.lf.collect().get_column(colname).is_null().all()
         ]
     )
     assert_frame_equal_pl(
