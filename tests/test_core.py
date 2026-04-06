@@ -157,6 +157,14 @@ def test_catalog_init_back_compat(capsys, obj, sep, read_kwargs, read_csv_kwargs
     'obj, read_kwargs, columns_with_iterables',
     [
         (multi_variable_cat, {'converters': {'variable': ast.literal_eval}}, None),
+        (
+            multi_variable_cat,
+            {
+                'converters': {'variable': ast.literal_eval},
+                'schema_overrides': {'variable': pl.List(pl.Categorical)},
+            },
+            ['variable'],
+        ),
         (multi_variable_cat, None, ['variable']),
     ],
 )
@@ -166,6 +174,11 @@ def test_columns_with_iterables(capsys, obj, read_kwargs, columns_with_iterables
         obj, read_kwargs=read_kwargs, columns_with_iterables=columns_with_iterables
     )
     assert 'variable' in cat.esmcat.columns_with_iterables
+
+    if read_kwargs is not None and (schema_dict := read_kwargs.get('schema_overrides', {})):
+        # Assert we are getting the correct schema
+        for varname, dtype in schema_dict.items():
+            assert cat.esmcat.pl_df.schema[varname] == dtype
 
 
 def test_read_csv_conflict():

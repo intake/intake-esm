@@ -630,6 +630,8 @@ class CatalogFileDataReader:
     def _read_csv_pl(self) -> FramesModel:
         """Read a catalog file stored as a csv using polars"""
         converters = self.read_kwargs.pop('converters', {})  # Hack
+        schema_overrides = self.read_kwargs.pop('schema_overrides', {})  # Hack
+        # See https://github.com/pola-rs/polars/issues/13040 - can't use read_csv.
 
         # For polars <1.33, we need to use fsspec here. For >=1.34, we can pass the raw
         # url. See https://github.com/pola-rs/polars/pull/24450 & https://github.com/intake/intake-esm/issues/744
@@ -674,11 +676,19 @@ class CatalogFileDataReader:
                 .str.replace('^.', '[')  # Replace first/last chars with [ or ].
                 .str.replace('.$', ']')  # set/tuple => list
                 .str.replace(',]$', ']')  # Remove trailing commas
-                .str.replace_all("'", '"')
-                .str.json_decode()  # This is to do with the way polars reads json - single versus double quotes
+                .str.replace_all(
+                    "'", '"'
+                )  # This is to do with the JSON spec- single versus double quotes
+                .str.json_decode(dtype=pl.List(pl.Utf8))
                 for colname in converters.keys()
             ]
         )
+
+        if schema_overrides:
+            lf = lf.with_columns(
+                [pl.col(colname).cast(dtype) for colname, dtype in schema_overrides.items()]
+            )
+
         return FramesModel(lf=lf)
 
     def _read_parquet_pl(self) -> FramesModel:
@@ -690,7 +700,7 @@ class CatalogFileDataReader:
         )
         return FramesModel(lf=lf)
 
-    def _read(self):
+    def _read(self) -> FramesModel:
         if self.driver == 'polars':
             if self.filetype == 'csv':
                 return self._read_csv_pl()
