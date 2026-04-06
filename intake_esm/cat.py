@@ -269,7 +269,7 @@ class ESMCatalogModel(pydantic.BaseModel):
                 data['last_updated'] = None
             cat = cls.model_validate(data)
             if cat.catalog_file:
-                cat._frames = cat._df_from_file(cat, _mapper, storage_options, read_kwargs)
+                cat._frames = cat._df_from_file(_mapper, storage_options, read_kwargs)
             else:
                 cat._frames = FramesModel(
                     lf=pl.LazyFrame(cat.catalog_dict),
@@ -281,7 +281,6 @@ class ESMCatalogModel(pydantic.BaseModel):
 
     def _df_from_file(
         self,
-        cat: ESMCatalogModel,
         _mapper: fsspec.FSMap,
         storage_options: dict[str, typing.Any],
         read_kwargs: dict[str, typing.Any],
@@ -299,8 +298,6 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         Parameters
         ----------
-        cat: ESMCatalogModel
-            The catalog model
         _mapper: fsspec mapper
             A fsspec mapper object
         storage_options: dict
@@ -315,13 +312,13 @@ class ESMCatalogModel(pydantic.BaseModel):
             A pydantic model containing at least one of a pandas/polars dataframe
             and a polars lazyframe
         """
-        if _mapper.fs.exists(cat.catalog_file):
-            csv_path = cat.catalog_file
+        if _mapper.fs.exists(self.catalog_file):
+            csv_path = self.catalog_file
         else:
-            csv_path = f'{os.path.dirname(_mapper.root)}/{cat.catalog_file}'
-        cat.catalog_file = csv_path
+            csv_path = f'{os.path.dirname(_mapper.root)}/{self.catalog_file}'
+        self.catalog_file = csv_path
 
-        reader = CatalogFileDataReader(cat.catalog_file, storage_options, **read_kwargs)
+        reader = CatalogFileDataReader(self.catalog_file, storage_options, **read_kwargs)
         self._iterable_dtype_map = reader.dtype_map
         return reader.frames
 
