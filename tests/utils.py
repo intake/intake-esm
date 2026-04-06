@@ -7,6 +7,9 @@ here = os.path.abspath(os.path.dirname(__file__))
 zarr_cat_pangeo_cmip6 = 'https://storage.googleapis.com/cmip6/pangeo-cmip6.json'
 cdf_cat_sample_cmip6 = os.path.join(here, 'sample-catalogs/cmip6-netcdf.json')
 multi_variable_cat = os.path.join(here, 'sample-catalogs/multi-variable-catalog.json')
+multi_variable_hard_cat = os.path.join(
+    here, 'sample-catalogs/multi-variable-hardcoded-catalog.json'
+)
 cdf_cat_sample_cmip5 = os.path.join(here, 'sample-catalogs/cmip5-netcdf.json')
 cdf_cat_sample_cmip5_pq = os.path.join(here, 'sample-catalogs/cmip5-netcdf-parquet.json')
 cdf_cat_sample_cesmle = os.path.join(here, 'sample-catalogs/cesm1-lens-netcdf.json')
