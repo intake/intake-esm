@@ -1058,7 +1058,7 @@ def test_df_reader_csv(catalog, df_reader, _driver):
     assert isinstance(cat.esmcat._driver, _driver)
     if df_reader == 'pandas':
         cat.df
-        assert cat.esmcat._driver.frames.pl_df is None
+        assert cat.esmcat._driver.frames.lf is None
         cat.esmcat._driver.frames.polars
         assert cat.esmcat._driver.frames.pl_df is not None
 
@@ -1081,3 +1081,24 @@ def test_reader_selection_precedence(monkeypatch, env_reader, explicit_reader, e
     assert isinstance(cat.esmcat._driver, expected)
     reference = pd.read_csv(cat.esmcat.catalog_file, dtype=str)
     pd.testing.assert_frame_equal(cat.df, reference, check_dtype=False)
+
+
+@pytest.mark.parametrize('df_reader', ['pandas', 'polars'])
+def test_search__frames_df_is_None(df_reader):
+    """
+    Test that is EsmCatalogMoel._frames.df is None, we default to searching
+    with polars.
+
+    ---
+    Why wasn't this caught by our other tests? Why doesn't it work? WTF...
+    """
+
+    cat = intake.open_esm_datastore(
+        access_columns_with_lists_cat,
+        columns_with_iterables=['variable'],
+        df_reader=df_reader,
+    )
+
+    result = cat.search(variable=['strairx_m', 'flatn_ai_m'], require_all_on=['file_id'])
+    assert isinstance(result.df, pd.DataFrame)
+    assert len(result) == 1

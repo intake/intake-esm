@@ -2,9 +2,16 @@ import re
 
 import numpy as np
 import pandas as pd
+import polars as pl
 import pytest
+from pandas.testing import assert_frame_equal
 
-from intake_esm._search import is_pattern, search, search_apply_require_all_on
+from intake_esm._search import (
+    is_pattern,
+    pl_search,
+    search,
+    search_apply_require_all_on,
+)
 from intake_esm.cat import QueryModel
 
 
@@ -147,6 +154,11 @@ def test_search(query, require_all_on, expected):
         query=query, columns=df.columns.tolist(), require_all_on=require_all_on
     )
     results = search(df=df, query=query_model.query, columns_with_iterables=set())
+
+    lf = pl.from_pandas(df).lazy()
+    results_pl = pl_search(lf=lf, query=query_model.query, columns_with_iterables=set())
+    assert_frame_equal(results_pl, results)
+
     assert isinstance(results, pd.DataFrame)
     if require_all_on:
         results = search_apply_require_all_on(
@@ -184,11 +196,104 @@ def test_search_columns_with_iterables(query, expected):
             'random': [{'bx', 'by'}, {'bx', 'bz'}, {'bx', 'by'}],
         }
     )
+
     query_model = QueryModel(query=query, columns=df.columns.tolist())
+
+    lf = pl.from_pandas(df).lazy()
+
+    # This mirrors a setup step in the esmcat.search function which preserves dtypes.
+    # If altering this test, ensure that the dtypes are preserved here as well!
+    iterable_dtypes = {colname: type(df[colname].iloc[0]) for colname in {'variable', 'random'}}
+
+    results = search(df=df, query=query_model.query, columns_with_iterables={'variable', 'random'})
+
+    results_pl = pl_search(
+        lf=lf,
+        query=query_model.query,
+        columns_with_iterables={'variable', 'random'},
+        iterable_dtypes=iterable_dtypes,
+    )
+    assert_frame_equal(results_pl, results)
+    assert results.to_dict(orient='records') == expected
+
+
+@pytest.mark.parametrize(
+    'query,expected',
+    [
+        (
+            dict(variable=['A', 'C']),
+            [
+                {
+                    'path': 'file1',
+                    'variable': ['A', 'B'],
+                    'attr': 1,
+                },
+                {
+                    'path': 'file2',
+                    'variable': ['A', 'B', 'C'],
+                    'attr': 2,
+                },
+                {
+                    'attr': 3,
+                    'path': 'file3',
+                    'variable': [
+                        'C',
+                        'D',
+                        'A',
+                    ],
+                },
+            ],
+        ),
+        (
+            dict(variable=['A', 'C'], attr=[1, 2]),
+            [
+                {
+                    'path': 'file1',
+                    'variable': ['A', 'B'],
+                    'attr': 1,
+                },
+                {
+                    'path': 'file2',
+                    'variable': ['A', 'B', 'C'],
+                    'attr': 2,
+                },
+            ],
+        ),
+    ],
+)
+def test_search_columns_with_iterables_str_specified(query, expected):
+    df = pd.DataFrame(
+        {
+            'path': ['file1', 'file2', 'file3'],
+            'variable': [['A', 'B'], ['A', 'B', 'C'], ['C', 'D', 'A']],
+            'attr': [1, 2, 3],
+        }
+    )
+
+    query_model = QueryModel(query=query, columns=df.columns.tolist())
+
+    lf = pl.from_pandas(df).lazy()
+
+    # This mirrors a setup step in the esmcat.search function which preserves dtypes.
+    # If altering this test, ensure that the dtypes are preserved here as well!
+    iterable_dtypes = {colname: type(df[colname].iloc[0]) for colname in {'variable'}}
+
     results = search(
-        df=df, query=query_model.query, columns_with_iterables={'variable', 'random'}
-    ).to_dict(orient='records')
-    assert results == expected
+        df=df,
+        query=query_model.query,
+        columns_with_iterables={
+            'variable',
+        },
+    )
+
+    results_pl = pl_search(
+        lf=lf,
+        query=query_model.query,
+        columns_with_iterables='variable',
+        iterable_dtypes=iterable_dtypes,
+    )
+    assert_frame_equal(results_pl, results)
+    assert results.to_dict(orient='records') == expected
 
 
 @pytest.mark.parametrize(
@@ -220,11 +325,98 @@ def test_search_require_all_on_columns_with_iterables(query, expected):
         }
     )
     query_model = QueryModel(query=query, columns=df.columns.tolist(), require_all_on=['attr'])
+
     results = search(df=df, query=query_model.query, columns_with_iterables={'variable', 'random'})
+
+    lf = pl.from_pandas(df).lazy()
+
+    # This mirrors a setup step in the esmcat.search function which preserves dtypes.
+    # If altering this test, ensure that the dtypes are preserved here as well!
+    iterable_dtypes = {colname: type(df[colname].iloc[0]) for colname in {'variable', 'random'}}
+
+    results_pl = pl_search(
+        lf=lf,
+        query=query_model.query,
+        columns_with_iterables={'variable', 'random'},
+        iterable_dtypes=iterable_dtypes,
+    )
+    assert_frame_equal(results_pl, results)
+
+    results_pl = search_apply_require_all_on(
+        df=results_pl,
+        query=query_model.query,
+        require_all_on=query_model.require_all_on,
+        columns_with_iterables={'variable', 'random'},
+    )
+
     results = search_apply_require_all_on(
         df=results,
         query=query_model.query,
         require_all_on=query_model.require_all_on,
         columns_with_iterables={'variable', 'random'},
-    ).to_dict(orient='records')
-    assert results == expected
+    )
+
+    assert_frame_equal(results_pl, results)
+
+    assert results.to_dict(orient='records') == expected
+
+
+def test_pattern_itercol_raises():
+    """
+    If we try to use pattern matching within iterable columns, we should raise a NotImplementedError.
+    """
+
+    df = pd.DataFrame(
+        {
+            'path': ['file1', 'file2', 'file3'],
+            'variable': [['A', 'B'], ['A', 'B', 'C'], ['C', 'D', 'A']],
+            'attr': [1, 2, 3],
+        }
+    )
+
+    query_model = QueryModel(query=dict(variable=[re.compile('^A$')]), columns=df.columns.tolist())
+
+    lf = pl.from_pandas(df).lazy()
+
+    with pytest.raises(
+        NotImplementedError,
+        match='Pattern matching within iterable columns is not implemented yet.',
+    ):
+        pl_search(
+            lf=lf,
+            query=query_model.query,
+            columns_with_iterables={'variable'},
+            iterable_dtypes={'variable': list},
+        )
+
+
+def test_numpy_dtypes_coerced_to_tuples():
+    """
+    If we have a column with numpy array values, we should coerce those to tuples
+    in the pandas dataframe. These numpy dtypes can arise from polars <=> pandas
+    conversions & from parquet serialised catalogues.
+    """
+
+    lf = pl.LazyFrame(
+        {
+            'path': ['file1', 'file2', 'file3'],
+            'variable': [
+                np.array(['A', 'B'], dtype=object),
+                np.array(['A', 'B', 'C'], dtype=object),
+                np.array(['C', 'D', 'A'], dtype=object),
+            ],
+            'attr': [1, 2, 3],
+        }
+    )
+
+    query_model = QueryModel(query=dict(variable=['A', 'C']), columns=['path', 'variable', 'attr'])
+
+    results_pl = pl_search(
+        lf=lf,
+        query=query_model.query,
+        columns_with_iterables={'variable'},
+        iterable_dtypes={'variable': np.ndarray},
+    )
+
+    assert isinstance(results_pl['variable'][0], tuple)
+    assert isinstance(results_pl['variable'][0][0], str)

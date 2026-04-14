@@ -16,7 +16,7 @@ import pydantic
 import tlz
 from pydantic import ConfigDict
 
-from ._search import search, search_apply_require_all_on
+from ._search import pl_search, search, search_apply_require_all_on
 from .iodrivers import (
     CatalogFileReader,
     CatalogFileWriter,
@@ -297,8 +297,7 @@ class ESMCatalogModel(pydantic.BaseModel):
             else:
                 cat._frames = FramesModel(
                     lf=pl.LazyFrame(cat.catalog_dict),
-                    pl_df=pl.DataFrame(cat.catalog_dict),
-                    df=pl.DataFrame(cat.catalog_dict).to_pandas(),
+                    # df=pl.DataFrame(cat.catalog_dict).to_pandas(),
                 )
 
             return cat
@@ -471,6 +470,11 @@ class ESMCatalogModel(pydantic.BaseModel):
         """
         Search for entries in the catalog.
 
+        If the pandas dataframe has not yet been instantiated, we search the polars
+        dataframe, materialising the pandas dataframe only when necessary. If the
+        pandas dataframe has been instantiated, we search it instead, as searching
+        is cheap compared to materialisation.
+
         Parameters
         ----------
         query: dict, optional
@@ -488,23 +492,51 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         """
 
+        if self._frames is None:
+            raise ValueError(
+                'FramesModel not instantiated. This should never happen.'
+            )  # pragma: no cover
+
+        if self._frames.df is None:
+            cols = list(self.lf.collect_schema().keys())
+            columns_with_iterables = {
+                col
+                for col, dtype in self._frames.lf.head(1)  # type: ignore[union-attr]
+                .collect()
+                .schema.items()
+                if dtype == pl.List
+            }
+            use_pl = True
+        else:
+            use_pl = False
+            columns_with_iterables = self.columns_with_iterables
+            cols = self.df.columns.tolist()
+
         _query = (
             query
             if isinstance(query, QueryModel)
-            else QueryModel(
-                query=query, require_all_on=require_all_on, columns=self.df.columns.tolist()
-            )
+            else QueryModel(query=query, require_all_on=require_all_on, columns=cols)
         )
 
-        results = search(
-            df=self.df, query=_query.query, columns_with_iterables=self.columns_with_iterables
-        )
+        if use_pl:
+            results = pl_search(
+                lf=self.lf,
+                query=_query.query,
+                columns_with_iterables=columns_with_iterables,
+            )
+        else:
+            results = search(
+                df=self.df,
+                query=_query.query,
+                columns_with_iterables=columns_with_iterables,
+            )
+
         if _query.require_all_on is not None and not results.empty:
             results = search_apply_require_all_on(
                 df=results,
                 query=_query.query,
                 require_all_on=_query.require_all_on,
-                columns_with_iterables=self.columns_with_iterables,
+                columns_with_iterables=columns_with_iterables,
             )
         return results
 
@@ -533,7 +565,7 @@ class QueryModel(pydantic.BaseModel):
         if isinstance(require_all_on, str):
             self.require_all_on = [require_all_on]
         if require_all_on is not None:
-            for key in self.require_all_on:
+            for key in self.require_all_on:  # type: ignore[union-attr]
                 if key not in columns:
                     raise ValueError(f'Column {key} not in columns {columns}')
         _query = query.copy()

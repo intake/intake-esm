@@ -7,6 +7,7 @@ import polars as pl
 import pydantic
 import pytest
 from polars import testing as pl_testing
+from pydantic import ValidationError
 
 from intake_esm.cat import ESMCatalogModel
 from intake_esm.iodrivers import (
@@ -20,52 +21,50 @@ from intake_esm.iodrivers import (
 )
 
 from .utils import (
+    access_columns_with_lists_cat,
     here,
     sample_df,
     sample_esmcat_data,
     sample_lf,
-    sample_pl_df,
 )
 
 
 @pytest.mark.parametrize(
-    'pd_df, pl_df, lf, err',
+    'pd_df, lf, err',
     [
-        (sample_df, sample_pl_df, sample_lf, False),
-        (sample_df, None, None, False),
-        (None, None, None, True),
-        (None, sample_pl_df, None, False),
-        (None, None, sample_lf, False),
+        (sample_df, sample_lf, False),
+        (sample_df, None, False),
+        (None, None, True),
+        (None, sample_lf, False),
     ],
 )
-def test_FramesModel_init(pd_df, pl_df, lf, err):
+def test_FramesModel_init(pd_df, lf, err):
     """
     Make sure FramesModel works with different input combos
     """
     if not err:
-        FramesModel(df=pd_df, pl_df=pl_df, lf=lf)
+        FramesModel(df=pd_df, lf=lf)
         assert True
     else:
         with pytest.raises(pydantic.ValidationError):
-            FramesModel(df=pd_df, pl_df=pl_df, lf=lf)
+            FramesModel(df=pd_df, lf=lf)
 
 
 @pytest.mark.parametrize(
-    'pd_df, pl_df, lf',
+    'pd_df, lf',
     [
-        (sample_df, sample_pl_df, sample_lf),
-        (sample_df, None, None),
-        (None, sample_pl_df, None),
-        (None, None, sample_lf),
+        (sample_df, sample_lf),
+        (sample_df, None),
+        (None, sample_lf),
     ],
 )
 @pytest.mark.parametrize('attr', ['polars', 'lazy', 'columns_with_iterables'])
-def test_FramesModel_no_accidental_pd(pd_df, pl_df, lf, attr):
+def test_FramesModel_no_accidental_pd(pd_df, lf, attr):
     """
     Make sure that if we instantiate with a polars dataframe or a lazy frame, we
     don't accidentally trigger the creation of a pandas dataframe.
     """
-    f = FramesModel(df=pd_df, pl_df=pl_df, lf=lf)
+    f = FramesModel(df=pd_df, lf=lf)
 
     if pd_df is not None:
         assert f.df is not None
@@ -84,68 +83,70 @@ def test_FramesModel_no_accidental_pd(pd_df, pl_df, lf, attr):
         assert f.df is not None
 
 
-def test_FramesModel_no_accidental_pl():
-    """
-    Make sure that if we instantiate with a pandas dataframe, we
-    don't accidentally trigger the creation of a polars dataframe.
-    """
-    pd_df = sample_df
-    pl_df = None
-    lf = None
-    f = FramesModel(df=pd_df, pl_df=pl_df, lf=lf)
-
-    assert f.pl_df is None
-    assert f.polars is not None
-    assert f.pl_df is not None
-
-
-def test_FramesModel_pandas_from_pldf():
-    pd_df = None
-    pl_df = sample_pl_df
-    lf = None
-    f = FramesModel(df=pd_df, pl_df=pl_df, lf=lf)
-
-    assert isinstance(f.pandas, pd.DataFrame)
-
-
 def test_FramesModel_polars_from_lf():
     pd_df = None
-    pl_df = None
     lf = sample_lf
-    f = FramesModel(df=pd_df, pl_df=pl_df, lf=lf)
+    f = FramesModel(df=pd_df, lf=lf)
 
     assert isinstance(f.polars, pl.DataFrame)
 
 
-def test_FramesModel_columns_with_iterables():
-    pd_df = None
-    pl_df = None
-    lf = sample_lf.head(0)
-    f = FramesModel(df=pd_df, pl_df=pl_df, lf=lf)
+@pytest.mark.parametrize(
+    'lf, pd_df',
+    [
+        (sample_lf.head(0), None),
+        (None, sample_df.head(0)),
+    ],
+)
+def test_FramesModel_columns_with_iterables(lf, pd_df):
+    if lf is not None:
+        lf = sample_lf.head(0)
+    if pd_df is not None:
+        pd_df = sample_df.head(0)
+
+    f = FramesModel(df=pd_df, lf=lf)
     assert f.columns_with_iterables == set()
 
 
 def test_FramesModel_set_manual_df():
     """
-    Test that if we set esmcat._df, we don't cause an error. We also test that the
-    creation of `cat._frames.pl_df` is deferred until we ask for it with the
-    `cat.pl_df` property.
+    Test that if we set esmcat._df, we don't cause an error or our state to get wonky.
     """
     cat = ESMCatalogModel.from_dict({'esmcat': sample_esmcat_data, 'df': sample_df})
-
-    assert cat._frames.pl_df is None
 
     new_df = pd.DataFrame({'numeric_col': [1, 2, 3], 'str_col': ['a', 'b', 'c']})
     cat._df = new_df
 
-    assert getattr(cat, '_frames') is not None
-
-    pd.testing.assert_frame_equal(cat.df, new_df)
-
     expected_pl_df = pl.DataFrame({'numeric_col': [1, 2, 3], 'str_col': ['a', 'b', 'c']})
 
-    assert cat._frames.pl_df is None
     pl_testing.assert_frame_equal(cat.pl_df, expected_pl_df)
+
+
+def test_FramesModel_applies_tuple():
+    """
+    Test that if we have a column with lists, we convert it to tuples in the pandas dataframe.
+    """
+    cat = ESMCatalogModel.load(
+        access_columns_with_lists_cat,
+        df_reader='polars',
+        read_kwargs={'converters': {'variable': ast.literal_eval}},
+    )
+
+    pandas_df = cat._frames.pandas
+    assert 'variable' in pandas_df.columns
+    assert pandas_df['variable'].map(lambda value: isinstance(value, tuple)).all()
+
+
+def test_frames_model_ok_with_pandas_only():
+    df = pd.DataFrame({'a': [1, 2]})
+    m = FramesModel(df=df, lf=None)
+    assert m.df is not None
+    assert m.lf is None
+
+
+def test_frames_model_error_when_all_none():
+    with pytest.raises(ValidationError):
+        FramesModel(df=None, lf=None)
 
 
 @pytest.mark.parametrize('read_kwargs', [{}, {'converters': {'variable': ast.literal_eval}}])

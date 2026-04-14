@@ -313,22 +313,16 @@ def test_query_model_mixed_iterables_preserved():
     assert q.query['var'] == ['tas', 'pr']
 
 
-# ------------------------------
-# FramesModel.ensure_some
-# ------------------------------
-
-
 def test_frames_model_ok_with_pandas_only():
     df = pd.DataFrame({'a': [1, 2]})
-    m = FramesModel(df=df, pl_df=None, lf=None)
+    m = FramesModel(df=df, lf=None)
     assert m.df is not None
-    assert m.pl_df is None
     assert m.lf is None
 
 
 def test_frames_model_error_when_all_none():
     with pytest.raises(ValidationError):
-        FramesModel(df=None, pl_df=None, lf=None)
+        FramesModel(df=None, lf=None)
 
 
 def test_esm_catalog_dates_are_pass_through():
