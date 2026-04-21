@@ -7,6 +7,7 @@ import packaging.version
 import pandas as pd
 import pydantic
 import xarray as xr
+import zarr
 from intake.source.base import DataSource, Schema
 
 from .cat import Aggregation, DataFormat
@@ -89,7 +90,15 @@ def _open_dataset(
         xarray_open_kwargs['backend_kwargs']['consolidated'] = False
         urlpath = 'reference://'
 
-    if xarray_open_kwargs['engine'] == 'zarr' or data_format == 'opendap':
+    if (
+        xarray_open_kwargs['engine'] == 'zarr'
+        and fsspec.utils.can_be_local(urlpath)
+        and urlpath.endswith('.zip')
+    ):
+        url = zarr.storage.ZipStore(fsspec.open_local(urlpath, **storage_options))
+        if 'backend_kwargs' in xarray_open_kwargs:
+            xarray_open_kwargs['backend_kwargs'].pop('storage_options', None)
+    elif xarray_open_kwargs['engine'] == 'zarr' or data_format == 'opendap':
         url = urlpath
     elif fsspec.utils.can_be_local(urlpath):
         url = fsspec.open_local(urlpath, **storage_options)
