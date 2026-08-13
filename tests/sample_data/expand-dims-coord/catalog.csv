@@ -1,0 +1,3 @@
+filename,path,file_id,frequency,start_date,end_date,variable,variable_long_name,variable_standard_name,variable_cell_methods,variable_units,realm,temporal_label,member
+regression_r1.nc,./tests/sample_data/expand-dims-coord/regression_r1.nc,by647,mon,"2015-01-01, 00:00:00","2015-03-01, 00:00:00",time,time,time,time: mean,days,atmos,mon,r1
+regression_r2.nc,./tests/sample_data/expand-dims-coord/regression_r2.nc,by647,mon,"2015-01-01, 00:00:00","2015-03-01, 00:00:00",time,time,time,time: mean,days,atmos,mon,r2

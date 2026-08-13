@@ -159,6 +159,8 @@ def _update_attrs(*, additional_attrs, ds):
 def _expand_dims(expand_dims, ds):
     if expand_dims:
         for variable in ds.attrs[OPTIONS['vars_key']]:
+            if variable not in ds.data_vars:
+                continue  # Only expand data variables, not coords
             ds[variable] = ds[variable].expand_dims(**expand_dims)
 
     return ds
