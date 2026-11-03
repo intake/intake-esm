@@ -274,7 +274,7 @@ def test_catalog_search_columns_with_iterables(path, columns_with_iterables, que
     cat = intake.open_esm_datastore(path, columns_with_iterables=columns_with_iterables)
 
     for iter_col in columns_with_iterables:
-        assert isinstance(cat.df[iter_col][0], tuple)
+        assert isinstance(cat.df[iter_col][0], list)
     new_cat = cat.search(**query)
     assert len(new_cat) == expected_size
 

@@ -39,11 +39,15 @@ def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_option
         else _default_open_kwargs
     )
 
+    # Add options to backend kwargs as we delegate all this to Zarr
+    # however, don't add options if none are passed. Zarr will raise
+    # if non-none options are passed for local assets
     if (
         xarray_open_kwargs['engine'] == 'zarr'
         and 'storage_options' not in xarray_open_kwargs['backend_kwargs']
+        and storage_options
     ):
-        xarray_open_kwargs['backend_kwargs']['storage_options'] = {} or storage_options
+        xarray_open_kwargs['backend_kwargs']['storage_options'] = storage_options
 
     xarray_open_kwargs = _set_async_flag(data_format, xarray_open_kwargs)
 

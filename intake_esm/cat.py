@@ -354,6 +354,7 @@ class ESMCatalogModel(pydantic.BaseModel):
 
     @property
     def grouped(self) -> pd.core.groupby.DataFrameGroupBy | pd.DataFrame:
+        cols = None
         if self.aggregation_control:
             if self.aggregation_control.groupby_attrs:
                 self.aggregation_control.groupby_attrs = list(
@@ -366,13 +367,16 @@ class ESMCatalogModel(pydantic.BaseModel):
             if self.aggregation_control.groupby_attrs and set(
                 self.aggregation_control.groupby_attrs
             ) != set(self.df.columns):
-                return self.df.groupby(self.aggregation_control.groupby_attrs)
-        cols = list(
-            filter(
-                functools.partial(_allnan_or_nonan, self.df),
-                self.df.columns,
+                cols = self.aggregation_control.groupby_attrs
+        if cols is None:
+            cols = list(
+                filter(
+                    functools.partial(_allnan_or_nonan, self.df),
+                    self.df.columns,
+                )
             )
-        )
+        if len(cols) == 1:
+            cols = cols[0]
         return self.df.groupby(cols)
 
     def _construct_group_keys(self, sep: str = '.') -> dict[str, str | tuple[str]]:
@@ -525,7 +529,8 @@ class FramesModel(pydantic.BaseModel):
         self.pl_df = self.lf.collect()  # type: ignore[union-attr]
         self.df = self.pl_df.to_pandas(use_pyarrow_extension_array=True)
         for colname in self.columns_with_iterables:
-            self.df[colname] = self.df[colname].apply(tuple)
+            if self.df.dtypes[colname] == 'O':  # not for pyarrow list
+                self.df[colname] = self.df[colname].apply(tuple)
         return self.df
 
     @property

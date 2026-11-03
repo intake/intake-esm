@@ -148,7 +148,6 @@ class esm_datastore(Catalog):
         self.derivedcat = registry or default_registry
         self._entries = {}
         self._requested_variables = []
-        self._columns_with_iterables = columns_with_iterables or []
         self.datasets = {}
         self._validate_derivedcat()
 
@@ -316,7 +315,6 @@ class esm_datastore(Catalog):
 
                 if isinstance(grouped, pd.DataFrame):
                     records = [grouped.loc[internal_key].to_dict()]
-
                 else:
                     records = grouped.get_group(internal_key).to_dict(orient='records')
 
