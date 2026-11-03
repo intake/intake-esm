@@ -101,7 +101,9 @@ def _open_dataset(
     elif xarray_open_kwargs['engine'] == 'kerchunk' and data_format == 'reference':
         url = urlpath
     else:
-        url = fsspec.open(urlpath, **storage_options).open()
+        # we "keep a reference" to the OpenFile so it doesn't close as soon as it is created
+        openfile = fsspec.open(urlpath, **storage_options)
+        url = openfile.open()
 
     # Handle multi-file datasets with `xr.open_mfdataset()`
     if (isinstance(url, str) and '*' in url) or isinstance(url, list):
