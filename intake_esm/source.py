@@ -39,11 +39,15 @@ def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_option
         else _default_open_kwargs
     )
 
+    # Add options to backend kwargs as we delegate all this to Zarr
+    # however, don't add options if none are passed. Zarr will raise
+    # if non-none options are passed for local assets
     if (
         xarray_open_kwargs['engine'] == 'zarr'
         and 'storage_options' not in xarray_open_kwargs['backend_kwargs']
+        and storage_options
     ):
-        xarray_open_kwargs['backend_kwargs']['storage_options'] = {} or storage_options
+        xarray_open_kwargs['backend_kwargs']['storage_options'] = storage_options
 
     xarray_open_kwargs = _set_async_flag(data_format, xarray_open_kwargs)
 
@@ -97,7 +101,9 @@ def _open_dataset(
     elif xarray_open_kwargs['engine'] == 'kerchunk' and data_format == 'reference':
         url = urlpath
     else:
-        url = fsspec.open(urlpath, **storage_options).open()
+        # we "keep a reference" to the OpenFile so it doesn't close as soon as it is created
+        openfile = fsspec.open(urlpath, **storage_options)
+        url = openfile.open()
 
     # Handle multi-file datasets with `xr.open_mfdataset()`
     if (isinstance(url, str) and '*' in url) or isinstance(url, list):

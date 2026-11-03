@@ -117,8 +117,8 @@ params = [
             {'A': 'NASA', 'B': 'foo', 'C': 'HiSt', 'D': 'tAs'},
         ],
     ),
-    ({'A': None}, None, [{'A': None, 'B': None, 'C': 'exp', 'D': 'UA'}]),
-    ({'A': np.nan}, None, [{'A': None, 'B': None, 'C': 'exp', 'D': 'UA'}]),
+    ({'A': None}, None, [{'A': np.nan, 'B': np.nan, 'C': 'exp', 'D': 'UA'}]),
+    ({'A': np.nan}, None, [{'A': np.nan, 'B': np.nan, 'C': 'exp', 'D': 'UA'}]),
 ]
 
 
@@ -126,8 +126,8 @@ params = [
 def test_search(query, require_all_on, expected):
     df = pd.DataFrame(
         {
-            'A': ['NCAR', 'IPSL', 'IPSL', 'CSIRO', 'IPSL', 'NCAR', 'NOAA', 'NCAR', 'NASA', None],
-            'B': ['CESM', 'FOO', 'FOO', 'BAR', 'FOO', 'CESM', 'GCM', 'WACM', 'foo', None],
+            'A': ['NCAR', 'IPSL', 'IPSL', 'CSIRO', 'IPSL', 'NCAR', 'NOAA', 'NCAR', 'NASA', np.nan],
+            'B': ['CESM', 'FOO', 'FOO', 'BAR', 'FOO', 'CESM', 'GCM', 'WACM', 'foo', np.nan],
             'C': [
                 'hist',
                 'control',
@@ -160,6 +160,10 @@ def test_search(query, require_all_on, expected):
     [
         (
             dict(variable=['A', 'C'], random='bz'),
+            [{'path': 'file2', 'variable': ['A', 'B', 'C'], 'attr': 2, 'random': {'bx', 'bz'}}],
+        ),
+        (
+            dict(variable=['A', 'C'], random='.*z'),
             [{'path': 'file2', 'variable': ['A', 'B', 'C'], 'attr': 2, 'random': {'bx', 'bz'}}],
         ),
         (

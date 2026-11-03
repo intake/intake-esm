@@ -66,7 +66,7 @@ cat.esmcat.has_multiple_variable_assets
 The search functionality works in the same way:
 
 ```{code-cell} ipython3
-cat_subset =cat.search(variable=["O2", "SiO3"])
+cat_subset = cat.search(variable=["O2", "SiO3"])
 cat_subset.df
 ```
 
