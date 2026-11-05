@@ -8,10 +8,10 @@
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "Programming Language :: Python",
         "Topic :: Scientific/Engineering",
     ]
@@ -21,7 +21,7 @@
     maintainers = [{ name = "ACCESS-NRI", email = "charles.turner@anu.edu.au" }]
     name = "access-intake-esm"
     readme = "README.md"
-    requires-python = ">=3.10"
+    requires-python = ">=3.11"
 
 
     dependencies = [
@@ -68,7 +68,7 @@
 [tool.ruff]
     extend-include = ["*.ipynb"]
     line-length    = 100
-    target-version = "py310"
+    target-version = "py311"
 
     builtins = ["ellipsis"]
     # Exclude a variety of commonly ignored directories.

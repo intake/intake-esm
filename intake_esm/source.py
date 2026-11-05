@@ -94,7 +94,9 @@ def _open_dataset(
     elif fsspec.utils.can_be_local(urlpath):
         url = fsspec.open_local(urlpath, **storage_options)
     else:
-        url = fsspec.open(urlpath, **storage_options).open()
+        # Keep the OpenFile (and its filesystem) alive while xarray opens the asset.
+        openfile = fsspec.open(urlpath, **storage_options)
+        url = openfile.open()
 
     # Handle multi-file datasets with `xr.open_mfdataset()`
     if (isinstance(url, str) and '*' in url) or isinstance(url, list):

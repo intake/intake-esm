@@ -23,7 +23,7 @@ requirements:
     - versioneer
     - setuptools >=61.0.0
   run:
-    - python >=3.10
+    - python >=3.11
     {% for dep in deps %}
     - {{ dep }}
     {% endfor %}
