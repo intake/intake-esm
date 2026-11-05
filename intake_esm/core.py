@@ -898,9 +898,7 @@ class esm_datastore(Catalog):
         """
         For groupby attrs that have more than one unique value, return their name and length
         """
-        lens = {
-            k: len(getattr(self.unique(), k)) for k in self.esmcat.aggregation_control.groupby_attrs
-        }
+        lens = {k: len(self.unique()[k]) for k in self.esmcat.aggregation_control.groupby_attrs}
         return {k: v for k, v in lens.items() if v > 1}
 
     def _create_derived_variables(self, datasets, skip_on_error):
