@@ -21,6 +21,7 @@ import intake_esm
 
 from .utils import (
     access_columns_with_lists_cat,
+    access_columns_with_sets_cat,
     access_columns_with_tuples_cat,
     catalog_dict_records,
     cdf_cat_sample_cesmle,
@@ -268,6 +269,7 @@ def test_open_and_reserialize(tmp_path, file_format_1, file_format_2):
     created. Only affects unspecified fields.
     """
     catalog = intake.open_esm_datastore(cdf_cat_sample_cmip5)
+    expected_table = catalog.df.copy(deep=True)
 
     catalog.serialize(
         name='serialized',
@@ -278,6 +280,7 @@ def test_open_and_reserialize(tmp_path, file_format_1, file_format_2):
     )
 
     catalog = intake.open_esm_datastore(tmp_path / 'serialized.json')
+    pd.testing.assert_frame_equal(catalog.df, expected_table, check_dtype=False)
 
     catalog.serialize(
         name='reserialized',
@@ -303,6 +306,49 @@ def test_open_and_reserialize(tmp_path, file_format_1, file_format_2):
         reserialized.pop(field, None)
 
     assert serialized == reserialized
+    reopened = intake.open_esm_datastore(tmp_path / 'reserialized.json')
+    pd.testing.assert_frame_equal(reopened.df, expected_table, check_dtype=False)
+
+
+@pytest.mark.parametrize('first_format', ['csv', 'parquet'])
+@pytest.mark.parametrize('second_format', ['csv', 'parquet'])
+@pytest.mark.parametrize(
+    'catalog_file', [access_columns_with_lists_cat, access_columns_with_sets_cat]
+)
+def test_iterable_serialization_preserves_values(
+    tmp_path, catalog_file, first_format, second_format
+):
+    read_kwargs = {'converters': {'variable': ast.literal_eval}}
+    catalog = intake.open_esm_datastore(catalog_file, read_kwargs=read_kwargs)
+    normalise = set if catalog_file == access_columns_with_sets_cat else tuple
+    expected = catalog.df.copy(deep=True)
+    expected['variable'] = expected['variable'].astype(object).apply(normalise)
+    for i, file_format in enumerate([first_format, second_format]):
+        name = f'roundtrip_{i}'
+        catalog.serialize(
+            name=name, directory=tmp_path, catalog_type='file', file_format=file_format
+        )
+        catalog = intake.open_esm_datastore(
+            tmp_path / f'{name}.json', read_kwargs=read_kwargs if file_format == 'csv' else None
+        )
+        actual = catalog.df.copy(deep=True)
+        actual['variable'] = actual['variable'].astype(object).apply(normalise)
+        pd.testing.assert_frame_equal(actual, expected, check_dtype=False)
+
+
+def test_parquet_filename_preserves_catalog_name(tmp_path):
+    cat = intake.open_esm_datastore(cdf_cat_sample_cmip5)
+    cat.serialize(name='physics', directory=tmp_path, catalog_type='file', file_format='parquet')
+    assert (tmp_path / 'physics.parquet').is_file()
+
+
+@pytest.mark.parametrize('use_model', [False, True])
+def test_serialization_rejects_unknown_file_format(tmp_path, use_model):
+    cat = intake.open_esm_datastore(cdf_cat_sample_cmip5)
+    save = cat.esmcat.save if use_model else cat.serialize
+    with pytest.raises(ValueError, match='file_format'):
+        save(name='invalid', directory=tmp_path, catalog_type='file', file_format='orc')
+    assert not (tmp_path / 'invalid.json').exists()
 
 
 @pytest.mark.parametrize(
@@ -442,6 +488,8 @@ def test_catalog_keys_info(cat):
     [
         ('file', {'compression': 'bz2'}, {}, '.'),
         ('file', {'compression': 'gzip'}, {}, None),
+        ('file', {'compression': 'xz'}, {}, '.'),
+        ('file', {'compression': 'zip'}, {}, '.'),
         ('dict', {}, {}, None),
     ],
 )

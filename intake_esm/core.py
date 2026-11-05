@@ -535,7 +535,6 @@ class esm_datastore(Catalog):
         write_kwargs: dict, optional
             Additional keyword arguments passed through to the :py:func:`~pandas.DataFrame.to_csv` or
             :py:func:`~pandas.DataFrame.to_parquet` functions.
-            Compression is currently ignored when serializing to parquet.
         to_csv_kwargs : dict, optional
             Deprecated alias for `write_kwargs`.
         json_dump_kwargs : dict, optional
