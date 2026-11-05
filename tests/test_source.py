@@ -1,14 +1,18 @@
 import os
 import tarfile
 import tempfile
+import warnings
 from unittest import mock
 
 import dask
+import intake
 import pytest
 import xarray
 from dask.delayed import DelayedLeaf
 
 from intake_esm.source import (
+    ConcatenationWarning,
+    ESMDataSourceError,
     _delayed_open_ds,
     _eager_open_ds,
     _get_open_func,
@@ -17,6 +21,8 @@ from intake_esm.source import (
     _update_attrs,
 )
 from intake_esm.utils import _zarr_async
+
+from .utils import cdf_cat_sample_cmip6
 
 dask.config.set(scheduler='single-threaded')
 
@@ -205,3 +211,51 @@ def test_get_open_func(threaded, expected):
         assert open_func == _eager_open_ds
     else:
         assert isinstance(open_func, DelayedLeaf)
+
+
+def test_no_concat_coordinates_warns_and_retains_first_dataset():
+    cat = intake.open_esm_datastore(cdf_cat_sample_cmip6).search(
+        source_id='CNRM-CM6-1', variable_id='tasmax', experiment_id='historical'
+    )
+    # These real member files share coordinates. Without join_new they have
+    # no dimension along which combine_by_coords can order the two datasets.
+    cat.esmcat.aggregation_control.aggregations = [
+        agg for agg in cat.esmcat.aggregation_control.aggregations if agg.type != 'join_new'
+    ]
+    assert len(cat.df) == 2
+    with pytest.warns(ConcatenationWarning, match='retaining only first dataset'):
+        ds = cat.to_dask(
+            threaded=False,
+            xarray_open_kwargs={'engine': 'h5netcdf', 'chunks': {}},
+            progressbar=False,
+        )
+    try:
+        with xarray.open_dataset(cat.df.path.iloc[0], engine='h5netcdf') as first:
+            xarray.testing.assert_equal(ds.tasmax, first.tasmax)
+    finally:
+        ds.close()
+
+
+def test_other_combine_value_errors_are_not_swallowed():
+    cat = intake.open_esm_datastore(cdf_cat_sample_cmip6).search(
+        source_id='CNRM-CM6-1', variable_id='tasmax', experiment_id='historical'
+    )
+    cat.esmcat.aggregation_control.aggregations = [
+        agg for agg in cat.esmcat.aggregation_control.aggregations if agg.type != 'join_new'
+    ]
+
+    def reverse_second_member(ds):
+        if ds.attrs['variant_label'] == 'r6i1p1f2':
+            return ds.isel(time=slice(None, None, -1))
+        return ds
+
+    with warnings.catch_warnings(record=True) as caught:
+        with pytest.raises(ESMDataSourceError) as exc:
+            cat.to_dask(
+                preprocess=reverse_second_member,
+                threaded=False,
+                xarray_open_kwargs={'engine': 'h5netcdf', 'chunks': {}},
+                progressbar=False,
+            )
+    assert isinstance(exc.value.__cause__, ValueError)
+    assert not any(issubclass(w.category, ConcatenationWarning) for w in caught)
