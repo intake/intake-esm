@@ -148,7 +148,6 @@ class esm_datastore(Catalog):
         self.derivedcat = registry or default_registry
         self._entries = {}
         self._requested_variables = []
-        self._columns_with_iterables = columns_with_iterables or []
         self.datasets = {}
         self._validate_derivedcat()
 
@@ -316,7 +315,6 @@ class esm_datastore(Catalog):
 
                 if isinstance(grouped, pd.DataFrame):
                     records = [grouped.loc[internal_key].to_dict()]
-
                 else:
                     records = grouped.get_group(internal_key).to_dict(orient='records')
 
@@ -882,16 +880,26 @@ class esm_datastore(Catalog):
         :py:class:`~xarray.Dataset`
         """
         if len(self) != 1:  # quick check to fail more quickly if there are many results
+            lens = self._aggr_lengths
             raise ValueError(
-                f'Expected exactly one dataset. Received {len(self)} datasets. Please refine your search or use `.to_dataset_dict()`.'
+                f'Expected exactly one dataset. Received {len(self)} datasets. Please refine your search on {", ".join(lens.keys())} or use `.to_dataset_dict()`.'
             )
         res = self.to_dataset_dict(**{**kwargs, 'progressbar': False})
         if len(res) != 1:  # extra check in case kwargs did modify something
+            lens = self._aggr_lengths
             raise ValueError(
-                f'Expected exactly one dataset. Received {len(self)} datasets. Please refine your search or use `.to_dataset_dict()`.'
+                f'Expected exactly one dataset. Received {len(self)} datasets. Please refine your search on {", ".join(lens.keys())} or use `.to_dataset_dict()`.'
             )
         _, ds = res.popitem()
         return ds
+
+    @property
+    def _aggr_lengths(self) -> dict[str, int]:
+        """
+        For groupby attrs that have more than one unique value, return their name and length
+        """
+        lens = {k: len(self.unique()[k]) for k in self.esmcat.aggregation_control.groupby_attrs}
+        return {k: v for k, v in lens.items() if v > 1}
 
     def _create_derived_variables(self, datasets, skip_on_error):
         if len(self.derivedcat) > 0:

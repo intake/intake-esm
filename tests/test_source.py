@@ -83,7 +83,11 @@ def test_open_dataset(fpath, expected_time_size, engine):
 @pytest.mark.parametrize('storage_options', [{'anon': True}, {}])
 def test_get_xarray_open_kwargs(storage_options):
     xarray_open_kwargs = _get_xarray_open_kwargs('zarr', storage_options=storage_options)
-    assert xarray_open_kwargs['backend_kwargs']['storage_options'] == storage_options
+    if storage_options:
+        assert xarray_open_kwargs['backend_kwargs']['storage_options'] == storage_options
+    else:
+        # don't add empty or none options
+        assert 'storage_options' not in xarray_open_kwargs['backend_kwargs']
 
 
 @pytest.mark.parametrize('xr_version, chunk_default', [('2025.10.0', {}), ('2025.11.0', 'auto')])
