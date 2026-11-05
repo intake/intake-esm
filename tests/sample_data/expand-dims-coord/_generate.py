@@ -2,7 +2,7 @@
 
 Each file has a ``time`` dimension (and ``lat``/``lon``) plus a ``tas`` data
 variable, but no ``member`` dimension. The accompanying ``catalog.csv`` lists
-``variable=time`` so that intake-esm tries to ``expand_dims`` a dimension
+``variable=('tas', 'time')`` so intake-esm tries to ``expand_dims`` a dimension
 *coordinate*, which destroys the time index and breaks ``combine_by_coords`` on
 unfixed code. See ``catalog.json``.
 
