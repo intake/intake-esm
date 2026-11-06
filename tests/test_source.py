@@ -6,6 +6,7 @@ from unittest import mock
 
 import dask
 import intake
+import numpy as np
 import pytest
 import xarray
 from dask.delayed import DelayedLeaf
@@ -15,6 +16,7 @@ from intake_esm.source import (
     ESMDataSourceError,
     _delayed_open_ds,
     _eager_open_ds,
+    _expand_dims,
     _get_open_func,
     _get_xarray_open_kwargs,
     _open_dataset,
@@ -259,3 +261,34 @@ def test_other_combine_value_errors_are_not_swallowed():
             )
     assert isinstance(exc.value.__cause__, ValueError)
     assert not any(issubclass(w.category, ConcatenationWarning) for w in caught)
+
+
+def test_expand_dims_coord_variable_regression():
+    """A catalog whose `variable` column includes a dimension coordinate (`time`)
+    must still load. Previously `_expand_dims` expanded `time` into a
+    `(member, time)` coordinate, destroying its index and breaking
+    `combine_by_coords` with an `ESMDataSourceError`.
+    """
+    cat_json = os.path.join(here, 'sample_data/expand-dims-coord/catalog.json')
+    cat = intake.open_esm_datastore(cat_json, columns_with_iterables=['variable'], threaded=False)
+    dsets = cat.to_dataset_dict(progressbar=False)
+    ds = dsets['by647.mon']
+    assert 'time' in ds.dims  # time index preserved, not expanded away
+    assert ds.sizes['time'] == 3
+    assert ds.time.dims == ('time',)
+    assert 'time' in ds.indexes
+    assert set(ds.member.values) == {'r1', 'r2'}
+    for member in ['r1', 'r2']:
+        path = os.path.join(here, 'sample_data/expand-dims-coord', f'regression_{member}.nc')
+        with xarray.open_dataset(path) as original:
+            np.testing.assert_array_equal(ds.time.values, original.time.values)
+            np.testing.assert_allclose(ds.tas.sel(member=member).values, original.tas.values)
+
+
+def test_expand_dims_still_expands_data_variables():
+    ds = xarray.Dataset({'tas': ('time', [1.0, 2.0])}, coords={'time': [0, 1]})
+    ds.attrs['intake_esm_vars'] = ['tas', 'time']
+    result = _expand_dims({'member': ['r1']}, ds)
+    assert result.tas.dims == ('member', 'time')
+    assert result.time.dims == ('time',)
+    np.testing.assert_array_equal(result.tas.values, [[1.0, 2.0]])
