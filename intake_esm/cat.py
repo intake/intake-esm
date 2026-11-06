@@ -691,6 +691,8 @@ class CatalogFileDataReader:
                 for colname in converters.keys()
             ]
         )
+        if iterable_dtypes:
+            lf = lf.with_columns([pl.col(k).cast(v) for k, v in iterable_dtypes.items()])
         return FramesModel(lf=lf)
 
     def _read_parquet_pl(self) -> FramesModel:

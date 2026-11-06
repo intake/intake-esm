@@ -945,3 +945,35 @@ def test_to_dask_returns_real_single_dataset():
             xr.testing.assert_equal(ds.tasmax.isel(member_id=0, drop=True), original.tasmax)
     finally:
         ds.close()
+
+
+@pytest.mark.parametrize('dtype', [pl.List(pl.String), pl.List(pl.Categorical)])
+def test_iterable_schema_overrides(dtype):
+    cat = intake.open_esm_datastore(
+        multi_variable_cat,
+        columns_with_iterables=['variable'],
+        read_kwargs={'schema_overrides': {'variable': dtype, 'component': pl.Categorical}},
+    )
+    expected = pd.read_csv(cat.esmcat.catalog_file, converters={'variable': ast.literal_eval})
+    assert cat.esmcat.pl_df.schema['variable'] == dtype
+    assert cat.esmcat.pl_df.schema['component'] == pl.Categorical
+    assert cat.esmcat.pl_df['variable'].to_list() == [list(v) for v in expected.variable]
+    assert cat.esmcat.pl_df['component'].to_list() == expected.component.tolist()
+
+
+def test_numeric_iterable_schema_override(tmp_path):
+    with open(multi_variable_cat) as f:
+        metadata = json.load(f)
+    source = intake.open_esm_datastore(multi_variable_cat, columns_with_iterables=['variable'])
+    table = pd.read_csv(source.esmcat.catalog_file)
+    table['levels'] = str([1, 2])
+    table.to_csv(tmp_path / 'catalog.csv', index=False)
+    metadata['catalog_file'] = 'catalog.csv'
+    (tmp_path / 'catalog.json').write_text(json.dumps(metadata))
+    cat = intake.open_esm_datastore(
+        tmp_path / 'catalog.json',
+        columns_with_iterables=['variable', 'levels'],
+        read_kwargs={'schema_overrides': {'levels': pl.List(pl.Int64)}},
+    )
+    assert cat.esmcat.pl_df.schema['levels'] == pl.List(pl.Int64)
+    assert cat.esmcat.pl_df['levels'].to_list() == [[1, 2]] * len(table)
