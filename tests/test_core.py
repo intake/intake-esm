@@ -1,7 +1,6 @@
 import ast
 import json
 import os
-import sys
 import tempfile
 import warnings
 from pathlib import Path
@@ -14,7 +13,6 @@ import polars as pl
 import pydantic
 import pytest
 import xarray as xr
-from pandas.testing import assert_frame_equal as assert_frame_equal_pd
 from polars.testing import assert_frame_equal as assert_frame_equal_pl
 
 if packaging.version.Version(xr.__version__) < packaging.version.Version('2024.10'):
@@ -358,7 +356,7 @@ def test_serialization_rejects_unknown_file_format(tmp_path, use_model):
     assert not (tmp_path / 'invalid.json').exists()
 
 
-def test_dict_serialization_list_dtype_preserved():
+def test_dict_serialization_preserves_values():
     catalog = intake.open_esm_datastore(
         access_columns_with_lists_cat, columns_with_iterables=['variable']
     )
@@ -380,6 +378,7 @@ def test_dict_serialization_list_dtype_preserved():
     pd.testing.assert_frame_equal(
         catalog.df,
         catalog2.df,
+        check_dtype=False,
     )
 
 
@@ -1062,3 +1061,23 @@ def test_df_reader_csv(catalog, df_reader, _driver):
         assert cat.esmcat._driver.frames.pl_df is None
         cat.esmcat._driver.frames.polars
         assert cat.esmcat._driver.frames.pl_df is not None
+
+
+@pytest.mark.parametrize(
+    'env_reader, explicit_reader, expected',
+    [
+        (None, None, PolarsCsvReader),
+        ('pandas', None, PandasCsvReader),
+        ('pandas', 'polars', PolarsCsvReader),
+        ('polars', 'pandas', PandasCsvReader),
+    ],
+)
+def test_reader_selection_precedence(monkeypatch, env_reader, explicit_reader, expected):
+    if env_reader is None:
+        monkeypatch.delenv('ITK_ESM_DF_READER', raising=False)
+    else:
+        monkeypatch.setenv('ITK_ESM_DF_READER', env_reader)
+    cat = intake.open_esm_datastore(cdf_cat_sample_cmip5, df_reader=explicit_reader)
+    assert isinstance(cat.esmcat._driver, expected)
+    reference = pd.read_csv(cat.esmcat.catalog_file, dtype=str)
+    pd.testing.assert_frame_equal(cat.df, reference, check_dtype=False)

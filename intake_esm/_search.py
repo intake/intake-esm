@@ -31,6 +31,8 @@ def is_pattern(value):
 
 
 def is_stringtype(series):
+    if series.dtype == 'object' and pd.api.types.infer_dtype(series, skipna=True) == 'string':
+        return True
     # scalar
     if isinstance(series.dtype, pd.core.arrays.string_.StringDtype) or series.dtype in [
         'string',

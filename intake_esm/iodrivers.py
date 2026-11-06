@@ -43,17 +43,15 @@ class FramesModel(pydantic.BaseModel):
             return self.df
 
         if self.pl_df is not None:
-            self.df = self.pl_df.to_pandas(use_pyarrow_extension_array=False)
-            self.df[list(self.columns_with_iterables)] = self.df[
-                list(self.columns_with_iterables)
-            ].map(tuple)
+            self.df = self.pl_df.to_pandas(use_pyarrow_extension_array=True)
+            columns = [col for col in self.columns_with_iterables if self.df[col].dtype == 'object']
+            self.df[columns] = self.df[columns].map(tuple)
             return self.df
 
         self.pl_df = self.lf.collect()  # type: ignore[union-attr]
-        self.df = self.pl_df.to_pandas(use_pyarrow_extension_array=False)
-        self.df[list(self.columns_with_iterables)] = self.df[list(self.columns_with_iterables)].map(
-            tuple
-        )
+        self.df = self.pl_df.to_pandas(use_pyarrow_extension_array=True)
+        columns = [col for col in self.columns_with_iterables if self.df[col].dtype == 'object']
+        self.df[columns] = self.df[columns].map(tuple)
         return self.df
 
     @property
@@ -155,12 +153,16 @@ class PolarsCsvReader(CatalogFileReader):
 
     def read(self) -> None:
         """Read a catalog file stored as a csv using polars"""
-        converters = self.read_kwargs.pop(
-            'converters', {}
-        )  # Hack. N.B polars doesn't have a converters arg so this is safe to do.
-        # See https://github.com/pola-rs/polars/issues/13040 - can't use read_csv.
+        converters = self.read_kwargs.pop('converters', {})  # Hack
+        schema_overrides = self.read_kwargs.get('schema_overrides', {})
+        iterable_dtypes = {k: v for k, v in schema_overrides.items() if k in converters}
+        if iterable_dtypes:
+            self.read_kwargs['schema_overrides'] = {
+                k: v for k, v in schema_overrides.items() if k not in converters
+            }
+
         lf = pl.scan_csv(
-            self.catalog_file,  # type: ignore[arg-type]
+            self.catalog_file,
             storage_options=self.storage_options,
             infer_schema=False,
             **self.read_kwargs,
@@ -198,6 +200,8 @@ class PolarsCsvReader(CatalogFileReader):
                 for colname in converters.keys()
             ]
         )
+        if iterable_dtypes:
+            lf = lf.with_columns([pl.col(k).cast(v) for k, v in iterable_dtypes.items()])
         self._frames = FramesModel(lf=lf)
 
 
@@ -300,10 +304,7 @@ class CatalogFileWriter:
     ) -> None:
         data, fs, json_file_name = cls._common(name, directory, storage_options, data)
 
-        _tmp_df = df.copy(deep=True)
-
-        for colname, dtype in dtype_map.items():
-            _tmp_df[colname] = _tmp_df[colname].apply(getattr(builtins, dtype))
+        _tmp_df = cls._prepare_dataframe(df, dtype_map)
 
         data['catalog_dict'] = _tmp_df.to_dict(orient='records')
 
@@ -313,6 +314,15 @@ class CatalogFileWriter:
             json.dump(data, outfile, **json_kwargs)  # type: ignore[arg-type]
 
         print(f'Successfully wrote ESM catalog json file to: {json_file_name}')
+
+    @staticmethod
+    def _prepare_dataframe(df: pd.DataFrame, dtype_map: dict[str, str]) -> pd.DataFrame:
+        """Restore iterable containers for serialization, defaulting to lists."""
+        result = df.copy(deep=True)
+        for colname in FramesModel(df=df).columns_with_iterables:
+            dtype = dtype_map.get(colname, 'list')
+            result[colname] = result[colname].astype(object).apply(getattr(builtins, dtype))
+        return result
 
     @classmethod
     def _common(
@@ -368,10 +378,7 @@ class PandasCsvWriter(CatalogFileWriter):
         data, fs, json_file_name = cls._common(name, directory, storage_options, data)
         csv_file_name = fs.unstrip_protocol(f'{cls.mapper.root}/{name}.csv')
 
-        _tmp_df = df.copy(deep=True)
-
-        for colname, dtype in dtype_map.items():
-            _tmp_df[colname] = _tmp_df[colname].apply(getattr(builtins, dtype))
+        _tmp_df = cls._prepare_dataframe(df, dtype_map)
 
         csv_kwargs: dict[str, typing.Any] = {'index': False}
         csv_kwargs |= write_kwargs or {}

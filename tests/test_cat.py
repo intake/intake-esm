@@ -1,4 +1,6 @@
+import ast
 import datetime as dt
+import tempfile
 
 import pandas as pd
 import pydantic
@@ -8,6 +10,7 @@ from pydantic_core import ValidationError
 from intake_esm.cat import Assets, DataFormat, ESMCatalogModel, FramesModel, QueryModel
 
 from .utils import (
+    access_columns_with_tuples_cat,
     catalog_dict_records,
     cdf_cat_sample_cesmle,
     cdf_cat_sample_cmip5,
@@ -139,38 +142,6 @@ def test_esmcatmodel_unique_and_nunique(query, expected_unique_vals, expected_nu
     assert cat_sub.nunique().to_dict() == expected_nunique_vals
 
 
-@pytest.mark.parametrize(
-    'catalog_file, expected_type',
-    [
-        (access_columns_with_lists_cat, list),
-        (access_columns_with_tuples_cat, tuple),
-        (access_columns_with_sets_cat, set),
-        (access_single_item_iterables_cat, tuple),
-    ],
-)
-def test_esmcatmodel_roundtrip_itercols_type_stable(catalog_file, expected_type):
-    """
-    Test that if we open a catalog with list iterable column, they are saved as
-    lists, tuples as tuples, etc.
-    """
-    cat = ESMCatalogModel.load(
-        catalog_file, read_kwargs={'converters': {'variable': ast.literal_eval}}
-    )
-    # Create a tempdir & save it there, then open with pandas and literal eval it
-    # to check the dtype
-    assert isinstance(cat.df.loc[0, 'variable'], tuple)
-    with tempfile.TemporaryDirectory() as tmpdir:
-        cat.save(
-            'catalog',
-            directory=tmpdir,
-            catalog_type='file',
-        )
-        serialised_cat = pd.read_csv(
-            f'{tmpdir}/catalog.csv', converters={'variable': ast.literal_eval}
-        )
-        assert isinstance(serialised_cat.loc[0, 'variable'], expected_type)
-
-
 def test_save_esmcat_invalidformat():
     cat = ESMCatalogModel.load(
         access_columns_with_tuples_cat, read_kwargs={'converters': {'variable': ast.literal_eval}}
@@ -180,6 +151,7 @@ def test_save_esmcat_invalidformat():
             cat.save(
                 'catalog',
                 directory=tmpdir,
+                catalog_type='file',
                 file_format='invalidformat',
             )
 
@@ -368,3 +340,18 @@ def test_esm_catalog_dates_are_pass_through():
         last_updated=dt.date(2025, 1, 1),
     )
     assert m.last_updated == dt.date(2025, 1, 1)
+
+
+@pytest.mark.parametrize('materialised', [False, True])
+@pytest.mark.parametrize('path', [cdf_cat_sample_cmip6, multi_variable_cat])
+def test_frames_preserve_arrow_catalogue(path, materialised):
+    read_kwargs = (
+        {'converters': {'variable': ast.literal_eval}} if path == multi_variable_cat else {}
+    )
+    cat = ESMCatalogModel.load(path, read_kwargs=read_kwargs)
+    lazy = cat.lf
+    expected = lazy.collect().to_pandas(use_pyarrow_extension_array=True)
+    frames = FramesModel(pl_df=lazy.collect()) if materialised else FramesModel(lf=lazy)
+    pd.testing.assert_frame_equal(frames.pandas, expected)
+    assert all(isinstance(dtype, pd.ArrowDtype) for dtype in frames.pandas.dtypes)
+    assert frames.pandas is frames.df

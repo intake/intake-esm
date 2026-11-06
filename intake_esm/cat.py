@@ -10,7 +10,6 @@ import warnings
 from pathlib import Path
 
 import fsspec
-import packaging.version
 import pandas as pd
 import polars as pl
 import pydantic
@@ -224,7 +223,7 @@ class ESMCatalogModel(pydantic.BaseModel):
                 f'catalog_type must be either "dict" or "file". Received catalog_type={catalog_type}'
             )
 
-        if file_format not in {'csv', 'parquet'}:
+        if catalog_type == 'file' and file_format not in {'csv', 'parquet'}:
             raise ValueError(
                 f'file_format must be either "csv" or "parquet". Received file_format={file_format}'
             )
@@ -263,7 +262,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         json_file: str | pydantic.FilePath | pydantic.AnyUrl,
         storage_options: dict[str, typing.Any] | None = None,
         read_kwargs: dict[str, typing.Any] | None = None,
-        df_reader=typing.Literal['polars', 'pandas', 'infer'],
+        df_reader: typing.Literal['polars', 'pandas', 'infer'] = 'polars',
     ) -> ESMCatalogModel:
         """
         Loads the catalog from a file
@@ -522,7 +521,7 @@ class QueryModel(pydantic.BaseModel):
     model_config = ConfigDict(validate_assignment=False)
 
     @pydantic.model_validator(mode='after')
-    def validate_query(self) -> Self:
+    def validate_query(self) -> typing.Self:
         query = self.query
         columns = self.columns
         require_all_on = self.require_all_on
