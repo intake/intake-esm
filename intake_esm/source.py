@@ -159,7 +159,8 @@ def _open_dataset_try_auto(url, func: typing.Callable, xarray_open_kwargs) -> xr
         ds = func(url, **xarray_open_kwargs)
     except NotImplementedError as exc:
         if (
-            'Can not use auto rechunking with object dtype. We are unable to estimate the size in bytes of object data'
+            xarray_open_kwargs.get('chunks') == 'auto'
+            and 'Can not use auto rechunking with object dtype. We are unable to estimate the size in bytes of object data'
             in str(exc)
         ):
             xarray_open_kwargs['chunks'] = {}
