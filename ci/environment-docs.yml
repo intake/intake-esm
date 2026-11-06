@@ -32,6 +32,7 @@ dependencies:
   - xarray >=2024.10
   - zarr <3.0|>=3.0.10
   - furo >=2022.09.15
+  - kerchunk >=0.2.9
   - pip:
       - git+https://github.com/ncar-xdev/ecgtools
       - sphinxext-opengraph<0.10.0
