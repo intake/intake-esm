@@ -11,6 +11,7 @@ dependencies:
   - flaky >= 3.8.0
   - gcsfs >=2024.12
   - h5netcdf >=0.8.1
+  - hypothesis
   - ipython
   - itables
   - matplotlib
