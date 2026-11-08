@@ -543,16 +543,16 @@ def test_catalog_serialize(catalog_type, to_csv_kwargs, json_dump_kwargs, direct
     subset_df = cat_subset.esmcat.pl_df.with_columns(
         [
             pl.col(colname).cast(pl.Null)
-            for colname in cat_subset.esmcat._frames.pl_df.columns
-            if cat_subset.esmcat._frames.pl_df.get_column(colname).is_null().all()
+            for colname in cat_subset.esmcat.pl_df.columns
+            if cat_subset.esmcat.pl_df.get_column(colname).is_null().all()
         ]
     )
 
     df = cat.esmcat.pl_df.with_columns(
         [
             pl.col(colname).cast(pl.Null)
-            for colname in cat.esmcat._frames.pl_df.columns
-            if cat.esmcat._frames.pl_df.get_column(colname).is_null().all()
+            for colname in cat.esmcat.pl_df.columns
+            if cat.esmcat.pl_df.get_column(colname).is_null().all()
         ]
     )
 
@@ -1060,7 +1060,7 @@ def test_df_reader_csv(catalog, df_reader, _driver):
         cat.df
         assert cat.esmcat._driver.frames.lf is None
         cat.esmcat._driver.frames.polars
-        assert cat.esmcat._driver.frames.pl_df is not None
+        assert cat.esmcat._driver.frames.lf is not None
 
 
 @pytest.mark.parametrize(
@@ -1102,3 +1102,33 @@ def test_search__frames_df_is_None(df_reader):
     result = cat.search(variable=['strairx_m', 'flatn_ai_m'], require_all_on=['file_id'])
     assert isinstance(result.df, pd.DataFrame)
     assert len(result) == 1
+
+
+@pytest.mark.parametrize(
+    'path, query, require_all_on',
+    [
+        (cdf_cat_sample_cmip6, {'source_id': ['CNRM-CM6-1', 'BCC-ESM1']}, None),
+        (cdf_cat_sample_cmip6, {'source_id': ['^CNRM.*']}, None),
+        (cdf_cat_sample_cmip6, {'dcpp_init_year': [None]}, None),
+        (cdf_cat_sample_cmip6, {'source_id': ['not-a-real-model']}, None),
+        (cdf_cat_sample_cmip6, {}, None),
+        (access_columns_with_lists_cat, {'variable': ['aice_m']}, None),
+        (access_columns_with_lists_cat, {'variable': ['strairx_m', 'flatn_ai_m']}, ['file_id']),
+    ],
+)
+def test_real_catalogue_lazy_search_parity(path, query, require_all_on):
+    kwargs = (
+        {'columns_with_iterables': ['variable']} if path == access_columns_with_lists_cat else {}
+    )
+    lazy = intake.open_esm_datastore(path, df_reader='polars', **kwargs)
+    eager = intake.open_esm_datastore(path, df_reader='polars', **kwargs)
+    assert lazy.esmcat._frames.df is None
+    original = eager.df.copy(deep=True)
+    expected = eager.search(require_all_on=require_all_on, **query).df
+    actual = lazy.search(require_all_on=require_all_on, **query).df
+    pd.testing.assert_frame_equal(actual, expected, check_dtype=bool(query))
+    if query:
+        assert all(isinstance(dtype, pd.ArrowDtype) for dtype in actual.dtypes)
+    pd.testing.assert_frame_equal(eager.df, original)
+    # Searching should not materialise/cache the complete pandas source frame.
+    assert lazy.esmcat._frames.df is None

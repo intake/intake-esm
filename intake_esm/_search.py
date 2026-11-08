@@ -7,8 +7,6 @@ import numpy as np
 import pandas as pd
 import polars as pl
 
-pl.Config.set_engine_affinity('streaming')
-
 
 def unpack_iterable_column(df: pd.DataFrame, column: str) -> pd.DataFrame:
     """Return a DataFrame where elements of a given iterable column have been unpacked into multiple lines."""
@@ -45,6 +43,8 @@ def is_pattern(value: str | typing.Pattern | Collection) -> bool:
 
 
 def is_stringtype(series):
+    if isinstance(series.dtype, pd.ArrowDtype) and pd.api.types.is_string_dtype(series.dtype):
+        return True
     if series.dtype == 'object' and pd.api.types.infer_dtype(series, skipna=True) == 'string':
         return True
     # scalar
@@ -115,9 +115,8 @@ def pl_search(
     columns_with_iterables: set
         Names of columns in the lazy dataframe whose values contain iterables.
     iterable_dtypes: dict, optional
-        A dictionary mapping column names to their iterable dtypes. If not provided,
-        tuple is assumed for iterable columns. Typically unused, unless a lazy
-        dataframe with, for example, set iterables has been passed explicitly.
+        Optional explicit Python container conversions for iterable columns.
+        Without an override, retain Arrow-backed list storage in the result.
     Returns
     -------
     dataframe: :py:class:`~pandas.DataFrame`
@@ -137,7 +136,7 @@ def pl_search(
     if isinstance(columns_with_iterables, str):
         columns_with_iterables = [columns_with_iterables]
 
-    iterable_dtypes = iterable_dtypes or {colname: tuple for colname in columns_with_iterables}
+    iterable_dtypes = iterable_dtypes or {}
 
     for colname, dtype in iterable_dtypes.items():
         if dtype == np.ndarray:
@@ -186,10 +185,10 @@ def pl_search(
                 pl.col(colname).list.eval(pl.element().is_in(subquery, nulls_equal=True)).list.any()
             )
 
-    df = lf.collect().to_pandas()
+    df = lf.collect(engine='streaming').to_pandas(use_pyarrow_extension_array=True)
 
     for colname, dtype in iterable_dtypes.items():
-        df[colname] = df[colname].apply(dtype)
+        df[colname] = df[colname].astype(object).apply(dtype)
 
     return df
 

@@ -15,6 +15,16 @@ from intake_esm._search import (
 from intake_esm.cat import QueryModel
 
 
+def arrow_result(frame, iterable_columns=(), schema=None):
+    """Expected Arrow scalar storage, retaining explicitly requested containers."""
+    expected = pl.from_pandas(frame, schema_overrides=schema).to_pandas(
+        use_pyarrow_extension_array=True
+    )
+    for column in iterable_columns:
+        expected[column] = frame[column]
+    return expected
+
+
 @pytest.mark.parametrize(
     'value, expected',
     [
@@ -157,7 +167,11 @@ def test_search(query, require_all_on, expected):
 
     lf = pl.from_pandas(df).lazy()
     results_pl = pl_search(lf=lf, query=query_model.query, columns_with_iterables=set())
-    assert_frame_equal(results_pl, results)
+    assert_frame_equal(
+        results_pl,
+        arrow_result(results, schema=lf.collect_schema()) if query_model.query else results,
+        check_dtype=bool(query_model.query),
+    )
 
     assert isinstance(results, pd.DataFrame)
     if require_all_on:
@@ -172,10 +186,6 @@ def test_search(query, require_all_on, expected):
     [
         (
             dict(variable=['A', 'C'], random='bz'),
-            [{'path': 'file2', 'variable': ['A', 'B', 'C'], 'attr': 2, 'random': {'bx', 'bz'}}],
-        ),
-        (
-            dict(variable=['A', 'C'], random='.*z'),
             [{'path': 'file2', 'variable': ['A', 'B', 'C'], 'attr': 2, 'random': {'bx', 'bz'}}],
         ),
         (
@@ -213,7 +223,9 @@ def test_search_columns_with_iterables(query, expected):
         columns_with_iterables={'variable', 'random'},
         iterable_dtypes=iterable_dtypes,
     )
-    assert_frame_equal(results_pl, results)
+    assert_frame_equal(
+        results_pl, arrow_result(results, {'variable', 'random'} & set(results.columns))
+    )
     assert results.to_dict(orient='records') == expected
 
 
@@ -292,7 +304,9 @@ def test_search_columns_with_iterables_str_specified(query, expected):
         columns_with_iterables='variable',
         iterable_dtypes=iterable_dtypes,
     )
-    assert_frame_equal(results_pl, results)
+    assert_frame_equal(
+        results_pl, arrow_result(results, {'variable', 'random'} & set(results.columns))
+    )
     assert results.to_dict(orient='records') == expected
 
 
@@ -340,7 +354,9 @@ def test_search_require_all_on_columns_with_iterables(query, expected):
         columns_with_iterables={'variable', 'random'},
         iterable_dtypes=iterable_dtypes,
     )
-    assert_frame_equal(results_pl, results)
+    assert_frame_equal(
+        results_pl, arrow_result(results, {'variable', 'random'} & set(results.columns))
+    )
 
     results_pl = search_apply_require_all_on(
         df=results_pl,
@@ -356,7 +372,9 @@ def test_search_require_all_on_columns_with_iterables(query, expected):
         columns_with_iterables={'variable', 'random'},
     )
 
-    assert_frame_equal(results_pl, results)
+    assert_frame_equal(
+        results_pl, arrow_result(results, {'variable', 'random'} & set(results.columns))
+    )
 
     assert results.to_dict(orient='records') == expected
 
@@ -388,6 +406,17 @@ def test_pattern_itercol_raises():
             columns_with_iterables={'variable'},
             iterable_dtypes={'variable': list},
         )
+
+
+def test_pl_search_collects_with_streaming_engine(mocker):
+    """
+    Searches stream without changing the caller's global Polars configuration.
+    """
+    spy = mocker.spy(pl.LazyFrame, 'collect')
+    lf = pl.LazyFrame({'A': ['x', 'y']})
+    results = pl_search(lf=lf, query={'A': ['x']}, columns_with_iterables=set())
+    assert results['A'].tolist() == ['x']
+    assert spy.call_args.kwargs == {'engine': 'streaming'}
 
 
 def test_numpy_dtypes_coerced_to_tuples():

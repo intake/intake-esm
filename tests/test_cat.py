@@ -345,7 +345,7 @@ def test_frames_preserve_arrow_catalogue(path, materialised):
     cat = ESMCatalogModel.load(path, read_kwargs=read_kwargs)
     lazy = cat.lf
     expected = lazy.collect().to_pandas(use_pyarrow_extension_array=True)
-    frames = FramesModel(pl_df=lazy.collect()) if materialised else FramesModel(lf=lazy)
+    frames = FramesModel(lf=lazy.collect().lazy()) if materialised else FramesModel(lf=lazy)
     pd.testing.assert_frame_equal(frames.pandas, expected)
     assert all(isinstance(dtype, pd.ArrowDtype) for dtype in frames.pandas.dtypes)
     assert frames.pandas is frames.df

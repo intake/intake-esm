@@ -122,9 +122,9 @@ def test_FramesModel_set_manual_df():
     pl_testing.assert_frame_equal(cat.pl_df, expected_pl_df)
 
 
-def test_FramesModel_applies_tuple():
+def test_FramesModel_preserves_arrow_lists():
     """
-    Test that if we have a column with lists, we convert it to tuples in the pandas dataframe.
+    Preserve Arrow list storage and values rather than forcing Python tuples.
     """
     cat = ESMCatalogModel.load(
         access_columns_with_lists_cat,
@@ -134,7 +134,18 @@ def test_FramesModel_applies_tuple():
 
     pandas_df = cat._frames.pandas
     assert 'variable' in pandas_df.columns
-    assert pandas_df['variable'].map(lambda value: isinstance(value, tuple)).all()
+    assert isinstance(pandas_df['variable'].dtype, pd.ArrowDtype)
+    assert pandas_df['variable'].tolist() == cat.lf.collect()['variable'].to_list()
+
+
+def test_FramesModel_pandas_collects_with_streaming_engine(mocker):
+    """
+    Materialising the catalogue streams without global Polars configuration.
+    """
+    spy = mocker.spy(pl.LazyFrame, 'collect')
+    frames = FramesModel(lf=pl.LazyFrame({'A': ['x', 'y']}))
+    assert frames.pandas['A'].tolist() == ['x', 'y']
+    assert spy.call_args.kwargs == {'engine': 'streaming'}
 
 
 def test_frames_model_ok_with_pandas_only():

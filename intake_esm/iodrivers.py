@@ -40,10 +40,8 @@ class FramesModel(pydantic.BaseModel):
         if self.df is not None:
             return self.df
 
-        pl_df = self.lf.collect()  # type: ignore[union-attr]
-        self.df = pl_df.to_pandas(use_pyarrow_extension_array=False)
-        for colname in self.columns_with_iterables:
-            self.df[colname] = self.df[colname].apply(tuple)
+        pl_df = self.lf.collect(engine='streaming')  # type: ignore[union-attr]
+        self.df = pl_df.to_pandas(use_pyarrow_extension_array=True)
         return self.df
 
     @property
