@@ -442,6 +442,86 @@ def test_pl_search_uses_search_for_patterns_polars_cannot_run(pattern, mocker):
     assert spy.call_count == 2
 
 
+@pytest.mark.parametrize(
+    'query, expected',
+    [
+        ({'strings': [None]}, ['a']),
+        ({'strings': ['A']}, ['a']),
+        ({'strings': ['^A']}, ['a']),
+        ({'sizes': [None]}, ['a']),
+        ({'sizes': [1]}, ['a']),
+    ],
+)
+def test_null_lists_and_elements_match_consistently(query, expected):
+    """
+    A null element matches a null query, whatever the list holds, and a null list
+    matches nothing.
+    """
+    columns_with_iterables = {'strings', 'sizes'}
+    lf = pl.LazyFrame(
+        {
+            'name': ['a', 'b', 'c'],
+            'strings': [['A', None], None, []],
+            'sizes': [[1, None], None, []],
+        }
+    )
+    df = lf.collect().to_pandas(use_pyarrow_extension_array=True)
+    actual = pl_search(lf=lf, query=query, columns_with_iterables=columns_with_iterables)
+    results = search(df=df, query=query, columns_with_iterables=columns_with_iterables)
+    assert actual['name'].tolist() == expected
+    assert_frame_equal(actual, results)
+
+
+def test_regex_skips_null_list_elements():
+    """
+    A null list element is a non-match rather than an error for `re.search`.
+    """
+    lf = pl.LazyFrame({'path': ['a', 'b'], 'variable': [[None, 'A'], [None]]})
+    df = lf.collect().to_pandas(use_pyarrow_extension_array=True)
+    query = {'variable': ['^A']}
+    actual = pl_search(lf=lf, query=query, columns_with_iterables={'variable'})
+    expected = search(df=df, query=query, columns_with_iterables={'variable'})
+    assert actual['path'].tolist() == ['a']
+    assert_frame_equal(actual, expected)
+
+
+@pytest.mark.parametrize(
+    'query, expected',
+    [
+        ({'name': [1]}, []),
+        ({'count': ['1']}, []),
+        ({'count': [1, '2']}, ['a']),
+        ({'count': [1.0]}, ['a']),
+        ({'count': [1.5]}, []),
+        ({'count': [True]}, ['a']),
+        ({'count': [float('inf')]}, []),
+        ({'ratio': [1]}, ['a']),
+        ({'ratio': [1, 2.5]}, ['a', 'b']),
+        ({'count': ['^1']}, []),
+        ({'count': [re.compile('^1')]}, []),
+        ({'sizes': [1.0, 'A']}, ['a']),
+    ],
+)
+def test_mismatched_types_follow_python_equality(query, expected):
+    """
+    Values that can't equal a column's values don't match, rather than raising.
+    """
+    columns_with_iterables = {'sizes'}
+    lf = pl.LazyFrame(
+        {
+            'name': ['a', 'b'],
+            'count': [1, 2],
+            'ratio': [1.0, 2.5],
+            'sizes': [[1], [2]],
+        }
+    )
+    df = lf.collect().to_pandas(use_pyarrow_extension_array=True)
+    actual = pl_search(lf=lf, query=query, columns_with_iterables=columns_with_iterables)
+    results = search(df=df, query=query, columns_with_iterables=columns_with_iterables)
+    assert actual['name'].tolist() == expected
+    assert_frame_equal(actual, results)
+
+
 @pytest.mark.filterwarnings('error::FutureWarning')
 def test_search_regex_over_nulls_in_object_column():
     """

@@ -1,4 +1,5 @@
 import itertools
+import numbers
 import re
 import typing
 from collections.abc import Collection
@@ -66,8 +67,13 @@ def is_stringtype(series):
 
 
 def iterable_contains(data, value, regex=False):
+    if pd.api.types.is_scalar(data) and pd.isna(data):  # A null list matches nothing.
+        return False
     if regex:
-        return any([re.search(value, d) for d in data])
+        return any([re.search(value, d) for d in data if d is not None])
+    if value is None:
+        # Numeric Arrow lists containing nulls reach us as float arrays with NaNs.
+        return any(pd.isna(d) for d in data)
     return value in data
 
 
@@ -94,11 +100,14 @@ def search(
                 if isinstance(strings.dtype, pd.ArrowDtype):
                     strings = strings.astype('string[python]')
                 mask = strings.str.contains(value, regex=True, case=True, flags=0, na=False)
+            elif is_pattern(value):
+                # Arrow can't compare to a compiled pattern, which can't match anyway.
+                mask = pd.Series(False, index=df.index)
             elif pd.isna(value):
                 mask = df[column].isnull()
             else:
                 mask = df[column] == value
-            local_mask = local_mask | mask
+            local_mask = local_mask | mask.fillna(False)
         global_mask = global_mask & local_mask
     results = df.loc[global_mask]
     return results.reset_index(drop=True)
@@ -123,12 +132,35 @@ def _polars_can_run(pattern: str | typing.Pattern) -> bool:
     return True
 
 
-def _pl_mask(element: pl.Expr, subquery: Collection, is_string: bool) -> pl.Expr:
+def _pl_literals(subquery: Collection, dtype: pl.DataType) -> list:
+    """Return the exact values that can equal a value of `dtype`, converted to it.
+
+    `search` uses Python equality, so `1.0` matches an integer `1` and `'1'` matches
+    nothing, whereas Polars raises when asked to compare mismatched types.
+    """
+    target = dtype.to_python()
+    numeric = issubclass(target, numbers.Number)
+    literals = []
+    for value in subquery:
+        if value is None:
+            literals.append(None)
+        elif numeric and isinstance(value, numbers.Number):
+            try:
+                converted = target(value)
+            except (OverflowError, ValueError):  # e.g. int(float('inf'))
+                continue
+            if converted == value:
+                literals.append(converted)
+        elif not numeric and isinstance(value, target) and not is_pattern(value):
+            literals.append(value)
+    return literals
+
+
+def _pl_mask(element: pl.Expr, subquery: Collection, dtype: pl.DataType) -> pl.Expr:
     """Match exact values and regex patterns separately, as `search` does."""
-    literals = [q for q in subquery if not is_pattern(q)]
+    mask = element.is_in(_pl_literals(subquery, dtype), nulls_equal=True)
     patterns = [q for q in subquery if is_pattern(q)]
-    mask = element.is_in(literals, nulls_equal=True)
-    if is_string and patterns:
+    if dtype == pl.String and patterns:
         mask = mask | element.str.contains('|'.join(_pl_regex(q) for q in patterns))
     return mask
 
@@ -184,11 +216,11 @@ def pl_search(
         for colname, subquery in query.items():
             dtype = full_schema[colname]
             if colname in columns_with_iterables:
-                mask = _pl_mask(pl.element(), subquery, dtype.inner == pl.String)
+                mask = _pl_mask(pl.element(), subquery, dtype.inner)
                 lf = lf.filter(pl.col(colname).list.eval(mask).list.any())
             else:
                 subquery = [None if pd.isna(subq) else subq for subq in subquery]
-                lf = lf.filter(_pl_mask(pl.col(colname), subquery, dtype == pl.String))
+                lf = lf.filter(_pl_mask(pl.col(colname), subquery, dtype))
 
     df = lf.collect(engine='streaming').to_pandas(use_pyarrow_extension_array=True)
 
