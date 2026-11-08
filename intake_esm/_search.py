@@ -89,7 +89,11 @@ def search(
                     iterable_contains, value=value, regex=is_pattern(value) & column_is_stringtype
                 )
             elif column_is_stringtype and is_pattern(value):
-                mask = df[column].str.contains(value, regex=True, case=True, flags=0)
+                # Arrow's regex engine can't handle look-around or compiled patterns.
+                strings = df[column]
+                if isinstance(strings.dtype, pd.ArrowDtype):
+                    strings = strings.astype('string[python]')
+                mask = strings.str.contains(value, regex=True, case=True, flags=0, na=False)
             elif pd.isna(value):
                 mask = df[column].isnull()
             else:
@@ -98,6 +102,35 @@ def search(
         global_mask = global_mask & local_mask
     results = df.loc[global_mask]
     return results.reset_index(drop=True)
+
+
+def _pl_regex(pattern: str | typing.Pattern) -> str:
+    """Return a pattern as Polars regex source, scoping its flags to the pattern."""
+    if isinstance(pattern, re.Pattern):
+        prefix = '(?i:' if pattern.flags & re.IGNORECASE else '(?:'
+        return f'{prefix}{pattern.pattern})'
+    return f'(?:{pattern})'
+
+
+def _polars_can_run(pattern: str | typing.Pattern) -> bool:
+    """Check whether Polars can match a pattern as Python's `re` would."""
+    if isinstance(pattern, re.Pattern) and pattern.flags & ~(re.IGNORECASE | re.UNICODE):
+        return False
+    try:
+        pl.select(pl.lit('').str.contains(_pl_regex(pattern)))
+    except pl.exceptions.ComputeError:
+        return False
+    return True
+
+
+def _pl_mask(element: pl.Expr, subquery: Collection, is_string: bool) -> pl.Expr:
+    """Match exact values and regex patterns separately, as `search` does."""
+    literals = [q for q in subquery if not is_pattern(q)]
+    patterns = [q for q in subquery if is_pattern(q)]
+    mask = element.is_in(literals, nulls_equal=True)
+    if is_string and patterns:
+        mask = mask | element.str.contains('|'.join(_pl_regex(q) for q in patterns))
+    return mask
 
 
 def pl_search(
@@ -142,50 +175,25 @@ def pl_search(
         if dtype == np.ndarray:
             iterable_dtypes[colname] = tuple
 
-    query_non_iterable = {
-        key: val for key, val in query.items() if key not in columns_with_iterables
-    }
+    # Patterns Polars can't run faithfully are the only ones matched in Python.
+    use_python_regex = not all(
+        _polars_can_run(value) for values in query.values() for value in values if is_pattern(value)
+    )
 
-    for colname, subquery in query_non_iterable.items():
-        subquery = [None if pd.isna(subq) else subq for subq in subquery]
-        if is_pattern(subquery):
-            case_insensitive = [
-                bool(q.flags & re.IGNORECASE) if isinstance(q, re.Pattern) else False
-                for q in subquery
-            ]
-            # Prepend (?i) to patterns for case insensitive matching if needed
-            subquery = [q.pattern if isinstance(q, re.Pattern) else q for q in subquery]
-            subquery = [f'(?i){q}' if ci else q for q, ci in zip(subquery, case_insensitive)]
-
-            lf = lf.filter(pl.col(colname).str.contains('|'.join(subquery), literal=False))
-        else:
-            lf = lf.filter(pl.col(colname).is_in(subquery, nulls_equal=True))
-
-    query_iterable = {key: val for key, val in query.items() if key in columns_with_iterables}
-    for colname, subquery in query_iterable.items():
-        if is_pattern(subquery):
-            raise NotImplementedError(
-                'Pattern matching within iterable columns is not implemented yet.'
-            )
-            case_insensitive = [
-                bool(q.flags & re.IGNORECASE) if isinstance(q, re.Pattern) else False
-                for q in subquery
-            ]
-            # Prepend (?i) to patterns for case insensitive matching if needed
-            subquery = [q.pattern if isinstance(q, re.Pattern) else q for q in subquery]
-            subquery = [f'(?i){q}' if ci else q for q, ci in zip(subquery, case_insensitive)]
-
-            lf = lf.filter(
-                pl.col(colname)
-                .list.eval(pl.element().str.contains('|'.join(subquery), literal=False))
-                .any()
-            )
-        else:
-            lf = lf.filter(
-                pl.col(colname).list.eval(pl.element().is_in(subquery, nulls_equal=True)).list.any()
-            )
+    if not use_python_regex:
+        for colname, subquery in query.items():
+            dtype = full_schema[colname]
+            if colname in columns_with_iterables:
+                mask = _pl_mask(pl.element(), subquery, dtype.inner == pl.String)
+                lf = lf.filter(pl.col(colname).list.eval(mask).list.any())
+            else:
+                subquery = [None if pd.isna(subq) else subq for subq in subquery]
+                lf = lf.filter(_pl_mask(pl.col(colname), subquery, dtype == pl.String))
 
     df = lf.collect(engine='streaming').to_pandas(use_pyarrow_extension_array=True)
+
+    if use_python_regex:
+        df = search(df=df, query=query, columns_with_iterables=columns_with_iterables)
 
     for colname, dtype in iterable_dtypes.items():
         df[colname] = df[colname].astype(object).apply(dtype)

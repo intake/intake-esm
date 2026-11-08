@@ -6,6 +6,7 @@ import polars as pl
 import pytest
 from pandas.testing import assert_frame_equal
 
+import intake_esm._search
 from intake_esm._search import (
     is_pattern,
     pl_search,
@@ -186,6 +187,10 @@ def test_search(query, require_all_on, expected):
     [
         (
             dict(variable=['A', 'C'], random='bz'),
+            [{'path': 'file2', 'variable': ['A', 'B', 'C'], 'attr': 2, 'random': {'bx', 'bz'}}],
+        ),
+        (
+            dict(variable=['A', 'C'], random='.*z'),
             [{'path': 'file2', 'variable': ['A', 'B', 'C'], 'attr': 2, 'random': {'bx', 'bz'}}],
         ),
         (
@@ -379,9 +384,77 @@ def test_search_require_all_on_columns_with_iterables(query, expected):
     assert results.to_dict(orient='records') == expected
 
 
-def test_pattern_itercol_raises():
+def test_pl_search_matches_literals_exactly_alongside_patterns():
     """
-    If we try to use pattern matching within iterable columns, we should raise a NotImplementedError.
+    A literal in a query containing a pattern must not become a substring regex.
+    """
+    lf = pl.LazyFrame({'D': ['O2', 'NO2', 'XNO2']})
+    actual = pl_search(
+        lf=lf, query={'D': [re.compile('^O2$'), 'NO2']}, columns_with_iterables=set()
+    )
+    assert actual['D'].tolist() == ['O2', 'NO2']
+
+
+def test_pl_search_scopes_ignorecase_to_its_pattern():
+    """
+    A case insensitive pattern must not change how other patterns match.
+    """
+    lf = pl.LazyFrame({'C': ['HIST', 'ctl1', 'CTL1']})
+    actual = pl_search(
+        lf=lf,
+        query={'C': [re.compile('hist', re.IGNORECASE), '^ctl']},
+        columns_with_iterables=set(),
+    )
+    assert actual['C'].tolist() == ['HIST', 'ctl1']
+
+
+def test_pl_search_runs_portable_iterable_regex_in_polars(monkeypatch):
+    """
+    Regex which Polars can run must not fall back to materialising in pandas.
+    """
+
+    def fail(**kwargs):
+        raise AssertionError('search should not be used for a portable pattern')
+
+    monkeypatch.setattr('intake_esm._search.search', fail)
+    lf = pl.LazyFrame({'variable': [['aice_m', 'hi_m'], ['sst']]})
+    actual = pl_search(lf=lf, query={'variable': ['^aice.*']}, columns_with_iterables={'variable'})
+    assert len(actual) == 1
+
+
+@pytest.mark.parametrize(
+    'pattern',
+    [
+        '^(?!sst).*',
+        re.compile('^(?!sst).*'),
+        re.compile('^aice', re.MULTILINE),
+    ],
+)
+def test_pl_search_uses_search_for_patterns_polars_cannot_run(pattern, mocker):
+    """
+    Look-around needs Python's re, and Polars doesn't apply flags beyond IGNORECASE.
+    """
+    spy = mocker.spy(intake_esm._search, 'search')
+    lf = pl.LazyFrame({'variable': [['aice_m', 'hi_m'], ['sst']], 'name': ['aice_m', 'sst']})
+    for column in ('variable', 'name'):
+        actual = pl_search(lf=lf, query={column: [pattern]}, columns_with_iterables={'variable'})
+        assert actual['name'].tolist() == ['aice_m']
+    assert spy.call_count == 2
+
+
+@pytest.mark.filterwarnings('error::FutureWarning')
+def test_search_regex_over_nulls_in_object_column():
+    """
+    Regex over nulls in an object column shouldn't rely on deprecated downcasting.
+    """
+    df = pd.DataFrame({'C': ['hist', None, 'control']}, dtype=object)
+    results = search(df=df, query={'C': ['^hi']}, columns_with_iterables=set())
+    assert results['C'].tolist() == ['hist']
+
+
+def test_pattern_itercol_matches_search():
+    """
+    Iterable regex searches on a lazy frame match the results of `search`.
     """
 
     df = pd.DataFrame(
@@ -396,16 +469,15 @@ def test_pattern_itercol_raises():
 
     lf = pl.from_pandas(df).lazy()
 
-    with pytest.raises(
-        NotImplementedError,
-        match='Pattern matching within iterable columns is not implemented yet.',
-    ):
-        pl_search(
-            lf=lf,
-            query=query_model.query,
-            columns_with_iterables={'variable'},
-            iterable_dtypes={'variable': list},
-        )
+    actual = pl_search(
+        lf=lf,
+        query=query_model.query,
+        columns_with_iterables={'variable'},
+        iterable_dtypes={'variable': list},
+    )
+    expected = search(df=df, query=query_model.query, columns_with_iterables={'variable'})
+    assert_frame_equal(actual, arrow_result(expected, {'variable'}))
+    assert len(actual) == 3
 
 
 def test_pl_search_collects_with_streaming_engine(mocker):

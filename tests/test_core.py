@@ -1113,6 +1113,7 @@ def test_search__frames_df_is_None(df_reader):
         (cdf_cat_sample_cmip6, {'source_id': ['not-a-real-model']}, None),
         (cdf_cat_sample_cmip6, {}, None),
         (access_columns_with_lists_cat, {'variable': ['aice_m']}, None),
+        (access_columns_with_lists_cat, {'variable': ['^aice.*']}, None),
         (access_columns_with_lists_cat, {'variable': ['strairx_m', 'flatn_ai_m']}, ['file_id']),
     ],
 )
