@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import builtins
 import datetime
 import enum
 import functools
@@ -122,7 +121,6 @@ class ESMCatalogModel(pydantic.BaseModel):
     last_updated: datetime.datetime | datetime.date | None = None
     _df: pd.DataFrame | None = pydantic.PrivateAttr()
     _frames: FramesModel | None = pydantic.PrivateAttr()
-    _iterable_dtype_map: dict[str, str] = pydantic.PrivateAttr(default_factory=dict)
 
     model_config = ConfigDict(arbitrary_types_allowed=True, validate_assignment=True)
 
@@ -243,11 +241,10 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         _tmp_df = self.df.copy(deep=True)
 
+        # Iterable columns are held as tuples internally, but are always written out
+        # as lists, regardless of the bracket style in the original catalog file.
         for colname in self.columns_with_iterables:
-            dtype = self._iterable_dtype_map.get(colname, 'list')
-            if catalog_type == 'file' and file_format == 'parquet':
-                dtype = 'list'  # Arrow/Parquet has lists, not Python sets or tuples.
-            _tmp_df[colname] = _tmp_df[colname].astype(object).apply(getattr(builtins, dtype))
+            _tmp_df[colname] = _tmp_df[colname].astype(object).apply(list)
 
         if catalog_type == 'file':
             csv_kwargs: dict[str, typing.Any] = {'index': False}
@@ -358,7 +355,6 @@ class ESMCatalogModel(pydantic.BaseModel):
         self.catalog_file = csv_path
 
         reader = CatalogFileDataReader(self.catalog_file, storage_options, **read_kwargs)
-        self._iterable_dtype_map = reader.dtype_map
         return reader.frames
 
     @property
@@ -656,7 +652,6 @@ class CatalogFileDataReader:
                 f'Expected one of {__filetypes__}'
             )
 
-        self._dtype_map: dict[str, str] = {}
         self.frames = self._read()
 
     def _read_csv_pd(self) -> FramesModel:
@@ -666,10 +661,6 @@ class CatalogFileDataReader:
             storage_options=self.storage_options,
             **self.read_kwargs,
         )
-        self._dtype_map = {
-            colname: df['colname'].dtype
-            for colname in self.read_kwargs.get('converters', {}).keys()
-        }
         return FramesModel(df=df)
 
     def _read_csv_pl(self) -> FramesModel:
@@ -693,25 +684,6 @@ class CatalogFileDataReader:
                 infer_schema=False,
                 **self.read_kwargs,
             )
-
-        if dtype_map := (
-            lf.head(1)
-            .select([colname for colname in converters.keys()])
-            .with_columns(
-                [
-                    pl.col(colname)
-                    .str.head(1)
-                    .str.replace_many(
-                        ['[', '(', '{'],
-                        ['list', 'tuple', 'set'],
-                    )
-                    for colname in converters.keys()
-                ]
-            )
-            .collect()
-            .to_dicts()
-        ):  # Returns an empty list if no rows - hence walrus
-            self._dtype_map = dtype_map[0]
 
         lf = lf.with_columns(
             [
@@ -749,8 +721,3 @@ class CatalogFileDataReader:
                 return self._read_csv_pd()
             else:
                 raise ValueError(f'Unsupported file type {self.filetype} for pandas reader')
-
-    @property
-    def dtype_map(self) -> dict[str, str]:
-        """Return a map of column names to their dtypes for columns with iterables."""
-        return self._dtype_map
