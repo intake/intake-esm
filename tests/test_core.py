@@ -189,7 +189,7 @@ def test_read_csv_conflict():
         )
 
 
-def test_write_csv_conflict(tmp_path, catalog_type):
+def test_write_csv_conflict(tmp_path):
     """Test that error is raised when `to_csv_kwargs` conflicts with `write_kwargs`."""
     cat = intake.open_esm_datastore(catalog_dict_records)
     file_format = "csv"
@@ -197,7 +197,7 @@ def test_write_csv_conflict(tmp_path, catalog_type):
     kwargs = {
         'name': 'test_catalog',
         'directory': tmp_path,
-        'catalog_type': catalog_type,
+        'catalog_type': 'file',
         'file_format': file_format,
         'write_kwargs': {'compression': 'gzip'},
     }
@@ -226,7 +226,7 @@ def test_write_csv_conflict(tmp_path, catalog_type):
         cat.serialize(
             name='test_catalog',
             directory=tmp_path,
-            catalog_type=catalog_type,
+            catalog_type='file',
             file_format=file_format,
             to_csv_kwargs={'compression': 'gzip'},
         )
