@@ -43,8 +43,8 @@ The descriptor is a single json file, inspired by the [STAC spec](https://github
 ### Catalog
 
 The collection points to a single catalog.
-A catalog is a CSV file.
-The meaning of the columns in the csv file is defined by the parent collection.
+A catalog is a CSV or parquet file.
+The meaning of the columns in the csv/parquet file is defined by the parent collection.
 
 ```
 activity_id,source_id,path
@@ -65,29 +65,29 @@ They should be either [URIs](https://en.wikipedia.org/wiki/Uniform_Resource_Iden
 | id                  | string                                                    | **REQUIRED.** Identifier for the catalog.                                                                                                                              |
 | title               | string                                                    | A short descriptive one-line title for the catalog.                                                                                                                    |
 | description         | string                                                    | **REQUIRED.** Detailed multi-line description to fully explain the catalog. [CommonMark 0.28](http://commonmark.org/) syntax MAY be used for rich text representation. |
-| catalog_file        | string                                                    | **REQUIRED.** Path to a the CSV file with the catalog contents.                                                                                                        |
-| catalog_dict        | array                                                     | If specified, it is mutually exclusive with `catalog_file`. An array of dictionaries that represents the data that would otherwise be in the csv.                      |
+| catalog_file        | string                                                    | **REQUIRED.** Path to a the CSV/parquet file with the catalog contents.                                                                                                |
+| catalog_dict        | array                                                     | If specified, it is mutually exclusive with `catalog_file`. An array of dictionaries that represents the data that would otherwise be in the csv/parquet.              |
 | attributes          | [[Attribute Object](#attribute-object)]                   | **REQUIRED.** A list of attribute columns in the data set.                                                                                                             |
-| assets              | [Assets Object](#assets-object)                           | **REQUIRED.** Description of how the assets (data files) are referenced in the CSV catalog file.                                                                       |
+| assets              | [Assets Object](#assets-object)                           | **REQUIRED.** Description of how the assets (data files) are referenced in the CSV/parquet catalog file.                                                               |
 | aggregation_control | [Aggregation Control Object](#aggregation-control-object) | **OPTIONAL.** Description of how to support aggregation of multiple assets into a single xarray data set.                                                              |
 
 ### Attribute Object
 
-An attribute object describes a column in the catalog CSV file.
+An attribute object describes a column in the catalog CSV/parquet file.
 The column names can optionally be associated with a controlled vocabulary, such as the [CMIP6 CVs](https://github.com/WCRP-CMIP/CMIP6_CVs), which explain how to interpret the attribute values.
 
-| Element     | Type   | Description                                                                            |
-| ----------- | ------ | -------------------------------------------------------------------------------------- |
-| column_name | string | **REQUIRED.** The name of the attribute column. Must be in the header of the CSV file. |
-| vocabulary  | string | Link to the controlled vocabulary for the attribute in the format of a URL.            |
+| Element     | Type   | Description                                                                                    |
+| ----------- | ------ | ---------------------------------------------------------------------------------------------- |
+| column_name | string | **REQUIRED.** The name of the attribute column. Must be in the header of the CSV/parquet file. |
+| vocabulary  | string | Link to the controlled vocabulary for the attribute in the format of a URL.                    |
 
 ### Assets Object
 
-An assets object describes the columns in the CSV file relevant for opening the actual data files.
+An assets object describes the columns in the CSV/parquet file relevant for opening the actual data files.
 
 | Element            | Type   | Description                                                                                                                                                                                                                              |
 | ------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| column_name        | string | **REQUIRED.** The name of the column containing the path to the asset. Must be in the header of the CSV file.                                                                                                                            |
+| column_name        | string | **REQUIRED.** The name of the column containing the path to the asset. Must be in the header of the CSV/parquet file.                                                                                                                    |
 | format             | string | The data format. Valid values are `netcdf`, `zarr`, `zarr2`, `zarr3`, `opendap` or `reference` ([`kerchunk`](https://github.com/fsspec/kerchunk) reference files). If specified, it means that all data in the catalog is the same type. |
 | format_column_name | string | The column name which contains the data format, allowing for variable data types in one catalog. Mutually exclusive with `format`.                                                                                                       |
 
@@ -128,11 +128,11 @@ If `zarr2` or `zarr3` is specified in the `format` field, the `async` flag will 
 
 An aggregation control object defines neccessary information to use when aggregating multiple assets into a single xarray data set.
 
-| Element              | Type                                        | Description                                                                             |
-| -------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------- |
-| variable_column_name | string                                      | **REQUIRED.** Name of the attribute column in csv file that contains the variable name. |
-| groupby_attrs        | array                                       | Column names (attributes) that define data sets that can be aggegrated.                 |
-| aggregations         | [[Aggregation Object](#aggregation-object)] | **OPTIONAL.** List of aggregations to apply to query results                            |
+| Element              | Type                                        | Description                                                                                     |
+| -------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| variable_column_name | string                                      | **REQUIRED.** Name of the attribute column in csv/parquet file that contains the variable name. |
+| groupby_attrs        | array                                       | Column names (attributes) that define data sets that can be aggegrated.                         |
+| aggregations         | [[Aggregation Object](#aggregation-object)] | **OPTIONAL.** List of aggregations to apply to query results                                    |
 
 ### Aggregation Object
 
