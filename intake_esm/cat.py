@@ -9,7 +9,6 @@ import typing
 import warnings
 
 import fsspec
-import packaging.version
 import pandas as pd
 import polars as pl
 import pydantic
@@ -666,24 +665,19 @@ class CatalogFileDataReader:
     def _read_csv_pl(self) -> FramesModel:
         """Read a catalog file stored as a csv using polars"""
         converters = self.read_kwargs.pop('converters', {})  # Hack
+        schema_overrides = self.read_kwargs.get('schema_overrides', {})
+        iterable_dtypes = {k: v for k, v in schema_overrides.items() if k in converters}
+        if iterable_dtypes:
+            self.read_kwargs['schema_overrides'] = {
+                k: v for k, v in schema_overrides.items() if k not in converters
+            }
 
-        # For polars <1.33, we need to use fsspec here. For >=1.34, we can pass the raw
-        # url. See https://github.com/pola-rs/polars/pull/24450 & https://github.com/intake/intake-esm/issues/744
-        if packaging.version.Version(pl.__version__) < packaging.version.Version('1.34'):
-            with fsspec.open(self.catalog_file, **self.storage_options) as fobj:
-                lf = pl.scan_csv(
-                    fobj,  # type: ignore[arg-type]
-                    storage_options=self.storage_options,
-                    infer_schema=False,
-                    **self.read_kwargs,
-                )
-        else:
-            lf = pl.scan_csv(
-                self.catalog_file,
-                storage_options=self.storage_options,
-                infer_schema=False,
-                **self.read_kwargs,
-            )
+        lf = pl.scan_csv(
+            self.catalog_file,
+            storage_options=self.storage_options,
+            infer_schema=False,
+            **self.read_kwargs,
+        )
 
         lf = lf.with_columns(
             [
@@ -691,11 +685,15 @@ class CatalogFileDataReader:
                 .str.replace('^.', '[')  # Replace first/last chars with [ or ].
                 .str.replace('.$', ']')  # set/tuple => list
                 .str.replace(',]$', ']')  # Remove trailing commas
-                .str.replace_all("'", '"')
-                .str.json_decode()  # This is to do with the way polars reads json - single versus double quotes
+                .str.replace_all(
+                    "'", '"'
+                )  # This is to do with the JSON spec- single versus double quotes
+                .str.json_decode(dtype=pl.List(pl.Utf8))
                 for colname in converters.keys()
             ]
         )
+        if iterable_dtypes:
+            lf = lf.with_columns([pl.col(k).cast(v) for k, v in iterable_dtypes.items()])
         return FramesModel(lf=lf)
 
     def _read_parquet_pl(self) -> FramesModel:
