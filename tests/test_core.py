@@ -26,7 +26,6 @@ from .utils import (
     catalog_dict_records,
     cdf_cat_sample_cesmle,
     cdf_cat_sample_cmip5,
-    cdf_cat_sample_cmip5_pq,
     cdf_cat_sample_cmip6,
     cdf_cat_sample_cmip6_noagg,
     mixed_cat_sample_cmip6,
@@ -192,7 +191,7 @@ def test_read_csv_conflict():
 def test_write_csv_conflict(tmp_path):
     """Test that error is raised when `to_csv_kwargs` conflicts with `write_kwargs`."""
     cat = intake.open_esm_datastore(catalog_dict_records)
-    file_format = "csv"
+    file_format = 'csv'
 
     kwargs = {
         'name': 'test_catalog',
