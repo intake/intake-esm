@@ -107,7 +107,7 @@ def test_open_dataset_kerchunk(kerchunk_file=kerchunk_file):
     # chunking
     xarray_open_kwargs = _get_xarray_open_kwargs(
         'reference',
-        dict(engine='zarr', consolidated=False, drop_variables='crs'),
+        dict(engine='zarr', consolidated=False),
         storage_options={
             'remote_protocol': 's3',
             'remote_options': {'anon': True, 'asynchronous': _zarr_async()},
@@ -292,3 +292,61 @@ def test_expand_dims_still_expands_data_variables():
     assert result.tas.dims == ('member', 'time')
     assert result.time.dims == ('time',)
     np.testing.assert_array_equal(result.tas.values, [[1.0, 2.0]])
+
+
+@pytest.fixture
+def object_dtype_zarr(tmp_path):
+    # Keep the existing real NetCDF values, adding a variable-length string
+    # variable that Dask cannot automatically chunk.
+    with xarray.open_dataset(f1, engine='scipy') as source:
+        expected = source.load()
+    expected['labels'] = ('sample', np.array(['first', 'second'], dtype=object))
+    path = tmp_path / 'object.zarr'
+    expected.to_zarr(path, zarr_format=2)
+    return str(path), expected
+
+
+@pytest.mark.parametrize('multi_file', [False, True])
+def test_object_dtype_auto_chunk_fallback(object_dtype_zarr, multi_file):
+    path, expected = object_dtype_zarr
+    kwargs = {'engine': 'zarr', 'chunks': 'auto'}
+    open_func = xarray.open_mfdataset if multi_file else xarray.open_dataset
+    with pytest.raises(NotImplementedError, match='auto rechunking with object dtype'):
+        open_func(path, **kwargs)
+    with _open_dataset([path] if multi_file else path, None, xarray_open_kwargs=kwargs) as actual:
+        xarray.testing.assert_equal(actual.compute(), expected)
+
+
+@pytest.mark.parametrize('chunks', [None, {}, {'sample': 1}])
+def test_object_dtype_preserves_explicit_chunks(object_dtype_zarr, chunks):
+    path, expected = object_dtype_zarr
+    kwargs = {'engine': 'zarr', 'chunks': chunks}
+    with _open_dataset(path, None, xarray_open_kwargs=kwargs) as actual:
+        xarray.testing.assert_equal(actual.compute(), expected)
+        if chunks is None:
+            assert actual.labels.chunks is None
+        elif chunks == {'sample': 1}:
+            assert actual.labels.chunks == ((1, 1),)
+    assert kwargs['chunks'] == chunks
+
+
+def test_object_dtype_does_not_override_explicit_auto_dimension(object_dtype_zarr):
+    path, _ = object_dtype_zarr
+    with pytest.raises(NotImplementedError, match='auto rechunking with object dtype'):
+        _open_dataset(
+            path, None, xarray_open_kwargs={'engine': 'zarr', 'chunks': {'sample': 'auto'}}
+        )
+
+
+def test_chunk_fallback_preserves_unrelated_error():
+    with pytest.raises(ValueError, match='unrecognized engine'):
+        _open_dataset(f1, None, xarray_open_kwargs={'engine': 'not-an-engine', 'chunks': 'auto'})
+
+
+def test_numeric_and_cftime_keep_auto_chunks():
+    kwargs = {'engine': 'scipy', 'chunks': 'auto'}
+    with _open_dataset(f1, None, xarray_open_kwargs=kwargs) as actual:
+        with xarray.open_dataset(f1, engine='scipy') as expected:
+            xarray.testing.assert_equal(actual.compute(), expected)
+        assert actual.tasmax.chunks is not None
+    assert kwargs['chunks'] == 'auto'
