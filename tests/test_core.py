@@ -21,7 +21,6 @@ import intake_esm
 
 from .utils import (
     access_columns_with_lists_cat,
-    access_columns_with_sets_cat,
     access_columns_with_tuples_cat,
     catalog_dict_records,
     cdf_cat_sample_cesmle,
@@ -298,17 +297,12 @@ def test_open_and_reserialize(tmp_path, file_format_1, file_format_2):
 
 @pytest.mark.parametrize('first_format', ['csv', 'parquet'])
 @pytest.mark.parametrize('second_format', ['csv', 'parquet'])
-@pytest.mark.parametrize(
-    'catalog_file', [access_columns_with_lists_cat, access_columns_with_sets_cat]
-)
-def test_iterable_serialization_preserves_values(
-    tmp_path, catalog_file, first_format, second_format
-):
+def test_iterable_serialization_preserves_values(tmp_path, first_format, second_format):
+    """Iterable values survive repeated round trips between csv and parquet."""
     read_kwargs = {'converters': {'variable': ast.literal_eval}}
-    catalog = intake.open_esm_datastore(catalog_file, read_kwargs=read_kwargs)
-    normalise = set if catalog_file == access_columns_with_sets_cat else tuple
+    catalog = intake.open_esm_datastore(access_columns_with_lists_cat, read_kwargs=read_kwargs)
     expected = catalog.df.copy(deep=True)
-    expected['variable'] = expected['variable'].astype(object).apply(normalise)
+    expected['variable'] = expected['variable'].astype(object).apply(tuple)
     for i, file_format in enumerate([first_format, second_format]):
         name = f'roundtrip_{i}'
         catalog.serialize(
@@ -318,8 +312,43 @@ def test_iterable_serialization_preserves_values(
             tmp_path / f'{name}.json', read_kwargs=read_kwargs if file_format == 'csv' else None
         )
         actual = catalog.df.copy(deep=True)
-        actual['variable'] = actual['variable'].astype(object).apply(normalise)
+        actual['variable'] = actual['variable'].astype(object).apply(tuple)
         pd.testing.assert_frame_equal(actual, expected, check_dtype=False)
+
+
+@pytest.mark.parametrize(
+    'literal, expected',
+    [
+        ("['a', 'b']", ('a', 'b')),
+        ("('a', 'b')", ('a', 'b')),
+        ("{'a', 'b'}", ('a', 'b')),
+        ("('a',)", ('a',)),
+    ],
+    ids=['list', 'tuple', 'set', 'single-item-tuple'],
+)
+def test_read_iterable_literals(tmp_path, literal, expected):
+    """Catalogs written with list, tuple or set literals in iterable columns can be read."""
+    pd.DataFrame({'path': ['a.nc', 'b.nc'], 'variable': [literal, literal]}).to_csv(
+        tmp_path / 'cat.csv', index=False
+    )
+    with open(tmp_path / 'cat.json', 'w') as f:
+        json.dump(
+            {
+                'esmcat_version': '0.1.0',
+                'id': 'iterable-literals',
+                'description': '',
+                'catalog_file': 'cat.csv',
+                'attributes': [],
+                'assets': {'column_name': 'path', 'format': 'netcdf'},
+            },
+            f,
+        )
+
+    catalog = intake.open_esm_datastore(
+        tmp_path / 'cat.json', read_kwargs={'converters': {'variable': ast.literal_eval}}
+    )
+    assert catalog.esmcat.columns_with_iterables == {'variable'}
+    assert catalog.df['variable'].astype(object).apply(tuple).tolist() == [expected, expected]
 
 
 def test_parquet_filename_preserves_catalog_name(tmp_path):
