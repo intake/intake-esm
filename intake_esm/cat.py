@@ -128,7 +128,6 @@ class ESMCatalogModel(pydantic.BaseModel):
     _df: pd.DataFrame | None = pydantic.PrivateAttr()
     _frames: FramesModel | None = pydantic.PrivateAttr()
     _driver: CatalogFileReader | None = pydantic.PrivateAttr(default=None)
-    _iterable_dtype_map: dict[str, str] = pydantic.PrivateAttr(default_factory=dict)
 
     model_config = ConfigDict(arbitrary_types_allowed=True, validate_assignment=True)
 
@@ -305,7 +304,6 @@ class ESMCatalogModel(pydantic.BaseModel):
 
     def _df_from_file(
         self,
-        cat: ESMCatalogModel,
         _mapper: fsspec.FSMap,
         storage_options: dict[str, typing.Any],
         read_kwargs: dict[str, typing.Any],
@@ -324,8 +322,6 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         Parameters
         ----------
-        cat: ESMCatalogModel
-            The catalog model
         _mapper: fsspec mapper
             A fsspec mapper object
         storage_options: dict
@@ -340,11 +336,11 @@ class ESMCatalogModel(pydantic.BaseModel):
             A pydantic model containing at least one of a pandas/polars dataframe
             and a polars lazyframe
         """
-        if _mapper.fs.exists(cat.catalog_file):
-            csv_path = cat.catalog_file
+        if _mapper.fs.exists(self.catalog_file):
+            csv_path = self.catalog_file
         else:
-            csv_path = f'{os.path.dirname(_mapper.root)}/{cat.catalog_file}'
-        cat.catalog_file = csv_path
+            csv_path = f'{os.path.dirname(_mapper.root)}/{self.catalog_file}'
+        self.catalog_file = csv_path
 
         if cat.catalog_file is None:
             raise AssertionError(
@@ -373,8 +369,7 @@ class ESMCatalogModel(pydantic.BaseModel):
             self._driver = PolarsCsvReader(cat.catalog_file, storage_options, **read_kwargs)
         else:
             self._driver = PandasCsvReader(cat.catalog_file, storage_options, **read_kwargs)
-
-        self._iterable_dtype_map = self._driver.dtype_map
+            
         return self._driver.frames
 
     @property
