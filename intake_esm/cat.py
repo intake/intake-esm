@@ -666,6 +666,12 @@ class CatalogFileDataReader:
     def _read_csv_pl(self) -> FramesModel:
         """Read a catalog file stored as a csv using polars"""
         converters = self.read_kwargs.pop('converters', {})  # Hack
+        schema_overrides = self.read_kwargs.get('schema_overrides', {})
+        iterable_dtypes = {k: v for k, v in schema_overrides.items() if k in converters}
+        if iterable_dtypes:
+            self.read_kwargs['schema_overrides'] = {
+                k: v for k, v in schema_overrides.items() if k not in converters
+            }
 
         lf = pl.scan_csv(
             self.catalog_file,
