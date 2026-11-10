@@ -27,6 +27,7 @@ def show_versions(file=sys.stdout):  # pragma: no cover
     deps = [
         ('xarray', lambda mod: mod.__version__),
         ('pandas', lambda mod: mod.__version__),
+        ('polars', lambda mod: mod.__version__),
         ('intake', lambda mod: mod.__version__),
         ('intake_esm', lambda mod: mod.__version__),
         ('fsspec', lambda mod: mod.__version__),

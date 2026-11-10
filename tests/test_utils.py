@@ -1,10 +1,17 @@
+from io import StringIO
 from unittest import mock
 
 import polars as pl
 import pytest
 from polars.testing import assert_frame_equal
 
-from intake_esm.utils import MinimalExploder, _set_async_flag
+from intake_esm.utils import MinimalExploder, _set_async_flag, show_versions
+
+
+def test_show_versions_includes_polars():
+    output = StringIO()
+    show_versions(file=output)
+    assert f'polars: {pl.__version__}' in output.getvalue()
 
 
 @pytest.mark.parametrize(

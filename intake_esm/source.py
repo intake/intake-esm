@@ -3,6 +3,7 @@ import warnings
 
 import dask
 import fsspec
+import packaging.version
 import pandas as pd
 import pydantic
 import xarray as xr
@@ -21,10 +22,14 @@ class ESMDataSourceError(Exception):
 
 
 def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_options=None):
+    _can_autochunk_cftime = packaging.version.Version(xr.__version__) >= packaging.version.Version(
+        '2025.11.0'
+    )
+
     xarray_open_kwargs = (xarray_open_kwargs or {}).copy()
     _default_open_kwargs = {
         'engine': 'zarr' if data_format in {'zarr', 'zarr2', 'zarr3', 'reference'} else 'netcdf4',
-        'chunks': {},
+        'chunks': 'auto' if _can_autochunk_cftime else {},
         'backend_kwargs': {},
         'decode_timedelta': False,
     }
@@ -34,11 +39,15 @@ def _get_xarray_open_kwargs(data_format, xarray_open_kwargs=None, storage_option
         else _default_open_kwargs
     )
 
+    # Add options to backend kwargs as we delegate all this to Zarr
+    # however, don't add options if none are passed. Zarr will raise
+    # if non-none options are passed for local assets
     if (
         xarray_open_kwargs['engine'] == 'zarr'
         and 'storage_options' not in xarray_open_kwargs['backend_kwargs']
+        and storage_options
     ):
-        xarray_open_kwargs['backend_kwargs']['storage_options'] = {} or storage_options
+        xarray_open_kwargs['backend_kwargs']['storage_options'] = storage_options
 
     xarray_open_kwargs = _set_async_flag(data_format, xarray_open_kwargs)
 
@@ -79,17 +88,22 @@ def _open_dataset(
     )
 
     # Support kerchunk datasets, setting the file object (fo) and urlpath
-    if data_format == 'reference':
+    if data_format == 'reference' and xarray_open_kwargs['engine'] == 'zarr':
         xarray_open_kwargs['backend_kwargs']['storage_options']['fo'] = urlpath
         xarray_open_kwargs['backend_kwargs']['consolidated'] = False
         urlpath = 'reference://'
 
-    if xarray_open_kwargs['engine'] in 'zarr' or data_format == 'opendap':
+    if xarray_open_kwargs['engine'] == 'zarr' or data_format == 'opendap':
         url = urlpath
     elif fsspec.utils.can_be_local(urlpath):
         url = fsspec.open_local(urlpath, **storage_options)
+    # Support kerchunk datasets opened with the kerchunk engine
+    elif xarray_open_kwargs['engine'] == 'kerchunk' and data_format == 'reference':
+        url = urlpath
     else:
-        url = fsspec.open(urlpath, **storage_options).open()
+        # we "keep a reference" to the OpenFile so it doesn't close as soon as it is created
+        openfile = fsspec.open(urlpath, **storage_options)
+        url = openfile.open()
 
     # Handle multi-file datasets with `xr.open_mfdataset()`
     if (isinstance(url, str) and '*' in url) or isinstance(url, list):
@@ -145,6 +159,8 @@ def _update_attrs(*, additional_attrs, ds):
 def _expand_dims(expand_dims, ds):
     if expand_dims:
         for variable in ds.attrs[OPTIONS['vars_key']]:
+            if variable not in ds.data_vars:
+                continue  # Only expand data variables, not coords
             ds[variable] = ds[variable].expand_dims(**expand_dims)
 
     return ds
@@ -301,10 +317,11 @@ class ESMDataSource(DataSource):
                         datasets, **self.xarray_combine_by_coords_kwargs
                     )
                 except ValueError as exc:
-                    if (
-                        str(exc)
-                        == 'Could not find any dimension coordinates to use to order the datasets for concatenation'
-                    ):
+                    if str(exc) in [
+                        # Error message changed in https://github.com/pydata/xarray/commit/ad92a166ee301302a02cc6f975d0899430806a86
+                        'Could not find any dimension coordinates to use to order the Dataset objects for concatenation',
+                        'Could not find any dimension coordinates to use to order the datasets for concatenation',
+                    ]:
                         warnings.warn(
                             'Attempting to concatenate datasets without valid dimension coordinates: retaining only first dataset.'
                             ' Request valid dimension coordinate to silence this warning.',

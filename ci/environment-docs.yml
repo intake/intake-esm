@@ -20,7 +20,7 @@ dependencies:
   - pip
   - pydantic>=2.0
   - python-graphviz
-  - python=3.11
+  - python=3.12
   - s3fs >=2024.12
   - setuptools >=75.0.0
   - setuptools_scm >=8.1.0
