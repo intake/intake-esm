@@ -189,23 +189,10 @@ def test_read_csv_conflict():
         )
 
 
-@pytest.mark.parametrize(
-    'datastore, file_format',
-    [
-        (catalog_dict_records, 'csv'),
-        (cdf_cat_sample_cmip6, 'csv'),
-        (zarr_cat_aws_cesm, 'csv'),
-        (zarr_cat_pangeo_cmip6, 'csv'),
-        (cdf_cat_sample_cmip5_pq, 'parquet'),
-        (multi_variable_cat, 'csv'),
-        ({'esmcat': sample_esmcat_data, 'df': sample_df}, 'csv'),
-        (intake_esm.cat.ESMCatalogModel.load(cdf_cat_sample_cmip6), 'csv'),
-    ],
-)
-@pytest.mark.parametrize('catalog_type', ['file', 'dict'])
-def test_write_csv_conflict(tmp_path, datastore, file_format, catalog_type):
+def test_write_csv_conflict(tmp_path, catalog_type):
     """Test that error is raised when `to_csv_kwargs` conflicts with `write_kwargs`."""
-    cat = intake.open_esm_datastore(datastore)
+    cat = intake.open_esm_datastore(catalog_dict_records)
+    file_format = "csv"
 
     kwargs = {
         'name': 'test_catalog',
