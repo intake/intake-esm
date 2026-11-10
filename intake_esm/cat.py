@@ -667,23 +667,12 @@ class CatalogFileDataReader:
         """Read a catalog file stored as a csv using polars"""
         converters = self.read_kwargs.pop('converters', {})  # Hack
 
-        # For polars <1.33, we need to use fsspec here. For >=1.34, we can pass the raw
-        # url. See https://github.com/pola-rs/polars/pull/24450 & https://github.com/intake/intake-esm/issues/744
-        if packaging.version.Version(pl.__version__) < packaging.version.Version('1.34'):
-            with fsspec.open(self.catalog_file, **self.storage_options) as fobj:
-                lf = pl.scan_csv(
-                    fobj,  # type: ignore[arg-type]
-                    storage_options=self.storage_options,
-                    infer_schema=False,
-                    **self.read_kwargs,
-                )
-        else:
-            lf = pl.scan_csv(
-                self.catalog_file,
-                storage_options=self.storage_options,
-                infer_schema=False,
-                **self.read_kwargs,
-            )
+        lf = pl.scan_csv(
+            self.catalog_file,
+            storage_options=self.storage_options,
+            infer_schema=False,
+            **self.read_kwargs,
+        )
 
         lf = lf.with_columns(
             [
