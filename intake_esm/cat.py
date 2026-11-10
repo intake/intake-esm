@@ -355,7 +355,6 @@ class ESMCatalogModel(pydantic.BaseModel):
         self.catalog_file = csv_path
 
         reader = CatalogFileDataReader(self.catalog_file, storage_options, **read_kwargs)
-        self._iterable_dtype_map = reader.dtype_map
         return reader.frames
 
     @property
