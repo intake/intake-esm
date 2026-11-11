@@ -230,7 +230,6 @@ class ESMCatalogModel(pydantic.BaseModel):
         file_writer_kwargs = {
             'data': self.model_dump().copy(),
             'df': self.df,
-            'dtype_map': self._iterable_dtype_map,
             'name': name,
             'directory': directory,
             'catalog_type': catalog_type,
@@ -290,9 +289,7 @@ class ESMCatalogModel(pydantic.BaseModel):
                 data['last_updated'] = None
             cat = cls.model_validate(data)
             if cat.catalog_file:
-                cat._frames = cat._df_from_file(
-                    cat, _mapper, storage_options, read_kwargs, df_reader
-                )
+                cat._frames = cat._df_from_file(_mapper, storage_options, read_kwargs, df_reader)
             else:
                 cat._frames = FramesModel(
                     lf=pl.LazyFrame(cat.catalog_dict),
@@ -342,34 +339,34 @@ class ESMCatalogModel(pydantic.BaseModel):
             csv_path = f'{os.path.dirname(_mapper.root)}/{self.catalog_file}'
         self.catalog_file = csv_path
 
-        if cat.catalog_file is None:
+        if self.catalog_file is None:
             raise AssertionError(
                 'catalog_file cannot be None here. Mostly for mypy..'
             )  # pragma: no cover
 
-        if _is_parquet(cat.catalog_file):  # Parquet files only have polars support for now
+        if _is_parquet(self.catalog_file):  # Parquet files only have polars support for now
             if df_reader == 'pandas':
                 warnings.warn(
                     'Pandas parquet reader is not implemented yet. Falling back to polars parquet reader.',
                     UserWarning,
                     stacklevel=2,
                 )
-            self._driver = PolarsParquetReader(cat.catalog_file, storage_options, **read_kwargs)
-        elif _pd_only_compression(cat.catalog_file):
+            self._driver = PolarsParquetReader(self.catalog_file, storage_options, **read_kwargs)
+        elif _pd_only_compression(self.catalog_file):
             if df_reader == 'polars':
                 warnings.warn(
-                    f'Polars does not support reading {Path(cat.catalog_file).suffix} CSV files. Falling back to pandas CSV reader.',
+                    f'Polars does not support reading {Path(self.catalog_file).suffix} CSV files. Falling back to pandas CSV reader.',
                     UserWarning,
                     stacklevel=2,
                 )
-            self._driver = PandasCsvReader(cat.catalog_file, storage_options, **read_kwargs)
+            self._driver = PandasCsvReader(self.catalog_file, storage_options, **read_kwargs)
         elif df_reader == 'pandas':
-            self._driver = PandasCsvReader(cat.catalog_file, storage_options, **read_kwargs)
+            self._driver = PandasCsvReader(self.catalog_file, storage_options, **read_kwargs)
         elif df_reader == 'polars':
-            self._driver = PolarsCsvReader(cat.catalog_file, storage_options, **read_kwargs)
+            self._driver = PolarsCsvReader(self.catalog_file, storage_options, **read_kwargs)
         else:
-            self._driver = PandasCsvReader(cat.catalog_file, storage_options, **read_kwargs)
-            
+            self._driver = PandasCsvReader(self.catalog_file, storage_options, **read_kwargs)
+
         return self._driver.frames
 
     @property

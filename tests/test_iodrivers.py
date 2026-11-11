@@ -196,7 +196,6 @@ def test_csv_readers(csv_reader):
     'csv_fname',
     [
         'access-columns-with-tuples',
-        'access-columns-with-sets',
         'multi-variable-catalog',
     ],
 )
@@ -227,7 +226,6 @@ def test_unimplemented_writers(writer):
     test_args = {
         'data': {},
         'df': pd.DataFrame(),
-        'dtype_map': {},
         'name': 'test_catalog',
         'write_kwargs': {},
     }

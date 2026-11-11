@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import builtins
 import datetime
 import json
 import os
@@ -119,18 +118,10 @@ class CatalogFileReader(ABC):
         if self.catalog_file is None:
             raise AssertionError('catalog_file must be set to a valid file path or URL')
 
-        self._dtype_map: dict[str, str] = {}
         self._frames: FramesModel | None = None
 
     @abstractmethod
     def read(self) -> None: ...
-
-    @property
-    def dtype_map(self) -> dict[str, str]:
-        """Return a map of column names to their dtypes for columns with iterables."""
-        if self._frames is None:
-            self.read()
-        return self._dtype_map
 
     @property
     def frames(self) -> FramesModel:
@@ -167,25 +158,6 @@ class PolarsCsvReader(CatalogFileReader):
             infer_schema=False,
             **self.read_kwargs,
         )
-
-        if dtype_map := (
-            lf.head(1)
-            .select([colname for colname in converters.keys()])
-            .with_columns(
-                [
-                    pl.col(colname)
-                    .str.head(1)
-                    .str.replace_many(
-                        ['[', '(', '{'],
-                        ['list', 'tuple', 'set'],
-                    )
-                    for colname in converters.keys()
-                ]
-            )
-            .collect()
-            .to_dicts()
-        ):  # Returns an empty list if no rows - hence walrus
-            self._dtype_map = dtype_map[0]
 
         lf = lf.with_columns(
             [
@@ -228,7 +200,6 @@ class PolarsParquetReader(CatalogFileReader):
             **self.read_kwargs,
         )
         self._frames = FramesModel(lf=lf)
-        self._dtype_map = {}
 
 
 class PandasCsvReader(CatalogFileReader):
@@ -250,17 +221,8 @@ class PandasCsvReader(CatalogFileReader):
             storage_options=self.storage_options,
             **self.read_kwargs,
         )
-        self._dtype_map = {
-            colname: df.head(1)[colname]
-            .astype(str)
-            .str[0]
-            .map(
-                {'[': 'list', '{': 'set', '(': 'tuple'},
-            )
-            .iloc[0]
-            for colname in self.read_kwargs.get('converters', {}).keys()
-        }
-        df[list(self._dtype_map.keys())] = df[list(self._dtype_map.keys())].map(tuple)
+        if iterable_columns := list(self.read_kwargs.get('converters', {}).keys()):
+            df[iterable_columns] = df[iterable_columns].map(tuple)
         self._frames = FramesModel(df=df)
 
 
@@ -292,7 +254,6 @@ class CatalogFileWriter:
         cls,
         data: dict,
         df: pd.DataFrame,
-        dtype_map: dict[str, str],
         name: str,
         *,
         write_kwargs: dict,
@@ -303,8 +264,7 @@ class CatalogFileWriter:
         storage_options: dict[str, typing.Any] | None = None,
     ) -> None:
         data, fs, json_file_name = cls._common(name, directory, storage_options, data)
-
-        _tmp_df = cls._prepare_dataframe(df, dtype_map)
+        _tmp_df = cls._prepare_dataframe(df)
 
         data['catalog_dict'] = _tmp_df.to_dict(orient='records')
 
@@ -316,12 +276,12 @@ class CatalogFileWriter:
         print(f'Successfully wrote ESM catalog json file to: {json_file_name}')
 
     @staticmethod
-    def _prepare_dataframe(df: pd.DataFrame, dtype_map: dict[str, str]) -> pd.DataFrame:
-        """Restore iterable containers for serialization, defaulting to lists."""
+    def _prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+        """Iterable columns are held as tuples (or arrays) internally, but are always
+        written out as lists, regardless of the bracket style in the original catalog file."""
         result = df.copy(deep=True)
         for colname in FramesModel(df=df).columns_with_iterables:
-            dtype = dtype_map.get(colname, 'list')
-            result[colname] = result[colname].astype(object).apply(getattr(builtins, dtype))
+            result[colname] = result[colname].astype(object).apply(list)
         return result
 
     @classmethod
@@ -365,7 +325,6 @@ class PandasCsvWriter(CatalogFileWriter):
         cls,
         data: dict,
         df: pd.DataFrame,
-        dtype_map: dict[str, str],
         name: str,
         *,
         write_kwargs: dict,
@@ -377,8 +336,7 @@ class PandasCsvWriter(CatalogFileWriter):
     ) -> None:
         data, fs, json_file_name = cls._common(name, directory, storage_options, data)
         csv_file_name = fs.unstrip_protocol(f'{cls.mapper.root}/{name}.csv')
-
-        _tmp_df = cls._prepare_dataframe(df, dtype_map)
+        _tmp_df = cls._prepare_dataframe(df)
 
         csv_kwargs: dict[str, typing.Any] = {'index': False}
         csv_kwargs |= write_kwargs or {}
@@ -406,7 +364,6 @@ class PandasParquetWriter(CatalogFileWriter):
         cls,
         data: dict,
         df: pd.DataFrame,
-        dtype_map: dict[str, str],
         name: str,
         *,
         directory: str | None = None,
@@ -422,8 +379,9 @@ class PandasParquetWriter(CatalogFileWriter):
         write_kwargs |= {'index': False}
 
         data['catalog_file'] = str(pq_file_name)
+        _tmp_df = cls._prepare_dataframe(df)
         with fs.open(pq_file_name, 'wb') as pq_outfile:
-            df.to_parquet(pq_outfile, **write_kwargs)
+            _tmp_df.to_parquet(pq_outfile, **write_kwargs)
 
         with fs.open(json_file_name, 'w') as outfile:
             json_kwargs = {'indent': 2}
@@ -441,7 +399,6 @@ class PolarsCsvWriter(CatalogFileWriter):
         cls,
         data: dict,
         df: pd.DataFrame,
-        dtype_map: dict[str, str],
         name: str,
         *,
         write_kwargs: dict,
@@ -462,7 +419,6 @@ class PolarsParquetWriter(CatalogFileWriter):
         cls,
         data: dict,
         df: pd.DataFrame,
-        dtype_map: dict[str, str],
         name: str,
         *,
         write_kwargs: dict,
