@@ -7,6 +7,7 @@ import json
 import os
 import typing
 import warnings
+from pathlib import Path
 
 import fsspec
 import pandas as pd
@@ -14,12 +15,18 @@ import polars as pl
 import pydantic
 import tlz
 from pydantic import ConfigDict
-from typing_extensions import Self
 
 from ._search import search, search_apply_require_all_on
-
-__framereaders__ = [pl, pd]
-__filetypes__ = ['csv', 'csv.bz2', 'csv.gz', 'csv.zip', 'csv.xz', 'parquet']
+from .iodrivers import (
+    CatalogFileReader,
+    CatalogFileWriter,
+    FramesModel,
+    PandasCsvReader,
+    PandasCsvWriter,
+    PandasParquetWriter,
+    PolarsCsvReader,
+    PolarsParquetReader,
+)
 
 
 def _allnan_or_nonan(df, column: str) -> bool:
@@ -78,7 +85,7 @@ class Assets(pydantic.BaseModel):
     model_config = ConfigDict(validate_assignment=True)
 
     @pydantic.model_validator(mode='after')
-    def _validate_data_format(self) -> Self:
+    def _validate_data_format(self) -> typing.Self:
         data_format, format_column_name = self.format, self.format_column_name
         if data_format is not None and format_column_name is not None:
             raise ValueError('Cannot set both format and format_column_name')
@@ -120,11 +127,12 @@ class ESMCatalogModel(pydantic.BaseModel):
     last_updated: datetime.datetime | datetime.date | None = None
     _df: pd.DataFrame | None = pydantic.PrivateAttr()
     _frames: FramesModel | None = pydantic.PrivateAttr()
+    _driver: CatalogFileReader | None = pydantic.PrivateAttr(default=None)
 
     model_config = ConfigDict(arbitrary_types_allowed=True, validate_assignment=True)
 
     @pydantic.model_validator(mode='after')
-    def validate_catalog(self) -> Self:
+    def validate_catalog(self) -> typing.Self:
         catalog_dict, catalog_file = self.catalog_dict, self.catalog_file
         if catalog_dict is not None and catalog_file is not None:
             raise ValueError('catalog_dict and catalog_file cannot be set at the same time')
@@ -216,59 +224,35 @@ class ESMCatalogModel(pydantic.BaseModel):
 
         if catalog_type == 'file' and file_format not in {'csv', 'parquet'}:
             raise ValueError(
-                f'file_format must be either "csv" or "parquet". Received {file_format=}'
+                f'file_format must be either "csv" or "parquet". Received file_format={file_format}'
             )
 
-        # Check if the directory is None, and if it is, set it to the current directory
-        if directory is None:
-            directory = os.getcwd()
+        file_writer_kwargs = {
+            'data': self.model_dump().copy(),
+            'df': self.df,
+            'name': name,
+            'directory': directory,
+            'catalog_type': catalog_type,
+            'file_format': file_format,
+            'write_kwargs': write_kwargs,
+            'json_dump_kwargs': json_dump_kwargs,
+            'storage_options': storage_options,
+        }
 
-        # Configure the fsspec mapper and associated filenames
-        storage_options = storage_options if storage_options is not None else {}
-        mapper = fsspec.get_mapper(f'{directory}', **storage_options)
-        fs = mapper.fs
-        csv_file_name = fs.unstrip_protocol(f'{mapper.root}/{name}.csv')
-        json_file_name = fs.unstrip_protocol(f'{mapper.root}/{name}.json')
-
-        data = self.model_dump().copy()
-        for key in {'catalog_dict', 'catalog_file'}:
-            data.pop(key, None)
-        data['id'] = name
-        data['last_updated'] = datetime.datetime.now(datetime.timezone.utc).strftime(
-            '%Y-%m-%dT%H:%M:%SZ'
-        )
-
-        _tmp_df = self.df.copy(deep=True)
-
-        # Iterable columns are held as tuples internally, but are always written out
-        # as lists, regardless of the bracket style in the original catalog file.
-        for colname in self.columns_with_iterables:
-            _tmp_df[colname] = _tmp_df[colname].astype(object).apply(list)
-
-        if catalog_type == 'file':
-            csv_kwargs: dict[str, typing.Any] = {'index': False}
-            csv_kwargs |= write_kwargs or {}
-            compression = csv_kwargs.get('compression', '')
-            extensions = {'gzip': '.gz', 'bz2': '.bz2', 'zip': '.zip', 'xz': '.xz'}
-            if file_format == 'csv':
-                csv_file_name = f'{csv_file_name}{extensions.get(compression, "")}'
-                data['catalog_file'] = str(csv_file_name)
-                with fs.open(csv_file_name, 'wb') as csv_outfile:
-                    _tmp_df.to_csv(csv_outfile, **csv_kwargs)
-            elif file_format == 'parquet':
-                pq_file_name = f'{csv_file_name.removesuffix(".csv")}.parquet'
-                data['catalog_file'] = str(pq_file_name)
-                with fs.open(pq_file_name, 'wb') as pq_outfile:
-                    _tmp_df.to_parquet(pq_outfile, **write_kwargs)
+        if catalog_type == 'dict':
+            writer = CatalogFileWriter
+        elif file_format == 'csv':
+            writer = PandasCsvWriter
+        elif file_format == 'parquet':
+            writer = PandasParquetWriter
         else:
-            data['catalog_dict'] = _tmp_df.to_dict(orient='records')
+            # This branch shouldn't be reached because of the earlier validation.
+            # Left in for safety/completeness.
+            raise NotImplementedError(
+                f'Writer for catalog_type={catalog_type} and file_format={file_format} not implemented'
+            )  # pragma: no cover
 
-        with fs.open(json_file_name, 'w') as outfile:
-            json_kwargs = {'indent': 2}
-            json_kwargs |= json_dump_kwargs or {}
-            json.dump(data, outfile, **json_kwargs)  # type: ignore[arg-type]
-
-        print(f'Successfully wrote ESM catalog json file to: {json_file_name}')
+        return writer.write(**file_writer_kwargs)
 
     @classmethod
     def load(
@@ -276,6 +260,7 @@ class ESMCatalogModel(pydantic.BaseModel):
         json_file: str | pydantic.FilePath | pydantic.AnyUrl,
         storage_options: dict[str, typing.Any] | None = None,
         read_kwargs: dict[str, typing.Any] | None = None,
+        df_reader: typing.Literal['polars', 'pandas', 'infer'] = 'polars',
     ) -> ESMCatalogModel:
         """
         Loads the catalog from a file
@@ -304,7 +289,7 @@ class ESMCatalogModel(pydantic.BaseModel):
                 data['last_updated'] = None
             cat = cls.model_validate(data)
             if cat.catalog_file:
-                cat._frames = cat._df_from_file(_mapper, storage_options, read_kwargs)
+                cat._frames = cat._df_from_file(_mapper, storage_options, read_kwargs, df_reader)
             else:
                 cat._frames = FramesModel(
                     lf=pl.LazyFrame(cat.catalog_dict),
@@ -319,10 +304,11 @@ class ESMCatalogModel(pydantic.BaseModel):
         _mapper: fsspec.FSMap,
         storage_options: dict[str, typing.Any],
         read_kwargs: dict[str, typing.Any],
+        df_reader: typing.Literal['polars', 'pandas', 'infer'],
     ) -> FramesModel:
         """
-        Read the catalog file from disk, falling back to pandas for bz2 files which
-        polars can't read.
+        Read the catalog file from disk. If a reader is specified, that will be
+        used. Else, the reader will be inferred from the file extension.
 
         Returns a FramesModel, which contains at least one of:
         - a polars LazyFrame
@@ -353,8 +339,35 @@ class ESMCatalogModel(pydantic.BaseModel):
             csv_path = f'{os.path.dirname(_mapper.root)}/{self.catalog_file}'
         self.catalog_file = csv_path
 
-        reader = CatalogFileDataReader(self.catalog_file, storage_options, **read_kwargs)
-        return reader.frames
+        if self.catalog_file is None:
+            raise AssertionError(
+                'catalog_file cannot be None here. Mostly for mypy..'
+            )  # pragma: no cover
+
+        if _is_parquet(self.catalog_file):  # Parquet files only have polars support for now
+            if df_reader == 'pandas':
+                warnings.warn(
+                    'Pandas parquet reader is not implemented yet. Falling back to polars parquet reader.',
+                    UserWarning,
+                    stacklevel=2,
+                )
+            self._driver = PolarsParquetReader(self.catalog_file, storage_options, **read_kwargs)
+        elif _pd_only_compression(self.catalog_file):
+            if df_reader == 'polars':
+                warnings.warn(
+                    f'Polars does not support reading {Path(self.catalog_file).suffix} CSV files. Falling back to pandas CSV reader.',
+                    UserWarning,
+                    stacklevel=2,
+                )
+            self._driver = PandasCsvReader(self.catalog_file, storage_options, **read_kwargs)
+        elif df_reader == 'pandas':
+            self._driver = PandasCsvReader(self.catalog_file, storage_options, **read_kwargs)
+        elif df_reader == 'polars':
+            self._driver = PolarsCsvReader(self.catalog_file, storage_options, **read_kwargs)
+        else:
+            self._driver = PandasCsvReader(self.catalog_file, storage_options, **read_kwargs)
+
+        return self._driver.frames
 
     @property
     def lf(self) -> pl.LazyFrame:
@@ -500,7 +513,7 @@ class QueryModel(pydantic.BaseModel):
     model_config = ConfigDict(validate_assignment=False)
 
     @pydantic.model_validator(mode='after')
-    def validate_query(self) -> Self:
+    def validate_query(self) -> typing.Self:
         query = self.query
         columns = self.columns
         require_all_on = self.require_all_on
@@ -524,198 +537,10 @@ class QueryModel(pydantic.BaseModel):
         return self
 
 
-class FramesModel(pydantic.BaseModel):
-    """A Pydantic model to represent our collection of dataframes - pandas, polars,
-    and lazyframe."""
-
-    df: pd.DataFrame | None = None
-    pl_df: pl.DataFrame | None = None
-    lf: pl.LazyFrame | None = None
-
-    model_config = ConfigDict(validate_assignment=True, arbitrary_types_allowed=True)
-
-    @pydantic.model_validator(mode='after')
-    def ensure_some(self) -> Self:
-        """
-        Make sure that at least one of the dataframes is not `None` when the model is
-        instantiated.
-        """
-        if self.df is None and self.pl_df is None and self.lf is None:
-            raise AssertionError('At least one of df, pl_df, or lf must be set')
-        return self
-
-    @property
-    def pandas(self) -> pd.DataFrame:
-        """Return the pandas DataFrame, instantiating it if necessary."""
-        if self.df is not None:
-            return self.df
-
-        if self.pl_df is not None:
-            self.df = self.pl_df.to_pandas(use_pyarrow_extension_array=True)
-            self.df[list(self.columns_with_iterables)] = self.df[
-                list(self.columns_with_iterables)
-            ].map(tuple)
-            return self.df
-
-        self.pl_df = self.lf.collect()  # type: ignore[union-attr]
-        self.df = self.pl_df.to_pandas(use_pyarrow_extension_array=True)
-        for colname in self.columns_with_iterables:
-            if self.df.dtypes[colname] == 'O':  # not for pyarrow list
-                self.df[colname] = self.df[colname].apply(tuple)
-        return self.df
-
-    @property
-    def polars(self) -> pl.DataFrame:
-        """Return the polars DataFrame, instantiating it if necessary."""
-        if self.pl_df is not None:
-            return self.pl_df
-
-        if self.lf is not None:
-            self.pl_df = self.lf.collect()
-            return self.pl_df
-
-        self.pl_df = pl.from_pandas(self.df)
-        self.lf = self.pl_df.lazy()
-
-        return self.pl_df
-
-    @property
-    def lazy(self) -> pl.LazyFrame:
-        """Return the polars LazyFrame, instantiating it if necessary."""
-        if self.lf is not None:
-            return self.lf
-
-        # Otherwise, it must be none - so lets create the lazyframe now. We use the
-        # self.polars property, so we can cascade to creating it from the pandas dataframe
-        # if necessary.
-        self.lf = self.polars.lazy()
-        return self.lf
-
-    @property
-    def columns_with_iterables(self) -> set[str]:
-        """Return a set of columns that have iterables, preferentially using
-        `self.lazy` > `self.polars` > `self.pandas` to minimise overhead."""
-        if (trunc_df := self.lazy.head(1).collect()).is_empty():
-            return set()
-        if self.df is not None and self.df.empty:
-            return set()
-
-        colnames, dtypes = trunc_df.columns, trunc_df.dtypes
-        return {colname for colname, dtype in zip(colnames, dtypes) if dtype == pl.List}
-
-    def nunique(self) -> pd.Series:
-        """Return a series of the number of unique values for each column in the catalog."""
-        return pd.Series(
-            {
-                colname: self.polars.get_column(colname).explode().n_unique()
-                if self.polars.schema[colname] == pl.List
-                else self.polars.get_column(colname).n_unique()
-                for colname in self.polars.columns
-            }
-        )
+def _is_parquet(file_path: str) -> bool:
+    return file_path.lower().endswith('.parquet')
 
 
-class CatalogFileDataReader:
-    """Abstracts away some of the complexity related to reading dataframes"""
-
-    def __init__(
-        self,
-        catalog_file: pydantic.StrictStr | None,
-        storage_options: dict[str, typing.Any],
-        **read_kwargs,
-    ):
-        self.catalog_file = catalog_file
-        self.storage_options = storage_options
-        self.read_kwargs = read_kwargs
-
-        if self.catalog_file is None:
-            raise AssertionError('catalog_file must be set to a valid file path or URL')
-
-        # I think we want to replace this with a dict lookup.
-        if self.catalog_file.endswith('.csv.gz') or self.catalog_file.endswith('.csv'):
-            self.driver = 'polars'
-            self.filetype = 'csv'
-        elif self.catalog_file.endswith('.parquet'):
-            self.driver = 'polars'
-            self.filetype = 'parquet'
-        elif (
-            self.catalog_file.endswith('.csv.bz2')
-            or self.catalog_file.endswith('.csv.xz')
-            or self.catalog_file.endswith('.csv.zip')
-        ):
-            self.driver = 'pandas'
-            self.filetype = 'csv'
-        else:
-            raise ValueError(
-                f'Unsupported file type for catalog_file {self.catalog_file}. '
-                f'Expected one of {__filetypes__}'
-            )
-
-        self.frames = self._read()
-
-    def _read_csv_pd(self) -> FramesModel:
-        """Read a catalog file stored as a csv using pandas"""
-        df = pd.read_csv(
-            self.catalog_file,
-            storage_options=self.storage_options,
-            **self.read_kwargs,
-        )
-        return FramesModel(df=df)
-
-    def _read_csv_pl(self) -> FramesModel:
-        """Read a catalog file stored as a csv using polars"""
-        converters = self.read_kwargs.pop('converters', {})  # Hack
-        schema_overrides = self.read_kwargs.get('schema_overrides', {})
-        iterable_dtypes = {k: v for k, v in schema_overrides.items() if k in converters}
-        if iterable_dtypes:
-            self.read_kwargs['schema_overrides'] = {
-                k: v for k, v in schema_overrides.items() if k not in converters
-            }
-
-        lf = pl.scan_csv(
-            self.catalog_file,
-            storage_options=self.storage_options,
-            infer_schema=False,
-            **self.read_kwargs,
-        )
-
-        lf = lf.with_columns(
-            [
-                pl.col(colname)
-                .str.replace('^.', '[')  # Replace first/last chars with [ or ].
-                .str.replace('.$', ']')  # set/tuple => list
-                .str.replace(',]$', ']')  # Remove trailing commas
-                .str.replace_all(
-                    "'", '"'
-                )  # This is to do with the JSON spec- single versus double quotes
-                .str.json_decode(dtype=pl.List(pl.Utf8))
-                for colname in converters.keys()
-            ]
-        )
-        if iterable_dtypes:
-            lf = lf.with_columns([pl.col(k).cast(v) for k, v in iterable_dtypes.items()])
-        return FramesModel(lf=lf)
-
-    def _read_parquet_pl(self) -> FramesModel:
-        """Read a catalog file stored as a parquet using polars"""
-        lf = pl.scan_parquet(
-            self.catalog_file,  # type: ignore[arg-type]
-            storage_options=self.storage_options,
-            **self.read_kwargs,
-        )
-        return FramesModel(lf=lf)
-
-    def _read(self):
-        if self.driver == 'polars':
-            if self.filetype == 'csv':
-                return self._read_csv_pl()
-            elif self.filetype == 'parquet':
-                return self._read_parquet_pl()
-            else:
-                raise ValueError(f'Unsupported file type {self.filetype} for polars reader')
-
-        if self.driver == 'pandas':
-            if self.filetype == 'csv':
-                return self._read_csv_pd()
-            else:
-                raise ValueError(f'Unsupported file type {self.filetype} for pandas reader')
+def _pd_only_compression(file_path: str) -> bool:
+    pd_only_compressions = ['.zip', '.xz', '.bz2', '.zst']
+    return any(file_path.lower().endswith(ext) for ext in pd_only_compressions)

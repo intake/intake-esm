@@ -1,6 +1,9 @@
 import ast
 import json
 import os
+import tempfile
+import warnings
+from pathlib import Path
 from unittest import mock
 
 import intake
@@ -18,13 +21,16 @@ else:
     from xarray import DataTree
 
 import intake_esm
+from intake_esm.iodrivers import PandasCsvReader, PolarsCsvReader, PolarsParquetReader
 
 from .utils import (
+    access_columns_with_lists_bz2_cat,
     access_columns_with_lists_cat,
     access_columns_with_tuples_cat,
     catalog_dict_records,
     cdf_cat_sample_cesmle,
     cdf_cat_sample_cmip5,
+    cdf_cat_sample_cmip5_pq,
     cdf_cat_sample_cmip6,
     cdf_cat_sample_cmip6_noagg,
     mixed_cat_sample_cmip6,
@@ -187,49 +193,6 @@ def test_read_csv_conflict():
         )
 
 
-def test_write_csv_conflict(tmp_path):
-    """Test that error is raised when `to_csv_kwargs` conflicts with `write_kwargs`."""
-    cat = intake.open_esm_datastore(catalog_dict_records)
-    file_format = 'csv'
-
-    kwargs = {
-        'name': 'test_catalog',
-        'directory': tmp_path,
-        'catalog_type': 'file',
-        'file_format': file_format,
-        'write_kwargs': {'compression': 'gzip'},
-    }
-
-    # Work when inputs are consistent
-    cat.serialize(**kwargs)
-
-    kwargs['to_csv_kwargs'] = kwargs['write_kwargs']
-    # Fails on conflict
-    with pytest.raises(ValueError):
-        cat.serialize(
-            name='test_catalog',
-            directory=tmp_path,
-            catalog_type='file',
-            file_format=file_format,
-            write_kwargs={'compression': 'gzip'},
-            to_csv_kwargs={'compression': 'gzip'},
-        )
-
-    kwargs.pop('write_kwargs')
-
-    with pytest.warns(
-        DeprecationWarning,
-        match='to_csv_kwargs is deprecated and will be removed in a future version. ',
-    ):
-        cat.serialize(
-            name='test_catalog',
-            directory=tmp_path,
-            catalog_type='file',
-            file_format=file_format,
-            to_csv_kwargs={'compression': 'gzip'},
-        )
-
-
 @pytest.mark.parametrize(
     'file_format_1',
     [
@@ -364,6 +327,88 @@ def test_serialization_rejects_unknown_file_format(tmp_path, use_model):
     with pytest.raises(ValueError, match='file_format'):
         save(name='invalid', directory=tmp_path, catalog_type='file', file_format='orc')
     assert not (tmp_path / 'invalid.json').exists()
+
+
+@pytest.mark.parametrize(
+    'datastore, file_format',
+    [
+        (catalog_dict_records, 'csv'),
+        (cdf_cat_sample_cmip6, 'csv'),
+        (zarr_cat_aws_cesm, 'csv'),
+        (zarr_cat_pangeo_cmip6, 'csv'),
+        (cdf_cat_sample_cmip5_pq, 'parquet'),
+        (multi_variable_cat, 'csv'),
+        ({'esmcat': sample_esmcat_data, 'df': sample_df}, 'csv'),
+        (intake_esm.cat.ESMCatalogModel.load(cdf_cat_sample_cmip6), 'csv'),
+    ],
+)
+@pytest.mark.parametrize('catalog_type', ['file', 'dict'])
+def test_write_csv_conflict(tmp_path, datastore, file_format, catalog_type):
+    """Test that error is raised when `to_csv_kwargs` conflicts with `write_kwargs`."""
+    cat = intake.open_esm_datastore(datastore)
+
+    kwargs = {
+        'name': 'test_catalog',
+        'directory': tmp_path,
+        'catalog_type': catalog_type,
+        'file_format': file_format,
+        'write_kwargs': {'compression': 'gzip'},
+    }
+
+    # Work when inputs are consistent
+    cat.serialize(**kwargs)
+
+    kwargs['to_csv_kwargs'] = kwargs['write_kwargs']
+    # Fails on conflict
+    with pytest.raises(ValueError):
+        cat.serialize(
+            name='test_catalog',
+            directory=tmp_path,
+            catalog_type='file',
+            file_format=file_format,
+            write_kwargs={'compression': 'gzip'},
+            to_csv_kwargs={'compression': 'gzip'},
+        )
+
+    kwargs.pop('write_kwargs')
+
+    with pytest.warns(
+        DeprecationWarning,
+        match='to_csv_kwargs is deprecated and will be removed in a future version. ',
+    ):
+        cat.serialize(
+            name='test_catalog',
+            directory=tmp_path,
+            catalog_type=catalog_type,
+            file_format=file_format,
+            to_csv_kwargs={'compression': 'gzip'},
+        )
+
+
+def test_dict_serialization_preserves_values():
+    catalog = intake.open_esm_datastore(
+        access_columns_with_lists_cat, columns_with_iterables=['variable']
+    )
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        catalog.serialize(
+            name='test_catalog',
+            directory=tmpdir,
+            catalog_type='dict',
+            file_format='csv',
+            storage_options={},
+        )
+
+        catalog2 = intake.open_esm_datastore(
+            Path(tmpdir) / 'test_catalog.json',
+            columns_with_iterables=['variable'],
+        )
+
+    pd.testing.assert_frame_equal(
+        catalog.df,
+        catalog2.df,
+        check_dtype=False,
+    )
 
 
 @pytest.mark.parametrize(
@@ -539,6 +584,7 @@ def test_catalog_serialize(catalog_type, to_csv_kwargs, json_dump_kwargs, direct
             if cat.esmcat._frames.pl_df.get_column(colname).is_null().all()
         ]
     )
+
     assert_frame_equal_pl(
         subset_df,
         df,
@@ -977,3 +1023,90 @@ def test_numeric_iterable_schema_override(tmp_path):
     )
     assert cat.esmcat.pl_df.schema['levels'] == pl.List(pl.Int64)
     assert cat.esmcat.pl_df['levels'].to_list() == [[1, 2]] * len(table)
+
+
+@pytest.mark.parametrize(
+    'catalog, _driver',
+    [
+        (
+            cdf_cat_sample_cmip5_pq,
+            PolarsParquetReader,
+        ),
+    ],
+)
+@pytest.mark.parametrize('df_reader', ['pandas', 'polars', 'infer'])
+def test_df_reader_parquet(catalog, df_reader, _driver):
+    if df_reader == 'pandas':
+        with pytest.warns(UserWarning, match='Pandas parquet reader is not implemented yet.'):
+            cat = intake.open_esm_datastore(catalog, df_reader=df_reader)
+    else:
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')  # Turn warnings into errors
+            cat = intake.open_esm_datastore(catalog, df_reader=df_reader)
+
+        assert isinstance(cat.esmcat._driver, _driver)
+
+
+@pytest.mark.parametrize(
+    'catalog, df_reader, _driver',
+    [
+        (
+            cdf_cat_sample_cmip5,
+            'polars',
+            PolarsCsvReader,
+        ),
+        (
+            cdf_cat_sample_cmip5,
+            'pandas',
+            PandasCsvReader,
+        ),
+        (
+            cdf_cat_sample_cmip5,
+            'infer',
+            PandasCsvReader,
+        ),
+        (
+            access_columns_with_lists_bz2_cat,
+            'polars',
+            PandasCsvReader,
+        ),
+        (
+            access_columns_with_lists_bz2_cat,
+            'pandas',
+            PandasCsvReader,
+        ),
+        (
+            access_columns_with_lists_bz2_cat,
+            'infer',
+            PandasCsvReader,
+        ),
+    ],
+)
+def test_df_reader_csv(catalog, df_reader, _driver):
+    cat = intake.open_esm_datastore(catalog, df_reader=df_reader)
+    assert isinstance(cat.esmcat._driver, _driver)
+    if df_reader == 'pandas':
+        cat.df
+        assert cat.esmcat._driver.frames.pl_df is None
+        cat.esmcat._driver.frames.polars
+        assert cat.esmcat._driver.frames.pl_df is not None
+
+
+@pytest.mark.parametrize(
+    'env_reader, explicit_reader, expected',
+    [
+        (None, None, PolarsCsvReader),
+        ('pandas', None, PandasCsvReader),
+        ('pandas', 'polars', PolarsCsvReader),
+        ('polars', 'pandas', PandasCsvReader),
+    ],
+)
+def test_reader_selection_precedence(monkeypatch, env_reader, explicit_reader, expected):
+    if env_reader is None:
+        monkeypatch.delenv('ITK_ESM_DF_READER', raising=False)
+    else:
+        monkeypatch.setenv('ITK_ESM_DF_READER', env_reader)
+    cat = intake.open_esm_datastore(cdf_cat_sample_cmip5, df_reader=explicit_reader)
+    assert isinstance(cat.esmcat._driver, expected)
+    reference = pd.read_csv(cat.esmcat.catalog_file, dtype=str)
+    pd.testing.assert_frame_equal(cat.df, reference, check_dtype=False)
